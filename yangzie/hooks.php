@@ -1,0 +1,128 @@
+<?php
+/**
+ * 该文件为系统提供hook机制，hook主要用于下面的地方：
+ * 1.产生用户的行为消息（create event,update event,read event,delete event）
+ * 4.数据输入处理（filter，validatet）
+ * 5.数据输出处理（filter，validatet）
+ * 6.事件通知（action）
+ * 
+ * hook提供入处理的方式是：
+ * 1.在系统启动前加载所有的hook：加载每个目录下的hooks.php文件
+ * 2.在上面的处理的地方调用hook
+ * 
+ * hook分为两类：
+ * 1.改变数据的hook，叫filter
+ * 1.验证数据的hook，叫validater
+ * 2.事件通过hook，叫action
+ * 
+ * 如果hook成功，filter返回修改后的值，其它hook返回true；失败都抛出异常：Hook_Exception
+ * @author liizii
+ * @since 2009-9-1
+ */
+
+#定义架构使用的hook常量
+define('YZE_LOAD_CSS','load_css');
+define('YZE_LOAD_JS_BEFORE_BODY','load_js_before_body');
+define('YZE_BEFORE_POST','do_before_post');
+define('YZE_BEFORE_GET','do_before_get');
+define('YZE_BEFORE_PUT','do_before_put');
+define('YZE_BEFORE_DELETE','do_before_delete');
+define('YZE_AFTER_POST','do_after_post');
+define('YZE_AFTER_GET','do_after_get');
+define('YZE_AFTER_PUT','do_after_put');
+define('YZE_AFTER_DELETE','do_after_delete');
+define('YZE_TRANSACTION_COMMIT','transaction_commit');
+define('YZE_FILTER_URI','filter_uri');#uri过滤，传入uri分离后的数据或者就是uri字符串本身
+
+final class Hook{
+	private $listeners = array();
+	private static $instance;
+	private function __construct(){}
+
+	/**
+	 * 
+	 *
+	 * @return Hook
+	 */
+	public static function the_hook(){
+        if (!isset(self::$instance)) {
+            $c = __CLASS__;
+            self::$instance = new $c;
+        }
+        return self::$instance;
+    }
+    
+	/**
+	 * 增加hook
+	 *
+	 */
+	public function add_hook($event,$func_name,$object=null){
+		$this->listeners[$event][] = array("function"=>$func_name,"object"=>$object);
+	}
+	
+	public function do_filter($filter_name,$data){
+		if(!$this->has_hook($filter_name))return $data;
+		foreach($this->listeners[$filter_name] as $listeners){
+			if(is_object($listeners['object'])){
+//				TODO call object method
+			}else{
+				$data = call_user_func($listeners['function'],$data);
+			}
+		}
+		return $data;
+	}
+
+	public function do_action($event,$args = null){
+		if(!$this->has_hook($event))return;
+		foreach(@$this->listeners[$event] as $listeners){
+			if(is_object($listeners['object'])){
+//				TODO call object method
+			}else{
+				//use call_user_func
+				call_user_func($listeners['function'],$args);
+			}
+		}
+	}
+	
+	private function has_hook($filter_name){
+		return @$this->listeners[$filter_name];
+	}
+}
+
+
+///////////////////function //////////////////
+
+function do_hook(){
+	
+}
+function do_action($action_name,$args = null){
+	$hook = Hook::the_hook();
+	$hook->do_action($action_name,$args);
+}
+/**
+ * 
+ * 调用注册的过滤器回调，如果有多个回调，则数据依次经过每个回调后返回
+ * 
+ * @param unknown_type $filter_name
+ * @param unknown_type $filter_data
+ * 
+ * @return array;
+ */
+function do_filter($filter_name,$filter_data){
+	$hook = Hook::the_hook();
+	return $hook->do_filter($filter_name,$filter_data);
+}
+/**
+ * 对数据进入验证，正确则什么也不做，错误抛出Validate_Failed异常
+ * 
+ * @param $filter_name 验证器名字
+ * @param $filter_data 验证的数据
+ * @return void
+ * @author liizii
+ * @since 2009-12-21
+ */
+function do_validate($filter_name,$filter_data){
+	$hook = Hook::the_hook();
+	return $hook->do_filter($filter_name,$filter_data);
+}
+?>

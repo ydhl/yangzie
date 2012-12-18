@@ -68,6 +68,34 @@ abstract class Model extends YangzieObject{
 	}
 	
 	/**
+	 * 对model转换成json对象
+	 * 
+	 * @author leeboo
+	 * 
+	 * 
+	 * @return string json string
+	 */
+	public function toJson(){
+		return json_encode($this->get_records());
+	}
+	
+	/**
+	 * 根据jsonString创建对象, 如果json不是有效的json，返回null
+	 */
+	public static function from_Json($json){
+		$array = json_decode($json, true);
+		if(is_null($array))return null;
+		
+		$class = get_called_class();
+		$obj = new $class();
+		
+		foreach($array as $name => $value){
+			$obj->set($name, $value);
+		}
+		return $obj;
+	}
+	
+	/**
 	 * 返回主键值
 	 * @return id
 	 */

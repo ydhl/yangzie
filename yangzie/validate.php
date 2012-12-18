@@ -32,6 +32,7 @@ abstract class YZEValidate extends YangzieObject
     const IS_EMAIL = "is_email";
     const EQUAL = "equal";
     const VERIFY_CODE = "verify_code";
+    const REGEX = "regex";
     
     const DS_GET = "get";
     const DS_POST = "post";
@@ -59,7 +60,7 @@ abstract class YZEValidate extends YangzieObject
     	foreach ((array)@$this->validates[$request_method] as $name => $rules) {
     		foreach ($rules as $rule => $rule_data) {
     			if (!$this->$rule($request_method, $name, $rule_data['value'])) {
-    				$failed[$name] = $this->validates[$gpcs][$name][$rule]['message'];
+    				$failed[$name] = $this->validates[$request_method][$name][$rule]['message'];
     			}
     		}
     	}
@@ -130,11 +131,6 @@ abstract class YZEValidate extends YangzieObject
     	return $this;
     }
     
-    public function regular_validate($method, $name, $rule)
-    {
-    	$datas = $this->get_datas($method);
-    	return preg_match($rule, $datas[$name]) ? true : false;
-    }
     
     /**
      * 数据必需要提供
@@ -152,6 +148,12 @@ abstract class YZEValidate extends YangzieObject
     public function required($method, $name, $rule)
     {
         return array_key_exists($name, $this->get_datas($method));
+    }
+    
+    public function regex($method, $name, $rule)
+    {
+    	$datas = $this->get_datas($method);
+    	return preg_match($rule, $datas[$name]) ? true : false;
     }
     
     public function not_empty($method, $name, $rule)

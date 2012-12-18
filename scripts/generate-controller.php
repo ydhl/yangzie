@@ -40,12 +40,13 @@ eg. php generate.php -cmd controller -gen example.yaml
 		}
 		
 		if(!file_exists(dirname(dirname(__FILE__))."/gen/".$this->yaml)){
-			die(__(dirname(dirname(__FILE__))."/gen/".$this->yaml." not found."));
+			die(__(dirname(dirname(__FILE__))."/gen/".$this->yaml." not found.\r\n"));
 		}
 		
 		
 		$this->load_yaml();
 		
+// 		print_r($this->input);die;
 		
 		if(empty($this->module_name) || empty($this->controller)){
 			die("Yaml Config File Not Valid");
@@ -124,7 +125,7 @@ eg. php generate.php -cmd controller -gen example.yaml
 	private function parse_uri_args(){
 		if(preg_match_all("/\?P\<(?P<args>[^\>]+)\>/i", $this->uri, $matches)){
 			foreach($matches['args'] as $arg){
-				$this->uri_args[] = '"r:'.$arg.'"';
+				$this->uri_args[] = 'r:'.$arg;
 			}
 		}
 	
@@ -198,6 +199,32 @@ class $class extends Resource_Controller {
 		$this->redirect		= $array['redirect'];
 	}
 	
+	private function input_code_segment($method){
+		$code = "";
+		foreach ($this->input as $input){
+			if(stripos(@$input['data-source'], $method)===FALSE)continue;
+			$code .= @"\${$input[name]}	= \$this->request->get_from_{$method}('".$input['name']."');
+";
+		}
+		foreach ($this->uri_args as $arg){
+			$arg_name = substr($arg, 2);
+			$code .= @"
+		\${$arg_name}	= \$this->request->get_var('{$arg_name}');
+";
+		}
+		return $code;
+	}
+	
+	private function output_code_segment($method){
+		$code = "";
+		foreach ($this->output as $input){
+			if(stripos($input['data-source'], $method)===FALSE)continue;
+			$code .= "\${$input[name]}	= \$this->request->get_from_{$method}('".$input['name']."');
+";
+		}
+		return $code;
+	}
+	
 	private function check_action(){
 		//找到controller，判断其中有没有action，如果没有则生成action，及对应的view，validate，test
 		$controller_file = '../modules/'.strtolower($this->module_name).'/controllers/'.strtolower($this->controller).'_controller.class.php';
@@ -206,12 +233,15 @@ class $class extends Resource_Controller {
 		$refl = new ReflectionClass($controller_class);
 		$methods = $this->http_methods;
 		$action_code = "";
+		
 		foreach($methods as $method){
 			if(!$refl->hasMethod($method)){
 				$action_code .= "		
 	public function $method(){
-		".($method=="get" ? '$this->set_view_data(Yangzie_Const::PAGE_TITLE, "set page title");' : "")."
+		".$this->input_code_segment($method)."
 		//Your Code Written in Here.
+				
+		".($method=="get" ? '$this->set_view_data(Yangzie_Const::PAGE_TITLE, "set page title");' : "")."
 	}
 	";
 			}
@@ -222,13 +252,82 @@ class $class extends Resource_Controller {
 		}
 		
 		if(!$this->novalidate){
-			$this->create_validate($this->module_name, $this->controller);
+			$this->create_validate();
 		}
 	
 		$contents = file_get_contents($controller_file);
 		$contents = preg_replace("/(class $controller_class extends Resource_Controller {)/m", "\\1\r\n$action_code", $contents);
 		echo "update controller :\t\t";
 		$this->create_file($controller_file, $contents,true);
+	}
+	
+	private function validate_code_segment($method){
+		$code = "";
+		foreach ($this->input as $input){
+			if(stripos(@$input['data-source'], $method)===FALSE)continue;
+			$validate_name = strtolower(substr($input['validate']['name'], 0, 10)) == "validate::" ? $input['validate']['name'] : "'{$input['validate']['name']}'";
+			$code .= @"\$this->set_validate_rule('{$method}', '{$input[name]}', {$validate_name}, '{$input[validate][regx]}', '{$input[validate][message]}');
+";
+		}
+		return $code;
+	}
+
+	protected function create_view($module, $controller){
+		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/views");
+		$view_file_path = dirname(dirname(__FILE__))
+		."/app/modules/". $module."/views/{$controller}.tpl.php";
+		$view_file_content = "<?php
+/**
+ * 视图的描述
+ * @param type name optional
+ *
+ */
+?>";
+		echo("create view :\t\t\t");
+		$this->create_file($view_file_path, $view_file_content);
+	}
+	protected function create_validate(){
+		$module 	= $this->module_name;
+		$controller = $this->controller;
+		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/validates");
+	
+		$validate_file_path = dirname(dirname(__FILE__))
+		."/app/modules/". $module."/validates/{$controller}_validate.class.php";
+
+		$validate_file_content = "<?php
+/**
+ *
+ * @version \$Id\$
+ * @package $module
+ */
+class ".YangzieObject::format_class_name($controller, "Validate")." extends YZEValidate{
+	
+	public function init_get_validates(){
+		".$this->validate_code_segment("get")."
+		//Written Get Validate Rules Code in Here. such as
+		//\$this->set_validate_rule('get', 'params name in url', 'validate method name', '', 'error message');
+	}
+	
+	public function init_post_validates(){
+		".$this->validate_code_segment("post")."
+		//Written Get Validate Rules Code in Here. such as
+		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
+	}
+	
+	public function init_put_validates(){
+		".$this->validate_code_segment("put")."
+		//Written Get Validate Rules Code in Here. such as
+		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
+	}
+	
+	public function init_delete_validates(){
+		".$this->validate_code_segment("delete")."
+		//Written Get Validate Rules Code in Here. such as
+		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
+	}
+}?>";
+		echo("create validate :\t\t");
+		$this->create_file($validate_file_path, $validate_file_content);
 	}
 }
 ?>

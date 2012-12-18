@@ -1,17 +1,17 @@
 <?php
 class Generate_Model_Script extends AbstractScript{
-	private $methodlist;
+	private $base;
 	private $module_name;
 	private $table_name;
 	private $class_name;
 	const USAGE = "根据表生成模型对象,用法:
 
-  php generate.php -cmd model -mod module_name -tbl table_name -cls class_name   [-mtd methodlist]
+  php generate.php -cmd model -mod module_name -tbl table_name -cls class_name   [-base table | model]
     -cmd controller：命令名
     -mod module_name：模块名
     -tbl table_name：表名
     -cls class_name：Model 类名
-    -mtd methodlist： 实体类中定义的方法名，逗号分隔，逗号之间不能有空格
+    -base table | model： 居于什么来生成，table：根据table来生成model class，model：根据model来生成table
     
     
 ";
@@ -22,8 +22,8 @@ class Generate_Model_Script extends AbstractScript{
 		while($argv){
 			$option = strtolower(trim(array_shift($argv)));
 			switch ($option){
-				case '-mtd':
-					$this->methodlist = trim(array_shift($argv));break;
+				case '-base':
+					$this->base = trim(array_shift($argv));break;
 				case '-mod':
 					$this->module_name = array_shift($argv);break;
 				case '-tbl':
@@ -64,17 +64,6 @@ class Generate_Model_Script extends AbstractScript{
 	public function create_class_code($class){
 		$methoddefine='';
 		$package=$this->module_name;
-		foreach((array)$this->methodlist as $method){
-			$methoddefine .= "
-	/*
-	 * @param
-	 * @return
-	 */
-	public function $method(){
-		//Write you code here
-	}
-";
-		}
 		
 		$code = "<?php
 /**
@@ -97,7 +86,6 @@ class $class{
 	public function create_model_code($class){
 		$table = $this->table_name;
 		$package=$this->module_name;
-		$methodlist = $this->methodlist;
 		
 		$app_module = new App_Module();
 		$db = mysql_connect(

@@ -31,6 +31,8 @@ abstract class Resource_Controller extends YangzieObject
      * @var HttpCache
      */
     protected $cache_config;
+    protected $session;
+    protected $request;
 
     
     public function __construct()
@@ -49,6 +51,8 @@ abstract class Resource_Controller extends YangzieObject
     		}
     	}
 		
+    	$this->request = Request::get_instance();
+    	$this->session = Session::get_instance();
 		
     	//init layout
     	$request = Request::get_instance();

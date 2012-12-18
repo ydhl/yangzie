@@ -79,53 +79,5 @@ abstract class AbstractScript{
 		echo("OK.\r\n");
 	}
 
-	protected function create_view($module, $controller){
-		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/views");
-		$view_file_path = dirname(dirname(__FILE__))
-		."/app/modules/". $module."/views/{$controller}.tpl.php";
-		$view_file_content = "<?php
-//TODO 定义视图显示
-?>";
-		echo("create view :\t\t\t");
-		$this->create_file($view_file_path, $view_file_content);
-	}
-
-
-	protected function create_validate($module, $controller){
-		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/validates");
-
-		$validate_file_path = dirname(dirname(__FILE__))
-		."/app/modules/". $module."/validates/{$controller}_validate.class.php";
-		$validate_file_content = "<?php
-/**
- *
- * @version \$Id\$
- * @package $module
- */
-class ".YangzieObject::format_class_name($controller, "Validate")." extends YZEValidate{
-
-	public function init_get_validates(){
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('get', 'params name in url', 'validate method name', '', 'error message');
-	}
-	
-	public function init_post_validates(){
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
-	}
-	
-	public function init_put_validates(){
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
-	}
-	
-	public function init_delete_validates(){
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
-	}
-}?>";
-		echo("create validate :\t\t");
-		$this->create_file($validate_file_path, $validate_file_content);
-	}
 }
 ?>

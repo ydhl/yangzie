@@ -127,6 +127,10 @@ abstract class Resource_Controller extends YangzieObject
         if (is_a($response, "Cacheable")) {
             $response->set_cache_config($this->cache_config);//内容协商的缓存控制
         }
+        //如果客户端是ajax请求，则用json模板，约定ajax请求时不会要求得到整个布局界面，只是取得某一部分
+        if(@$_SERVER['HTTP_X_YZE_REQUEST_CLIENT'] == "AJAX"){
+        	$this->layout = "json";
+        }
         return $response;
     }
 
@@ -199,6 +203,17 @@ abstract class Resource_Controller extends YangzieObject
 
         return $this->_handle_post();
     }
+    
+    /**
+     *  ajax请求时返回的数据
+     * 
+     * @author leeboo
+     * 
+     * @return array
+     */
+    protected function post_result_of_ajax(){
+    	return array();
+    }
 
     /**
      * 处理post请求
@@ -225,13 +240,18 @@ abstract class Resource_Controller extends YangzieObject
         //post后重定向，把post处理中设置的数据保存下来，重定向到新页面后再取出来显示
         //因为post不提供显示视图输出，所以这些数据需要在重定向后的get请求返回的视图中显示
         //这主要是post处理方法在向get方法中共享数据的方式
-        //XXX ajax post的内容不需要重定向
         if ($this->get_view_data() && is_a($response, "Redirect")) {//有的post提交返回 的是Notpl_View
             Session::get_instance()->save_uri_datas($response->the_uri(), $this->get_view_data());
         }
         //成功处理，清除数据
         $session->clear_post_datas($request->the_uri());
-		$session->clear_request_token_ext($request->the_uri());
+	$session->clear_request_token_ext($request->the_uri());
+	
+	//如果客户端是ajax请求，则返回post_result_of_ajax数据，不做重定向
+	if(@$_SERVER['HTTP_X_YZE_REQUEST_CLIENT'] == "AJAX"){
+		$this->layout = "json";
+		return new Notpl_View(json_encode($this->post_result_of_ajax()), $this);
+	}
         return $response;
     }
     

@@ -13,7 +13,7 @@ class Form extends YangzieObject{
 		$this->form_name = $form_name;
 		$this->model = $model;
 		$this->view = $view;
-		$this->acl = new ACL();
+		$this->acl = YZE_ACL::get_instance();
 	}
 
 	public function begin_form(array $attrs=array(),$is_delete=false){

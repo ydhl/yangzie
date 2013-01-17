@@ -5,9 +5,7 @@ class App_Module extends Base_Module{
 	 * @var string
 	 */
 	public $auth_class = "App_Auth";
-
-	public $modules = array("default","test");
-	
+		
 	//数据库配置
 	public $db_user = 'root';
 	public $db_host= '127.0.0.1';

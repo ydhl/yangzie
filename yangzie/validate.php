@@ -183,8 +183,7 @@ abstract class YZEValidate extends YangzieObject
     public function date_format($method, $name, $rule)
     {
         $datas = $this->get_datas($method);
-        $date = strtotime($datas[$name]);
-        return checkdate( date("m", $date), date("d", $date), date("Y",$date));
+       return strtotime($datas[$name]);
     }
     
     /**

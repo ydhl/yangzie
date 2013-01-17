@@ -2,21 +2,22 @@
 /**
  *
  * @version $Id$
- * @package Test
+ * @package Order
  */
-class Test_Module extends Base_Module{
+class Order_Module extends Base_Module{
+    public $auths = array();
+    public $no_auths = array();
 	protected function _config(){
 		return array(
-			'name'	=> 'Test',
+			'name'	=> 'Order',
 			'include_path'	=> array(
 			),
 			'include_files'	=> array(
 			),
 			'routers'	=> array(
-				'/orders/(?P<id>\d+)/?'	=> array(
-					'controller'	=> 'order',
+				'/orders/?'	=> array(
+					'controller'	=> 'orders',
 					'args'	=> array(
-						0	=> 'r:id',
 					),
 				),
 			),

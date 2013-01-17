@@ -268,7 +268,7 @@ class Request extends YangzieObject
 			
 			throw new Controller_Not_Found_Exception($controller_cls);
 		}
-		$controller = $this->controller_obj = new $controller_cls();
+		$controller = $this->controller_obj = $controller_cls::get_instance();
 		if (!method_exists($controller, $request_method)) {
 			throw new Action_Not_Found_Exception($controller_cls."::".$request_method);
 		}
@@ -485,7 +485,7 @@ class Request extends YangzieObject
 			$authobject->do_auth();
 			
 			//验证请求的方法是否有权限调用
-			$acl = new ACL();
+			$acl = YZE_ACL::get_instance();
 			$aco_name = "/".$this->module()."/".$this->controller()."/".$req_method;
 			if(!$acl->check_byname($authobject->get_request_aro_name(), $aco_name)){
 				throw new Permission_Deny_Exception(vsprintf(__("没有访问资源 <strong>%s</strong> 的权限"), 

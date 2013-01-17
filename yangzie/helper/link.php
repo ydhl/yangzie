@@ -90,7 +90,7 @@ class Link{
 		return $this;
 	}
 	public function display($return=false){
-        $acl = new ACL();
+        $acl = YZE_ACL::get_instance();
         $app_auth = new App_Auth();
         if ( !$acl->check_byname($app_auth->get_request_aro_name(), $this->acl_name)){
         	return;

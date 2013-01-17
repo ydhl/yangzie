@@ -28,15 +28,16 @@ class Router{
 
 	public static function load_routers(){
 		$app_module = new App_Module();
-		foreach($app_module->get_module_config('modules') as $module){
-			if(file_exists(APP_MODULES_INC."/{$module}/__module__.php")){
-				include_once APP_MODULES_INC."/{$module}/__module__.php";
-				
-				$class = ucfirst(strtolower($module))."_Module";
+		
+		foreach(glob(APP_MODULES_INC."/*") as $module){
+			if(file_exists("{$module}/__module__.php")){
+				include_once "{$module}/__module__.php";
+				$module_name = basename($module);
+				$class = ucfirst(strtolower($module_name))."_Module";
 				$object = new $class();
 				$mappings = $object->get_module_config('routers');
 				if($mappings){
-					Router::get_Instance()->set_Routers($module,$mappings);
+					Router::get_Instance()->set_Routers($module_name,$mappings);
 				}
 			}
 		}

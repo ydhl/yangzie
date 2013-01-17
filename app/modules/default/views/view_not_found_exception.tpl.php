@@ -1,5 +1,5 @@
 <?php
-$module 	= Request::get_instance()->module();
+$module 	= Request::get_instance()->request_module();
 $method 	= Request::get_instance()->method();  
 $controller = Request::get_instance()->request_controller();
 $controller_class = Request::get_instance()->controller_class();

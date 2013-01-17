@@ -8,7 +8,7 @@ abstract class El extends YangzieObject{
 	public function __construct(View_Adapter $view,$name){
 		$this->view = $view;
 		$this->name = $name;
-		$this->acl = new ACL();
+		$this->acl = YZE_ACL::get_instance();
 	}
 	
 	/**

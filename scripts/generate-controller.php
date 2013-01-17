@@ -2,57 +2,25 @@
 class Generate_Controller_Script extends AbstractScript{
 	private $controller;
 	private $novalidate;
-	private $noview;
+	private $view_format;
 	private $module_name;
 	private $uri;
 	private $view_tpl;
-	private $yaml;
-	private $input;
-	private $output;
-	private $redirect;
+	private $model;
 	private $uri_args = array();
-	
-	const USAGE = "根据yaml文件配置生成生成控制器、action及其对应的view、validate。用法:
-
-php generate.php -cmd controller -gen gen yaml
-
--cmd 		: controller ：命令名
--gen 		: yaml 配置文件名
-
-eg. php generate.php -cmd controller -gen example.yaml
-";
 
 	protected $http_methods = array("get","post","delete","put");
 	
 	public function generate(){
 		$argv = $this->args;
-		while($argv){
-			$option = strtolower(trim(array_shift($argv)));
-			switch ($option){
-				case '-gen':
-					$this->yaml	= trim(array_shift($argv));break;
-				default:break;#忽略其它
-			}
-		}
+		$this->controller		= $argv['controller'];
+		$this->novalidate		= $argv['novalidate'];
+		$this->view_format 		= $argv['view_format'];
+		$this->module_name 	= $argv['module_name'];
+		$this->uri 				= $argv['uri'];
+		$this->view_tpl 			= $argv['view_tpl'];
 		
-		if(empty($this->yaml)){
-			die(__(Generate_Controller_Script::USAGE));
-		}
-		
-		if(!file_exists(dirname(dirname(__FILE__))."/gen/".$this->yaml)){
-			die(__(dirname(dirname(__FILE__))."/gen/".$this->yaml." not found.\r\n"));
-		}
-		
-		
-		$this->load_yaml();
-		
-// 		print_r($this->input);die;
-		
-		if(empty($this->module_name) || empty($this->controller)){
-			die("Yaml Config File Not Valid");
-		}
-		
-		$generate_module = new Generate_Module_Script(array("-mod",$this->module_name));
+		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
 		
 		if(!$this->uri){
@@ -65,7 +33,7 @@ eg. php generate.php -cmd controller -gen example.yaml
 		$this->check_action();
 		echo "update __module__ file :\t";
 		$this->update_module();
-		echo "Ok.\r\nDone.";
+		echo get_colored_text("Ok.\r\nDone.", "blue");
 	}
 	
 	private function update_module(){
@@ -186,44 +154,6 @@ class $class extends Resource_Controller {
 		$this->create_controller($controller);
 	}
 	
-	private function load_yaml(){
-		$array = Spyc::YAMLLoad(dirname(dirname(__FILE__))."/gen/".$this->yaml);
-		$this->controller 	= $array['name'];
-		$this->module_name 	= $array['module'];
-		$this->uri 			= $array['uri'];
-		$this->novalidate 	= !strcasecmp($array['validate'], "yes");
-		$this->noview 		= !strcasecmp($array['view'], "yes");
-		$this->view_tpl		= $array['view-tpl'];
-		$this->input		= $array['input'];
-		$this->output		= $array['output'];
-		$this->redirect		= $array['redirect'];
-	}
-	
-	private function input_code_segment($method){
-		$code = "";
-		foreach ($this->input as $input){
-			if(stripos(@$input['data-source'], $method)===FALSE)continue;
-			$code .= @"\${$input[name]}	= \$this->request->get_from_{$method}('".$input['name']."');
-";
-		}
-		foreach ($this->uri_args as $arg){
-			$arg_name = substr($arg, 2);
-			$code .= @"
-		\${$arg_name}	= \$this->request->get_var('{$arg_name}');
-";
-		}
-		return $code;
-	}
-	
-	private function output_code_segment($method){
-		$code = "";
-		foreach ($this->output as $input){
-			if(stripos($input['data-source'], $method)===FALSE)continue;
-			$code .= "\${$input[name]}	= \$this->request->get_from_{$method}('".$input['name']."');
-";
-		}
-		return $code;
-	}
 	
 	private function check_action(){
 		//找到controller，判断其中有没有action，如果没有则生成action，及对应的view，validate，test
@@ -238,16 +168,15 @@ class $class extends Resource_Controller {
 			if(!$refl->hasMethod($method)){
 				$action_code .= "		
 	public function $method(){
-		".$this->input_code_segment($method)."
 		//Your Code Written in Here.
 				
-		".($method=="get" ? '$this->set_view_data(Yangzie_Const::PAGE_TITLE, "set page title");' : "")."
+		".($method=="get" ? '$this->set_view_data(Yangzie_Const::PAGE_TITLE, "this is controller '.$this->controller.'");' : "")."
 	}
 	";
 			}
 
-			if($method == "get" && !$this->noview){
-				$this->create_view($this->module_name, $this->controller);
+			if($method == "get" && $this->view_format){
+				$this->create_view();
 			}
 		}
 		
@@ -263,6 +192,7 @@ class $class extends Resource_Controller {
 	
 	private function validate_code_segment($method){
 		$code = "";
+		if(!$this->model)return $code;
 		foreach ($this->input as $input){
 			if(stripos(@$input['data-source'], $method)===FALSE)continue;
 			$validate_name = strtolower(substr($input['validate']['name'], 0, 10)) == "validate::" ? $input['validate']['name'] : "'{$input['validate']['name']}'";
@@ -272,19 +202,24 @@ class $class extends Resource_Controller {
 		return $code;
 	}
 
-	protected function create_view($module, $controller){
+	protected function create_view(){
+		$module = $this->module_name;
+		$controller = $this->controller;
+		$format = explode(" ", $this->view_format);
 		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/views");
-		$view_file_path = dirname(dirname(__FILE__))
-		."/app/modules/". $module."/views/{$controller}.tpl.php";
-		$view_file_content = "<?php
+		foreach ($format as $_format){
+			$view_file_path = dirname(dirname(__FILE__))
+			."/app/modules/". $module."/views/{$controller}.{$_format}.php";
+			$view_file_content = "<?php
 /**
  * 视图的描述
  * @param type name optional
  *
  */
 ?>";
-		echo("create view :\t\t\t");
-		$this->create_file($view_file_path, $view_file_content);
+			echo("create view :\t\t\t");
+			$this->create_file($view_file_path, $view_file_content);
+		}
 	}
 	protected function create_validate(){
 		$module 	= $this->module_name;

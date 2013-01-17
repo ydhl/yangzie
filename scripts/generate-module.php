@@ -10,15 +10,7 @@ php generate.php -cmd module  -mod module_name
 
 	public function generate(){
 		$argv = $this->args;
-		while($argv){
-			$option = strtolower(trim(array_shift($argv)));
-			switch ($option){
-				case '-mod':
-					$this->module_name = strtolower(array_shift($argv));break;
-				default:break;#忽略其它
-			}
-		}
-
+		$this->module_name = $argv['module_name'];
 
 		if(empty($this->module_name)){
 			die(__(Generate_Module_Script::USAGE));
@@ -50,6 +42,8 @@ php generate.php -cmd module  -mod module_name
  * @package $module
  */
 class {$module}_Module extends Base_Module{
+    public \$auths = array();
+    public \$no_auths = array();
     protected function _config(){
         return array(
         'name'=>'{$module}',

@@ -6,20 +6,7 @@ abstract class Base_Module{
 	 * @var string
 	 */
 	public $name = "";
-	
-	/**
-	 * 该模块加载时自动设置的包含路径，如array('path1','path2')
-	 * @var array
-	 */
-	public $include_path = array();
-	
-	/**
-	 * 该模块加载时自动加载的文件，如array('path1/file1','file2')
-	 * @var array
-	 */
-	public $include_files = array();
-
-	
+		
 	/**
 	 * 该模块自定义的uri路由，如array('/something/\d+'=>array("controller"=>'quote',"args"=>array()))
 	 * controller string 资源控制器名
@@ -57,17 +44,6 @@ abstract class Base_Module{
 	 * @var unknown_type
 	 */
 	public $no_auths = array();
-	
-	/**
-	 * 定义模块中哪些action允许或者拒绝哪些ARO访问
-	 * 格式为：
-	 * array(
-	 *     controller_name1/action1:get|post|put|delete|* => ARO名或者回调函数
-	 * )
-	 * @var array
-	 * @deprecated 未考虑好怎么实现
-	 */
-//	public $acls = array();
 	
 	
 	public function get_module_config($name=null){

@@ -1,5 +1,5 @@
 --TEST--
-		Order_Controller class Controller Unit Test
+		Orders_Controller class Controller Unit Test
 --FILE--
 <?php
 ini_set("display_errors",0);

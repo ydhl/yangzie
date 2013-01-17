@@ -4,44 +4,20 @@ class Generate_Model_Script extends AbstractScript{
 	private $module_name;
 	private $table_name;
 	private $class_name;
-	const USAGE = "根据表生成模型对象,用法:
-
-  php generate.php -cmd model -mod module_name -tbl table_name -cls class_name   [-base table | model]
-    -cmd controller：命令名
-    -mod module_name：模块名
-    -tbl table_name：表名
-    -cls class_name：Model 类名
-    -base table | model： 居于什么来生成，table：根据table来生成model class，model：根据model来生成table
-    
-    
-";
 	
 	public function generate(){
 		$argv = $this->args;
-		
-		while($argv){
-			$option = strtolower(trim(array_shift($argv)));
-			switch ($option){
-				case '-base':
-					$this->base = trim(array_shift($argv));break;
-				case '-mod':
-					$this->module_name = array_shift($argv);break;
-				case '-tbl':
-					$this->table_name = array_shift($argv);break;
-				case '-cls':
-					$this->class_name = array_shift($argv);break;
-				default:break;#忽略其它
-			}
-		}
+		$this->base 				= $argv['base'];
+		$this->module_name 	= $argv['module_name'];
+		$this->table_name 		= $argv['table_name'];
+		$this->class_name 		= $argv['class_name'];
 		
 		if(empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
 			die(__(Generate_Model_Script::USAGE));
 		}
 		
-		$path = dirname(dirname(__FILE__))."/app/modules/".$this->module_name;
-		if(!file_exists($path)){
-			die(__("module not exist, please generate first."));
-		}
+		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
+		$generate_module->generate();
 		
 		//Model 
 		$model_class = YangzieObject::format_class_name($this->class_name,"Model");
@@ -75,6 +51,7 @@ class $class{
 	private \$model;
 	
 	public function $class(\$key){
+		include '".strtolower($class)."_model.class.php';
 		\$this->model = Model::find(\$key, '{$class}_Model');
 	}
 	

@@ -34,23 +34,33 @@ abstract class Resource_Controller extends YangzieObject
     protected $session;
     protected $request;
 
+    private static $instance;
     
-    public function __construct()
+    public static function get_instance()
     {
+    	if (!isset(self::$instance)) {
+    		$c = get_called_class();
+    		self::$instance = new $c;
+    	}
+    	return self::$instance;
+    }
+    
+    private function __construct()
+    {
+    	echo "<pre>";
+    	print_r(get_included_files());
     	foreach ((array)$this->models as $model) {
     		if (stripos($model, ".")) {
     			$pathinfo = explode(".", $model);
-    			include_once $pathinfo[0]."/models/".strtolower($pathinfo[1]).".class.php";
+    			include APP_MODULES_INC."/".$pathinfo[0]."/models/".strtolower($pathinfo[1]).".class.php";
     			continue;
     		}
-    		if ( @!include_once "{$this->module_name}/models/".strtolower($model).".class.php" ){
-    			continue;
-    		}
-    		if (@!include_once APP_MODELS_INC."/".strtolower($model).".class.php") {
+    		//echo APP_MODULES_INC."/{$this->module_name}/models/".strtolower($model).".class.php";
+    		if ( !include APP_MODULES_INC."/{$this->module_name}/models/".strtolower($model).".class.php" ){
     			continue;
     		}
     	}
-		
+    	//print_r(get_included_files());
     	$this->request = Request::get_instance();
     	$this->session = Session::get_instance();
 		
@@ -170,7 +180,7 @@ abstract class Resource_Controller extends YangzieObject
         if(!$model) {
             throw new Resource_Not_Found_Exception(__("您要修改的内容不存在"));
         }
-        include_once "{$yze_module_name}/models/".strtolower($yze_model_name).".class.php";
+//         include_once "{$yze_module_name}/models/".strtolower($yze_model_name).".class.php";
         
         if ($yze_modify_version != $model->get_version_value()) {
             throw new Model_Update_Conflict_Exception(vsprintf(__("数据已经在%s被更新了, 你编辑的数据是旧的，请刷新后重试"), array($model->get_version_value())));

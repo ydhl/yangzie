@@ -1,126 +1,73 @@
-if( !this.yze_ajax_front_controller ){
-	this.yze_ajax_front_controller = {
-			getUrl:'', 
-			triggerId:'',
-			callback:''
-	};
-}
-
-( function() {
-	var submit = function(){
-		var postData = $(this).serialize();
-		var action =  $(this).attr("action") || yze_ajax_front_controller.getUrl; //如果沒有指定action，那麼post仍然提交到getUrl中
-		var method = $(this).attr("method") || "POST";
+function yze_ajax_front_controller(){
+	this.getUrl 					= "";
+	this.submitCallback = "";
+	this.httpCallback 		= "";
+	
+	//api 
+	this.get = function(url, params, httpCallback, submitCallback) {
+		this.getUrl 		= url;
+		this.submitCallback 	= submitCallback;
+		this.httpCallback 	= httpCallback;
+		var _self = this;
 		
 		$.ajax({
-			url: 		action,
-			type: 	method,
-			headers: {
-				"X-YZE-Request-Client" : "AJAX"
-			},
-			data: 	postData,
-		        error: function(jqXHR, textStatus, errorThrown) {
-		        	alert(errorThrown);
+		        url: url,
+		        type: "GET",
+		        headers: {
+		            "X-YZE-Request-Client" : "AJAX"
 		        },
+		        data: params,
+		        error: function(jqXHR, textStatus, errorThrown) {alert(errorThrown);},
 		        success: function(data, textStatus, jqXHR) {
-		        	//ajax POST的返回，可能是成功后的json，也可能是非json，如失败后的重定向, 表单数据回显
-		        	var trigger_callback = $("#"+yze_ajax_front_controller.trigger_id).attr("data-yze-ajax-controller-callback");
-		        	try{
-		        		var json = JSON.parse(data);
-		        	}catch(e){}
-	        		if(json && trigger_callback){
-	        			trigger_callback(json);
-	        		}else{
-	        			modifyForm(data);
-	        		}
+		        	modifyForm.call(_self, data);
 		        },
 		        dataType: "html"
-		    });
-			return false; //阻止表单自己的提交
-	};
+		});
+	}
 	
+	
+	// ---------------------------------
+	//              private
+	// ---------------------------------
 	function modifyForm(data){
 		var id = new Date();
 		data = data.replace(/<form\s/ig, "<form data-yze-ajax-form-id='"+id+"' ");
 		//alert(data);
-		yze_ajax_front_controller.callback(data); //该回调调用后，表单就已经加在dom中了，现在修改它的submit事件
+		this.httpCallback(data); //该回调调用后，表单就已经加在dom中了，现在修改它的submit事件
 		
-		$("form[data-yze-ajax-form-id='"+id+"']").unbind("submit", submit);
-		$("form[data-yze-ajax-form-id='"+id+"']").submit(submit);
-	}
-	
-	if (typeof yze_ajax_front_controller.get !== 'function') {
-		yze_ajax_front_controller.get = function(url, params, callback, triggerId) {
-			this.getUrl 		= url;
-			this.triggerId 	= triggerId;
-			this.callback 	= callback;
+		var getUrl 					= this.getUrl;
+		var submitCallback 	= this.submitCallback;
+		var _self = this;
+		$("form[data-yze-ajax-form-id='"+id+"']").unbind("submit");
+		$("form[data-yze-ajax-form-id='"+id+"']").submit(function(){
+			var postData = $(this).serialize();//这里的this指表单
+			var action =  $(this).attr("action") || getUrl; //如果沒有指定action，那麼post仍然提交到getUrl中
+			var method = $(this).attr("method") || "POST";
 			
 			$.ajax({
-			        url: url,
-			        type: "GET",
-			        headers: {
-			            "X-YZE-Request-Client" : "AJAX"
+				url: 		action,
+				type: 	method,
+				headers: {
+					"X-YZE-Request-Client" : "AJAX"
+				},
+				data: 	postData,
+			        error: function(jqXHR, textStatus, errorThrown) {
+			        	alert(errorThrown);
 			        },
-			        data: params,
-			        error: function(jqXHR, textStatus, errorThrown) {alert(errorThrown);},
 			        success: function(data, textStatus, jqXHR) {
-			        	modifyForm(data);
+			        	//ajax POST的返回，可能是成功后的json，也可能是非json，如失败后的重定向, 表单数据回显
+			        	try{
+			        		var json = JSON.parse(data);
+			        	}catch(e){}
+		        		if(json){
+		        			submitCallback(json);
+		        		}else{
+		        			modifyForm.call(_self, data);
+		        		}
 			        },
 			        dataType: "html"
 			    });
-			}
-		}
-})();
-
-//var _ajax_front_controller = {
-//	get : function(url, params, callback, trigger_id) {
-//		$.ajax({
-//	        url: url,
-//	        type: "GET",
-//	        headers: {
-//	            "X-YZE-Request-Client" : "AJAX"
-//	        },
-//	        data: params,
-//	        error: function(jqXHR, textStatus, errorThrown) {},
-//	        success: function(data, textStatus, jqXHR) {
-//	        	var id = new Date();
-//				data = data.replace(/<form\s/ig, "<form data-yze-ajax-form-id='"+id+"' ");
-//				//alert(data);
-//				callback(data); //该回调调用后，表单就已经加在dom中了，现在修改它的submit事件
-//				$("form[data-yze-ajax-form-id='"+id+"']").unbind("submit");
-//				$("form[data-yze-ajax-form-id='"+id+"']").submit(function(){
-//					var postData = $(this).serialize();
-//					var action =  $(this).attr("action") || url; //如果沒有指定action，那麼post仍然提交到url中
-//					var method = $(this).attr("method") || "POST";
-//					
-//					$.ajax({
-//				        url: 		action,
-//				        type: 	method,
-//				        headers: {
-//				            "X-YZE-Request-Client" : "AJAX"
-//				        },
-//				        data: 	postData,
-//				        error: function(jqXHR, textStatus, errorThrown) {
-//				        	alert(textStatus);
-//				        },
-//				        success: function(data, textStatus, jqXHR) {
-//				        	//ajax POST的返回，可能是成功后的json，也可能是非json，如果失败后的重定向, 表单数据回显
-//				        	var trigger_callback = $("#"+trigger_id);
-//				        	try{
-//					        	var json = JSON.parse(data);
-//				        	}catch(e){}
-//			        		if(json && trigger_callback){
-//			        			trigger_callback(json);
-//			        		}else{
-//			        			callback(data);
-//			        		}
-//				        },
-//				        dataType: "html"
-//				    });
-//					return false; //阻止自己的提交
-//				});
-//	        },
-//	        dataType: "html"
-//	    });
-//	}
-//};
+				return false; //阻止表单自己的提交
+		});
+	}
+}

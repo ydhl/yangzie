@@ -16,26 +16,12 @@ function load_app(){
 	foreach((array)$module_include_files as $path){
 		include_once $path;
 	}
-	
-	foreach($app_module->get_module_config('modules') as $module){
-		if(file_exists(APP_MODULES_INC."/{$module}/__module__.php")){
-			include_once APP_MODULES_INC."/{$module}/__module__.php";
-				
-			$class = ucfirst(strtolower($module))."_Module";
-			$object = new $class();
-			$module_include_path = $object->get_module_config('INCLUDE_PATH');
-			ini_set('include_path',get_include_path().PS.APP_MODULES_INC."/{$module}");
-			foreach((array)$module_include_path as $path){
-				ini_set('include_path',get_include_path().PS.APP_MODULES_INC."/{$module}/{$path}");
-			}
-				
-			$module_include_files = $object->get_module_config('include_files');
-			foreach((array)$module_include_files as $path){
-				include_once $path;
-			}
+	foreach(glob(APP_MODULES_INC."/*") as $module){
+		if(file_exists("{$module}/__module__.php")){
+			include_once "{$module}/__module__.php";
 		}
-		if(file_exists(APP_MODULES_INC."/{$module}/__hooks__.php")){
-			include_once APP_MODULES_INC."/{$module}/__hooks__.php";
+		if(file_exists("{$module}/__hooks__.php")){
+			include_once "{$module}/__hooks__.php";
 		}
 	}
 }

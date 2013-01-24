@@ -5,77 +5,7 @@
  * @author liizii
  *
  */
-interface DBA{
-	/**
-	 * 根据主键查询记录，返回实体
-	 * $key为查询表的主键，如果是复合主键，$key为数组，键为字段名。如:array('qo_item_id'=>123,'part_item_id'=>456)
-	 * @param unknown_type $key
-	 * @param string|Model $class
-	 * @return Model
-	 */
-	public function find($key,$class);
-	
-	public function find_by(array $ids, $class);
-	/**
-	 * 查询所有的记录，返回实体数组,键为主键值
-	 * @param string|Model $class
-	 * @return array(Model)
-	 */
-	public function findAll($class);
-
-	/**
-	 * 原生查询，不返回对象，返回结果数组，如果不是ddl，返回影响的行数
-	 * 返回的结果数据由DBMySQLWrapper封装,它封装了DBMysql类
-	 * @see ResultWrapper
-	 * @param SQL $class
-	 * @return ResultWrapper
-	 */
-	public function nativeQuery(SQL $sql);
-	public function nativeQuery2($sql);
-
-	public function beginTransaction();
-	public function commit();
-	public function rollBack();
-
-	/**
-	 * 根据条件查询所有的记录，返回实体数组,
-	 * !!!如果是联合查询，没有数据的对象返回null
-	 * 
-	 * @param SQL $sql
-	 * @return array(Model)
-	 */
-	public function select(SQL $sql);
-	
-	/**
-	 * 同select，区别是直接返回一个对象
-	 * @param SQL $sql
-	 * @return Model
-	 */
-	public function getSingle(SQL $sql);
-	/**
-	 * 执行SQL更改语句，返回影响的记录，出错报出 DBAException
-	 * @param SQL $sql
-	 * @return array(Model)
-	 */
-	public function execute(SQL $sql);
-	
-	public function exec($sqlstring);
-	/**
-	 * 保存(update,insert)记录
-	 * @param Model $entity
-	 * @return int 返回操作成功的实体的主键
-	 */
-	public function save(Model $entity);
-	/**
-	 * 根据条件删除记录
-	 * @param Model $entity
-	 * @return int 返回操作成功的记录数
-	 */
-	public function delete(Model $entity);
-}
-
-
-class DBAImpl extends YangzieObject implements DBA
+class YZE_DBAImpl extends YZE_Object
 {
 	private $conn;
 	private static $me;
@@ -83,20 +13,20 @@ class DBAImpl extends YangzieObject implements DBA
 	private function __construct(){
 		if($this->conn)return $this->conn;
 		$app_module = new App_Module();
-		
+
 		if(!$app_module->db_name)return;
-		
-		$this->conn =  new PDO(
-			'mysql:dbname='.$app_module->get_module_config('db_name').';host='.$app_module->get_module_config('db_host'), 
-		$app_module->get_module_config('db_user'),
-		$app_module->get_module_config('db_psw')
+
+		$this->conn =  new \PDO(
+				'mysql:dbname='.$app_module->get_module_config('db_name').';host='.$app_module->get_module_config('db_host'),
+				$app_module->get_module_config('db_user'),
+				$app_module->get_module_config('db_psw')
 		);
-		$this->conn->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
+		$this->conn->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
 		$this->conn->query('SET NAMES '.$app_module->get_module_config('db_charset'));
 	}
 
 	/**
-	 * @return DBA
+	 * @return YZE_DBAImpl
 	 */
 	public static function getDBA(){
 		if(!isset(self::$me)){
@@ -107,24 +37,31 @@ class DBAImpl extends YangzieObject implements DBA
 	}
 
 
-    public function find_by(array $ids, $class)
-    {
-        if(!($class instanceof Model) && !class_exists($class)){
-            throw new DBAException("Model Class $class not found");
-        }
+	public function find_by(array $ids, $class)
+	{
+		if(!($class instanceof Model) && !class_exists($class)){
+			throw new YZE_DBAException("Model Class $class not found");
+		}
 
-        $entity = $class instanceof Model ? $class : new $class;
+		$entity = $class instanceof Model ? $class : new $class;
 
-        $sql = new SQL();
-        $sql->from(get_class($entity),"a")
-            ->where("a",$entity->get_key_name(),SQL::IN,$ids);
+		$sql = new SQL();
+		$sql->from(get_class($entity),"a")
+		->where("a",$entity->get_key_name(),SQL::IN,$ids);
 
-        return $this->select($sql);
-    }
-	
+		return $this->select($sql);
+	}
+
+	/**
+	 * 根据主键查询记录，返回实体
+	 * $key为查询表的主键，如果是复合主键，$key为数组，键为字段名。如:array('qo_item_id'=>123,'part_item_id'=>456)
+	 * @param unknown_type $key
+	 * @param string|Model $class
+	 * @return Model
+	 */
 	public function find($key,$class){
 		if(!($class instanceof Model) && !class_exists($class)){
-			throw new DBAException("Model Class $class not found");
+			throw new YZE_DBAException("Model Class $class not found");
 		}
 
 		$entity = $class instanceof Model ? $class : new $class;
@@ -136,40 +73,61 @@ class DBAImpl extends YangzieObject implements DBA
 		$rst = $this->select($sql);
 		return @$rst[0];
 	}
-
+	/**
+	 * 查询所有的记录，返回实体数组,键为主键值
+	 * @param string|Model $class
+	 * @return array(Model)
+	 */
 	public function findAll($class){
 		if(!($class instanceof Model) && !class_exists($class)){
-			throw new DBAException("Model Class $class not found");
+			throw new YZE_DBAException("Model Class $class not found");
 		}
 		$entity = $class instanceof Model ? $class : new $class;
 		$sql = new SQL();
 		$sql->from(get_class($entity),"t");
 		return $this->select($sql);
 	}
-
+	/**
+	 * 原生查询，不返回对象，返回结果数组，如果不是ddl，返回影响的行数
+	 * 返回的结果数据由DBMySQLWrapper封装,它封装了DBMysql类
+	 * @see ResultWrapper
+	 * @param SQL $class
+	 * @return ResultWrapper
+	 */
 	public function nativeQuery(SQL $sql){
 		return $this->nativeQuery2($sql->__toString());
 	}
 	public function nativeQuery2($sql){
 		return new PDOStatementWrapper($this->conn->query($sql));
 	}
-
+	/**
+	 * 同select，区别是直接返回一个对象
+	 * @param SQL $sql
+	 * @return Model
+	 */
 	public function getSingle(SQL $sql){
 		$sql->limit(1);
 		$result = $this->select($sql);
 		return @$result[0];
 	}
-    
+
+	/**
+	 * 根据条件查询所有的记录，返回实体数组,
+	 * !!!如果是联合查询，没有数据的对象返回null
+	 *
+	 * @param SQL $sql
+	 * @return array(Model)
+	 */
 	public function select(SQL $sql){
 		$classes = $sql->get_select_classes(true);
 		$statement = $this->conn->query($sql->__toString());
 		if(empty($statement)){
-			throw new DBAException(join(",", $this->conn->errorInfo()));
+			throw new YZE_DBAException(join(",", $this->conn->errorInfo()));
 		}
 		$raw_result = $statement->fetchAll(PDO::FETCH_ASSOC);
 		$num_rows = $statement->rowCount();
 		$more_entity = count($classes) > 1;
-        $entity_objects = array();
+		$entity_objects = array();
 		for($i=0;$i<$num_rows;$i++){#所有的对象
 			foreach($classes as $cls){
 				if($more_entity){
@@ -188,13 +146,13 @@ class DBAImpl extends YangzieObject implements DBA
 			if($more_entity){
 				foreach($entity_objects[$row] as &$entity){
 					$this->_build_entity($entity,
-					$raw_row_data,
-					$select_tables);
+							$raw_row_data,
+							$select_tables);
 				}
 			}else{
 				$this->_build_entity($entity_objects[$row],
-				$raw_row_data,
-				$select_tables);
+						$raw_row_data,
+						$select_tables);
 			}
 			$row++;
 		}
@@ -211,7 +169,11 @@ class DBAImpl extends YangzieObject implements DBA
 		}
 		return $objects;
 	}
-
+	/**
+	 * 根据条件删除记录
+	 * @param Model $entity
+	 * @return int 返回操作成功的记录数
+	 */
 	public function delete(Model $entity){
 		$sql = new SQL();
 		$sql->delete()->from(get_class($entity),"t");
@@ -223,32 +185,41 @@ class DBAImpl extends YangzieObject implements DBA
 		do_action("db-delete", $entity);
 		return $entity;
 	}
+	/**
+	 * 执行SQL更改语句，返回影响的记录，出错报出 YZE_DBAException
+	 * @param SQL $sql
+	 * @return array(Model)
+	 */
 	public function execute(SQL $sql){
 		if(empty($sql))return false;
 		$affected = $this->conn->exec($sql->__toString());
 		if ($affected===false) {
-			throw new DBAException(join(", ", $this->conn->errorInfo()));
-		}
-		return $affected;
-	}
-	
-	public function exec($sql){
-		if(empty($sql))return false;
-		$affected = $this->conn->exec($sql);
-		if ($affected===false) {
-			throw new DBAException(join(", ", $this->conn->errorInfo()));
+			throw new YZE_DBAException(join(", ", $this->conn->errorInfo()));
 		}
 		return $affected;
 	}
 
+	public function exec($sql){
+		if(empty($sql))return false;
+		$affected = $this->conn->exec($sql);
+		if ($affected===false) {
+			throw new YZE_DBAException(join(", ", $this->conn->errorInfo()));
+		}
+		return $affected;
+	}
+	/**
+	 * 保存(update,insert)记录
+	 * @param Model $entity
+	 * @return int 返回操作成功的实体的主键
+	 */
 	public function save(Model $entity){
 		if(empty($entity)){
-			throw new DBAException("save Model is empty");
+			throw new YZE_DBAException("save Model is empty");
 		}
 		$sql = new SQL();
 		if($entity->get_key()){//update
 			do_action("db-update", $entity);
-			
+				
 			//自动把version更新
 			$entity->update_version();
 			$sql->update('t',$entity->get_records())
@@ -257,16 +228,16 @@ class DBAImpl extends YangzieObject implements DBA
 			$this->execute($sql);
 			return $entity->get_key();
 		}else{//insert
-			
+				
 			$sql->insert('t',$entity->get_records())
 			->from(get_class($entity),"t");
 			$this->execute($sql);
 			$insert_id = $this->conn->lastInsertId();
-			
+				
 			if(empty($insert_id)){
-				throw new DBAException(join(", ", $this->conn->errorInfo()));
+				throw new YZE_DBAException(join(", ", $this->conn->errorInfo()));
 			}
-			
+				
 			$entity->set($entity->get_key_name(),$insert_id);
 			do_action("db-insert", $entity);
 			return $insert_id;
@@ -302,7 +273,7 @@ class DBAImpl extends YangzieObject implements DBA
 		}
 	}
 }
-class PDOStatementWrapper extends YangzieObject{
+class PDOStatementWrapper extends YZE_Object{
 	/**
 	 * @var PDOStatement
 	 */
@@ -313,7 +284,7 @@ class PDOStatementWrapper extends YangzieObject{
 		$this->db = $db_mysql;
 		$this->result = $this->db->fetchAll(PDO::FETCH_ASSOC);
 	}
-	
+
 	public function next(){
 		$this->index +=1;
 		return @$this->result[$this->index];

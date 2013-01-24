@@ -51,6 +51,18 @@ abstract class Base_Module{
 		$config = array_merge($config,$this->_config());
 		return $name ? @$config[strtolower($name)] : $config;
 	}
+	
+	public function get_uris_of_controller($controller){
+		$controller = rtrim(strtolower($controller), "_controller");
+		$config = $this->_config();
+		$_ = array();
+		foreach ($config['routers'] as $uri => $mapping){
+			if(strtolower($mapping['controller']) == $controller){
+				$_[] = $uri;
+			}
+		}
+		return $_;
+	}
 
 	/**
 	 * 初始化一些配置项的值，返回数组，键为配置名

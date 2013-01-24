@@ -1,4 +1,5 @@
 <?php
+
 function get_default_value($object, $name, $uri=null)
 {
 	if (Session::post_cache_has($name, $uri)){

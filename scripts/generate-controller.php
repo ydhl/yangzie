@@ -23,10 +23,6 @@ class Generate_Controller_Script extends AbstractScript{
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
 		
-		if(!$this->uri){
-			$this->uri = "/".$this->module_name."/".$this->controller."/?";
-		}
-		
 		$this->parse_uri_args();
 		$this->save_class();
 		$this->save_test();
@@ -48,7 +44,7 @@ class Generate_Controller_Script extends AbstractScript{
 		$method 	= $ref_cls->getMethod("_config");
 		$method->setAccessible(true);
 		$configs = $method->invoke($module);
-		if(!@$configs['routers'][$this->uri]){
+		if($this->uri && !@$configs['routers'][$this->uri]){
 			$configs['routers'][$this->uri] = array("controller"=>$this->controller, "args"=>$this->uri_args);
 			$config_str = $this->_arr2str($configs, "\t\t");
 				
@@ -106,7 +102,7 @@ class Generate_Controller_Script extends AbstractScript{
 			return;
 		}
 		echo "create controller phpt file:\t";
-		$class = YangzieObject::format_class_name($controller,"Controller");
+		$class = YZE_Object::format_class_name($controller,"Controller");
 		$class_file_path = dirname(dirname(__FILE__))
 		."/tests/". $module."/" ."".strtolower($class).".class.phpt";
 		$test_file_content = "--TEST--
@@ -128,7 +124,7 @@ include \"load.php\";
 	private function create_controller($controller){
 		$module = $this->module_name;
 	
-		$class = YangzieObject::format_class_name($controller,"Controller");
+		$class = YZE_Object::format_class_name($controller,"Controller");
 		$class_file_path = dirname(dirname(__FILE__))
 		."/app/modules/". $module."/controllers/".strtolower($class).".class.php";
 		$class_file_content = "<?php
@@ -137,9 +133,19 @@ include \"load.php\";
 * @version \$Id\$
 * @package $module
 */
-class $class extends Resource_Controller {
+class $class extends YZE_Resource_Controller {
+	public function get_response_guid(){
+		//如果该控制器的响应输出需要缓存，这里返回生成缓存文件的唯一id
+		//该id根据请求的输入参数生成
+		return null;
+	}
+	protected function post_result_of_ajax(){
+		//这里返回该控制器在ajax请求时返回地数据
+		return array();
+	}
 	protected \$module_name = \"$module\";
 	protected \$models = array();
+	
 }
 ?>";
 		echo "create controller:\t\t";
@@ -159,7 +165,7 @@ class $class extends Resource_Controller {
 		//找到controller，判断其中有没有action，如果没有则生成action，及对应的view，validate，test
 		$controller_file = '../modules/'.strtolower($this->module_name).'/controllers/'.strtolower($this->controller).'_controller.class.php';
 		include_once $controller_file;
-		$controller_class = YangzieObject::format_class_name($this->controller, "Controller");
+		$controller_class = YZE_Object::format_class_name($this->controller, "Controller");
 		$refl = new ReflectionClass($controller_class);
 		$methods = $this->http_methods;
 		$action_code = "";
@@ -170,7 +176,7 @@ class $class extends Resource_Controller {
 	public function $method(){
 		//Your Code Written in Here.
 				
-		".($method=="get" ? '$this->set_view_data(Yangzie_Const::PAGE_TITLE, "this is controller '.$this->controller.'");' : "")."
+		".($method=="get" ? '$this->set_view_data(YZE_Const::PAGE_TITLE, "this is controller '.$this->controller.'");' : "")."
 	}
 	";
 			}
@@ -185,7 +191,7 @@ class $class extends Resource_Controller {
 		}
 	
 		$contents = file_get_contents($controller_file);
-		$contents = preg_replace("/(class $controller_class extends Resource_Controller {)/m", "\\1\r\n$action_code", $contents);
+		$contents = preg_replace("/(class $controller_class extends YZE_Resource_Controller {)/m", "\\1\r\n$action_code", $contents);
 		echo "update controller :\t\t";
 		$this->create_file($controller_file, $contents,true);
 	}
@@ -216,7 +222,9 @@ class $class extends Resource_Controller {
  * @param type name optional
  *
  */
-?>";
+?>
+
+this is {$controller} view";
 			echo("create view :\t\t\t");
 			$this->create_file($view_file_path, $view_file_content);
 		}
@@ -235,7 +243,7 @@ class $class extends Resource_Controller {
  * @version \$Id\$
  * @package $module
  */
-class ".YangzieObject::format_class_name($controller, "Validate")." extends YZEValidate{
+class ".YZE_Object::format_class_name($controller, "Validate")." extends YZEValidate{
 	
 	public function init_get_validates(){
 		".$this->validate_code_segment("get")."

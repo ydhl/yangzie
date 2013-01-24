@@ -5,7 +5,7 @@
  * @author liizii
  * @since 20100620
  */
-class SQL extends YangzieObject{
+class SQL extends YZE_Object{
 	const EQ 		= "=";
 	const NE 		= "!=";
 	const GT 		= ">";
@@ -786,7 +786,7 @@ class SQL extends YangzieObject{
  * @author liizii
  *
  */
-class Where extends YangzieObject{
+class Where extends YZE_Object{
 	private $alias;
 	private $field;
 	private $op;

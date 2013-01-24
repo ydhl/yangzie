@@ -12,6 +12,7 @@
  * @link     http://www.yangzie.net
  *
  */
+
 require_once YANGZIE.'/const.php';
 require_once YANGZIE.'/auth.php';
 require_once YANGZIE.'/yangzie.php';
@@ -31,9 +32,10 @@ require_once YANGZIE.'/hooks.php';//framework hook处理,hook处理程序
 require_once YANGZIE.'/router.php';
 require_once YANGZIE.'/startup.php';
 require_once YANGZIE.'/error.php';
-require_once YANGZIE.'/helper/el.php';
-require_once YANGZIE.'/bd/bd-functions.php';
+require_once YANGZIE.'/daemon/daemon-functions.php';
 require_once YANGZIE.'/html.php';
+require_once YANGZIE.'/form.php';
+require_once YANGZIE.'/i18n.php';
 
 //增加加载会出现命名冲突
 /**
@@ -43,10 +45,25 @@ require_once YANGZIE.'/html.php';
  *
  * @return void
  */
-function __autoload($class_name) 
+function __autoload($class)
 {
-    $class_name = strtolower($class_name);
-    @include_once $class_name . '.class.php';
+	$class_components = explode("\\", ltrim($class, "\\"));
+	$class_name 		= array_pop($class_components);
+	$class_name = strtolower($class_name);
+	if($class_components){
+		$path = join("/", $class_components)."/".$class_name . '.class.php';
+	}else{
+		$path = $class_name . '.class.php';
+	}
+	
+
+	
+	if(file_exists(INSTALL_PATH.$path)){
+		include_once INSTALL_PATH.$path;
+	}else{
+// 		debug_print_backtrace();
+// 		echo $path;
+	}
 }
 
 /**
@@ -58,17 +75,17 @@ load_app();
 
 /**
  * 启动会话,load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
- */
+*/
 session_start();
 
 /**
  * 加载及初始化所有模块的url映射，它们指定了uri到controller的映射
- */
+*/
 Router::load_routers();
 
 /**
  * 加载l10n本地语言翻译处理，根据用户的请求中的指示，决定合适的显示语言
- */
+*/
 load_default_textdomain();
 
 ?>

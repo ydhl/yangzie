@@ -1,8 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    #RewriteCond %{REQUEST_FILENAME} !-d
-    #RewriteCond %{REQUEST_FILENAME} !-f
-    #RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
-	RewriteEngine on
-	RewriteRule !\.(js|ico|gif|jpg|jpeg|png|css|swf|bmp|pdf|doc|mp3|wav)$ index.php [NC]
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
 </IfModule>

@@ -1,6 +1,7 @@
 <?php
+
 #http协议的处理
-class Http extends YangzieObject{
+class Http extends YZE_Object{
 	
 	public static function build_query($data) {
 		$ret = array();

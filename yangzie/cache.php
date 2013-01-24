@@ -5,10 +5,10 @@
  *
  */
 interface Cacheable{
-	public function set_cache_config(HttpCache $cache);
+	public function set_cache_config(YZE_HttpCache $cache);
 }
 
-class HttpCache extends YangzieObject{
+class YZE_HttpCache extends YZE_Object{
 	private $last_modified;
 	private $etag;
 	private $expires;

@@ -23,11 +23,13 @@ define("APP_LAYOUTS_INC", "../components/layouts");
 define("APP_VIEWS_INC", "../components/views");
 define("APP_MODELS_INC", "../components/models");
 define("APP_VALIDATES_INC", "../components/validates");
-define("INSTALL_PATH", dirname(__FILE__).DS);//安装的目录路径
-define("APP_PATH", dirname(INSTALL_PATH).DS);//应用代码路径
+
+define("INSTALL_PATH", dirname(__FILE__)."/../../");//安装的目录路径
+define("APP_PATH", INSTALL_PATH."app".DS);//应用代码路径
+define("APP_CACHES_PATH", INSTALL_PATH."app".DS."caches".DS);//应用代码路径
+
 ini_set('include_path', get_include_path().PS.YANGZIE);
-ini_set('include_path', get_include_path().PS.YANGZIE.DS."modules");
-ini_set('include_path', get_include_path().PS.APP_MODULES_INC);
+ini_set('include_path', get_include_path().PS."../..");
 //TODO 需不需要把项目录也设置在include path中
 
 //ini_set('error_reporting','~E_NOTICE');

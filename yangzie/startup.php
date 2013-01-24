@@ -4,13 +4,11 @@
  */
 function load_app(){
 	#加载app配置
-	include_once APP_INC.'/__config__.php';
-	include_once APP_INC.'/__aros_acos__.php';
+	//FIXME 这两个文件不存在如何处理。
+	include APP_INC.'/__config__.php';
+	include APP_INC.'/__aros_acos__.php';
 	$app_module = new App_Module();
-	$app_include_path = $app_module->get_module_config('include_path');
-	foreach((array)$app_include_path as $path){
-		ini_set('include_path',get_include_path().PS.APP_INC."/".$path);
-	}
+	ini_set('include_path',get_include_path().PS.APP_INC."/components");
 
 	$module_include_files = $app_module->get_module_config('include_files');
 	foreach((array)$module_include_files as $path){
@@ -25,6 +23,7 @@ function load_app(){
 		}
 	}
 }
+
 
 function run(){
 	try{
@@ -60,15 +59,8 @@ function run(){
 		$request->init_request();
 
 		/**
-		 * 如果请求是非get请求，则开启数据库的事务，yangzie约定认为get请求是读取操作
-		 * 不会对数据库进行一些事务性质的读处理，其它请求会对数据库进行事务性质的写处理，
-		 * 比如插入新数据，更新数据，删除数据等
-		 */
-		$request->begin_transaction();
-		/**
 		 * 登录认证请求，开发者需要实现系统的认证处理逻辑，
-		 * 认证实现在__config__.php::$auth_class配置其叫什么。
-		 * 在__config__.php::include_files中定义其包含路径，认证类实现IAuth
+		 * 认证实现在App_Auth中实现
 		 *
 		 * 每个模块需要定义自己模块中的请求url哪些需要进行认证，需要认证的url将会通过IAuth
 		 * 进行认证，开发者在IAuth的实现中处理具体的逻辑
@@ -85,6 +77,13 @@ function run(){
 		$request->validate();
 
 		/**
+		 * 如果请求是非get请求，则开启数据库的事务，yangzie约定认为get请求是读取操作
+		 * 不会对数据库进行一些事务性质的读处理，其它请求会对数据库进行事务性质的写处理，
+		 * 比如插入新数据，更新数据，删除数据等
+		 */
+		$request->begin_transaction();
+		
+		/**
 		 * 把控制权交给映射的控制器的action中去。并在成功处理后返回IResponse，它表示一次请求的影响
 		 * 如果初始化请求处理没有问题（找到了映射的controller，action），认证、数据验证都没有问题
 		 * 则controller将开始具体的请求所要求的业务处理
@@ -92,42 +91,29 @@ function run(){
 		 */
 		$response = $request->dispatch();
 
-		/**
-		 * 一切都ok，将把非get请求的处理进行事务提交
-		 */
+		//一切都ok，将把非get请求的处理进行事务提交
 		$request->commit();
 
-	}catch (Auth_Failed_Exception $e){
-		/**
-		 * 把当前uri中产生的异常保存下来，以便恢复后显示它
-		 */
+	}catch (YZE_Auth_Failed_Exception $e){
+		//FIXME 并不知道要去中个地址
+		//把当前uri中产生的异常保存下来，以便恢复后显示它
 		$session->save_uri_exception("/users/signin/", $e);
-		/**
-		 * 身份验证失败，导向登录页面，并把当前的uri带过去，登录成功后又返回
-		 */
+		//身份验证失败，导向登录页面，并把当前的uri带过去，登录成功后又返回
 		$response = new Redirect("/users/signin/?back_uri=".urlencode($request->the_uri()),$request->controller_obj());
 
-	}catch (Yangzie_Unresume_Exception $e){
+	}catch (YZE_Unresume_Exception $e){
 		/**
 		 * 这里表示在请求的处理过程中出现了不可恢复的异常。
 		 *
 		 * 不可恢复的异常指的是不能通过重新请求来重试的异常
-		 *
-		 * 异常将把控制指派给Default/Error处理，对应的异常类名作为控制器的action
-		 *
 		 */
 		$request->rollback();
-		Request::get_instance()->module("default");
-		$resource = strtolower(get_class($e));
-		Request::get_instance()->controller($resource);
 
-		include 'default/controllers/'.$resource.'_controller.class.php';
-		$error_controller = YangzieObject::format_class_name(strtolower(get_class($e)), "Controller");
-		$error_controller = new $error_controller();
+		$error_controller = new Default_Controller();
 		$error_controller->set_exception($e);
 		$response = $error_controller->do_get();
 
-	}catch (Yangzie_Resume_Exception $e){
+	}catch (YZE_Resume_Exception $e){
 		/**
 		 * 这里表示请求的处理过程中出现了可恢复的异常
 		 * 可恢复的异常表示可以通过重新请求来重试的异常，比如post后数据验证出现的可恢复的异常
@@ -143,7 +129,7 @@ function run(){
 		 * 如果URI A post请求到URI B，带上该post参数，出错时将返回referer_uri，其值通常就是URI A。
 		 * 要不然YZE认为一个请求默认post到自己，出错时将get回自己，也就是说URI A post到URI B，出错时将get URI B
 		 */
-		$referer_uri = YangzieObject::the_val(urldecode($request->get_from_post("referer_uri")), urldecode($request->the_full_uri()));//the_uri
+		$referer_uri = YZE_Object::the_val(urldecode($request->get_from_post("referer_uri")), urldecode($request->the_full_uri()));//the_uri
 		$no_query_uri = parse_url($referer_uri, PHP_URL_PATH);
 
 		/**
@@ -162,7 +148,6 @@ function run(){
 			$response = $request->dispatch();
 		}
 		$request->rollback();
-
 	}
 
 	/**
@@ -171,22 +156,20 @@ function run(){
 	 * 界面布局效果
 	 */
 	if(is_a($response,"View_Adapter")){
-		//fix 2012529 如果有错误控制器使用之
 		$controller_obj	= @$error_controller ? $error_controller : $request->controller_obj();
 		$layout = new Layout($controller_obj->get_layout(), $response, $controller_obj);
-		/**
-		 * 输出最终的视图
-		 */
-		$layout->output();
-		/**
-		 * 界面显示后把一些数据清空
-		 */
+		 //输出最终的视图 
+		$output = $layout->get_output();
+		if(($guid = $controller_obj->get_response_guid()) && !file_exists(APP_CACHES_PATH.$guid)){
+			file_put_contents(APP_CACHES_PATH.$guid, $output);
+		}
+		echo $output;
+		
+		//界面显示后把一些数据清空
 		Session::get_instance()->clear_uri_exception($request->the_uri());
 		Session::get_instance()->clear_uri_datas($request->the_uri());
 	}else{
-		/**
-		 * 其它非视图的响应输出，比如说重定向等只有header的http输出
-		 */
+		//其它非视图的响应输出，比如说重定向等只有header的http输出
 		$response->output();
 	}
 }

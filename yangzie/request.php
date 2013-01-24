@@ -1,5 +1,4 @@
 <?php
-
 /**
  * 一次处理上下文，是一个缓存机制，负责管理一次请求中使用到的数据库连接，实体缓存
  * 及其它需要缓存到会话中的内容
@@ -10,7 +9,7 @@
  * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
  * @link     www.yangzie.net
  */
-class Request extends YangzieObject
+class Request extends YZE_Object
 {
 	private $orgi_uri;
 	private $controller;
@@ -71,7 +70,7 @@ class Request extends YangzieObject
 
 	private function __construct()
 	{
-		$this->conn = DBAImpl::getDBA();
+		$this->conn = YZE_DBAImpl::getDBA();
 	}
 
 	/**
@@ -144,7 +143,7 @@ class Request extends YangzieObject
 		if ($this->is_get()) {
 			return;
 		}
-		do_action(YZE_TRANSACTION_COMMIT);
+		do_action(YZE_HOOK_TRANSACTION_COMMIT);
 		$this->conn->commit();
 	}
 
@@ -211,8 +210,13 @@ class Request extends YangzieObject
 	public function dispatch()
 	{
 		$controller = $this->controller_obj;
-		$method = "do_".$this->method();
-		return $controller->$method();
+		//如果控制器配置了缓存，则判断是否有缓存，有则直接输出缓存
+		if(($cache_html = $controller->has_response_cache())){
+			return new Notpl_View($cache_html, $controller);
+		}else{
+			$method = "do_".$this->method();
+			return $controller->$method();
+		}
 	}
 	public function init_request()
 	{
@@ -231,7 +235,7 @@ class Request extends YangzieObject
 		//默认按照 /module/controller/var/ 解析
 		$uri = $this->request_data->the_uri();
 		$uri_split 			= explode("/", trim($uri, "/"));
-		$curr_module 		= $this->the_val(strtolower($uri_split[0]), "default");
+		$curr_module 		= $this->the_val(strtolower($uri_split[0]), "home");
 		$def_controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");
 
 		$this->orgi_uri($uri)
@@ -261,18 +265,15 @@ class Request extends YangzieObject
 
 		$controller_cls = $this->controller_class();
 		$controller_file = $this->controller_file();
-
-		@include_once "{$curr_module}/controllers/{$controller_file}";
-
+		@include APP_PATH."modules/".$this->module()."/controllers/".$controller_file;
 		if (!class_exists($controller_cls)) {
-			
-			throw new Controller_Not_Found_Exception($controller_cls);
+			throw new YZE_Controller_Not_Found_Exception($controller_cls);
 		}
-		$controller = $this->controller_obj = $controller_cls::get_instance();
+		
+		$controller = $this->controller_obj = new $controller_cls();
 		if (!method_exists($controller, $request_method)) {
-			throw new Action_Not_Found_Exception($controller_cls."::".$request_method);
+			throw new YZE_Action_Not_Found_Exception($controller_cls."::".$request_method);
 		}
-
 		return $this;
 	}
 	public function orgi_uri()
@@ -328,6 +329,13 @@ class Request extends YangzieObject
 		$this->controller_class = self::format_class_name($this->controller(), "Controller");
 		return $this->controller_class;
 	}
+	/**
+	 * 
+	 * 
+	 * @author leeboo
+	 * 
+	 * @return YZE_Resource_Controller 
+	 */
 	public function controller_obj()
 	{
 		if ($this->controller_obj) return $this->controller_obj;
@@ -377,7 +385,7 @@ class Request extends YangzieObject
 
 	public function view_path()
 	{
-		return $this->module()."/views";
+		return APP_PATH."modules/".$this->module()."/views";
 	}
 	/**
 	 * 请求的方法：get,post,put,delete
@@ -473,13 +481,12 @@ class Request extends YangzieObject
 		$req_method = $this->method();
 		if($this->need_auth($req_method)) {//需要验证
 			$app_module = new App_Module();
-			$authclass = $app_module->auth_class;
-			if (empty($authclass) || !class_exists($authclass)) {
-				throw new Not_Found_Class_Exception(
-				vsprintf(__("未找到认证实现类%s,请在app/__config__.php中通过\$auth_class与\$include_files指定实现代码的位置"),array($authclass)));
+			if ( !class_exists("App_Auth")) {
+				throw new YZE_Not_Found_Class_Exception(
+				vsprintf(__("未找到认证实现类App_Auth")));
 			}
 			
-			$authobject = new $authclass();
+			$authobject = new App_Auth();
 			
 			//先验证是否登录 
 			$authobject->do_auth();
@@ -488,7 +495,7 @@ class Request extends YangzieObject
 			$acl = YZE_ACL::get_instance();
 			$aco_name = "/".$this->module()."/".$this->controller()."/".$req_method;
 			if(!$acl->check_byname($authobject->get_request_aro_name(), $aco_name)){
-				throw new Permission_Deny_Exception(vsprintf(__("没有访问资源 <strong>%s</strong> 的权限"), 
+				throw new YZE_Permission_Deny_Exception(vsprintf(__("没有访问资源 <strong>%s</strong> 的权限"), 
 				array(yze_get_aco_desc($aco_name))));
 			}
 		}
@@ -497,32 +504,32 @@ class Request extends YangzieObject
 
 	/**
 	 *
-	 * 如果uri指定有验证，则对请求数据进行验证，验证失败抛出Request_Validate_Failed异常
+	 * 如果uri指定有验证，则对请求数据进行验证，验证失败抛出YZE_Request_Validate_Failed异常
 	 */
 	public function validate()
 	{
 		$request_method = $this->method();
-		YangzieObject::silent_include_file($this->module().'/validates/'.$this->controller()."_validate.class.php");
+// 		YZE_Object::silent_include_file($this->module().'/validates/'.$this->controller()."_validate.class.php");
 		$validate_cls = self::format_class_name($this->controller(),"Validate");
 
-		if(!class_exists($validate_cls))return;
+		if(!class_exists("$validate_cls"))return;
 		$validate = new $validate_cls();
 		$validate_method = "init_{$request_method}_validates";
 		$validate->$validate_method();
 		return $validate->do_validate($request_method);
 	}
 
-	public function check_request(HttpCache $cache)
+	public function check_request(YZE_HttpCache $cache)
 	{
 		if (!$cache)return;
 		if ($cache->last_modified() && @$this->request_data->get_from_server('HTTP_IF_MODIFIED_SINCE')) {
 			if (strtotime($cache->last_modified()) == strtotime($this->request_data->get_from_server('HTTP_IF_MODIFIED_SINCE'))) {
-				throw new Not_Modified_Exception();
+				throw new YZE_Not_Modified_Exception();
 			}
 		}
 		if ($cache->etag() && @$this->request_data->get_from_server('HTTP_IF_NONE_MATCH')) {
 			if (strcasecmp($cache->etag(),$this->request_data->get_from_server('HTTP_IF_NONE_MATCH'))==0) {
-				throw new Not_Modified_Exception();
+				throw new YZE_Not_Modified_Exception();
 			}
 		}
 	}
@@ -639,7 +646,7 @@ class Request extends YangzieObject
  * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
  * @link     www.yangzie.net
  */
-class Request_Data extends YangzieObject
+class Request_Data extends YZE_Object
 {
 	private $post = array();
 	private $get = array();
@@ -703,7 +710,7 @@ class Request_Data extends YangzieObject
 	 */
 	public function the_uri()
 	{
-		$uri = do_filter(YZE_FILTER_URI,urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)));
+		$uri = do_filter(YZE_HOOK_FILTER_URI,urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)));
 		return is_array($uri) ? "/".implode("/",$uri) : $uri;
 	}
 	/**

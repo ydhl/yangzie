@@ -21,20 +21,18 @@
  */
 
 #定义架构使用的hook常量
-define('YZE_LOAD_CSS','load_css');
-define('YZE_LOAD_JS_BEFORE_BODY','load_js_before_body');
-define('YZE_BEFORE_POST','do_before_post');
-define('YZE_BEFORE_GET','do_before_get');
-define('YZE_BEFORE_PUT','do_before_put');
-define('YZE_BEFORE_DELETE','do_before_delete');
-define('YZE_AFTER_POST','do_after_post');
-define('YZE_AFTER_GET','do_after_get');
-define('YZE_AFTER_PUT','do_after_put');
-define('YZE_AFTER_DELETE','do_after_delete');
-define('YZE_TRANSACTION_COMMIT','transaction_commit');
-define('YZE_FILTER_URI','filter_uri');#uri过滤，传入uri分离后的数据或者就是uri字符串本身
+define('YZE_HOOK_BEFORE_POST','do_before_post');
+define('YZE_HOOK_BEFORE_GET','do_before_get');
+define('YZE_HOOK_BEFORE_PUT','do_before_put');
+define('YZE_HOOK_BEFORE_DELETE','do_before_delete');
+define('YZE_HOOK_AFTER_POST','do_after_post');
+define('YZE_HOOK_AFTER_GET','do_after_get');
+define('YZE_HOOK_AFTER_PUT','do_after_put');
+define('YZE_HOOK_AFTER_DELETE','do_after_delete');
+define('YZE_HOOK_TRANSACTION_COMMIT','transaction_commit');
+define('YZE_HOOK_FILTER_URI','filter_uri');#uri过滤，传入uri分离后的数据或者就是uri字符串本身
 
-final class Hook{
+final class YZE_Hook{
 	private $listeners = array();
 	private static $instance;
 	private function __construct(){}
@@ -42,7 +40,7 @@ final class Hook{
 	/**
 	 * 
 	 *
-	 * @return Hook
+	 * @return YZE_Hook
 	 */
 	public static function the_hook(){
         if (!isset(self::$instance)) {
@@ -96,7 +94,7 @@ function do_hook(){
 	
 }
 function do_action($action_name,$args = null){
-	$hook = Hook::the_hook();
+	$hook = YZE_Hook::the_hook();
 	$hook->do_action($action_name,$args);
 }
 /**
@@ -109,7 +107,7 @@ function do_action($action_name,$args = null){
  * @return array;
  */
 function do_filter($filter_name,$filter_data){
-	$hook = Hook::the_hook();
+	$hook = YZE_Hook::the_hook();
 	return $hook->do_filter($filter_name,$filter_data);
 }
 /**
@@ -122,7 +120,7 @@ function do_filter($filter_name,$filter_data){
  * @since 2009-12-21
  */
 function do_validate($filter_name,$filter_data){
-	$hook = Hook::the_hook();
+	$hook = YZE_Hook::the_hook();
 	return $hook->do_filter($filter_name,$filter_data);
 }
 ?>

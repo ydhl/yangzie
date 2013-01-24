@@ -1,5 +1,5 @@
 <?php
-class YangzieObject{
+class YZE_Object{
 	//subclass impl this.
 	public function output(){
 
@@ -44,13 +44,13 @@ class YangzieObject{
 		include_once $file;
 		$err = ob_get_clean();
 		if($err){
-			YangzieObject::log($err, "include file error");
+			YZE_Object::log($err, "include file error");
 		}
 	}
 	
 	public static function log($msg,$tag=null){
 		$messages = "[".($tag ? $tag : "yangzie")." ".date('y-m-d H:i:s')."] {$msg}\r\n";
-		$dir = INSTALL_PATH."/logs/log-".date("Y-m-d");
+		$dir = APP_PATH."/logs/log-".date("Y-m-d");
 
 		$log = @fopen($dir,"a+");
 		if(empty($log)){

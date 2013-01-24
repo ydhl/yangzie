@@ -64,21 +64,34 @@ function display_mvc_wizard(){
 ================================================================
   
 你将生成VC代码结构，请根据提示进操作，%s返回上一步：
-1. (1/7)控制器的名字:  "), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/7)所在功能模块:  "), get_colored_text(" CTRL+B ", "red", "white"));
 	
-	while (!is_validate_name(($controller = get_input()))){
-		echo get_colored_text(__("\t命名遵守PHP变量命名规则，请重输:  "), "red");
-	}
-	
-	echo __("2. (2/7)所在功能模块:  ");
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(__("\t命名遵守PHP变量命名规则，请重输:  "), "red");
 	}
 	
-	echo __("3. (3/7)映射URI:  ");
-	while (!($uri = get_input())){
-		echo get_colored_text(__("\t请输入映射的URI: "), "red");
+	echo __("2. (2/7)控制器的名字:  ");
+	while (!is_validate_name(($controller = get_input()))){
+		echo get_colored_text(__("\t命名遵守PHP变量命名规则，请重输:  "), "red");
 	}
+	
+	if(($uris = is_controller_exists($controller, $module))){
+		echo __("3. (3/7)控制器已存在，映射URI的是:\r\n\r\n");
+		foreach ($uris as $index => $uri){
+			echo "\t ".($index+1).". {$uri}\r\n";
+		}
+		echo __("\r\n\t选择一个或者输入新的, 回车表示不映射:");
+		$uri = get_input();
+		
+		if (is_numeric($uri)){
+			$uri = $uris[$uri-1];
+		}
+	}else{
+		echo __("3. (3/7)映射URI, 回车表示不映射:  ");
+		$uri = get_input();
+	}
+	
+	
 	
 	echo __("4. (4/7)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  ");
 	$view_format = get_input();
@@ -114,6 +127,17 @@ function display_mvc_wizard(){
 		"view_tpl"=>$view_tpl,
 		"controller"=>$controller,
 	);
+}
+
+function is_controller_exists($controller, $module){
+	if(file_exists(APP_MODULES_INC."/".$module."/__module__.php")){
+		include_once APP_MODULES_INC."/".$module."/__module__.php";
+		$class = ucfirst(strtolower($module))."_Module";
+		$object = new $class();
+		return $object->get_uris_of_controller($controller);
+		
+	}
+	return false;
 }
 
 function display_model_wizard(){

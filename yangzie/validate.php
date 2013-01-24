@@ -10,19 +10,7 @@
  * @link     http://www.yangzie.net
  *
  */
-
-/**
- * Enter description here ...
- * 
- * @category Framework
- * @package  Yangzie
- * @author   liizii <libol007@gmail.com>
- * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
- * @version  SVN: $Id$
- * @link     http://www.yangzie.net
- *
- */
-abstract class YZEValidate extends YangzieObject
+abstract class YZEValidate extends YZE_Object
 {
     const REQUIRED = "REQUIRED";
     const NOT_EMPTY = "not_empty";
@@ -48,7 +36,7 @@ abstract class YZEValidate extends YangzieObject
      *
      * @param string $request_method get|post|put|delete
      * 
-     * @throws Request_Validate_Failed
+     * @throws YZE_Request_Validate_Failed
      * 
      * @category Framework
      * @package  Yangzie
@@ -65,7 +53,7 @@ abstract class YZEValidate extends YangzieObject
     		}
     	}
         if ($failed) {
-        	throw new Request_Validate_Failed($failed, join(PHP_EOL, $failed));
+        	throw new YZE_Request_Validate_Failed($failed, join(PHP_EOL, $failed));
         }
 
         return true;

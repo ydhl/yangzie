@@ -20,14 +20,14 @@ class Generate_Model_Script extends AbstractScript{
 		$generate_module->generate();
 		
 		//Model 
-		$model_class = YangzieObject::format_class_name($this->class_name,"Model");
+		$model_class = YZE_Object::format_class_name($this->class_name,"Model");
 		$handleResult = $this->create_model_code($model_class);
 		echo "create model :\t\t\t";
 		$this->save_class($handleResult, $model_class, $this->module_name);
 // 		echo "create model phpt file :\t";
 // 		$this->save_test($handleResult, $model_class, $this->module_name);
 		
-		$class = YangzieObject::format_class_name($this->class_name,"");
+		$class = YZE_Object::format_class_name($this->class_name,"");
 		$handleResult = $this->create_class_code($class);
 		echo "create object :\t\t\t";
 		$this->save_class($handleResult,$class,$this->module_name);
@@ -112,12 +112,7 @@ class $class extends Model{
 	protected \$module_name = \"$package\";
 	protected \$key_name = \"$key\";
 	protected \$columns = array($fielddefine);
-	
-	private \$object;
-	
-	public function $class(){
-		\$this->object = new ".preg_replace("/_Model$/", "", $class)."();
-	}
+
 }?>";
 		return $code;
 	}

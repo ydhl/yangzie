@@ -33,7 +33,7 @@ interface IResponse{
  */
 class Response_304_NotModified implements IResponse{
 	private $headers;
-	public function __construct($headers,Resource_Controller $controller){
+	public function __construct($headers,YZE_Resource_Controller $controller){
 		$this->headers = $headers;
 		$this->controller = $controller;
 	}
@@ -63,7 +63,7 @@ class Response_304_NotModified implements IResponse{
 class Redirect implements IResponse{
 	private $uri;
 	private $data;
-	public function __construct($uri,Resource_Controller $controller){
+	public function __construct($uri, YZE_Resource_Controller $controller){
 		$this->uri = $uri;
 		$this->controller = $controller;
 	}
@@ -112,7 +112,7 @@ class Redirect implements IResponse{
  * html，xml，json，yaml等，
  * 由于包含的message-body，视图响应是可缓存的
  */
-abstract class View_Adapter extends YangzieObject implements IResponse,Cacheable{
+abstract class View_Adapter extends YZE_Object implements IResponse,Cacheable{
 	/**
 	 * 响应视图上要显示的数据，具体是什么内容由响应视图自己决定
 	 * @var array
@@ -130,12 +130,12 @@ abstract class View_Adapter extends YangzieObject implements IResponse,Cacheable
 	private $exception;
 	/**
 	 * 视图响应的缓存控制
-	 * @var HttpCache
+	 * @var YZE_HttpCache
 	 */
 	private $cache_ctl;
 	/**
 	 * 
-	 * @var Resource_Controller
+	 * @var YZE_Resource_Controller
 	 */
 	protected $controller;#生成Response的Controller
 	/**
@@ -143,7 +143,7 @@ abstract class View_Adapter extends YangzieObject implements IResponse,Cacheable
 	 *
 	 * @param array $data 其中的view指当前请求处理时控制器设置的数据，cache指处理请求时之前缓存下来的数据
 	 */
-	public function __construct($data,Resource_Controller $controller){
+	public function __construct($data, YZE_Resource_Controller $controller){
 		$this->data = is_array(@$data['view']) ? $data['view'] : array(@$data['view']);
 		$this->cache_data = is_array(@$data['cache']) ? $data['cache'] : array(@$data['cache']);
 		$this->controller = $controller;
@@ -194,7 +194,7 @@ abstract class View_Adapter extends YangzieObject implements IResponse,Cacheable
     public function get_exception(){
     	return $this->exception;
     }
-	public function set_cache_config(HttpCache $cache=null){
+	public function set_cache_config(YZE_HttpCache $cache=null){
 		$this->cache_ctl = $cache;
 	}
 	
@@ -220,17 +220,17 @@ class Simple_View extends View_Adapter {
 	 * 通过模板、数据构建视图输出
 	 * @param string $tpl 模板的路径全名。
 	 * @param array $data
-	 * @param Resource_Controller $controller
+	 * @param YZE_Resource_Controller $controller
 	 */
-	public function __construct($tpl, $data, Resource_Controller $controller){
+	public function __construct($tpl, $data, YZE_Resource_Controller $controller){
 		parent::__construct($data,$controller);
 		$this->tpl = $tpl;
 	}
 	
 	public function check_view()
 	{
-		if(!file_exists(APP_PATH."modules/{$this->tpl}.tpl.php")){
-			throw new View_Not_Found_Exception("{$this->tpl}.tpl.php");
+		if(!file_exists("{$this->tpl}.tpl.php")){
+			throw new YZE_View_Not_Found_Exception("{$this->tpl}.tpl.php");
 		}
 	}
 	
@@ -244,7 +244,7 @@ class Simple_View extends View_Adapter {
  */
 class Notpl_View extends View_Adapter {
 	private $html;
-	public function __construct($html,Resource_Controller $controller){
+	public function __construct($html, YZE_Resource_Controller $controller){
 		parent::__construct(array(),$controller);
 		$this->html = $html;
 	}
@@ -272,15 +272,16 @@ class Notpl_View extends View_Adapter {
 class Layout extends View_Adapter{
 	private $view;
 	private $layout;
-	public function __construct($layout,View_Adapter $view, Resource_Controller $controller){
+	public function __construct($layout,View_Adapter $view,  YZE_Resource_Controller $controller){
 		parent::__construct($view->get_datas(),$controller);
 		$this->view 	= $view;
 		$this->layout 	= $layout;
 	}
+	
 	protected function display_self(){
 		ob_start();
 		$this->view->output();
-		$content_for_layout = ob_get_clean();
+		$yze_content_of_layout = ob_get_clean();
 		include_once APP_LAYOUTS_INC."/{$this->layout}.tpl.php";
 	}
 }

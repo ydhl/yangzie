@@ -24,7 +24,7 @@
  * @author liizii
  *
  */
-abstract class Model extends YangzieObject{
+abstract class Model extends YZE_Object{
 	protected $records = array();
 	/**
 	 * 返回表名
@@ -64,7 +64,7 @@ abstract class Model extends YangzieObject{
 	}
 	
 	public function get_all(){
-		return DBAImpl::getDBA()->findAll(get_called_class());
+		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
 	}
 	
 	/**
@@ -164,10 +164,10 @@ abstract class Model extends YangzieObject{
 	 * @return Model 
 	 */
 	public static function find($id,$class){
-		return DBAImpl::getDBA()->find($id,$class);
+		return YZE_DBAImpl::getDBA()->find($id,$class);
 	}
 	public static function find_by_id($id){
-		return DBAImpl::getDBA()->find($id,get_called_class());
+		return YZE_DBAImpl::getDBA()->find($id,get_called_class());
 	}
 	/**
 	 * 根据主键数组查询对象。返回关联数组，键为主键，
@@ -179,7 +179,7 @@ abstract class Model extends YangzieObject{
 	{
 		$sql = new SQL();
 		$sql->from($class_name,"o")->where("o", $key_name, SQL::IN, $keys);
-		$objects = DBAImpl::getDBA()->select($sql);
+		$objects = YZE_DBAImpl::getDBA()->select($sql);
 		$_ = array();
 		foreach ($objects as $object){
 			$_[$object->get_key()] = $object;
@@ -192,7 +192,7 @@ abstract class Model extends YangzieObject{
 	 * 持久到数据库,返回自己
 	 */
 	public function save(){
-		DBAImpl::getDBA()->save($this);
+		YZE_DBAImpl::getDBA()->save($this);
 		return $this;
 	}
 
@@ -201,7 +201,7 @@ abstract class Model extends YangzieObject{
 	 * !!! 但这个对象所包含的数据还存在，只是主键不存在了
 	 */
 	public function remove(){
-		DBAImpl::getDBA()->delete($this);
+		YZE_DBAImpl::getDBA()->delete($this);
 		return $this;
 	}
 	
@@ -212,7 +212,7 @@ abstract class Model extends YangzieObject{
 	public static function remove_all($class){
 		$sql = new SQL();
 		$sql->delete()->from($class,'a');
-		return DBAImpl::getDBA()->execute($sql);
+		return YZE_DBAImpl::getDBA()->execute($sql);
 	}
 	/**
 	 * 把当前对象的主键值删除

@@ -1,5 +1,5 @@
 <?php
-class YZE_ACL extends YangzieObject{
+class YZE_ACL extends YZE_Object{
 	private $aros_acos;
 	private $acos;
 	private $permission_cache = array();
@@ -7,7 +7,7 @@ class YZE_ACL extends YangzieObject{
 	
 	private function __construct(){
 		$this->aros_acos = yze_get_acos_aros();
-		$this->acos = yze_get_acos();
+		$this->acos =   yze_get_acos();
 	}
 	
 	public static function get_instance()

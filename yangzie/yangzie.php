@@ -130,5 +130,18 @@ class YZE_Object{
 		},$str);
 		return mb_convert_encoding($text, $charcode, 'utf-8');
 	}
+	
+	protected function get_set_property()
+	{
+		$property = func_get_arg(0);
+		$args = func_get_arg(1);
+		$ref_property = new ReflectionProperty(get_class($this), $property);
+		$ref_property->setAccessible(true);
+		if ($args) {
+			$ref_property->setValue($this, $args[0]);
+			return $this;
+		}
+		return $ref_property->getValue($this);
+	}
 }
 ?>

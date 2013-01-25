@@ -17,25 +17,20 @@ define("YANGZIE", "../../yangzie");
 define("DS", DIRECTORY_SEPARATOR);
 define("PS", PATH_SEPARATOR);
 
-define("APP_INC", "..");//应用代码目录名称
-define("APP_MODULES_INC", "../modules");//应用代码目录名称
-define("APP_LAYOUTS_INC", "../components/layouts");
-define("APP_VIEWS_INC", "../components/views");
-define("APP_MODELS_INC", "../components/models");
-define("APP_VALIDATES_INC", "../components/validates");
+define("APP_INC", "../");//应用代码目录名称
+define("APP_MODULES_INC", "../modules/");//应用代码目录名称
+define("APP_LAYOUTS_INC", "../components/layouts/");
+define("APP_VIEWS_INC", "../components/views/");
+define("APP_MODELS_INC", "../components/models/");
+define("APP_VALIDATES_INC", "../components/validates/");
 
 define("INSTALL_PATH", dirname(__FILE__)."/../../");//安装的目录路径
 define("APP_PATH", INSTALL_PATH."app".DS);//应用代码路径
 define("APP_CACHES_PATH", INSTALL_PATH."app".DS."caches".DS);//应用代码路径
 
-ini_set('include_path', get_include_path().PS.YANGZIE);
 ini_set('include_path', get_include_path().PS."../..");
-//TODO 需不需要把项目录也设置在include path中
 
-//ini_set('error_reporting','~E_NOTICE');
+ini_set('error_reporting', E_ALL);
 
-//TODO 时区
 date_default_timezone_set('Asia/Chongqing');
-
-// TODO 初始化一些设置，这些设置php中有设置项的，但不能相信它已经设置好了，所以这里再设置一次
 ?>

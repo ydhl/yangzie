@@ -2,19 +2,21 @@
 /**
  * 加载所有的模块及其设置其配置
  */
-function load_app(){
+function yze_load_app(){
 	#加载app配置
-	//FIXME 这两个文件不存在如何处理。
-	include APP_INC.'/__config__.php';
-	include APP_INC.'/__aros_acos__.php';
+	if(!file_exists(APP_PATH."__config__.php")){
+		die(__("app/__config__.php not found"));
+	}
+	include APP_INC.'__config__.php';
+	@include APP_INC.'__aros_acos__.php';
 	$app_module = new App_Module();
-	ini_set('include_path',get_include_path().PS.APP_INC."/components");
+	ini_set('include_path',get_include_path().PS.APP_INC."components");
 
 	$module_include_files = $app_module->get_module_config('include_files');
 	foreach((array)$module_include_files as $path){
 		include_once $path;
 	}
-	foreach(glob(APP_MODULES_INC."/*") as $module){
+	foreach(glob(APP_MODULES_INC."*") as $module){
 		if(file_exists("{$module}/__module__.php")){
 			include_once "{$module}/__module__.php";
 		}
@@ -39,25 +41,8 @@ function run(){
 		 * @var Session
 		 */
 		$session = Session::get_instance();
-		/**
-		 * 预处理数据（get，post，cookie）.把一次请求中所有的外部数据，
-		 * 包含请求带来的数据，服务器的环境数据等等所有的会被系统使用到的数据全都
-		 * 过滤一便，把一些html元素进行编码
-		 *
-		 */
-		
-		$request->prepare_request_data();
-		/**
-		 * 初始化一次请求处理，收到一次请求后，根据request_uri解析出：
-		 * 1.映射的模块
-		 * 2.映射的控制器
-		 * 3.映射的action
-		 * 4.请求参数
-		 * 5.如果有错误，返回相应的异常
-		 * 6.保存post的数据，便于get时重新显示
-		 */
-		$request->init_request();
-
+		$dispatch = YZE_Dispatch::get_instance();
+		$dispatch->init();
 		/**
 		 * 登录认证请求，开发者需要实现系统的认证处理逻辑，
 		 * 认证实现在App_Auth中实现
@@ -143,7 +128,7 @@ function run(){
 		 * 并决定其显示在什么地方，判断后再进行后面的业务处理
 		 */
 		if(!$request->is_get()){
-			$response = new Redirect($referer_uri,$request->controller_obj());
+			$response = new Redirect($referer_uri,$dispatch->controller_obj());
 		}else{
 			$response = $request->dispatch();
 		}
@@ -156,7 +141,7 @@ function run(){
 	 * 界面布局效果
 	 */
 	if(is_a($response,"View_Adapter")){
-		$controller_obj	= @$error_controller ? $error_controller : $request->controller_obj();
+		$controller_obj	= @$error_controller ? $error_controller : $dispatch->controller_obj();
 		$layout = new Layout($controller_obj->get_layout(), $response, $controller_obj);
 		 //输出最终的视图 
 		$output = $layout->get_output();

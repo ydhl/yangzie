@@ -11,18 +11,12 @@
  *
  */
 
-/**
- * 初始化系统的一些配置信息，比如系统变量，yangzie的包含路径及一些php的配置问题
- */
-require_once 'init.php';
+//初始化系统的一些配置信息，比如系统变量，yangzie的包含路径及一些php的配置问题
+require 'init.php';
 
-/**
- * 加载系统需要的代码及初始化yangzie的名个功能处理
- */
-require_once 'load.php';
+//加载系统需要的代码及初始化yangzie的名个功能处理
+require 'load.php';
 
-/**
- * 开始处理请求
- */
+//开始处理请求
 run();
 ?>

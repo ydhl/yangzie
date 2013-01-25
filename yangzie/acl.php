@@ -10,6 +10,10 @@ class YZE_ACL extends YZE_Object{
 		$this->acos =   yze_get_acos();
 	}
 	
+	/**
+	 * 
+	 * @return YZE_ACL
+	 */
 	public static function get_instance()
 	{
 		if (!isset(self::$instance)) {

@@ -282,7 +282,7 @@ class Layout extends View_Adapter{
 		ob_start();
 		$this->view->output();
 		$yze_content_of_layout = ob_get_clean();
-		include_once APP_LAYOUTS_INC."/{$this->layout}.tpl.php";
+		include_once APP_LAYOUTS_INC."{$this->layout}.tpl.php";
 	}
 }
 ?>

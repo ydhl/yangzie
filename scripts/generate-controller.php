@@ -19,10 +19,10 @@ class Generate_Controller_Script extends AbstractScript{
 		$this->module_name 	= $argv['module_name'];
 		$this->uri 				= $argv['uri'];
 		$this->view_tpl 			= $argv['view_tpl'];
-		
+
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
-		
+
 		$this->parse_uri_args();
 		$this->save_class();
 		$this->save_test();
@@ -176,7 +176,7 @@ class $class extends YZE_Resource_Controller {
 	public function $method(){
 		//Your Code Written in Here.
 				
-		".($method=="get" ? '$this->set_view_data(YZE_Const::PAGE_TITLE, "this is controller '.$this->controller.'");' : "")."
+		".($method=="get" ? '$this->set_view_data("yze_page_title", "this is controller '.$this->controller.'");' : "")."
 	}
 	";
 			}

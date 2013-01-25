@@ -2,7 +2,7 @@
 /**
  * 该文件中定义了系统的所有资源及这些资源对应的控制器映射
  */
-class Router{
+class YZE_Router{
 	private static $instance;
 	private $mappings = array();
 	private function __construct(){}
@@ -26,9 +26,8 @@ class Router{
 	}
 
 	public static function load_routers(){
-		$app_module = new App_Module();
-		
-		foreach(glob(APP_MODULES_INC."/*") as $module){
+
+		foreach(glob(APP_MODULES_INC."*") as $module){
 			if(file_exists("{$module}/__module__.php")){
 				include_once "{$module}/__module__.php";
 				$module_name = basename($module);
@@ -36,7 +35,7 @@ class Router{
 				$object = new $class();
 				$mappings = $object->get_module_config('routers');
 				if($mappings){
-					Router::get_Instance()->set_Routers($module_name,$mappings);
+					YZE_Router::get_Instance()->set_Routers($module_name,$mappings);
 				}
 			}
 		}

@@ -7,7 +7,7 @@
 <meta name="generator" content="yangzie" />
 <link rel="shortcut icon" href="/themes/default/favicon.ico" />
 
-<title><?php echo $this->the_data("page_title"); ?></title>
+<title><?php echo $this->the_data("yze_page_title"); ?></title>
 </head>
 <body>
 <?php echo $yze_content_of_layout;	?>

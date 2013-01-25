@@ -100,7 +100,6 @@ function load_default_textdomain() {
 		return;
 	}
 	$locale = get_locale();
-	$app_module = new App_Module();
 	$mofile =  "components/i18n/$locale.mo";
 	return load_textdomain('default', $mofile);
 }

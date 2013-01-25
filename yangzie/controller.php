@@ -39,11 +39,10 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		foreach ((array)$this->models as $model) {
 			if (stripos($model, ".")) {
 				$pathinfo = explode(".", $model);
-				include APP_MODULES_INC."/".$pathinfo[0]."/models/".strtolower($pathinfo[1]).".class.php";
+				include APP_MODULES_INC.$pathinfo[0]."/models/".strtolower($pathinfo[1]).".class.php";
 				continue;
 			}
-			//echo APP_MODULES_INC."/{$this->module_name}/models/".strtolower($model).".class.php";
-			if ( !include APP_MODULES_INC."/{$this->module_name}/models/".strtolower($model).".class.php" ){
+			if ( !include APP_MODULES_INC."{$this->module_name}/models/".strtolower($model).".class.php" ){
 				continue;
 			}
 		}
@@ -120,6 +119,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		//设置请求token
 		do_action(YZE_HOOK_BEFORE_GET, $this);
 		$request = Request::get_instance();
+		$dispatch = YZE_Dispatch::get_instance();
 		Session::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
 		if (!method_exists($this, "get")) {
 			throw new YZE_Action_Not_Found_Exception("get");
@@ -130,7 +130,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		$view_data['cache'] = Session::get_instance()->get_uri_datas($request->the_uri());
 		$view_data['view'] = $this->get_view_data();
 		if (!$response) {
-			$view = Request::get_instance()->view_path()."/".$request->controller();
+			$view = $dispatch->view_path()."/". substr(strtolower(get_class($this)), 0, -11);
 			$format = $request->get_output_format();
 			if($format){
 				$view .= ".{$format}";
@@ -303,10 +303,10 @@ class Default_Controller extends YZE_Resource_Controller{
 		}
 		
 		if(!$this->exception){
-			return new Simple_View(APP_VIEWS_INC."/500",  array("view"=>array("exception"=>$this->exception)), $this);
+			return new Simple_View(APP_VIEWS_INC."500",  array("view"=>array("exception"=>$this->exception)), $this);
 		}
 		
-		return new Simple_View(APP_VIEWS_INC."/".$this->exception->error_number(), array("view"=>array("exception"=>$this->exception)), $this);
+		return new Simple_View(APP_VIEWS_INC.$this->exception->error_number(), array("view"=>array("exception"=>$this->exception)), $this);
 	}
 	private $exception;
 	public function set_exception(\Exception $e){

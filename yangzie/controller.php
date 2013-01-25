@@ -294,8 +294,21 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		}
 	}
 }
-
-class Default_Controller extends YZE_Resource_Controller{
+class YZE_Default_Controller extends YZE_Resource_Controller{
+	public function get(){
+		
+		$this->set_View_Data("yze_page_title", __("Yangzie 简单的PHP开发框架"));
+		return new Simple_View(YANGZIE."/welcome", $this->get_data(), $this);
+	}
+	
+	public function post()
+	{
+		$request = Request::get_instance();
+		$name = $request->get_from_post("name");
+		$this->set_View_Data("name", $name);
+	}
+}
+class YZE_Exception_Controller extends YZE_Resource_Controller{
 	public function get(){
 		$this->layout = "error";
 		if(DEVELOP_MODE){

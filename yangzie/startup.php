@@ -27,7 +27,7 @@ function yze_load_app(){
 }
 
 
-function run(){
+function yze_run(){
 	try{
 		/**
 		 * 取得一次请求的请求对象，对于一次请求来说，该对象是单例的，
@@ -94,7 +94,7 @@ function run(){
 		 */
 		$request->rollback();
 
-		$error_controller = new Default_Controller();
+		$error_controller = new YZE_Exception_Controller();
 		$error_controller->set_exception($e);
 		$response = $error_controller->do_get();
 

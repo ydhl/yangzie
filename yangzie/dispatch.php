@@ -47,14 +47,16 @@ class YZE_Dispatch extends YZE_Object{
 		//默认按照 /module/controller/var/ 解析
 		$uri = $request->the_uri();
 		$uri_split 			= explode("/", trim($uri, "/"));
-		$def_curr_module 		= $this->the_val(strtolower($uri_split[0]), "home");
+		$def_curr_module 		= strtolower($uri_split[0]);
 		$def_controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");
 		
-		$this->set_module($def_curr_module)->set_controller($def_controller_name);
+		if($def_curr_module){
+			$this->set_module($def_curr_module)->set_controller($def_controller_name);
+		}
 		
 		$routers = YZE_Router::get_instance()->get_routers();
 		
-		//根据配置中的routes来映射 TODO 性能优化
+		//根据配置中的routes来映射
 		$router_info 		= $this->_get_routers($routers, $uri);
 		if($router_info){
 			$controller_name 	= @$router_info['controller_name'];
@@ -62,8 +64,12 @@ class YZE_Dispatch extends YZE_Object{
 			$config_args 		= @$router_info['args'];
 		}
 		
-		if (!empty($controller_name)) {
+		if ( !empty( $controller_name ) ) {
 			$this->set_module($curr_module)->set_controller($controller_name);
+		}elseif( !$this->controller() ){
+			$this->controller = "yze_default";
+			$this->controller_class = "YZE_Default_Controller";
+			$this->controller_obj = new YZE_Default_Controller();
 		}
 		
 		$controller_cls = $this->controller_class();

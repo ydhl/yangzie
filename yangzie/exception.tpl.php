@@ -8,6 +8,7 @@ $dispatch = YZE_Dispatch::get_instance();
 <p>异常：<?php echo get_class($exception)?></p>
 <p>URI：<?php echo $request->the_uri()?></p>
 <p>Module：<?php echo $dispatch->module()?></p>
+<p>CWD：<?php echo getcwd()?></p>
 <p>Controller：<?php echo $dispatch->controller()?></p>
 <p>Controller Path：<?php echo $dispatch->controller_class()?></p>
 <p>Exception Message：<?php echo $exception ? $exception->getMessage() : ""?></p>

@@ -6,6 +6,7 @@ class Generate_Controller_Script extends AbstractScript{
 	private $module_name;
 	private $uri;
 	private $view_tpl;
+	private $entry_file;
 	private $model;
 	private $uri_args = array();
 
@@ -19,11 +20,13 @@ class Generate_Controller_Script extends AbstractScript{
 		$this->module_name 	= $argv['module_name'];
 		$this->uri 				= $argv['uri'];
 		$this->view_tpl 			= $argv['view_tpl'];
+		$this->entry_file 		= $argv['entry_file'];
 
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
 
 		$this->parse_uri_args();
+		$this->save_entry();
 		$this->save_class();
 		$this->save_test();
 		$this->check_action();
@@ -152,6 +155,23 @@ class $class extends YZE_Resource_Controller {
 		$this->create_file($class_file_path, $class_file_content);
 	}
 	
+	private function save_entry(){
+		$module = $this->module_name;
+		$controller = $this->controller;
+		if(empty($this->entry_file)){
+			return;
+		}
+		echo "create entry  file {$this->entry_file}:\t";
+		
+		$file_path = ENTRY_PATH.$this->entry_file.".php";
+		$file_content = "
+<?php
+include '../yangzie/bootstrap.php';
+yze_run('{$module}/{$controller}');
+?>";
+		$this->create_file($file_path, $file_content);
+	}
+	
 	private function save_class(){
 		$module = $this->module_name;
 		$controller = $this->controller;
@@ -159,7 +179,6 @@ class $class extends YZE_Resource_Controller {
 		//create controller
 		$this->create_controller($controller);
 	}
-	
 	
 	private function check_action(){
 		//找到controller，判断其中有没有action，如果没有则生成action，及对应的view，validate，test

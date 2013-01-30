@@ -40,31 +40,54 @@ class YZE_Dispatch extends YZE_Object{
 		}
 	}
 	
-	public function init(){
+	/**
+	 * 
+	 * 
+	 * @author leeboo
+	 * 
+	 * @param string $controller 如果传入则不解析url，不查找routers；而是直接解析controller，controller的格式是/module name/controller name
+	 * @throws YZE_Controller_Not_Found_Exception
+	 * @throws YZE_Action_Not_Found_Exception
+	 * 
+	 * @return
+	 */
+	public function init($controller = null){
 		$request = Request::get_instance();
 		$request_method = $request->method();
 		
-		//默认按照 /module/controller/var/ 解析
-		$uri = $request->the_uri();
-		$uri_split 			= explode("/", trim($uri, "/"));
-		$def_curr_module 		= strtolower($uri_split[0]);
-		$def_controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");
+		if($controller==""){//from entry
+			//nothing todo, will goto yangzie default controller
+		}elseif( !$controller ){
+			//默认按照 /module/controller/var/ 解析
+			$uri = $request->the_uri();
+			$uri_split 			= explode("/", trim($uri, "/"));
+			$curr_module 		= strtolower($uri_split[0]);
+			$controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");
+			
+			if($curr_module){
+				$this->set_module($curr_module)->set_controller($controller_name);
+			}
+			
+			$routers = YZE_Router::get_instance()->get_routers();
+			
+			//根据配置中的routes来映射
+			$router_info 		= $this->_get_routers($routers, $uri);
+			if($router_info){
+				$controller_name 	= @$router_info['controller_name'];
+				$curr_module 		= @$router_info['module'];
+				$config_args 		= @$router_info['args'];
+			}
+		}else{//from entry
+			$uri_split 				= explode("/", trim($controller, "/"));
+			$def_curr_module 		= strtolower($uri_split[0]);
+			$def_controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");
+				
+			if($def_curr_module){
+				$this->set_module($def_curr_module)->set_controller($def_controller_name);
+			}
+		} 
 		
-		if($def_curr_module){
-			$this->set_module($def_curr_module)->set_controller($def_controller_name);
-		}
-		
-		$routers = YZE_Router::get_instance()->get_routers();
-		
-		//根据配置中的routes来映射
-		$router_info 		= $this->_get_routers($routers, $uri);
-		if($router_info){
-			$controller_name 	= @$router_info['controller_name'];
-			$curr_module 		= @$router_info['module'];
-			$config_args 		= @$router_info['args'];
-		}
-		
-		if ( !empty( $controller_name ) ) {
+		if (  @$curr_module && $controller_name) {
 			$this->set_module($curr_module)->set_controller($controller_name);
 		}elseif( !$this->controller() ){
 			$this->controller = "yze_default";

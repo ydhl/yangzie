@@ -64,19 +64,19 @@ function display_mvc_wizard(){
 ================================================================
   
 你将生成VC代码结构，请根据提示进操作，%s返回上一步：
-1. (1/7)所在功能模块:  "), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/8)所在功能模块:  "), get_colored_text(" CTRL+B ", "red", "white"));
 	
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(__("\t命名遵守PHP变量命名规则，请重输:  "), "red");
 	}
 	
-	echo __("2. (2/7)控制器的名字:  ");
+	echo __("2. (2/8)控制器的名字:  ");
 	while (!is_validate_name(($controller = get_input()))){
 		echo get_colored_text(__("\t命名遵守PHP变量命名规则，请重输:  "), "red");
 	}
 	
 	if(($uris = is_controller_exists($controller, $module))){
-		echo __("3. (3/7)控制器已存在，映射URI的是:\r\n\r\n");
+		echo __("3. (3/8)控制器已存在，映射URI的是:\r\n\r\n");
 		foreach ($uris as $index => $uri){
 			echo "\t ".($index+1).". {$uri}\r\n";
 		}
@@ -87,33 +87,44 @@ function display_mvc_wizard(){
 			$uri = $uris[$uri-1];
 		}
 	}else{
-		echo __("3. (3/7)映射URI, 回车表示不映射:  ");
+		echo __("3. (3/8)映射URI, 回车表示不映射:  ");
 		$uri = get_input();
 	}
 	
 	
 	
-	echo __("4. (4/7)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  ");
+	echo __("4. (4/8)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  ");
 	$view_format = get_input();
 	
-	echo __("5. (5/7)是否生成验证器(yn),默认为y:  ");
+	echo __("5. (5/8)是否生成验证器(yn),默认为y:  ");
 	$need_validate = get_input();
 	$need_validate = $need_validate ? $need_validate : "y";
 	
 	if($view_format || $need_validate){
 		if($view_format && $need_validate){
-			echo __("6. (6/7)验证器、视图使用的Model:  ");
+			echo __("6. (6/8)验证器、视图使用的Model:  ");
 		}else if($view_format){
-			echo __("6. (6/7)视图使用的Model:  ");
+			echo __("6. (6/8)视图使用的Model:  ");
 		}else if($need_validate){
-			echo __("6. (5/7)验证器使用的Model:  ");
+			echo __("6. (5/8)验证器使用的Model:  ");
 		}
 		$model = get_input();
 	}
 	
 	if($view_format){
-		echo __("7. (7/7)视图样板组件名:  ");
+		echo __("7. (7/8)视图样板组件名:  ");
 		$view_tpl = get_input();
+	}
+	
+	echo __("8. (8/8)是否生成Entry文件(y|n):  ");
+	$has_entry = get_input();
+	
+	if($has_entry=="y"){
+		echo __("8. (8/8)Entry文件名，回车表示使用控制器名 {$controller}:  ");
+		$entry_file = get_input();
+		if(!$entry_file){
+			$entry_file = $controller;
+		}
 	}
 	
 	return array(
@@ -125,6 +136,7 @@ function display_mvc_wizard(){
 		"module_name"=>$module,
 		"uri"=>$uri,
 		"view_tpl"=>$view_tpl,
+		"entry_file"=>$entry_file,
 		"controller"=>$controller,
 	);
 }

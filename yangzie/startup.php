@@ -27,7 +27,7 @@ function yze_load_app(){
 }
 
 
-function yze_run(){
+function yze_run($controller = null){
 	try{
 		/**
 		 * 取得一次请求的请求对象，对于一次请求来说，该对象是单例的，
@@ -42,7 +42,7 @@ function yze_run(){
 		 */
 		$session = Session::get_instance();
 		$dispatch = YZE_Dispatch::get_instance();
-		$dispatch->init();
+		$dispatch->init($controller);
 		/**
 		 * 登录认证请求，开发者需要实现系统的认证处理逻辑，
 		 * 认证实现在App_Auth中实现

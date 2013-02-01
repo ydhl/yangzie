@@ -1,5 +1,4 @@
 <?php
-namespace yangzie;
 /**
  * 
  * 返回后台进程中运行的函数，返回函数名，后台进程将每隔yze_get_sleep seconds后依次运行这些函数

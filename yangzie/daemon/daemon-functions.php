@@ -1,5 +1,4 @@
 <?php
-namespace yangzie;
 /**
  * 该文件是YZE Daemon的核心文件，在YZE框架中（load.php）
  */

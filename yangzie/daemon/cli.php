@@ -1,5 +1,4 @@
 <?php
-namespace yangzie;
 /**
  * 该文件是YZE BD的核心文件，命令行下分别包含
  */

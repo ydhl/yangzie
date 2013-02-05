@@ -14,6 +14,7 @@
  */
 
 require_once YANGZIE.'/auth.php';
+require_once YANGZIE.'/file.php';
 require_once YANGZIE.'/yangzie.php';
 require_once YANGZIE.'/validate.php';
 require_once YANGZIE.'/session.php';

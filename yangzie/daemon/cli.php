@@ -78,6 +78,7 @@ function yze_run_daemon()
 
 function yze_daemon_log($msg)
 {
+	mkdir(APP_PATH."logs");
 	$dir = APP_PATH."logs/daemon-log-".date("Y-m-d");
 	$log = @fopen($dir,"a+");
 	if(empty($log)){

@@ -17,6 +17,6 @@ function hello_yze(){
 
 function yze_get_sleep()
 {
-	60;
+	return 60;
 }
 ?>

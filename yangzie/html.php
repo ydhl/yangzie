@@ -45,7 +45,20 @@ class YZE_Form extends YZE_Object{
 	}
 }
 
-function get_default_value($object, $name, $uri=null)
+/**
+ *  取得一个对象的默认值，如果name有缓存（表单提交失败）取缓存的值；如果对象存在
+ *  取对象的值，其它返回空。uri为空表示当前请求uri
+ * 
+ * @author leeboo
+ * 
+ * @param unknown $object
+ * @param unknown $name
+ * @param string $uri
+ * @return string
+ * 
+ * @return
+ */
+function yze_get_default_value($object, $name, $uri=null)
 {
 	if (Session::post_cache_has($name, $uri)){
 		return Session::get_cached_post($name, $uri);
@@ -55,12 +68,70 @@ function get_default_value($object, $name, $uri=null)
 	}
 	return "";
 }
-function get_post_error()
+
+/**
+ * 返回当前uri的表单最后一次提交出错的出错信息
+ * 
+ * @author leeboo
+ * 
+ * @return string
+ * 
+ * @return
+ */
+function yze_get_post_error()
 {
 	$session = Session::get_instance();
 	$uri = Request::get_instance()->the_uri();
 	if ($session->has_exception($uri)) {
 		return nl2br($session->get_uri_exception($uri)->getMessage());
 	}
+}
+
+/**
+ * 把传入的文件压缩成一个文件后返回该文件的uri，比如把所有的css文件压缩成一个；
+ * js文件压缩成一个。该api会考虑缓存，如果所传入的文件没有变化，则直接返回之前压缩的文件
+ * 压缩的文件存放在APP_CACHES_PATH / compressed 中， 缓存文件的命名及内容依赖于传入的文件
+ * 顺序。
+ * 
+ * 该api参数是可变参数，传入每个文件的操作系统绝对路径。 
+ * 调用方法 yze_output_compressed_file("/path/to/file/one.css", "/path/to/file/two.css");
+ * 
+ * 
+ * @author leeboo
+ * 
+ * 
+ * @return string 压缩文件的uri
+ */
+function yze_output_compressed_file(){
+	$num_args = func_num_args();
+	if(!$num_args)return;
+	
+	$cache_name = ""; $version=""; $cache_content = "";
+	yze_make_dirs(APP_CACHES_PATH."compressed");
+	
+	for ($i=0; $i<$num_args; $i++){
+		$file_name 		= func_get_arg($i);
+		if ( ! yze_isfile($file_name)) continue;
+		
+		$cache_name 	.= $file_name;
+		$version 		.= filemtime($file_name);
+	}
+
+	$ext = pathinfo($file_name, PATHINFO_EXTENSION);
+	$cache_name = APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-" . md5($version) . "." . $ext;
+	
+	if(yze_isfile($cache_name)) return yze_remove_abs_path($cache_name);//not changed
+	
+	for ($i=0; $i<$num_args; $i++){
+		$cache_content .= file_get_contents(func_get_arg($i));
+	}
+	
+	//删除之前的缓存文件，如果有的话
+	foreach (glob(APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-*." . $ext) as $old){
+		@unlink($old);
+	}
+	
+	file_put_contents($cache_name, $cache_content);
+	return yze_remove_abs_path($cache_name);
 }
 ?>

@@ -15,12 +15,12 @@ if($this->the_cache("name")){
 <?php 
 $form = new YZE_Form($this, "post");
 $form->begin_form();
-echo get_post_error();
+echo yze_get_post_error();
 ?>
 <table>
   <tr>
     <td>提交内容</td>
-    <td><input name="name" value="<?php get_default_value(null, "name")?>"/></td>
+    <td><input name="name" value="<?php yze_get_default_value(null, "name")?>"/></td>
   </tr>
   <tr>
     <td>&nbsp;</td>

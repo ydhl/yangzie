@@ -10,8 +10,8 @@ class App_Module extends Base_Module{
 	public $db_psw= 'ydhl';
 	public $db_charset= 'UTF8';
 	public $include_files = array(
-			"app/components/pomo/translation_entry.class.php",
-			"app/components/pomo/translations.class.php",
+			"app/vendor/pomo/translation_entry.class.php",
+			"app/vendor/pomo/translations.class.php",
 			"app/components/app_auth.class.php",
 			"app/components/i18n.php"
 	);

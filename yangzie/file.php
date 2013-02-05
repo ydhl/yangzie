@@ -1,7 +1,16 @@
 <?php
-
+/**
+ * 判断一个相同文件是否真的存在
+ * 
+ * @author leeboo
+ * 
+ * @param unknown $relative_file
+ * @return boolean
+ * 
+ * @return
+ */
 function yze_isfile($relative_file){
-	return is_file(get_abs_path($relative_file));
+	return is_file(yze_get_abs_path($relative_file));
 }
 
 function yze_isimage($file){

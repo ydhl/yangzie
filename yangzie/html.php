@@ -102,7 +102,7 @@ function yze_get_post_error()
  * 
  * @return string 压缩文件的uri
  */
-function yze_output_compressed_file(){
+function yze_compress_file(){
 	$num_args = func_num_args();
 	if(!$num_args)return;
 	
@@ -111,24 +111,25 @@ function yze_output_compressed_file(){
 	
 	for ($i=0; $i<$num_args; $i++){
 		$file_name 		= func_get_arg($i);
-		if ( ! yze_isfile($file_name)) continue;
+		if ( ! is_file($file_name)) continue;
 		
 		$cache_name 	.= $file_name;
 		$version 		.= filemtime($file_name);
 	}
-
+	if(!$cache_name)return;
+	
 	$ext = pathinfo($file_name, PATHINFO_EXTENSION);
 	$cache_name = APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-" . md5($version) . "." . $ext;
 	
 	if(yze_isfile($cache_name)) return yze_remove_abs_path($cache_name);//not changed
 	
 	for ($i=0; $i<$num_args; $i++){
-		$cache_content .= file_get_contents(func_get_arg($i));
+		$cache_content .= file_get_contents(func_get_arg($i))."\n";
 	}
 	
 	//删除之前的缓存文件，如果有的话
 	foreach (glob(APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-*." . $ext) as $old){
-		@unlink($old);
+		@unlink(APP_CACHES_PATH . "compressed/".$old);
 	}
 	
 	file_put_contents($cache_name, $cache_content);

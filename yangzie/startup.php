@@ -26,6 +26,31 @@ function yze_load_app(){
 	}
 }
 
+/**
+ * 检查系统的设置，如果一切都ok返回，如果有什么错误throw 异常
+ * 
+ * @author leeboo
+ * 
+ * @throws YZE_Unresume_Exception
+ * 
+ * @return
+ */
+function yze_system_check(){
+	$app_config = new App_Module();
+	$error = (array)$app_config->check();
+	
+	if (PHP_VERSION_ID<50300){
+		$error[] = __("yangzie需要php 5.3+以上版本");
+	}
+	if ( !is_writable(APP_CACHES_PATH)){
+		$error[] = vsprintf(__("%s 目录不可写"), APP_CACHES_PATH);
+	}
+	
+	if($error){
+		throw new YZE_RuntimeException(join(",",  $error));
+	}
+}
+
 
 function yze_run($controller = null){
 	try{
@@ -41,6 +66,8 @@ function yze_run($controller = null){
 		 * @var Session
 		 */
 		$session = Session::get_instance();
+		//检查系统配置
+		yze_system_check();
 		$dispatch = YZE_Dispatch::get_instance();
 		$dispatch->init($controller);
 		/**

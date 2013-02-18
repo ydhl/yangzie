@@ -42,6 +42,9 @@ function yze_system_check(){
 	if (PHP_VERSION_ID<50300){
 		$error[] = __("yangzie需要php 5.3+以上版本");
 	}
+	if (!extension_loaded("iconv")){
+		$error[] = __("iconv扩展未开启");
+	}
 	if ( !is_writable(APP_CACHES_PATH)){
 		$error[] = vsprintf(__("%s 目录不可写"), APP_CACHES_PATH);
 	}

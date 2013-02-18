@@ -90,7 +90,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 
 	public final  function has_response_cache(){
 		$cahce_file = APP_CACHES_PATH.$this->get_response_guid();
-		if(file_exists($cahce_file)){
+		if(file_exists($cahce_file) && $this->get_response_guid()){
 			return file_get_contents($cahce_file);
 		}
 		return null;

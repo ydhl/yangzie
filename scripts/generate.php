@@ -1,7 +1,6 @@
 <?php
-#解析出参数
 if(!preg_match("/cli/i",php_sapi_name())){
-	echo __("请在命令行下运行,进入到".dirname(__FILE__).", 运行php generate.php");die();
+	echo wrap_output(__("请在命令行下运行,进入到".dirname(__FILE__).", 运行php generate.php"));die();
 }
 
 
@@ -15,20 +14,20 @@ include_once '../../scripts/generate-module.php';
 if(true){
 	while(($cmds = display_home_wizard())){
 		$command = $cmds["cmd"];
-		system("clear");
-		echo get_colored_text("开始生成...\r\n", "blue");
+		clear_terminal();
+		echo get_colored_text(wrap_output("开始生成...\r\n"), "blue");
 		$class_name = "Generate_".ucfirst(strtolower($command))."_Script";
 		$object = new $class_name($cmds);
 		$object->generate();
-		echo get_colored_text("\r\n生成结束, 回车返回.\r\n", "blue");
+		echo get_colored_text(wrap_output("\r\n生成结束, 回车返回.\r\n"), "blue");
 		fgets(STDIN);
 	}
 }
 
 
 function display_home_wizard(){
-	system("clear");
-	echo __( "
+	clear_terminal();
+	echo wrap_output(__( "
 ================================================================
 \t\tYANGZIE Generate Script
 \t\t易点互联®
@@ -40,87 +39,87 @@ function display_home_wizard(){
 \t\t2.  生成Model：	\t\t根据表生成Model文件
 \t\t3.  goodbye
 	
-请选择(1 or 2 or 3): ");;
+请选择(1 or 2 or 3): "));
 	
 	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3))){
-		echo "请选择(1 or 2 or 3): ";
+		echo wrap_output("请选择(1 or 2 or 3): ");
 	}
 	
 	switch ($input){
 		case 1: return display_mvc_wizard();
 		case 2:  return display_model_wizard();
-		case 3:  die("
+		case 3:  die(wrap_output("
 退出.
-");
+"));
 		default: return array();
 	}
 }
 function display_mvc_wizard(){
-	system("clear");
-	echo vsprintf(__( "
+	clear_terminal();
+	echo vsprintf(wrap_output(__( "
 ================================================================
 		YANGZIE Generate Script
 		易点互联®
 ================================================================
   
 你将生成VC代码结构，请根据提示进操作，%s返回上一步：
-1. (1/8)所在功能模块:  "), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/8)所在功能模块:  ")), get_colored_text(" CTRL+B ", "red", "white"));
 	
 	while (!is_validate_name(($module = get_input()))){
-		echo get_colored_text(__("\t命名遵守PHP变量命名规则，请重输:  "), "red");
+		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
 	}
 	
-	echo __("2. (2/8)控制器的名字:  ");
+	echo wrap_output(__("2. (2/8)控制器的名字:  "));
 	while (!is_validate_name(($controller = get_input()))){
-		echo get_colored_text(__("\t命名遵守PHP变量命名规则，请重输:  "), "red");
+		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
 	}
 	
 	if(($uris = is_controller_exists($controller, $module))){
-		echo __("3. (3/8)控制器已存在，映射URI的是:\r\n\r\n");
+		echo wrap_output(__("3. (3/8)控制器已存在，映射URI的是:\r\n\r\n"));
 		foreach ($uris as $index => $uri){
 			echo "\t ".($index+1).". {$uri}\r\n";
 		}
-		echo __("\r\n\t选择一个或者输入新的, 回车表示不映射:");
+		echo wrap_output(__("\r\n\t选择一个或者输入新的, 回车表示不映射:"));
 		$uri = get_input();
 		
 		if (is_numeric($uri)){
 			$uri = $uris[$uri-1];
 		}
 	}else{
-		echo __("3. (3/8)映射URI, 回车表示不映射:  ");
+		echo wrap_output(__("3. (3/8)映射URI, 回车表示不映射:  "));
 		$uri = get_input();
 	}
 	
 	
 	
-	echo __("4. (4/8)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  ");
+	echo wrap_output(__("4. (4/8)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  "));
 	$view_format = get_input();
 	
-	echo __("5. (5/8)是否生成验证器(yn),默认为y:  ");
+	echo wrap_output(__("5. (5/8)是否生成验证器(yn),默认为y:  "));
 	$need_validate = get_input();
 	$need_validate = $need_validate ? $need_validate : "y";
 	
 	if($view_format || $need_validate){
 		if($view_format && $need_validate){
-			echo __("6. (6/8)验证器、视图使用的Model:  ");
+			echo wrap_output(__("6. (6/8)验证器、视图使用的Model:  "));
 		}else if($view_format){
-			echo __("6. (6/8)视图使用的Model:  ");
+			echo wrap_output(__("6. (6/8)视图使用的Model:  "));
 		}else if($need_validate){
-			echo __("6. (5/8)验证器使用的Model:  ");
+			echo wrap_output(__("6. (5/8)验证器使用的Model:  "));
 		}
 		$model = get_input();
 	}
 	
 	if($view_format){
-		echo __("7. (7/8)视图样板组件名:  ");
+		echo wrap_output(__("7. (7/8)视图样板组件名:  "));
 		$view_tpl = get_input();
 	}
 	
-	echo __("8. (8/8)是否生成Entry文件(y|n):  ");
+	echo wrap_output(__("8. (8/8)是否生成Entry文件(y|n):  "));
 	$has_entry = get_input();
 	
 	if($has_entry=="y"){
-		echo __("8. (8/8)Entry文件名，回车表示使用控制器名 {$controller}:  ");
+		echo wrap_output(__("8. (8/8)Entry文件名，回车表示使用控制器名 {$controller}:  "));
 		$entry_file = get_input();
 		if(!$entry_file){
 			$entry_file = $controller;
@@ -153,31 +152,31 @@ function is_controller_exists($controller, $module){
 }
 
 function display_model_wizard(){
-	system("clear");
-	echo vsprintf(__( "
+	clear_terminal();
+	echo wrap_output(vsprintf(__( "
 ================================================================
 \t\tYANGZIE Generate Script
 \t\t易点互联®
 ================================================================
 
 你将生成Model代码结构，请根据提示进操作，%s返回上一步：
-1. (1/4)表名: "), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/4)表名: ")), get_colored_text(" CTRL+B ", "red", "white"));
 	while (!is_validate_table(($table=get_input()))){
-		echo get_colored_text(vsprintf(__("\t表不存在(%s)，请重输:  "), mysql_error()), "red");
+		echo get_colored_text(wrap_output(vsprintf(__("\t表不存在(%s)，请重输:  "), mysql_error())), "red");
 	}
 
-	echo __("2. (2/4)Model类名:  ");
+	echo wrap_output(__("2. (2/4)Model类名:  "));
 	while (!is_validate_name(($model = get_input()))){
-		echo get_colored_text(__("\t类名遵守PHP变量命名规则,  请重输:  "), "red");
+		echo get_colored_text(wrap_output(__("\t类名遵守PHP变量命名规则,  请重输:  ")), "red");
 	}
-	echo __("3. (3/4)功能模块名,  遵守PHP变量命名规则:  ");
+	echo wrap_output(_("3. (3/4)功能模块名,  遵守PHP变量命名规则:  "));
 	while (!is_validate_name(($module = get_input()))){
-		echo get_colored_text(__("\t功能模块名,  请重输:  "), "red");
+		echo get_colored_text(wrap_output(__("\t功能模块名,  请重输:  ")), "red");
 	}
 
-	echo __("4. (4/4)同步方向(model or table), 默认table:  ");
+	echo wrap_output(__("4. (4/4)同步方向(model or table), 默认table:  "));
 	while (!in_array(($base = get_input()), array("model","table"))){
-		echo get_colored_text(__("\t请输入model 或 table:  "), "red");
+		echo get_colored_text(wrap_output(__("\t请输入model 或 table:  ")), "red");
 	}
 	
 	return array(
@@ -190,6 +189,7 @@ function display_model_wizard(){
 }
 
 function get_colored_text($text, $fgcolor=null, $bgcolor=null){
+	if(PHP_OS=="WINNT")return $text;
 	//return "\033[40m\033[31m some colored text \033[0m"; // red
 	if(!$fgcolor && !$bgcolor)return $text;
 	
@@ -270,6 +270,25 @@ function is_validate_table($table){
 	);
 	mysql_select_db($app_module->get_module_config("db_name"),$db);
 	return mysql_query("show full columns from $table",$db);
+}
+
+
+function clear_terminal(){
+	if(PHP_OS=="WINNT"){
+		$clear = "cls";
+	}else{
+		$clear = "clear";
+	}
+	exec("cls");
+}
+
+
+function wrap_output($msg){
+	if(PHP_OS=="WINNT"){
+		return iconv("UTF-8", "GB2312//IGNORE", $msg);
+	}else{
+		return $msg;
+	}
 }
 
 abstract class AbstractScript{

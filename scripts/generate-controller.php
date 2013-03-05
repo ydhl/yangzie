@@ -166,7 +166,7 @@ class $class extends YZE_Resource_Controller {
 		$file_path = ENTRY_PATH.$this->entry_file.".php";
 		$file_content = "
 <?php
-include '../yangzie/bootstrap.php';
+include '../../yangzie/bootstrap.php';
 yze_run('{$module}/{$controller}');
 ?>";
 		$this->create_file($file_path, $file_content);

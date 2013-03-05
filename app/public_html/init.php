@@ -27,7 +27,7 @@ define("APP_VALIDATES_INC", "../components/validates/");
 define("INSTALL_PATH", dirname(__FILE__)."/../../");//安装的目录路径
 define("APP_PATH", INSTALL_PATH."app".DS);//应用代码路径
 define("APP_CACHES_PATH", INSTALL_PATH."app".DS."public_html".DS."caches".DS);//应用代码路径
-define("ENTRY_PATH", INSTALL_PATH."entry".DS);//多入口访问文件目录
+define("ENTRY_PATH", APP_PATH."entry".DS);//多入口访问文件目录
 
 ini_set('include_path', get_include_path().PS."../..");
 

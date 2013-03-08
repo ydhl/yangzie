@@ -45,10 +45,7 @@ function yze_system_check(){
 	if (!extension_loaded("iconv")){
 		$error[] = __("iconv扩展未开启");
 	}
-	if ( !is_writable(APP_CACHES_PATH)){
-		$error[] = vsprintf(__("%s 目录不可写"), APP_CACHES_PATH);
-	}
-	
+
 	if($error){
 		throw new YZE_RuntimeException(join(",",  $error));
 	}

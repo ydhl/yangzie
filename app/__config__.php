@@ -19,7 +19,11 @@ class App_Module extends Base_Module{
 	public function check(){
 		//return empty array() if everything is ok
 		//return array  of  error message while has some error
-		return array();
+		$error = array();
+		if ( !is_writable(APP_CACHES_PATH)){
+			$error[] = vsprintf(__("%s 目录不可写"), APP_CACHES_PATH);
+		}
+		return $error;
 	}
 
 	protected function _config()

@@ -55,9 +55,7 @@ class YZE_Dispatch extends YZE_Object{
 		$request = Request::get_instance();
 		$request_method = $request->method();
 		
-		if($controller==""){//from entry
-			//nothing todo, will goto yangzie default controller
-		}elseif( !$controller ){
+		if( ! $controller ){
 			//默认按照 /module/controller/var/ 解析
 			$uri = $request->the_uri();
 			$uri_split 			= explode("/", trim($uri, "/"));
@@ -77,7 +75,7 @@ class YZE_Dispatch extends YZE_Object{
 				$curr_module 		= @$router_info['module'];
 				$config_args 		= @$router_info['args'];
 			}
-		}else{//from entry
+		}else{//指定了控制器，通常来之于entry里面的文件
 			$uri_split 				= explode("/", trim($controller, "/"));
 			$def_curr_module 		= strtolower($uri_split[0]);
 			$def_controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");

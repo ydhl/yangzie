@@ -2,14 +2,14 @@
 /**
 *
 * @version $Id$
-* @package order
+* @package default
 */
-class Orders_Controller extends YZE_Resource_Controller {
+class Default_Controller extends YZE_Resource_Controller {
 		
 	public function get(){
 		//Your Code Written in Here.
 				
-		$this->set_view_data("yze_page_title", "this is controller orders");
+		$this->set_view_data("yze_page_title", "this is controller default");
 	}
 			
 	public function post(){
@@ -39,7 +39,7 @@ class Orders_Controller extends YZE_Resource_Controller {
 		//这里返回该控制器在ajax请求时返回地数据
 		return array();
 	}
-	protected $module_name = "order";
+	protected $module_name = "default";
 	protected $models = array();
 	
 }

@@ -35,7 +35,7 @@ function display_home_wizard(){
   
 伙计，你想要生成什么？
 	
-\t\t1.  生成VC代码：\t\tcontroller，view，validate代码文件
+\t\t1.  生成VC代码：\t\tcontroller，view，validate文件
 \t\t2.  生成Model：	\t\t根据表生成Model文件
 \t\t3.  goodbye
 	

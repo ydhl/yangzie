@@ -6,4 +6,4 @@
  */
 ?>
 
-this is orders view
+this is default view

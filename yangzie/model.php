@@ -24,7 +24,7 @@
  * @author liizii
  *
  */
-abstract class Model extends YZE_Object{
+abstract class YZE_Model extends YZE_Object{
 	protected $records = array();
 	/**
 	 * 返回表名
@@ -161,7 +161,7 @@ abstract class Model extends YZE_Object{
 	 * 根据主键查询对象
 	 * id为查询表的主键，
 	 * @param unknown_type $id
-	 * @return Model 
+	 * @return YZE_Model 
 	 */
 	public static function find($id,$class){
 		return YZE_DBAImpl::getDBA()->find($id,$class);
@@ -177,8 +177,8 @@ abstract class Model extends YZE_Object{
 	 */
 	public static function find_by_keys($class_name,$key_name, array $keys)
 	{
-		$sql = new SQL();
-		$sql->from($class_name,"o")->where("o", $key_name, SQL::IN, $keys);
+		$sql = new YZE_SQL();
+		$sql->from($class_name,"o")->where("o", $key_name, YZE_SQL::IN, $keys);
 		$objects = YZE_DBAImpl::getDBA()->select($sql);
 		$_ = array();
 		foreach ($objects as $object){
@@ -210,7 +210,7 @@ abstract class Model extends YZE_Object{
 	 * @return bool
 	 */
 	public static function remove_all($class){
-		$sql = new SQL();
+		$sql = new YZE_SQL();
 		$sql->delete()->from($class,'a');
 		return YZE_DBAImpl::getDBA()->execute($sql);
 	}

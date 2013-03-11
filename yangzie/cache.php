@@ -4,7 +4,7 @@
  * @author liizii
  *
  */
-interface Cacheable{
+interface YZE_Cacheable{
 	public function set_cache_config(YZE_HttpCache $cache);
 }
 
@@ -16,7 +16,7 @@ class YZE_HttpCache extends YZE_Object{
 	
 	public function last_modified(){
 		if(func_num_args()>=1){
-			$this->last_modified = Request::format_gmdate(func_get_arg(0));
+			$this->last_modified = YZE_Request::format_gmdate(func_get_arg(0));
 			return $this;
 		}
 		return $this->last_modified;
@@ -35,7 +35,7 @@ class YZE_HttpCache extends YZE_Object{
 	
 	public function expires(){
 		if(func_num_args()>=1){
-			$this->expires = Request::format_gmdate(func_get_arg(0));
+			$this->expires = YZE_Request::format_gmdate(func_get_arg(0));
 			return $this;
 		}
 		return $this->expires;

@@ -38,7 +38,7 @@ class Generate_Controller_Script extends AbstractScript{
 	private function update_module(){
 		$module = $this->module_name;
 		$path = dirname(dirname(__FILE__))."/app/modules/".$module;
-		//配置res的默认router
+
 		$module_file = "$path/__module__.php";
 		include_once $module_file;
 		$module_cls = $module."_Module";
@@ -50,28 +50,20 @@ class Generate_Controller_Script extends AbstractScript{
 		if($this->uri && !@$configs['routers'][$this->uri]){
 			$configs['routers'][$this->uri] = array("controller"=>$this->controller, "args"=>$this->uri_args);
 			$config_str = $this->_arr2str($configs, "\t\t");
-				
 			$start_line = $method->getStartLine();
 			$end_line 	= $method->getEndLine();
-			$new_content= "";
-			$fp 		= fopen($module_file, "r+");
-			$cur_line 	= 1;
-			while ( ($line = fgets($fp)) !== false) {
-				if($cur_line >= $start_line && $cur_line <= $end_line){
-					if($cur_line == $end_line){
-						$new_content .= "\tprotected function _config(){\r\n\t\treturn ".$config_str."\r\n\t}\r\n";
-					}
-				}else{
-					$new_content .= $line;
-				}
-				++$cur_line;
+//  echo $start_line,", ",$end_line;
+			$file_content_arr = file($module_file);
+			for($i=$start_line; $i<$end_line; $i++){
+				unset($file_content_arr[$i]);
 			}
-			fseek($fp, 0);
-			ftruncate($fp, 0);
-			fwrite($fp, $new_content);
-			fclose($fp);
+// 			echo "\tprotected function _config(){\r\n\t\treturn ".$config_str."\r\n\t}\r\n";
+// 			print_r($file_content_arr);die;
+			//Tip 数组的索引从0开始
+			$file_content_arr[$start_line-1] = "\tprotected function _config(){\r\n\t\treturn ".$config_str."\r\n\t}\r\n";
+			$file_content_arr = array_values($file_content_arr);
+			file_put_contents($module_file, implode($file_content_arr));
 		}
-		
 	}
 	
 	
@@ -155,22 +147,6 @@ class $class extends YZE_Resource_Controller {
 		$this->create_file($class_file_path, $class_file_content);
 	}
 	
-	private function save_entry(){
-		$module = $this->module_name;
-		$controller = $this->controller;
-		if(empty($this->entry_file)){
-			return;
-		}
-		echo "create entry  file {$this->entry_file}:\t";
-		
-		$file_path = ENTRY_PATH.$this->entry_file.".php";
-		$file_content = "
-<?php
-include '../../../yangzie/bootstrap.php';
-yze_run('{$module}/{$controller}');
-?>";
-		$this->create_file($file_path, $file_content);
-	}
 	
 	private function save_class(){
 		$module = $this->module_name;

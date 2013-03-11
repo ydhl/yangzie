@@ -7,10 +7,9 @@ function yze_load_app(){
 	if(!file_exists(APP_PATH."__config__.php")){
 		die(__("app/__config__.php not found"));
 	}
-	include APP_INC.'__config__.php';
-	@include APP_INC.'__aros_acos__.php';
+	include_once APP_INC.'__config__.php';
+	@include_once APP_INC.'__aros_acos__.php';
 	$app_module = new App_Module();
-	ini_set('include_path',get_include_path().PS.APP_INC."components");
 
 	$module_include_files = $app_module->get_module_config('include_files');
 	foreach((array)$module_include_files as $path){
@@ -57,15 +56,15 @@ function yze_run($controller = null){
 		/**
 		 * 取得一次请求的请求对象，对于一次请求来说，该对象是单例的，
 		 * 包含一次请求的所有请求信息，封装了一些请求处理
-		 * @var Request
+		 * @var YZE_Request
 		 */
-		$request = Request::get_instance();
+		$request = YZE_Request::get_instance();
 		/**
 		 * 一个用户的会话对象，对于用户的一个会话过程来说是唯一，
 		 * 用于处理用户跨请求处理的一些数据问题
-		 * @var Session
+		 * @var YZE_Session
 		 */
-		$session = Session::get_instance();
+		$session = YZE_Session::get_instance();
 		//检查系统配置
 		yze_system_check();
 		$dispatch = YZE_Dispatch::get_instance();
@@ -74,8 +73,8 @@ function yze_run($controller = null){
 		 * 登录认证请求，开发者需要实现系统的认证处理逻辑，
 		 * 认证实现在App_Auth中实现
 		 *
-		 * 每个模块需要定义自己模块中的请求url哪些需要进行认证，需要认证的url将会通过IAuth
-		 * 进行认证，开发者在IAuth的实现中处理具体的逻辑
+		 * 每个模块需要定义自己模块中的请求url哪些需要进行认证，需要认证的url将会通过YZE_IAuth
+		 * 进行认证，开发者在YZE_IAuth的实现中处理具体的逻辑
 		 *
 		 * 配置模块中的那些url需要认证可在__module__.php::$auths配置
 		 */
@@ -96,7 +95,7 @@ function yze_run($controller = null){
 		$request->begin_transaction();
 		
 		/**
-		 * 把控制权交给映射的控制器的action中去。并在成功处理后返回IResponse，它表示一次请求的影响
+		 * 把控制权交给映射的控制器的action中去。并在成功处理后返回YZE_IResponse，它表示一次请求的影响
 		 * 如果初始化请求处理没有问题（找到了映射的controller，action），认证、数据验证都没有问题
 		 * 则controller将开始具体的请求所要求的业务处理
 		 * @var IRespose
@@ -111,7 +110,7 @@ function yze_run($controller = null){
 		//把当前uri中产生的异常保存下来，以便恢复后显示它
 		$session->save_uri_exception("/users/signin/", $e);
 		//身份验证失败，导向登录页面，并把当前的uri带过去，登录成功后又返回
-		$response = new Redirect("/users/signin/?back_uri=".urlencode($request->the_uri()),$request->controller_obj());
+		$response = new YZE_Redirect("/users/signin/?back_uri=".urlencode($request->the_uri()),$request->controller_obj());
 
 	}catch (YZE_Unresume_Exception $e){
 		/**
@@ -155,7 +154,7 @@ function yze_run($controller = null){
 		 * 并决定其显示在什么地方，判断后再进行后面的业务处理
 		 */
 		if(!$request->is_get()){
-			$response = new Redirect($referer_uri,$dispatch->controller_obj());
+			$response = new YZE_Redirect($referer_uri,$dispatch->controller_obj());
 		}else{
 			$response = $request->dispatch();
 		}
@@ -163,13 +162,13 @@ function yze_run($controller = null){
 	}
 
 	/**
-	 * 如果处理返回的视图是View_Adapter，表示响应是用于展示的视图内容，
+	 * 如果处理返回的视图是YZE_View_Adapter，表示响应是用于展示的视图内容，
 	 * 这时将把用户定义的视图layout设置上，返回的视图将在layout中进行显示，layout定义
 	 * 界面布局效果
 	 */
-	if(is_a($response,"View_Adapter")){
+	if(is_a($response,"YZE_View_Adapter")){
 		$controller_obj	= @$error_controller ? $error_controller : $dispatch->controller_obj();
-		$layout = new Layout($controller_obj->get_layout(), $response, $controller_obj);
+		$layout = new YZE_Layout($controller_obj->get_layout(), $response, $controller_obj);
 		 //输出最终的视图 
 		$output = $layout->get_output();
 		if(($guid = $controller_obj->get_response_guid()) && !file_exists(APP_CACHES_PATH.$guid)){
@@ -178,8 +177,8 @@ function yze_run($controller = null){
 		echo $output;
 		
 		//界面显示后把一些数据清空
-		Session::get_instance()->clear_uri_exception($request->the_uri());
-		Session::get_instance()->clear_uri_datas($request->the_uri());
+		YZE_Session::get_instance()->clear_uri_exception($request->the_uri());
+		YZE_Session::get_instance()->clear_uri_datas($request->the_uri());
 	}else{
 		//其它非视图的响应输出，比如说重定向等只有header的http输出
 		$response->output();

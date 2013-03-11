@@ -7,7 +7,7 @@ class YZE_Form extends YZE_Object{
 	private $view;
 
 
-	public function __construct(View_Adapter $view,$form_name,Model $model=null){
+	public function __construct(YZE_View_Adapter $view,$form_name,YZE_Model $model=null){
 		$this->form_name = $form_name;
 		$this->model = $model;
 		$this->view = $view;
@@ -22,7 +22,7 @@ class YZE_Form extends YZE_Object{
 		foreach ($attrs as $n=>$value){
 			$html .= "$n = '$value' ";
 		}
-		$token = Session::get_instance()->get_request_token(Request::get_instance()->the_uri());
+		$token = YZE_Session::get_instance()->get_request_token(YZE_Request::get_instance()->the_uri());
 		if($model){
 			$modify = "<input type='hidden' name='yze_modify_version' value='".$model->get_version_value()."'/>
 					<input type='hidden' name='yze_model_id' value='".$model->get_key()."'/>
@@ -45,6 +45,18 @@ class YZE_Form extends YZE_Object{
 	}
 }
 
+function yze_render_link($action, array $args, $anchor=null){
+	$path = http_build_query($args).($anchor ? "#{$anchor}" : "");
+	if(! defined('YZE_REWRITE_MODE')){
+		return $action."?".$path;
+	}
+	switch (strtoupper(YZE_REWRITE_MODE)){
+		case "REWRITE": 	return "/$action?".trim($path, "/");
+		case "PATH_INFO": 	
+		default: 	return "index.php/$action?".$path;
+	}
+}
+
 /**
  *  取得一个对象的默认值，如果name有缓存（表单提交失败）取缓存的值；如果对象存在
  *  取对象的值，其它返回空。uri为空表示当前请求uri
@@ -60,8 +72,8 @@ class YZE_Form extends YZE_Object{
  */
 function yze_get_default_value($object, $name, $uri=null)
 {
-	if (Session::post_cache_has($name, $uri)){
-		return Session::get_cached_post($name, $uri);
+	if (YZE_Session::post_cache_has($name, $uri)){
+		return YZE_Session::get_cached_post($name, $uri);
 	}
 	if ($object){
 		return $object->get($name);
@@ -80,8 +92,8 @@ function yze_get_default_value($object, $name, $uri=null)
  */
 function yze_get_post_error()
 {
-	$session = Session::get_instance();
-	$uri = Request::get_instance()->the_uri();
+	$session = YZE_Session::get_instance();
+	$uri = YZE_Request::get_instance()->the_uri();
 	if ($session->has_exception($uri)) {
 		return nl2br($session->get_uri_exception($uri)->getMessage());
 	}

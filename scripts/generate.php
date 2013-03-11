@@ -21,6 +21,7 @@ if(true){
 		$object->generate();
 		echo get_colored_text(wrap_output("\r\n生成结束, 回车返回.\r\n"), "blue");
 		fgets(STDIN);
+		die();
 	}
 }
 
@@ -114,19 +115,7 @@ function display_mvc_wizard(){
 		echo wrap_output(__("7. (7/8)视图样板组件名:  "));
 		$view_tpl = get_input();
 	}
-	
-	echo wrap_output(__("8. (8/8)是否生成Entry文件(y|n):  "));
-	$has_entry = get_input();
-	
-	if($has_entry=="y"){
-		echo wrap_output(__("8. (8/8)Entry文件名，回车表示使用控制器名 {$controller}:  "));
-		$entry_file = get_input();
-		if(!$entry_file){
-			$entry_file = $controller;
-		}
-	}
-	
-	return array(
+	return @array(
 		"cmd" => "controller",
 		"controller"=>$controller,
 		"model"=>$model,
@@ -135,7 +124,6 @@ function display_mvc_wizard(){
 		"module_name"=>$module,
 		"uri"=>$uri,
 		"view_tpl"=>$view_tpl,
-		"entry_file"=>$entry_file,
 		"controller"=>$controller,
 	);
 }

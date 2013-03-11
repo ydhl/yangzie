@@ -5,7 +5,7 @@
  * @author liizii
  * @since 20100620
  */
-class SQL extends YZE_Object{
+class YZE_SQL extends YZE_Object{
 	const EQ 		= "=";
 	const NE 		= "!=";
 	const GT 		= ">";
@@ -106,11 +106,11 @@ class SQL extends YZE_Object{
 	 */
 	private $classes = array();
 	/**
-	 * 构建where条件段，e.g. where('item','part_no',SQL::LIKE,'%Good%')
+	 * 构建where条件段，e.g. where('item','part_no',YZE_SQL::LIKE,'%Good%')
 	 * @param unknown_type $table
 	 * @param unknown_type $column
 	 * @param unknown_type $value
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function where($table_alias,$column,$op,$value=null){
 		$this->where[] = array(
@@ -123,11 +123,11 @@ class SQL extends YZE_Object{
 		return $this;
 	}
 	/**
-	 * 构建OR where条件段，e.g. or_where('item','part_no',SQL::LIKE,'%Good%')
+	 * 构建OR where条件段，e.g. or_where('item','part_no',YZE_SQL::LIKE,'%Good%')
 	 * @param unknown_type $table
 	 * @param unknown_type $column
 	 * @param unknown_type $value
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function or_where($table_alias,$column,$op,$value=null){
 		$this->where[] = array(
@@ -141,9 +141,9 @@ class SQL extends YZE_Object{
 	}
 	/**
 	 * eg.构建分组查询，如( ... AND ...)，分组由()包含
-	 * e.g where_group(array(new Where('o','status',SQL::EQ,'completed'),new Where('o','order_time',SQL::EQ,'2010-9-6')))
+	 * e.g where_group(array(new YZE_Where('o','status',YZE_SQL::EQ,'completed'),new  YZE_Where('o','order_time',SQL::EQ,'2010-9-6')))
 	 * @param array $where 里面的值是Where实例
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function where_group(array $where){
 		$this->and_where_group[] = $where;
@@ -151,9 +151,9 @@ class SQL extends YZE_Object{
 	}
 	/**
 	 * eg.构建分组查询，如( ... and ...) OR (...)，分组由()包含
-	 * e.g or_where_group(array(new Where('o','status',SQL::EQ,'completed','or'),new Where('o','order_time',SQL::EQ,'2010-9-6','or')))
+	 * e.g or_where_group(array(new  YZE_Where('o','status',YZE_SQL::EQ,'completed','or'),new  YZE_Where('o','order_time',SQL::EQ,'2010-9-6','or')))
 	 * @param array $where
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function or_where_group(array $where){
 		$this->or_where_group[] = $where;
@@ -163,7 +163,7 @@ class SQL extends YZE_Object{
 	 * 查询字段，e.g. select('item',array('part_no','quote_id'))->select('o',array('order_time'))
 	 * @param string $alias 查询的表别名
 	 * @param array $select 查询的字段
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function select($alias,array $select=array("*")){
 		$this->action = "select";
@@ -194,7 +194,7 @@ class SQL extends YZE_Object{
 	 * @param string $count_alias要count的字段取值别名
 	 * @param boolean $distinct要count的字段
 	 * 
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function count($table_alias, $field, $count_alias, $distinct=false){
 		$this->action = "select";
@@ -209,7 +209,7 @@ class SQL extends YZE_Object{
 	 * @param string $table_alias 查询的表别名
 	 * @param string $field 要count的字段
 	 * @param string $sum_alias 要sum的字段取值别名
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function sum($table_alias,$field,$sum_alias){
 		$this->action = "select";
@@ -222,7 +222,7 @@ class SQL extends YZE_Object{
 	 * @param string $table_alias 查询的表别名
 	 * @param string $field 要max的字段
 	 * @param string $max_alias 要max的字段取值别名
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function max($table_alias,$field,$max_alias){
 		$this->action = "select";
@@ -235,7 +235,7 @@ class SQL extends YZE_Object{
 	 * @param string $table_alias 查询的表别名
 	 * @param string $field 要min的字段
 	 * @param string $min_alias 要min的字段取值别名
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function min($table_alias,$field,$min_alias){
 		$this->action = "select";
@@ -245,7 +245,7 @@ class SQL extends YZE_Object{
 	}
 	/**
 	 * 构建删除sql,e.g. delete()
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function delete(){
 		$this->action = "delete";
@@ -255,7 +255,7 @@ class SQL extends YZE_Object{
 	 * 构建更新sql,e.g. update('item',array('part_no'=>'value','quote_id'=>'34343'));
 	 * @param array $datas 要更新的字段（键）与值
 	 * @param string $alias 更新的表别名
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function update($alias,array $datas){
 		$this->action = "update";
@@ -266,7 +266,7 @@ class SQL extends YZE_Object{
 	 * 构建插入sql,e.g. insert('item',array('part_no'=>'value','quote_id'=>'34343'));
 	 * @param array $datas 要插入的字段（键）与值
 	 * @param string $alias 插入的表别名
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function insert($alias,array $datas){
 		$this->action = "insert";
@@ -277,7 +277,7 @@ class SQL extends YZE_Object{
 	 * 构建查询的from段,e.g. from('LineItem','item')->from('Order','o')
 	 * @param string $class_name 对象名
 	 * @param string $alias 别名
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function from($class_name,$alias=null){
 		$entity = new $class_name();
@@ -293,7 +293,7 @@ class SQL extends YZE_Object{
 	 * @param $class_name 对象名
 	 * @param $alias 别名
 	 * @param $join_on
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function left_join($class_name,$alias,$join_on){
 		$entity = new $class_name();
@@ -313,7 +313,7 @@ class SQL extends YZE_Object{
 	 * @param $class_name 对象名
 	 * @param $alias 别名
 	 * @param $join_on
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function right_join($class_name,$alias,$join_on){
 		$entity = new $class_name();
@@ -333,7 +333,7 @@ class SQL extends YZE_Object{
 	 * @param $class_name 对象名
 	 * @param string$alias 别名
 	 * @param string $join_on
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function join($class_name,$alias,$join_on){
 		$entity = new $class_name();
@@ -365,7 +365,7 @@ class SQL extends YZE_Object{
 	 * sql 的limit限制，e.g. limit(0,10),limit(20)
 	 * @param unknown_type $start
 	 * @param unknown_type $end
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function limit($start,$end=null){
 		$this->limit_start = $start;
@@ -381,7 +381,7 @@ class SQL extends YZE_Object{
 	 * @param unknown_type $sort
 	 * @param bool $use_alias true 拼的sql是order by {$table_alias}_$order_by. false拼的sql是order by {$table_alias}.{$order_by}
 	 * 
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function order_by($table_alias,$order_by,$sort, $use_alias=false){
 		$this->order_by[] = array(
@@ -397,7 +397,7 @@ class SQL extends YZE_Object{
 	 * @param unknown_type $table_alias
 	 * @param unknown_type $group_by
 	 * @param bool $use_alias true 拼的sql是group by {$table_alias}_$group_by. false拼的sql是group by {$table_alias}.{$group_by}
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public function group_by($table_alias, $group_by, $use_alias=false){
 		$this->group_by[] = array(
@@ -414,10 +414,10 @@ class SQL extends YZE_Object{
 	 * @author leeboo
 	 * 
 	 * 
-	 * @return SQL
+	 * @return YZE_SQL
 	 */
 	public static function new_SQL(){
-		return new SQL();
+		return new YZE_SQL();
 	}
 	
 	/**
@@ -748,7 +748,7 @@ class SQL extends YZE_Object{
 		}
 		
 		#处理where中有子查询的情况
-		if(is_a($wheres['value'],'SQL')){
+		if(is_a($wheres['value'],'YZE_SQL')){
 			switch($wheres['op']){
 				case self::NOTIN:	
 					$cond = " NOT IN (".$wheres['value']->__toString().")";break;
@@ -782,11 +782,11 @@ class SQL extends YZE_Object{
 	}
 }
 /**
- * Where构建对象，用户构建复杂的where组合
+ * YZE_Where构建对象，用户构建复杂的where组合
  * @author liizii
  *
  */
-class Where extends YZE_Object{
+class YZE_Where extends YZE_Object{
 	private $alias;
 	private $field;
 	private $op;

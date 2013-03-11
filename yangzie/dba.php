@@ -39,15 +39,15 @@ class YZE_DBAImpl extends YZE_Object
 
 	public function find_by(array $ids, $class)
 	{
-		if(!($class instanceof Model) && !class_exists($class)){
+		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
 
-		$entity = $class instanceof Model ? $class : new $class;
+		$entity = $class instanceof YZE_Model ? $class : new $class;
 
-		$sql = new SQL();
+		$sql = new YZE_SQL();
 		$sql->from(get_class($entity),"a")
-		->where("a",$entity->get_key_name(),SQL::IN,$ids);
+		->where("a",$entity->get_key_name(),YZE_SQL::IN,$ids);
 
 		return $this->select($sql);
 	}
@@ -57,33 +57,33 @@ class YZE_DBAImpl extends YZE_Object
 	 * $key为查询表的主键，如果是复合主键，$key为数组，键为字段名。如:array('qo_item_id'=>123,'part_item_id'=>456)
 	 * @param unknown_type $key
 	 * @param string|Model $class
-	 * @return Model
+	 * @return YZE_Model
 	 */
 	public function find($key,$class){
-		if(!($class instanceof Model) && !class_exists($class)){
+		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
 
-		$entity = $class instanceof Model ? $class : new $class;
+		$entity = $class instanceof YZE_Model ? $class : new $class;
 
-		$sql = new SQL();
+		$sql = new YZE_SQL();
 		$sql->from(get_class($entity),"a")->limit(1);
 
-		$sql->where("a",$entity->get_key_name(),SQL::EQ,$key);
+		$sql->where("a",$entity->get_key_name(),YZE_SQL::EQ,$key);
 		$rst = $this->select($sql);
 		return @$rst[0];
 	}
 	/**
 	 * 查询所有的记录，返回实体数组,键为主键值
 	 * @param string|Model $class
-	 * @return array(Model)
+	 * @return array(YZE_Model)
 	 */
 	public function findAll($class){
-		if(!($class instanceof Model) && !class_exists($class)){
+		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
-		$entity = $class instanceof Model ? $class : new $class;
-		$sql = new SQL();
+		$entity = $class instanceof YZE_Model ? $class : new $class;
+		$sql = new YZE_SQL();
 		$sql->from(get_class($entity),"t");
 		return $this->select($sql);
 	}
@@ -91,21 +91,21 @@ class YZE_DBAImpl extends YZE_Object
 	 * 原生查询，不返回对象，返回结果数组，如果不是ddl，返回影响的行数
 	 * 返回的结果数据由DBMySQLWrapper封装,它封装了DBMysql类
 	 * @see ResultWrapper
-	 * @param SQL $class
+	 * @param YZE_SQL $class
 	 * @return ResultWrapper
 	 */
-	public function nativeQuery(SQL $sql){
+	public function nativeQuery(YZE_SQL $sql){
 		return $this->nativeQuery2($sql->__toString());
 	}
 	public function nativeQuery2($sql){
-		return new PDOStatementWrapper($this->conn->query($sql));
+		return new YZE_PDOStatementWrapper($this->conn->query($sql));
 	}
 	/**
 	 * 同select，区别是直接返回一个对象
-	 * @param SQL $sql
-	 * @return Model
+	 * @param YZE_SQL $sql
+	 * @return YZE_Model
 	 */
-	public function getSingle(SQL $sql){
+	public function getSingle(YZE_SQL $sql){
 		$sql->limit(1);
 		$result = $this->select($sql);
 		return @$result[0];
@@ -115,10 +115,10 @@ class YZE_DBAImpl extends YZE_Object
 	 * 根据条件查询所有的记录，返回实体数组,
 	 * !!!如果是联合查询，没有数据的对象返回null
 	 *
-	 * @param SQL $sql
+	 * @param YZE_SQL $sql
 	 * @return array(Model)
 	 */
-	public function select(SQL $sql){
+	public function select(YZE_SQL $sql){
 		$classes = $sql->get_select_classes(true);
 		$statement = $this->conn->query($sql->__toString());
 		if(empty($statement)){
@@ -171,13 +171,13 @@ class YZE_DBAImpl extends YZE_Object
 	}
 	/**
 	 * 根据条件删除记录
-	 * @param Model $entity
+	 * @param YZE_Model $entity
 	 * @return int 返回操作成功的记录数
 	 */
-	public function delete(Model $entity){
-		$sql = new SQL();
+	public function delete(YZE_Model $entity){
+		$sql = new YZE_SQL();
 		$sql->delete()->from(get_class($entity),"t");
-		$sql->where("t",$entity->get_key_name(),SQL::EQ,$entity->get_key());
+		$sql->where("t",$entity->get_key_name(),YZE_SQL::EQ,$entity->get_key());
 		$affected_row = $this->execute($sql);
 		if($affected_row){
 			$entity->delete_key();
@@ -186,11 +186,11 @@ class YZE_DBAImpl extends YZE_Object
 		return $entity;
 	}
 	/**
-	 * 执行SQL更改语句，返回影响的记录，出错报出 YZE_DBAException
-	 * @param SQL $sql
+	 * 执行YZE_SQL更改语句，返回影响的记录，出错报出 YZE_DBAException
+	 * @param YZE_SQL $sql
 	 * @return array(Model)
 	 */
-	public function execute(SQL $sql){
+	public function execute(YZE_SQL $sql){
 		if(empty($sql))return false;
 		$affected = $this->conn->exec($sql->__toString());
 		if ($affected===false) {
@@ -209,14 +209,14 @@ class YZE_DBAImpl extends YZE_Object
 	}
 	/**
 	 * 保存(update,insert)记录
-	 * @param Model $entity
+	 * @param YZE_Model $entity
 	 * @return int 返回操作成功的实体的主键
 	 */
-	public function save(Model $entity){
+	public function save(YZE_Model $entity){
 		if(empty($entity)){
-			throw new YZE_DBAException("save Model is empty");
+			throw new YZE_DBAException("save YZE_Model is empty");
 		}
-		$sql = new SQL();
+		$sql = new YZE_SQL();
 		if($entity->get_key()){//update
 			do_action("db-update", $entity);
 				
@@ -224,7 +224,7 @@ class YZE_DBAImpl extends YZE_Object
 			$entity->update_version();
 			$sql->update('t',$entity->get_records())
 			->from(get_class($entity),"t");
-			$sql->where("t",$entity->get_key_name(),SQL::EQ,$entity->get_key());
+			$sql->where("t",$entity->get_key_name(),YZE_SQL::EQ,$entity->get_key());
 			$this->execute($sql);
 			return $entity->get_key();
 		}else{//insert
@@ -255,7 +255,7 @@ class YZE_DBAImpl extends YZE_Object
 		if($this->conn)$this->conn->rollBack();
 	}
 
-	private function _build_entity(Model $entity,$raw_datas,$select_tables){
+	private function _build_entity(YZE_Model $entity,$raw_datas,$select_tables){
 		foreach ($raw_datas as $field_name => $field_value) {
 			//如果从数据库中取出来的值为null，则不用对相应的对象属性赋值，因为默认他们就是null。
 			//而赋值后再同步到数据库的时候，这些null值会被处理成''，0，如果字段是外键就会出错误，看_quoteValue
@@ -273,7 +273,7 @@ class YZE_DBAImpl extends YZE_Object
 		}
 	}
 }
-class PDOStatementWrapper extends YZE_Object{
+class YZE_PDOStatementWrapper extends YZE_Object{
 	/**
 	 * @var PDOStatement
 	 */

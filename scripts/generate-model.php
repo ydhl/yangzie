@@ -24,40 +24,10 @@ class Generate_Model_Script extends AbstractScript{
 		$handleResult = $this->create_model_code($model_class);
 		echo "create model :\t\t\t";
 		$this->save_class($handleResult, $model_class, $this->module_name);
-// 		echo "create model phpt file :\t";
-// 		$this->save_test($handleResult, $model_class, $this->module_name);
+		echo "create model phpt file :\t";
+		$this->save_test($handleResult, $model_class, $this->module_name);
 		
-		$class = YZE_Object::format_class_name($this->class_name,"");
-		$handleResult = $this->create_class_code($class);
-		echo "create object :\t\t\t";
-		$this->save_class($handleResult,$class,$this->module_name);
-		echo "create object phpt file :\t";
-		$this->save_test($handleResult,$class,$this->module_name);
 		echo "Done!\r\n";
-	}
-	
-	
-	public function create_class_code($class){
-		$methoddefine='';
-		$package=$this->module_name;
-		
-		$code = "<?php
-/**
- *
- * @version \$Id\$
- * @package $package
- */
-class $class{
-	private \$model;
-	
-	public function $class(\$key){
-		include '".strtolower($class)."_model.class.php';
-		\$this->model = Model::find(\$key, '{$class}_Model');
-	}
-	
-	$methoddefine
-}?>";
-	return $code;
 	}
 	
 	public function create_model_code($class){
@@ -100,7 +70,7 @@ class $class{
 		}
 		$code = "<?php
 /**
- * DO NOT MODIFY THIS FILE, THIS FILE IS AUTO GENERATE BY YDHL TOOL.
+ * 
  * 
  * @version \$Id\$
  * @package $package

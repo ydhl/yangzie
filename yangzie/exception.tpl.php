@@ -1,6 +1,6 @@
 <?php 
 $exception 	= $this->the_data("exception");
-$request 	= Request::get_instance();
+$request 	= YZE_Request::get_instance();
 $dispatch = YZE_Dispatch::get_instance();
 
 ?>

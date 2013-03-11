@@ -6,7 +6,7 @@
  * @access public
  * @author liizii, <libol007@gmail.com>
  */
-interface IResponse{
+interface YZE_IResponse{
 	/**
 	 * 输出响应
 	 */
@@ -31,7 +31,7 @@ interface IResponse{
  * @author liizii
  *
  */
-class Response_304_NotModified implements IResponse{
+class YZE_Response_304_NotModified implements YZE_IResponse{
 	private $headers;
 	public function __construct($headers,YZE_Resource_Controller $controller){
 		$this->headers = $headers;
@@ -60,7 +60,7 @@ class Response_304_NotModified implements IResponse{
  * @author liizii
  *
  */
-class Redirect implements IResponse{
+class YZE_Redirect implements YZE_IResponse{
 	private $uri;
 	private $data;
 	public function __construct($uri, YZE_Resource_Controller $controller){
@@ -69,8 +69,8 @@ class Redirect implements IResponse{
 	}
 	public function output(){
 		//如果一次请求是由 .json发起的，那么后续的站内url跳转都自动带上.json后缀
-		$format = Request::get_instance()->get_output_format();
-		if($format){
+		$format = YZE_Request::get_instance()->get_output_format();
+		if($format!="tpl"){
 			$url_components = parse_url($this->uri);
 			
 			//不是站内跳转
@@ -78,7 +78,7 @@ class Redirect implements IResponse{
 				header("Location: $this->uri");
 				return;
 			}
-			
+			//TODO 考虑PATH_INFO
 			header("Location: ".$url_components['path'].".{$format}?".$url_components['query'].
 					(@$url_components['fragment'] ? "#".$url_components['fragment'] : ""));
 			return;	
@@ -112,7 +112,7 @@ class Redirect implements IResponse{
  * html，xml，json，yaml等，
  * 由于包含的message-body，视图响应是可缓存的
  */
-abstract class View_Adapter extends YZE_Object implements IResponse,Cacheable{
+abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_Cacheable{
 	/**
 	 * 响应视图上要显示的数据，具体是什么内容由响应视图自己决定
 	 * @var array
@@ -147,7 +147,7 @@ abstract class View_Adapter extends YZE_Object implements IResponse,Cacheable{
 		$this->data = is_array(@$data['view']) ? $data['view'] : array(@$data['view']);
 		$this->cache_data = is_array(@$data['cache']) ? $data['cache'] : array(@$data['cache']);
 		$this->controller = $controller;
-		$this->exception = Session::get_instance()->get_uri_exception(Request::get_instance()->the_uri());
+		$this->exception = YZE_Session::get_instance()->get_uri_exception(YZE_Request::get_instance()->the_uri());
 	}
 	public function get_controller(){
 		return $this->controller;
@@ -214,35 +214,37 @@ abstract class View_Adapter extends YZE_Object implements IResponse,Cacheable{
  * 模板可以是生成html的模板，也可以是生成其它数据的模板，比如json，xml等，只是不同的模块对应不同的layout
  * 在view这里它们是一样的。
  */
-class Simple_View extends View_Adapter {
+class YZE_Simple_View extends YZE_View_Adapter {
 	private $tpl;
+	private $format;
 	/**
 	 * 通过模板、数据构建视图输出
 	 * @param string $tpl 模板的路径全名。
 	 * @param array $data
 	 * @param YZE_Resource_Controller $controller
 	 */
-	public function __construct($tpl, $data, YZE_Resource_Controller $controller){
+	public function __construct($tpl_name, $data, YZE_Resource_Controller $controller, $format="tpl"){
 		parent::__construct($data,$controller);
-		$this->tpl = $tpl;
+		$this->tpl 		= $tpl_name;
+		$this->format 	= $format;
 	}
 	
 	public function check_view()
 	{
-		if(!file_exists("{$this->tpl}.tpl.php")){
-			throw new YZE_View_Not_Found_Exception("{$this->tpl}.tpl.php");
+		if(!file_exists("{$this->tpl}.{$this->format}.php")){
+			throw new YZE_View_Not_Found_Exception("{$this->tpl}.{$this->format}.php");
 		}
 	}
 	
 	protected function display_self(){
-		require "{$this->tpl}.tpl.php";
+		require "{$this->tpl}.{$this->format}.php";
 	}
 }
 /**
  * 该response没有模板文件，只输出一些字符串，用于那些没有html模板只返回简单数据的地方如json，xml
  * 
  */
-class Notpl_View extends View_Adapter {
+class YZE_Notpl_View extends YZE_View_Adapter {
 	private $html;
 	public function __construct($html, YZE_Resource_Controller $controller){
 		parent::__construct(array(),$controller);
@@ -269,10 +271,10 @@ class Notpl_View extends View_Adapter {
  * @author liizii
  *
  */
-class Layout extends View_Adapter{
+class YZE_Layout extends YZE_View_Adapter{
 	private $view;
 	private $layout;
-	public function __construct($layout,View_Adapter $view,  YZE_Resource_Controller $controller){
+	public function __construct($layout,YZE_View_Adapter $view,  YZE_Resource_Controller $controller){
 		parent::__construct($view->get_datas(),$controller);
 		$this->view 	= $view;
 		$this->layout 	= $layout;
@@ -282,7 +284,7 @@ class Layout extends View_Adapter{
 		ob_start();
 		$this->view->output();
 		$yze_content_of_layout = ob_get_clean();
-		include_once APP_LAYOUTS_INC."{$this->layout}.tpl.php";
+		include_once APP_LAYOUTS_INC."{$this->layout}.layout.php";
 	}
 }
 ?>

@@ -3,11 +3,11 @@
  * 代理全局变量的访问，包含SESSION，GPC等等
  *
  */
-class Session{
+class YZE_Session{
 	private static $instance;
 	private function __construct(){}
 	/**
-	 * @return Session
+	 * @return YZE_Session
 	 */
 	public static function get_instance(){
 		if (!isset(self::$instance)) {
@@ -122,16 +122,16 @@ class Session{
 	public static function get_cached_post($name,$uri=null)
 	{
 		if (empty($uri)) {
-			$uri = Request::get_instance()->the_uri();
+			$uri = YZE_Request::get_instance()->the_uri();
 		}
-		$dates = Session::get_instance()->get_post_datas($uri);
+		$dates = YZE_Session::get_instance()->get_post_datas($uri);
 		return @$dates[$name];
 	}
 
 	public static function post_cache_has($name,$uri=null)
 	{
 		if (empty($uri)) {
-			$uri = Request::get_instance()->the_uri();
+			$uri = YZE_Request::get_instance()->the_uri();
 		}
 		return array_key_exists($name,(array)@$_SESSION['yze']['post_cache'][sha1($uri)]);
 	}
@@ -139,7 +139,7 @@ class Session{
 	public static function post_cache_has_ext($uri=null)
 	{
 		if (empty($uri)) {
-			$uri = Request::get_instance()->the_uri();
+			$uri = YZE_Request::get_instance()->the_uri();
 		}
 		return @$_SESSION['yze']['post_cache'][sha1($uri)];
 	}

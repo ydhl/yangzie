@@ -9,7 +9,7 @@
  * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
  * @link     www.yangzie.net
  */
-class Request extends YZE_Object
+class YZE_Request extends YZE_Object
 {
 	private $method;
 	private $vars;
@@ -164,7 +164,7 @@ class Request extends YZE_Object
 	 *
 	 * @param unknown_type $entity
 	 */
-	public function save_entity_to_cache(Model $entity)
+	public function save_entity_to_cache(YZE_Model $entity)
 	{
 		if (empty($entity))return;
 		$this->entity_cache[get_class($entity)][hash('md5', implode(",", array_values($entity->the_key())))] = $entity;
@@ -180,7 +180,7 @@ class Request extends YZE_Object
 	/**
 	 *
 	 *
-	 * @return Request
+	 * @return YZE_Request
 	 */
 	public static function get_instance()
 	{
@@ -254,7 +254,7 @@ class Request extends YZE_Object
 	 * 系统处理入口，该方法在入口文件index.php中调用，
 	 * 该方法的作用是根据URI把资源的请求操作转发到正确的资源上，并把处理结果返回。
 	 *
-	 * @return IResponse
+	 * @return YZE_IResponse
 	 * @author liizii, <libol007@gmail.com>
 	 *
 	 */
@@ -269,16 +269,16 @@ class Request extends YZE_Object
 		$this->set_method($request_method);
 
 		if  (!$this->is_get() && $this->the_post_data()) {
-			Session::get_instance()->save_post_datas($this->the_uri(), $this->the_post_data());
+			YZE_Session::get_instance()->save_post_datas($this->the_uri(), $this->the_post_data());
 		}
 
 		$uri = $this->the_uri();
 
 		$routers = YZE_Router::get_instance()->get_routers();
 		
-		$config_args 		= $this->_get_vars($routers, $uri);
+		$config_args 		= self::parse_url($routers, $uri);
 		
-		$this->set_vars(array_merge(Request::parse_uri_to_args($uri), @(array)$config_args));
+		$this->set_vars(@(array)$config_args['args']);
 		return $this;
 	}
 
@@ -333,7 +333,7 @@ class Request extends YZE_Object
 	{
 		$dispatch = YZE_Dispatch::get_instance();
 		$req_method = $this->method();
-		
+
 		if($this->need_auth($req_method)) {//需要验证
 			if ( !class_exists("App_Auth")) {
 				throw new YZE_Not_Found_Class_Exception(
@@ -400,13 +400,13 @@ class Request extends YZE_Object
 	 * @return
 	 */
 	public function get_output_format(){
-		$format = $this->get_var("__format__");//api 指定的输出格式,如http://domain/action.json
+		$format = $this->get_var("__yze_resp_format__");//api 指定的输出格式,如http://domain/action.json
 		if($format){
 			return $format;
 		}elseif($this->is_mobile_client()){//客户端是移动设备
 			return "mob";
 		}
-		return "";//default
+		return "tpl";//default
 	}
 
 	public function is_mobile_client(){
@@ -425,7 +425,7 @@ class Request extends YZE_Object
 			$v = '0';
 	
 			if ( is_array($v) || is_object($v) )
-				array_push($ret,Request::build_query($v));
+				array_push($ret,YZE_Request::build_query($v));
 			else
 				array_push($ret, $k.'='.urlencode($v));
 		}
@@ -442,7 +442,7 @@ class Request extends YZE_Object
 	 */
 	public static function add_args_into_current_uri(array $args)
 	{
-		$uri = Request::get_instance()->the_uri();
+		$uri = YZE_Request::get_instance()->the_uri();
 		$query_string = self::add_args_to_query_string($args);
 		return $uri."?".$query_string;
 	}
@@ -459,25 +459,6 @@ class Request extends YZE_Object
 			$gets[$name] = $value;
 		}
 		return self::build_query($gets);
-	}
-	
-	/**
-	 * 把 /name-value/形式的uri构建成name=value的数组
-	 *
-	 * @param string $uri
-	 * @return array
-	 */
-	public static function parse_uri_to_args($uri){
-		$uri_args = explode("/", trim($uri,"/"));
-		foreach ($uri_args as $k => $v){
-			if(strpos($v,'-')!==false){
-				$args = explode('-',urldecode($v));
-				$return[@$args[0]] = @$args[1];
-			}else{
-				$return[$k] = urldecode($v);
-			}
-		}
-		return (array)$return;
 	}
 	
 	public static function format_gmdate($date_str){
@@ -530,25 +511,27 @@ class Request extends YZE_Object
 	 *
 	 * @return Array('controller_name'=>, 'module'=>, 'args'=>)
 	 */
-	private function _get_vars($routers, $uri)
+	public static function parse_url($routers, $uri)
 	{
 		$_ = array();
 		foreach ($routers as $module=>$router_info) {
 			foreach ($router_info as $router => $acontroller) {
-				if (preg_match("#^{$router}$#i", $uri, $matches)) {
+				if (preg_match("#^/{$router}(\.(?P<__yze_resp_format__>[^/]+)$|/?$)#i", $uri, $matches)) {
+					$_['controller_name'] = strtolower($acontroller['controller']);
+					$config_args = $matches;
 					foreach ((array)$acontroller['args'] as $name => $value){
-						if (substr($value, 0, 2) == "r:") {
-							$name = substr($value,2);
-							$_[$name] = @$matches[$name];
-						}else{
-							$_[$name] = $value;
-						}
+						$config_args[$name] = $value;
 					}
+					$_['args'] 	= @$config_args;
+					$_['module'] = $module;
 					return $_;
 				}
 			}
 		}
+		
 		return $_;
 	}
+	
+	
 }
 ?>

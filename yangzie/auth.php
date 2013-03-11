@@ -1,5 +1,5 @@
 <?php
-interface IAuth{
+interface YZE_IAuth{
 	/**
 	 * 身份认证方法接口，验证用户是否登录，验证用户是否有访问的权限
 	 * 验证成功返回true，失败返回应用自定义的异常

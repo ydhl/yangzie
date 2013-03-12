@@ -19,7 +19,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 {
 	public $token;
 	protected $view_data = array();
-	protected $layout = 'default';
+	protected $layout = 'tpl';
 	/**
 	 * 控制器使用的model，格式：array("Model_Name","module_name.model_name")
 	 * @var array
@@ -276,7 +276,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 
 		//uri1中的表单提交到uri2中的情况
 		$refer_saved_token = $session->get_request_token($request->the_referer_uri(true));
-		$filtered_data  = do_filter("before_check_request_token", array("saved_token"=>$saved_token, "post_request_token"=>$post_request_token));
+		$filtered_data  = do_filter(YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, array("saved_token"=>$saved_token, "post_request_token"=>$post_request_token));
 		$saved_token    = $filtered_data['saved_token'];
 		$post_request_token = $filtered_data['post_request_token'];
 

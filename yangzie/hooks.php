@@ -29,6 +29,7 @@ define('YZE_HOOK_AFTER_POST','do_after_post');
 define('YZE_HOOK_AFTER_GET','do_after_get');
 define('YZE_HOOK_AFTER_PUT','do_after_put');
 define('YZE_HOOK_AFTER_DELETE','do_after_delete');
+define('YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token');
 define('YZE_HOOK_TRANSACTION_COMMIT','transaction_commit');
 define('YZE_HOOK_FILTER_URI','filter_uri');#uri过滤，传入uri分离后的数据或者就是uri字符串本身
 

@@ -41,7 +41,7 @@ php generate.php -cmd module  -mod module_name
  * @version \$Id\$
  * @package $module
  */
-class {$module}_Module extends Base_Module{
+class {$module}_Module extends YZE_Base_Module{
     public \$auths = array();
     public \$no_auths = array();
     protected function _config(){

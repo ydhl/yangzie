@@ -75,7 +75,7 @@ class Generate_Model_Script extends AbstractScript{
  * @version \$Id\$
  * @package $package
  */
-class $class extends Model{
+class $class extends YZE_Model{
 	$constantdefine
 	protected \$table= \"$table\";
 	protected \$version = 'modified_on';

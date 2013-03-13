@@ -20,13 +20,13 @@ class Generate_Controller_Script extends AbstractScript{
 		$this->module_name 	= $argv['module_name'];
 		$this->uri 				= $argv['uri'];
 		$this->view_tpl 			= $argv['view_tpl'];
-		$this->entry_file 		= $argv['entry_file'];
+		//$this->entry_file 		= $argv['entry_file'];
 
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
 
 		$this->parse_uri_args();
-		$this->save_entry();
+		//$this->save_entry();
 		$this->save_class();
 		$this->save_test();
 		$this->check_action();

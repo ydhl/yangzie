@@ -1,7 +1,7 @@
 <?php
 define("DEVELOP_MODE",  true);
 
-class App_Module extends Base_Module{
+class App_Module extends YZE_Base_Module{
 
 	//数据库配置
 	public $db_user = 'root';

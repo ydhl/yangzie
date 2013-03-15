@@ -38,23 +38,89 @@ function display_home_wizard(){
 	
 \t\t1.  生成VC代码：\t\tcontroller，view，validate文件
 \t\t2.  生成Model：	\t\t根据表生成Model文件
-\t\t3.  goodbye
+
+\t\t3.  删除module：\t\t删除模块
+\t\t4.  删除控制器：\t\t删除控制器及对应的验证器、视图
+\t\t5.  goodbye
 	
-请选择(1 or 2 or 3): "));
+请选择: "));
 	
-	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3))){
-		echo wrap_output("请选择(1 or 2 or 3): ");
+	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3,4,5))){
+		echo wrap_output("请选择操作对应的序号: ");
 	}
 	
 	switch ($input){
 		case 1: return display_mvc_wizard();
 		case 2:  return display_model_wizard();
-		case 3:  die(wrap_output("
+		case 3:  return display_delete_module_wizard();
+		case 4:  return display_delete_controller_wizard();
+		case 5:  die(wrap_output("
 退出.
 "));
 		default: return array();
 	}
 }
+
+function display_delete_controller_wizard(){
+	clear_terminal();
+	echo vsprintf(wrap_output(__( "
+================================================================
+		YANGZIE Generate Script
+		易点互联®
+================================================================
+删除控制器及其控制器、视图，%s返回上一步
+1. (1/2)所在功能模块: ")), get_colored_text(" CTRL+B ", "red", "white"));
+
+	while (!is_validate_name(($module = get_input()))){
+		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
+	}
+
+	echo wrap_output(__("2. (2/2)控制器的名字:  "));
+	while (!is_validate_name(($controller = get_input()))){
+		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
+	}
+	
+	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}_controller.class.php")){
+		echo wrap_output("控制器不存在");
+	}else{
+		unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}_controller.class.php");
+		@unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/validates/{$controller}_validate.class.php");
+		foreach (glob(dirname(dirname(__FILE__))."/app/modules/{$module}/views/{$controller}.*") as $file){
+			unlink($file);
+		}
+		unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}_controller.class.phpt");
+		@unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}_validate.class.phpt");
+		echo wrap_output("控制器及视图、验证器、单元测试文件删除成功");
+	}
+
+	return array();
+}
+
+function display_delete_module_wizard(){
+	clear_terminal();
+	echo vsprintf(wrap_output(__( "
+================================================================
+		YANGZIE Generate Script
+		易点互联®
+================================================================
+	
+输入要删除的模块名，%s返回上一步:  ")), get_colored_text(" CTRL+B ", "red", "white"));
+	
+	while (!is_validate_name(($module = get_input()))){
+		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
+	}
+	
+	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/".$module)){
+		echo wrap_output("模块不存在");
+	}else{
+		rrmdir(dirname(dirname(__FILE__))."/app/modules/".$module);
+		rrmdir(dirname(dirname(__FILE__))."/tests/".$module);
+		echo wrap_output("模块删除成功");
+	}
+
+	return array();
+}
+
 function display_mvc_wizard(){
 	clear_terminal();
 	echo vsprintf(wrap_output(__( "
@@ -148,7 +214,7 @@ function display_model_wizard(){
 ================================================================
 
 你将生成Model代码结构，请根据提示进操作，%s返回上一步：
-1. (1/4)表名: ")), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/4)表名: "), get_colored_text(" CTRL+B ", "red", "white")));
 	while (!is_validate_table(($table=get_input()))){
 		echo get_colored_text(wrap_output(vsprintf(__("\t表不存在(%s)，请重输:  "), mysql_error())), "red");
 	}
@@ -234,7 +300,7 @@ function get_fgcolor($color){
 }
 
 function get_input(){
-	$input = trim(fgets(STDIN));
+	$input = strtolower(trim(fgets(STDIN)));
 	is_back($input);
 	return $input;
 }
@@ -267,9 +333,21 @@ function clear_terminal(){
 	}else{
 		$clear = "clear";
 	}
-	exec("cls");
+	exec($clear);
 }
 
+function rrmdir($dir) {
+	if (is_dir($dir)) {
+		$objects = scandir($dir);
+		foreach ($objects as $object) {
+			if ($object != "." && $object != "..") {
+				if (filetype($dir."/".$object) == "dir") rrmdir($dir."/".$object); else unlink($dir."/".$object);
+			}
+		}
+		reset($objects);
+		rmdir($dir);
+	}
+}
 
 function wrap_output($msg){
 	if(PHP_OS=="WINNT"){

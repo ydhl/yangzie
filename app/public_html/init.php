@@ -29,7 +29,10 @@ define("APP_PATH", INSTALL_PATH."app".DS);//应用代码路径
 define("APP_CACHES_PATH", INSTALL_PATH."app".DS."public_html".DS."caches".DS);//应用代码路径
 define("ENTRY_PATH", INSTALL_PATH."app".DS."public_html".DS."entry".DS);//多入口访问文件目录
 //path_info, rewrite, none
-define('YZE_REWRITE_MODE', 'path_info');
+define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');
+define('YZE_REWRITE_MODE_REWRITE', 'yze_rewrite_mode_rewrite');
+define('YZE_REWRITE_MODE_NONE', 'yze_rewrite_mode_none');
+define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_NONE);
 
 ini_set('include_path', get_include_path().PS."../..");
 

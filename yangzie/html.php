@@ -47,13 +47,14 @@ class YZE_Form extends YZE_Object{
 
 function yze_render_link($action, array $args, $anchor=null){
 	$path = http_build_query($args).($anchor ? "#{$anchor}" : "");
-	if(! defined('YZE_REWRITE_MODE')){
-		return $action."?".$path;
-	}
-	switch (strtoupper(YZE_REWRITE_MODE)){
-		case "REWRITE": 	return "/$action?".trim($path, "/");
-		case "PATH_INFO": 	
-		default: 	return "index.php/$action?".$path;
+	$action = trim($action, "/");
+	
+	switch (YZE_REWRITE_MODE){
+		case YZE_REWRITE_MODE_REWRITE: 	return "/".$action."?".trim($path, "/");
+		case YZE_REWRITE_MODE_PATH_INFO: 	return "index.php/$action?".$path; 
+		case YZE_REWRITE_MODE_NONE:	
+		default: 	
+			return $_SERVER["SERVER_NAME"]."?yze_action=/{$action}&".$path;
 	}
 }
 

@@ -47,8 +47,8 @@ class {$module}_Module extends YZE_Base_Module{
     protected function _config(){
         return array(
         'name'=>'{$module}',
-        'include_path'=>array(),
-        'include_files'=>array(),
+        'include_path'=>array(),#加载模块时设置自动包含的路径
+        'include_files'=>array(),#加载模块时要自动包含的文件
         'routers' => array(
         )
         );

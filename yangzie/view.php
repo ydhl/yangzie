@@ -10,20 +10,14 @@ interface YZE_IResponse{
 	/**
 	 * 输出响应
 	 */
-    public function output();
-    
-    /**
-     * 取得控制器设置在响应中的值
-     * @package $key
-     */
-    public function the_data($key);
-    /**
-     * 
-     * 取得一次请求中缓存下来的值
-     * @param $key
-     */
-    public function the_cache($key);
-    
+	public function output();
+
+	/**
+	 * 取得控制器设置在响应中的值
+	 * @package $key
+	*/
+	public function get_data($key);
+
 
 }
 /**
@@ -48,12 +42,9 @@ class YZE_Response_304_NotModified implements YZE_IResponse{
 		$this->headers[$header_name] = $header_value;
 	}
 
-    public function the_data($key){
-    	return $this->headers[$key];
-    }
-	public function the_cache($key){
-    	return $this->headers[$key];
-    }
+	public function get_data($key){
+		return $this->headers[$key];
+	}
 }
 /**
  * HTTP Location:重定向，表示一次请求的处理输出是重定向
@@ -72,7 +63,7 @@ class YZE_Redirect implements YZE_IResponse{
 		$format = YZE_Request::get_instance()->get_output_format();
 		if($format!="tpl"){
 			$url_components = parse_url($this->uri);
-			
+
 			//不是站内跳转
 			if(@$url_components['host'] && $url_components['host']!=$_SERVER['HTTP_HOST']){
 				header("Location: $this->uri");
@@ -80,8 +71,8 @@ class YZE_Redirect implements YZE_IResponse{
 			}
 			//TODO 考虑PATH_INFO
 			header("Location: ".$url_components['path'].".{$format}?".$url_components['query'].
-					(@$url_components['fragment'] ? "#".$url_components['fragment'] : ""));
-			return;	
+			(@$url_components['fragment'] ? "#".$url_components['fragment'] : ""));
+			return;
 		}
 		header("Location: $this->uri");
 	}
@@ -99,16 +90,13 @@ class YZE_Redirect implements YZE_IResponse{
 	public function the_full_uri(){
 		return $this->uri;
 	}
-    public function the_data($key){
-    	return $this->data[$key];
-    }
-	public function the_cache($key){
-    	return $this->data[$key];
-    }
+	public function get_data($key){
+		return $this->data[$key];
+	}
 }
 
 /**
- * 视图响应，表示响应的HTTP中有message-body。message-body的内容可能是 
+ * 视图响应，表示响应的HTTP中有message-body。message-body的内容可能是
  * html，xml，json，yaml等，
  * 由于包含的message-body，视图响应是可缓存的
  */
@@ -118,11 +106,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 * @var array
 	 */
 	protected $data;
-	/**
-	 * 一次请求中缓存下来的内容
-	 * @var array
-	 */
-	protected $cache_data;
+
 	/**
 	 * 处理当前请求时出现的异常
 	 * @var Exception
@@ -134,7 +118,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 */
 	private $cache_ctl;
 	/**
-	 * 
+	 *
 	 * @var YZE_Resource_Controller
 	 */
 	protected $controller;#生成Response的Controller
@@ -144,62 +128,58 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 * @param array $data 其中的view指当前请求处理时控制器设置的数据，cache指处理请求时之前缓存下来的数据
 	 */
 	public function __construct($data, YZE_Resource_Controller $controller){
-		$this->data = is_array(@$data['view']) ? $data['view'] : array(@$data['view']);
-		$this->cache_data = is_array(@$data['cache']) ? $data['cache'] : array(@$data['cache']);
+		$this->data = (array)$data;
 		$this->controller = $controller;
 		$this->exception = YZE_Session::get_instance()->get_uri_exception(YZE_Request::get_instance()->the_uri());
 	}
 	public function get_controller(){
 		return $this->controller;
 	}
-    public final function output(){
-    	if($this->cache_ctl){
-    		$this->cache_ctl->output();
-    	}
-    	$this->display_self();
-    }
-    /**
-     * 取得视图的输出内容
-     */
-    public function get_output(){
-    	ob_start();
-    	$this->output();
-    	return ob_get_clean();
-    }
-    
-    /**
-     * 视图响应显示自己，其布局由视图模块定义，位于views/controller name/action下
-     * 子类根据自己的需要实现视图的加载方式
-     */
-    protected abstract function display_self();
+	public final function output(){
+		if($this->cache_ctl){
+			$this->cache_ctl->output();
+		}
+		$this->display_self();
+	}
+	/**
+	 * 取得视图的输出内容
+	 */
+	public function get_output(){
+		ob_start();
+		$this->output();
+		return ob_get_clean();
+	}
 
-    public function the_data($key){
-    	return @$this->data[$key];
-    }
-	public function the_cache($key){
-    	return @$this->cache_data[$key];
-    }
-    public function get_datas(){
-    	return array('view'=>$this->data,"cache"=>$this->cache_data);
-    }
-    public function has_exception(){
-    	return is_a($this->exception,"Exception");
-    }
-    public function get_exception_message(){
-    	if(!$this->has_exception()){
-    		return "";
-    	}
-    	return $this->exception->getMessage();
-    }
-    public function get_exception(){
-    	return $this->exception;
-    }
+	/**
+	 * 视图响应显示自己，其布局由视图模块定义，位于views/controller name/action下
+	 * 子类根据自己的需要实现视图的加载方式
+	 */
+	protected abstract function display_self();
+
+	public function get_data($key){
+		return @$this->data[$key];
+	}
+	public function get_datas(){
+		return  $this->data;
+	}
+	public function has_exception(){
+		return is_a($this->exception,"Exception");
+	}
+	public function get_exception_message(){
+		if(!$this->has_exception()){
+			return "";
+		}
+		return $this->exception->getMessage();
+	}
+	public function get_exception(){
+		return $this->exception;
+	}
 	public function set_cache_config(YZE_HttpCache $cache=null){
 		$this->cache_ctl = $cache;
 	}
-	
+
 	/**
-	 * 检查模板文件是否存在 
+	 * 检查模板文件是否存在
 	 */
 	public function check_view()
 	{
@@ -210,7 +190,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
  * 视图响应实现，负责加载视图响应模板，视图模板位于views/controller name/action name.tpl.php
  * Simple_View根据请求信息加载对于模块下面的视图模块，并include 它，由于是在对象中include，
  * 在该模板中就可以通过$this->the_date等API取到控制器设置给view的数据
- * 
+ *
  * 模板可以是生成html的模板，也可以是生成其它数据的模板，比如json，xml等，只是不同的模块对应不同的layout
  * 在view这里它们是一样的。
  */
@@ -228,21 +208,21 @@ class YZE_Simple_View extends YZE_View_Adapter {
 		$this->tpl 		= $tpl_name;
 		$this->format 	= $format;
 	}
-	
+
 	public function check_view()
 	{
 		if(!file_exists("{$this->tpl}.{$this->format}.php")){
 			throw new YZE_View_Not_Found_Exception("{$this->tpl}.{$this->format}.php");
 		}
 	}
-	
+
 	protected function display_self(){
 		require "{$this->tpl}.{$this->format}.php";
 	}
 }
 /**
  * 该response没有模板文件，只输出一些字符串，用于那些没有html模板只返回简单数据的地方如json，xml
- * 
+ *
  */
 class YZE_Notpl_View extends YZE_View_Adapter {
 	private $html;
@@ -261,13 +241,13 @@ class YZE_Notpl_View extends YZE_View_Adapter {
 /**
  * layout指定义视图响应的数据定义格式，比如输出html是<html>....</html>，
  * 输出xml的格式是<xml>...</xml>，json是{}等等，
- * 
+ *
  * layout也是视图响应，也包含模板，它在定义的响应数据格式中加上请求的视图的内容，这其中有一些约定：
  * layout模板中的content_for_layout指的是请求的视图输出内容。
  * content_for_layout是固定的、表示视图内容的变量
  * 其它的需要在layout中显示的变量，可以在controller中通过set_view_data设置后，
- * 在layout模板中通过$this->view->the_data()取出来。
- * 
+ * 在layout模板中通过$this->view->get_data()取出来。
+ *
  * @author liizii
  *
  */
@@ -279,7 +259,7 @@ class YZE_Layout extends YZE_View_Adapter{
 		$this->view 	= $view;
 		$this->layout 	= $layout;
 	}
-	
+
 	protected function display_self(){
 		ob_start();
 		$this->view->output();

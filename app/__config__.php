@@ -1,5 +1,5 @@
 <?php
-define("DEVELOP_MODE",  true);
+define("YZE_DEVELOP_MODE",  true);
 
 class App_Module extends YZE_Base_Module{
 

@@ -178,11 +178,13 @@ class $class extends YZE_Resource_Controller {
 
 			if($method == "get" && $this->view_format){
 				$this->create_view();
+				$this->create_layout();
 			}
 		}
 		
 		if(!$this->novalidate){
 			$this->create_validate();
+			$this->create_validate_test();
 		}
 	
 		$contents = file_get_contents($controller_file);
@@ -206,11 +208,11 @@ class $class extends YZE_Resource_Controller {
 	protected function create_view(){
 		$module = $this->module_name;
 		$controller = $this->controller;
-		$format = explode(" ", $this->view_format);
+		$formats = explode(" ", $this->view_format);
 		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/views");
-		foreach ($format as $_format){
+		foreach ($formats as $format){
 			$view_file_path = dirname(dirname(__FILE__))
-			."/app/modules/". $module."/views/{$controller}.{$_format}.php";
+			."/app/modules/". $module."/views/{$controller}.{$format}.php";
 			$view_file_content = "<?php
 /**
  * 视图的描述
@@ -220,10 +222,31 @@ class $class extends YZE_Resource_Controller {
 ?>
 
 this is {$controller} view";
-			echo("create view :\t\t\t");
+			echo("create view {$controller}.{$format}.php:\t\t\t");
 			$this->create_file($view_file_path, $view_file_content);
 		}
 	}
+	
+	protected function create_layout(){
+		$module = $this->module_name;
+		$controller = $this->controller;
+		$formats = explode(" ", $this->view_format);
+		
+		foreach ($formats as $format){
+			$layout = dirname(dirname(__FILE__))."/app/components/layouts/{$format}.layout.php";
+			if(!file_exists($layout)){
+				$layout_file_content = "<?php
+				/**
+				* {$format}布局
+				*/
+				?>
+				echo \$yze_content_of_layout";
+				echo("create layout {$format} :\t\t\t");
+				$this->create_file($layout, $layout_file_content);
+			}
+		}
+	}
+	
 	protected function create_validate(){
 		$module 	= $this->module_name;
 		$controller = $this->controller;
@@ -266,6 +289,28 @@ class ".YZE_Object::format_class_name($controller, "Validate")." extends YZEVali
 }?>";
 		echo("create validate :\t\t");
 		$this->create_file($validate_file_path, $validate_file_content);
+	}
+
+	protected function create_validate_test(){
+		$module 	= $this->module_name;
+		$controller = $this->controller;
+		$this->check_dir(dirname(dirname(__FILE__))."/tests/". $module);
+	
+		$validate_file_path = dirname(dirname(__FILE__))."/tests/". $module."/{$controller}_validate.class.phpt";
+		
+		$test_file_content = "--TEST--
+{$controller}_validate class Controller Unit Test
+--FILE--
+<?php
+ini_set(\"display_errors\",0);
+chdir(dirname(dirname(dirname(__FILE__))).\"/app/public_html\");
+include \"init.php\";
+include \"load.php\";
+//write you test code here
+?>
+--EXPECT--";
+		echo("create validate test :\t\t");
+		$this->create_file($validate_file_path, $test_file_content);
 	}
 }
 ?>

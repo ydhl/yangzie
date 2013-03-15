@@ -55,12 +55,22 @@ class YZE_Request extends YZE_Object
 	 * 返回的只是uri中的路径部分，query部分不包含，如/people-1/question-2/answers?p=3
 	 * 只返回/people-1/question-2/answers
 	 * 返回的url进行了urldecode
+	 * 
+	 * 如果使用了rewrite则url请实际的地址，如果使用的是path_info，则url为path_info部分，如果是普通的请求，则url是yze_action参数值
+	 * 因为采用的是单入口，所以对于后两种请求，真实的url都是domain/index.php
+	 * 
 	 * @return string
 	 * @author liizii, <libol007@gmail.com>
 	 */
 	public function the_uri()
 	{
-		$uri = do_filter(YZE_HOOK_FILTER_URI,urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)));
+		switch (YZE_REWRITE_MODE){
+			case YZE_REWRITE_MODE_PATH_INFO:	$uri = $_SERVER['PATH_INFO']; break;
+			case YZE_REWRITE_MODE_REWRITE: 	$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);break;
+			case YZE_REWRITE_MODE_NONE:
+			default : $uri = $this->get_from_get("yze_action", "/");
+		}
+		$uri = do_filter(YZE_HOOK_FILTER_URI,urldecode($uri));
 		return is_array($uri) ? "/".implode("/",$uri) : $uri;
 	}
 	
@@ -277,7 +287,7 @@ class YZE_Request extends YZE_Object
 		$routers = YZE_Router::get_instance()->get_routers();
 		
 		$config_args 		= self::parse_url($routers, $uri);
-		
+
 		$this->set_vars(@(array)$config_args['args']);
 		return $this;
 	}
@@ -504,7 +514,7 @@ class YZE_Request extends YZE_Object
 
 
 	/**
-	 *
+	 * 根据路由配置解析当前url，如果路由中没有配置，则根据默认的地址格式解析：/module/controller/vars.format
 	 *
 	 * @param unknown_type $routers
 	 * @param unknown_type $uri
@@ -516,19 +526,30 @@ class YZE_Request extends YZE_Object
 		$_ = array();
 		foreach ($routers as $module=>$router_info) {
 			foreach ($router_info as $router => $acontroller) {
-				if (preg_match("#^/{$router}(\.(?P<__yze_resp_format__>[^/]+)$|/?$)#i", $uri, $matches)) {
-					$_['controller_name'] = strtolower($acontroller['controller']);
+				$_['controller_name'] = strtolower($acontroller['controller']);
+				$_['module'] = $module;
+				
+				if (preg_match("#^/{$router}\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches) || 
+				preg_match("#^/{$router}/?$#i", $uri, $matches)) {
 					$config_args = $matches;
 					foreach ((array)$acontroller['args'] as $name => $value){
 						$config_args[$name] = $value;
 					}
 					$_['args'] 	= @$config_args;
-					$_['module'] = $module;
+					
 					return $_;
 				}
 			}
 		}
 		
+		//默认按照 /module/controller/var/ 解析
+		$uri_split 				= explode("/", trim($uri, "/"));
+		$_['module'] 			= strtolower($uri_split[0]);
+		$_['controller_name']	= self::the_val(strtolower(@$uri_split[1]), "index");
+		
+		if (preg_match("#\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches)) {
+			$_['args'] 	= $matches;
+		}
 		return $_;
 	}
 	

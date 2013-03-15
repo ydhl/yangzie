@@ -11,7 +11,7 @@ class YZE_Dispatch extends YZE_Object{
 
 	private function __construct()
 	{
-		$this->conn = YZE_DBAImpl::getDBA();
+		
 	}
 
 	/**
@@ -51,41 +51,22 @@ class YZE_Dispatch extends YZE_Object{
 	 * 
 	 * @return
 	 */
-	public function init($controller = null){
+	public function init($uri = null){
 		$request = YZE_Request::get_instance();
 		$request_method = $request->method();
 		
-		if( ! $controller ){
-			//默认按照 /module/controller/var/ 解析
-			if (@$_SERVER['PATH_INFO']){
-				$uri = $_SERVER['PATH_INFO'];
-			}else{
-				$uri = $request->the_uri();
-			}
+		if( ! $uri ){
+			$uri = $request->the_uri();
+		}
 			
-			$uri_split 			= explode("/", trim($uri, "/"));
-			$curr_module 		= strtolower($uri_split[0]);
-			$controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");
-			
-			$routers = YZE_Router::get_instance()->get_routers();
-			
-			//根据配置中的routes来映射
-			$router_info 		= YZE_Request::parse_url($routers, $uri);
+		$routers = YZE_Router::get_instance()->get_routers();
+		$router_info 		= YZE_Request::parse_url($routers, $uri);
 
-			if($router_info){
-				$controller_name 	= @$router_info['controller_name'];
-				$curr_module 		= @$router_info['module'];
-				$config_args 		= @$router_info['args'];
-			}
-		}else{//指定了控制器，通常来之于entry里面的文件
-			$uri_split 				= explode("/", trim($controller, "/"));
-			$def_curr_module 		= strtolower($uri_split[0]);
-			$def_controller_name= $this->the_val(strtolower(@$uri_split[1]), "index");
-				
-			if($def_curr_module){
-				$this->set_module($def_curr_module)->set_controller($def_controller_name);
-			}
-		} 
+		if($router_info){
+			$controller_name 	= @$router_info['controller_name'];
+			$curr_module 		= @$router_info['module'];
+		}
+
 		
 		if (  @$curr_module && $controller_name) {
 			$this->set_module($curr_module)->set_controller($controller_name);

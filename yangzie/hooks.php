@@ -31,7 +31,11 @@ define('YZE_HOOK_AFTER_PUT','do_after_put');
 define('YZE_HOOK_AFTER_DELETE','do_after_delete');
 define('YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token');
 define('YZE_HOOK_TRANSACTION_COMMIT','transaction_commit');
-define('YZE_HOOK_FILTER_URI','filter_uri');#uri过滤，传入uri分离后的数据或者就是uri字符串本身
+/**
+ * 解析地址得到请求url，如module/controller/var
+ * uri过滤，传入uri分离后的数据或者就是uri字符串本身
+ */
+define('YZE_HOOK_FILTER_URI','filter_uri');
 
 final class YZE_Hook{
 	private $listeners = array();

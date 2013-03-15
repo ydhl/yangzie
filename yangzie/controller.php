@@ -76,16 +76,18 @@ abstract class YZE_Resource_Controller extends YZE_Object
 
 	/**
 	 *
-	 * 取得缓存的数据与设置的试图数据
+	 * 取得缓存的数据与设置的视图数据
 	 *
-	 * @return Array array("cache"=>,"view"=>)
+	 * @return Array array()
 	 */
 	public function get_data()
 	{
 		$request = YZE_Request::get_instance();
-		$view_data['cache'] = YZE_Session::get_instance()->get_uri_datas($request->the_uri());
-		$view_data['view'] = $this->get_view_data();
-		return $view_data;
+		$cache = YZE_Session::get_instance()->get_uri_datas($request->the_uri());
+		if(!$cache){
+			return $this->get_View_Data();
+		}
+		return array_merge($cache, $this->get_view_data());
 	}
 
 	public final  function has_response_cache(){
@@ -140,9 +142,9 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		if (is_a($response, "YZE_Cacheable")) {
 			$response->set_cache_config($this->cache_config);//内容协商的缓存控制
 		}
-		//如果客户端是ajax请求，则用json模板，约定ajax请求时不会要求得到整个布局界面，只是取得某一部分
+		//如果客户端是ajax请求，则用blank模板，约定ajax请求时不会要求得到整个布局界面，只是取得某一部分
 		if(@$_SERVER['HTTP_X_YZE_REQUEST_CLIENT'] == "AJAX"){
-			$this->layout = "json";
+			$this->layout = "blank";
 		}
 		return $response;
 	}
@@ -250,10 +252,11 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		if (!$response) {
 			$response = new YZE_Redirect($request->the_uri(), $this);
 		}
+
 		//post后重定向，把post处理中设置的数据保存下来，重定向到新页面后再取出来显示
 		//因为post不提供显示视图输出，所以这些数据需要在重定向后的get请求返回的视图中显示
 		//这主要是post处理方法在向get方法中共享数据的方式
-		if ($this->get_view_data() && is_a($response, "Redirect")) {//有的post提交返回 的是YZE_Notpl_View
+		if ($this->get_view_data() && is_a($response, "YZE_Redirect")) {//有的post提交返回 的是YZE_Notpl_View
 			YZE_Session::get_instance()->save_uri_datas($response->the_uri(), $this->get_view_data());
 		}
 		//成功处理，清除数据
@@ -262,7 +265,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 
 		//如果客户端是ajax请求，则返回post_result_of_ajax数据，不做重定向
 		if(@$_SERVER['HTTP_X_YZE_REQUEST_CLIENT'] == "AJAX"){
-			$this->layout = "json";
+			$this->layout = "blank";
 			return new YZE_Notpl_View(json_encode($this->post_result_of_ajax()), $this);
 		}
 		return $response;
@@ -308,15 +311,15 @@ class YZE_Default_Controller extends YZE_Resource_Controller{
 class YZE_Exception_Controller extends YZE_Resource_Controller{
 	public function get(){
 		$this->layout = "error";
-		if(DEVELOP_MODE){
-			return new YZE_Simple_View(YANGZIE."/exception", array("view"=>array("exception"=>$this->exception)), $this);
+		if(defined("YZE_DEVELOP_MODE") && YZE_DEVELOP_MODE ){
+			return new YZE_Simple_View(YANGZIE."/exception", array("exception"=>$this->exception), $this);
 		}
 		
 		if(!$this->exception){
-			return new YZE_Simple_View(APP_VIEWS_INC."500",  array("view"=>array("exception"=>$this->exception)), $this);
+			return new YZE_Simple_View(APP_VIEWS_INC."500",  array("exception"=>$this->exception), $this);
 		}
 		
-		return new YZE_Simple_View(APP_VIEWS_INC.$this->exception->error_number(), array("view"=>array("exception"=>$this->exception)), $this);
+		return new YZE_Simple_View(APP_VIEWS_INC.$this->exception->error_number(), array("exception"=>$this->exception), $this);
 	}
 	private $exception;
 	public function set_exception(\Exception $e){

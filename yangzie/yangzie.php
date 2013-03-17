@@ -50,7 +50,7 @@ class YZE_Object{
 	
 	public static function log($msg,$tag=null){
 		$messages = "[".($tag ? $tag : "yangzie")." ".date('y-m-d H:i:s')."] {$msg}\r\n";
-		$dir = APP_PATH."/logs/log-".date("Y-m-d");
+		$dir = YZE_APP_PATH."/logs/log-".date("Y-m-d");
 
 		$log = @fopen($dir,"a+");
 		if(empty($log)){

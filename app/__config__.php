@@ -1,5 +1,5 @@
 <?php
-define("YZE_DEVELOP_MODE",  true);
+
 
 class App_Module extends YZE_Base_Module{
 
@@ -20,8 +20,8 @@ class App_Module extends YZE_Base_Module{
 		//return empty array() if everything is ok
 		//return array  of  error message while has some error
 		$error = array();
-		if ( !is_writable(APP_CACHES_PATH)){
-			$error[] = vsprintf(__("%s 目录不可写"), APP_CACHES_PATH);
+		if ( !is_writable(YZE_APP_CACHES_PATH)){
+			$error[] = vsprintf(__("%s 目录不可写"), YZE_APP_CACHES_PATH);
 		}
 		return $error;
 	}

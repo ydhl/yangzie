@@ -25,11 +25,11 @@ function yze_isimage($file){
  * @param unknown_type $path
  */
 function yze_get_abs_path($path){
-	return INSTALL_PATH.ltrim($path, "/");
+	return YZE_INSTALL_PATH.ltrim($path, "/");
 }
 
 function yze_remove_abs_path($path){
-	return "/".ltrim(strtr($path, array(INSTALL_PATH=>'',DS=>"/")),"/");
+	return "/".ltrim(strtr($path, array(YZE_INSTALL_PATH=>'',DS=>"/")),"/");
 }
 
 /**

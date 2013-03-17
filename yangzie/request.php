@@ -545,7 +545,12 @@ class YZE_Request extends YZE_Object
 		//默认按照 /module/controller/var/ 解析
 		$uri_split 				= explode("/", trim($uri, "/"));
 		$_['module'] 			= strtolower($uri_split[0]);
-		$_['controller_name']	= self::the_val(strtolower(@$uri_split[1]), "index");
+		//把controller-name 转换成controller_name
+		if(@$uri_split[1]){
+			$_['controller_name']	= strtolower(self::the_val(str_replace("-", "_", $uri_split[1]), "index"));
+		}else{
+			$_['controller_name']	= "index";
+		}
 		
 		if (preg_match("#\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches)) {
 			$_['args'] 	= $matches;

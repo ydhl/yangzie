@@ -195,8 +195,8 @@ function display_mvc_wizard(){
 }
 
 function is_controller_exists($controller, $module){
-	if(file_exists(APP_MODULES_INC.$module."/__module__.php")){
-		include_once APP_MODULES_INC.$module."/__module__.php";
+	if(file_exists(YZE_APP_MODULES_INC.$module."/__module__.php")){
+		include_once YZE_APP_MODULES_INC.$module."/__module__.php";
 		$class = ucfirst(strtolower($module))."_Module";
 		$object = new $class();
 		return $object->get_uris_of_controller($controller);

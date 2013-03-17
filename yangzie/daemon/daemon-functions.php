@@ -45,7 +45,7 @@ function yze_daemon_status()
 
 function yze_getpid()
 {
-	$pid_file 	= APP_PATH."logs/pid";
+	$pid_file 	= YZE_APP_PATH."logs/pid";
 	
 	if(file_exists($pid_file)){
 		$pid = trim(file_get_contents($pid_file));
@@ -63,8 +63,8 @@ function yze_getpid()
 
 function clear_pid()
 {
-	if(file_exists(APP_PATH."logs/pid")){
-		@unlink(APP_PATH."logs/pid");
+	if(file_exists(YZE_APP_PATH."logs/pid")){
+		@unlink(YZE_APP_PATH."logs/pid");
 		return true;
 	}
 	return false;
@@ -72,7 +72,7 @@ function clear_pid()
 
 function yze_savepid($pid)
 {
-	$f = fopen(APP_PATH."logs/pid", "w+");
+	$f = fopen(YZE_APP_PATH."logs/pid", "w+");
 	fwrite($f, $pid);
 	fclose($f);
 }

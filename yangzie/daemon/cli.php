@@ -7,8 +7,8 @@ include_once 'init.php';
 include_once 'load.php';
 
 //TODO 可能有多个jobs文件
-if(file_exists(APP_PATH.'daemon-jobs/jobs.php')){
-	include APP_PATH.'daemon-jobs/jobs.php';
+if(file_exists(YZE_APP_PATH.'daemon-jobs/jobs.php')){
+	include YZE_APP_PATH.'daemon-jobs/jobs.php';
 }else{
 	include YANGZIE.'/daemon/jobs_demo.php';
 }
@@ -78,8 +78,8 @@ function yze_run_daemon()
 
 function yze_daemon_log($msg)
 {
-	mkdir(APP_PATH."logs");
-	$dir = APP_PATH."logs/daemon-log-".date("Y-m-d");
+	mkdir(YZE_APP_PATH."logs");
+	$dir = YZE_APP_PATH."logs/daemon-log-".date("Y-m-d");
 	$log = @fopen($dir,"a+");
 	if(empty($log)){
 		return false;

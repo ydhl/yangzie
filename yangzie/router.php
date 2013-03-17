@@ -27,8 +27,8 @@ class YZE_Router{
 
 	public static function load_routers(){
 
-		foreach(glob(APP_MODULES_INC."*") as $module){
-			if(file_exists("{$module}/__module__.php")){
+		foreach(glob(YZE_APP_MODULES_INC."*") as $module){
+			if(@file_exists("{$module}/__module__.php")){
 				include_once "{$module}/__module__.php";
 				$module_name = basename($module);
 				$class = ucfirst(strtolower($module_name))."_Module";

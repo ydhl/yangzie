@@ -144,50 +144,6 @@ class YZE_Session{
 		return @$_SESSION['yze']['post_cache'][sha1($uri)];
 	}
 	
-	////////////// 下面为应用特有的 ////////////////
-
-	public function save_verify_code($uri_base64, $code)
-	{
-		$this->set_($uri_base64."_verifycode", $code);
-		return $this;
-	}
-
-	public function get_verify_code($uri_base64)
-	{
-		return $this->get_($uri_base64."_verifycode");
-	}
-
-	public function save_signined_user($user_key)
-	{
-		$_SESSION[Sessiong_Const::LOGIN_USER] = $user_key;
-		return $this;
-	}
-
-	/**
-	 * @return User_Model
-	 */
-	public function get_signined_user()
-	{
-		return @$_SESSION[Sessiong_Const::LOGIN_USER];
-	}
-
-	public function signout()
-	{
-		unset($_SESSION[Sessiong_Const::LOGIN_USER]);
-		return $this;
-	}
-
-	public function save_back_uri(/*string*/$uri){
-		$_SESSION['yze']['back_uri'] = $uri;
-	}
-
-	public function get_back_uri(){
-		return @$_SESSION['yze']['back_uri'];
-	}
-
-	public function clear_back_uri(){
-		unset($_SESSION['yze']['back_uri']);
-	}
 }
 
 ?>

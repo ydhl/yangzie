@@ -90,8 +90,8 @@ class YZE_Dispatch extends YZE_Object{
 	public function set_controller($controller){
 		$this->controller_class = self::format_class_name($controller, "Controller");
 		$class = $this->controller_class;
-		if(file_exists(APP_PATH."modules/".$this->module()."/controllers/".$this->controller_file())){
-			include_once APP_PATH."modules/".$this->module()."/controllers/".$this->controller_file();
+		if(file_exists(YZE_APP_PATH."modules/".$this->module()."/controllers/".$this->controller_file())){
+			include_once YZE_APP_PATH."modules/".$this->module()."/controllers/".$this->controller_file();
 		}
 		if(class_exists($this->controller_class)){
 			$this->controller_obj = new $class;
@@ -156,7 +156,7 @@ class YZE_Dispatch extends YZE_Object{
 	
 	public function view_path()
 	{
-		return APP_PATH."modules/".$this->module()."/views";
+		return YZE_APP_PATH."modules/".$this->module()."/views";
 	}
 }
 ?>

@@ -39,10 +39,10 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		foreach ((array)$this->models as $model) {
 			if (stripos($model, ".")) {
 				$pathinfo = explode(".", $model);
-				include APP_MODULES_INC.$pathinfo[0]."/models/".strtolower($pathinfo[1]).".class.php";
+				include YZE_APP_MODULES_INC.$pathinfo[0]."/models/".strtolower($pathinfo[1]).".class.php";
 				continue;
 			}
-			if ( !include APP_MODULES_INC."{$this->module_name}/models/".strtolower($model).".class.php" ){
+			if ( !include YZE_APP_MODULES_INC."{$this->module_name}/models/".strtolower($model).".class.php" ){
 				continue;
 			}
 		}
@@ -91,7 +91,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 	}
 
 	public final  function has_response_cache(){
-		$cahce_file = APP_CACHES_PATH.$this->get_response_guid();
+		$cahce_file = YZE_APP_CACHES_PATH.$this->get_response_guid();
 		if(file_exists($cahce_file) && $this->get_response_guid()){
 			return file_get_contents($cahce_file);
 		}
@@ -129,8 +129,8 @@ abstract class YZE_Resource_Controller extends YZE_Object
 
 		$response = $this->get();
 
-		$view_data['cache'] = YZE_Session::get_instance()->get_uri_datas($request->the_uri());
-		$view_data['view'] = $this->get_view_data();
+		$cache = YZE_Session::get_instance()->get_uri_datas($request->the_uri());
+		$view_data  = $cache ? array_merge($this->get_view_data(), $cache) : $this->get_view_data();
 		if (!$response) {
 			$view = $dispatch->view_path()."/". substr(strtolower(get_class($this)), 0, -11);
 			$format = $request->get_output_format();
@@ -311,9 +311,12 @@ class YZE_Default_Controller extends YZE_Resource_Controller{
 class YZE_Exception_Controller extends YZE_Resource_Controller{
 	public function get(){
 		$this->layout = "error";
+		$this->output_status_code($this->exception ? $this->exception->error_number() : 0);
 		if(defined("YZE_DEVELOP_MODE") && YZE_DEVELOP_MODE ){
 			return new YZE_Simple_View(YANGZIE."/exception", array("exception"=>$this->exception), $this);
 		}
+		
+		
 		
 		if(!$this->exception){
 			return new YZE_Simple_View(APP_VIEWS_INC."500",  array("exception"=>$this->exception), $this);
@@ -322,8 +325,14 @@ class YZE_Exception_Controller extends YZE_Resource_Controller{
 		return new YZE_Simple_View(APP_VIEWS_INC.$this->exception->error_number(), array("exception"=>$this->exception), $this);
 	}
 	private $exception;
-	public function set_exception(\Exception $e){
+	public function set_exception(Exception $e){
 		$this->exception = $e;
+	}
+	private function output_status_code($error_number){
+		switch ($error_number){
+			case 500: header("HTTP/1.0 500 Internal Server Error"); return;
+			case 404: header("HTTP/1.0 404 Not Found");return;
+		}
 	}
 }
 ?>

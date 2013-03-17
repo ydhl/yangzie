@@ -103,7 +103,7 @@ function yze_get_post_error()
 /**
  * 把传入的文件压缩成一个文件后返回该文件的uri，比如把所有的css文件压缩成一个；
  * js文件压缩成一个。该api会考虑缓存，如果所传入的文件没有变化，则直接返回之前压缩的文件
- * 压缩的文件存放在APP_CACHES_PATH / compressed 中， 缓存文件的命名及内容依赖于传入的文件
+ * 压缩的文件存放在YZE_APP_CACHES_PATH / compressed 中， 缓存文件的命名及内容依赖于传入的文件
  * 顺序。
  * 
  * 该api参数是可变参数，传入每个文件的操作系统绝对路径。 
@@ -120,7 +120,7 @@ function yze_compress_file(){
 	if(!$num_args)return;
 	
 	$cache_name = ""; $version=""; $cache_content = "";
-	yze_make_dirs(APP_CACHES_PATH."compressed");
+	yze_make_dirs(YZE_APP_CACHES_PATH."compressed");
 	
 	for ($i=0; $i<$num_args; $i++){
 		$file_name 		= func_get_arg($i);
@@ -132,7 +132,7 @@ function yze_compress_file(){
 	if(!$cache_name)return;
 	
 	$ext = pathinfo($file_name, PATHINFO_EXTENSION);
-	$cache_name = APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-" . md5($version) . "." . $ext;
+	$cache_name = YZE_APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-" . md5($version) . "." . $ext;
 	
 	if(yze_isfile($cache_name)) return yze_remove_abs_path($cache_name);//not changed
 	
@@ -141,8 +141,8 @@ function yze_compress_file(){
 	}
 	
 	//删除之前的缓存文件，如果有的话
-	foreach (glob(APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-*." . $ext) as $old){
-		@unlink(APP_CACHES_PATH . "compressed/".$old);
+	foreach (glob(YZE_APP_CACHES_PATH . "compressed/" . md5($cache_name) . "-*." . $ext) as $old){
+		@unlink(YZE_APP_CACHES_PATH . "compressed/".$old);
 	}
 	
 	file_put_contents($cache_name, $cache_content);

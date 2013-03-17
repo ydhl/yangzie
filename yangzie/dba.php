@@ -16,12 +16,12 @@ class YZE_DBAImpl extends YZE_Object
 
 		if(!$app_module->db_name)return;
 
-		$this->conn =  new \PDO(
-				'mysql:dbname='.$app_module->get_module_config('db_name').';host='.$app_module->get_module_config('db_host'),
+		$this->conn =  new PDO(
+				'mysql:dbname='.$app_module->get_module_config('db_name').';port='.$app_module->get_module_config('db_port').';host='.$app_module->get_module_config('db_host'),
 				$app_module->get_module_config('db_user'),
 				$app_module->get_module_config('db_psw')
 		);
-		$this->conn->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
+		$this->conn->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
 		$this->conn->query('SET NAMES '.$app_module->get_module_config('db_charset'));
 	}
 

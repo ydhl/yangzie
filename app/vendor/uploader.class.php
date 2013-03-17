@@ -45,7 +45,7 @@ class Uploader{
 	private function addWatermark($dist_path_filename){	
 		list($width, $height, $type, $attr) = @getimagesize($dist_path_filename);
 		if($type == IMAGETYPE_JPEG){
-			$src_im = imagecreatefromgif(INSTALL_PATH."28td.gif");//水印图片.
+			$src_im = imagecreatefromgif(YZE_INSTALL_PATH."28td.gif");//水印图片.
 		    $pct = 20;//透明度  0 - 100.100为为透明.
 			$dst_im = imagecreatefromjpeg($dist_path_filename);
 			$dst_x = imagesx($dst_im) - imagesx($src_im)-10;//距离右边10

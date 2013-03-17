@@ -17,22 +17,22 @@ define("YANGZIE", "../../yangzie");
 define("DS", DIRECTORY_SEPARATOR);
 define("PS", PATH_SEPARATOR);
 
-define("APP_INC", "../");//应用代码目录名称
-define("APP_MODULES_INC", "../modules/");//应用代码目录名称
-define("APP_LAYOUTS_INC", "../components/layouts/");
+define("YZE_APP_INC", "../");//应用代码目录名称
+define("YZE_APP_MODULES_INC", "../modules/");//应用代码目录名称
+define("YZE_APP_LAYOUTS_INC", "../components/layouts/");
 define("APP_VIEWS_INC", "../components/views/");
-define("APP_MODELS_INC", "../components/models/");
-define("APP_VALIDATES_INC", "../components/validates/");
 
-define("INSTALL_PATH", dirname(__FILE__)."/../../");//安装的目录路径
-define("APP_PATH", INSTALL_PATH."app".DS);//应用代码路径
-define("APP_CACHES_PATH", INSTALL_PATH."app".DS."public_html".DS."caches".DS);//应用代码路径
-define("ENTRY_PATH", INSTALL_PATH."app".DS."public_html".DS."entry".DS);//多入口访问文件目录
+
+define("YZE_INSTALL_PATH", dirname(__FILE__)."/../../");//安装的目录路径
+define("YZE_APP_PATH", YZE_INSTALL_PATH."app".DS);//应用代码路径
+define("YZE_APP_CACHES_PATH", YZE_INSTALL_PATH."app".DS."public_html".DS."caches".DS);//应用代码路径
+
 //path_info, rewrite, none
 define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');
 define('YZE_REWRITE_MODE_REWRITE', 'yze_rewrite_mode_rewrite');
 define('YZE_REWRITE_MODE_NONE', 'yze_rewrite_mode_none');
 define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_NONE);
+define("YZE_DEVELOP_MODE",  true);
 
 ini_set('include_path', get_include_path().PS."../..");
 

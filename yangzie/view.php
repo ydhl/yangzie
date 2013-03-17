@@ -264,7 +264,7 @@ class YZE_Layout extends YZE_View_Adapter{
 		ob_start();
 		$this->view->output();
 		$yze_content_of_layout = ob_get_clean();
-		include_once APP_LAYOUTS_INC."{$this->layout}.layout.php";
+		include_once YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
 	}
 }
 ?>

@@ -4,22 +4,22 @@
  */
 function yze_load_app(){
 	#加载app配置
-	if(!file_exists(APP_PATH."__config__.php")){
+	if(!file_exists(YZE_APP_PATH."__config__.php")){
 		die(__("app/__config__.php not found"));
 	}
-	include_once APP_INC.'__config__.php';
-	@include_once APP_INC.'__aros_acos__.php';
+	include_once YZE_APP_INC.'__config__.php';
+	@include_once YZE_APP_INC.'__aros_acos__.php';
 	$app_module = new App_Module();
 
 	$module_include_files = $app_module->get_module_config('include_files');
 	foreach((array)$module_include_files as $path){
 		include_once $path;
 	}
-	foreach(glob(APP_MODULES_INC."*") as $module){
-		if(file_exists("{$module}/__module__.php")){
+	foreach(glob(YZE_APP_MODULES_INC."*") as $module){
+		if(@file_exists("{$module}/__module__.php")){
 			include_once "{$module}/__module__.php";
 		}
-		if(file_exists("{$module}/__hooks__.php")){
+		if(@file_exists("{$module}/__hooks__.php")){
 			include_once "{$module}/__hooks__.php";
 		}
 	}
@@ -171,8 +171,8 @@ function yze_run($controller = null){
 		$layout = new YZE_Layout($controller_obj->get_layout(), $response, $controller_obj);
 		 //输出最终的视图 
 		$output = $layout->get_output();
-		if(($guid = $controller_obj->get_response_guid()) && !file_exists(APP_CACHES_PATH.$guid)){
-			file_put_contents(APP_CACHES_PATH.$guid, $output);
+		if(($guid = $controller_obj->get_response_guid()) && !file_exists(YZE_APP_CACHES_PATH.$guid)){
+			file_put_contents(YZE_APP_CACHES_PATH.$guid, $output);
 		}
 		echo $output;
 		

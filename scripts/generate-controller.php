@@ -25,7 +25,6 @@ class Generate_Controller_Script extends AbstractScript{
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
 
-		$this->parse_uri_args();
 		//$this->save_entry();
 		$this->save_class();
 		$this->save_test();
@@ -81,14 +80,7 @@ class Generate_Controller_Script extends AbstractScript{
 		$str .= $tab.")".($is_end ? ";" : ",\r\n");
 		return $str;
 	}
-	private function parse_uri_args(){
-		if(preg_match_all("/\?P\<(?P<args>[^\>]+)\>/i", $this->uri, $matches)){
-			foreach($matches['args'] as $arg){
-				$this->uri_args[] = 'r:'.$arg;
-			}
-		}
 	
-	}
 	
 	private function save_test(){
 		$module = $this->module_name;
@@ -236,11 +228,12 @@ this is {$controller} view";
 			$layout = dirname(dirname(__FILE__))."/app/components/layouts/{$format}.layout.php";
 			if(!file_exists($layout)){
 				$layout_file_content = "<?php
-				/**
-				* {$format}布局
-				*/
-				?>
-				echo \$yze_content_of_layout";
+/**
+  * {$format}布局
+  */
+echo \$yze_content_of_layout
+?>
+";
 				echo("create layout {$format} :\t\t\t");
 				$this->create_file($layout, $layout_file_content);
 			}

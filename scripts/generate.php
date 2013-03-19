@@ -223,14 +223,16 @@ function display_model_wizard(){
 	while (!is_validate_name(($model = get_input()))){
 		echo get_colored_text(wrap_output(__("\t类名遵守PHP变量命名规则,  请重输:  ")), "red");
 	}
-	echo wrap_output(_("3. (3/4)功能模块名,  遵守PHP变量命名规则:  "));
+	echo wrap_output(__("3. (3/4)功能模块名,  遵守PHP变量命名规则:  "));
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t功能模块名,  请重输:  ")), "red");
 	}
 
-	echo wrap_output(__("4. (4/4)同步方向(model or table), 默认table:  "));
-	while (!in_array(($base = get_input()), array("model","table"))){
+
+	echo wrap_output(__("4. (4/4)同步方向(model: 基于model ;  table: 基于table), 默认table:  "));
+	while (!in_array(($base = get_input()), array("","model","table"))){
 		echo get_colored_text(wrap_output(__("\t请输入model 或 table:  ")), "red");
+		$base = !$base ? "table" : $base;
 	}
 	
 	return array(

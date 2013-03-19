@@ -41,6 +41,7 @@ class Generate_Model_Script extends AbstractScript{
 			$app_module->get_module_config("db_psw")
 		);
 		mysql_select_db($app_module->get_module_config("db_name"),$db);
+		mysql_query("set names utf8",$db);
 		$result = mysql_query("show full columns from $table",$db);
 		
 		if (!$result) {

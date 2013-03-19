@@ -357,7 +357,7 @@ class YZE_Request extends YZE_Object
 
 			//验证请求的方法是否有权限调用
 			$acl = YZE_ACL::get_instance();
-			$aco_name = "/".$dispatch->module()."/".$dispatch->get_controller()."/".$req_method;
+			$aco_name = "/".$dispatch->module()."/".$dispatch->controller()."/".$req_method;
 			if(!$acl->check_byname($authobject->get_request_aro_name(), $aco_name)){
 				throw new YZE_Permission_Deny_Exception(vsprintf(__("没有访问资源 <strong>%s</strong> 的权限"),
 						array(yze_get_aco_desc($aco_name))));
@@ -547,7 +547,8 @@ class YZE_Request extends YZE_Object
 		$_['module'] 			= strtolower($uri_split[0]);
 		//把controller-name 转换成controller_name
 		if(@$uri_split[1]){
-			$_['controller_name']	= strtolower(self::the_val(str_replace("-", "_", $uri_split[1]), "index"));
+			$path = self::the_val(str_replace("-", "_", $uri_split[1]), "index");
+			$_['controller_name']	= pathinfo($path, PATHINFO_FILENAME );
 		}else{
 			$_['controller_name']	= "index";
 		}

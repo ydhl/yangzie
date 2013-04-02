@@ -18,18 +18,14 @@ function yze_isimage($file){
 	return in_array(strtolower(pathinfo($file,PATHINFO_EXTENSION)), $type);
 }
 
-/**
- *
- * /形式的url路径转换成在服务器上的绝对路径
- *
- * @param unknown_type $path
- */
-function yze_get_abs_path($path){
-	return YZE_INSTALL_PATH.ltrim($path, "/");
+function yze_get_abs_path($path, $in){
+	return $in.strtr(ltrim($path, "/"), array("/"=>DS));
 }
 
-function yze_remove_abs_path($path){
-	return "/".ltrim(strtr($path, array(YZE_INSTALL_PATH=>'',DS=>"/")),"/");
+function yze_remove_abs_path($path, $in){
+	$path = strtr($path, array(DS=>"/"));
+	$in =  strtr($in, array(DS=>"/"));
+	return "/".ltrim(strtr($path, array($in=>'')),"/");
 }
 
 /**

@@ -109,6 +109,20 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		//pass
 	}
 
+	protected function getResponse($view_tpl=null){
+		$dispatch = YZE_Dispatch::get_instance();
+		$request = YZE_Request::get_instance();
+		
+		$cache = YZE_Session::get_instance()->get_uri_datas($request->the_uri());
+		$view_data  = $cache ? array_merge($this->get_view_data(), $cache) : $this->get_view_data();
+		
+		$view_tpl = $view_tpl ? $view_tpl : substr(strtolower(get_class($this)), 0, -11);
+		$view = $dispatch->view_path()."/". $view_tpl;
+		$format = $request->get_output_format();
+		
+		return new YZE_Simple_View($view, $view_data, $this, $format);
+	}
+	
 	/**
 	 * 处理get方法.get方法用于显示界面,给出响应
 	 *
@@ -122,19 +136,15 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		do_action(YZE_HOOK_BEFORE_GET, $this);
 		$request = YZE_Request::get_instance();
 		$dispatch = YZE_Dispatch::get_instance();
-		YZE_Session::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
+		//YZE_Session::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
 		if (!method_exists($this, "get")) {
 			throw new YZE_Action_Not_Found_Exception("get");
 		}
 
 		$response = $this->get();
 
-		$cache = YZE_Session::get_instance()->get_uri_datas($request->the_uri());
-		$view_data  = $cache ? array_merge($this->get_view_data(), $cache) : $this->get_view_data();
 		if (!$response) {
-			$view = $dispatch->view_path()."/". substr(strtolower(get_class($this)), 0, -11);
-			$format = $request->get_output_format();
-			$response = new YZE_Simple_View($view, $view_data, $this, $format);
+			$response = $this->getResponse();
 		}
 		if(is_a($response, "YZE_View_Adapter")){
 			$response->check_view();
@@ -206,16 +216,6 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		do_action(YZE_HOOK_BEFORE_DELETE, $this);
 		$request = YZE_Request::get_instance();
 		$session = YZE_Session::get_instance();
-		//多人同时提交表单
-		$yze_model_id       = $request->get_from_post("yze_model_id");
-		$yze_modify_version = $request->get_from_post("yze_modify_version");
-		$yze_model_name     = $request->get_from_post("yze_model_name");
-		$yze_module_name    = $request->get_from_post("yze_module_name");
-
-		if(empty($yze_model_id) || empty($yze_model_name)) {
-			throw new YZE_Model_Update_Conflict_Exception(__("不知道要删除更新的模型名或者id"));
-		}
-
 		return $this->_handle_post();
 	}
 
@@ -245,7 +245,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 			throw new YZE_Action_Not_Found_Exception($method);
 		}
 		//防止表单重复提交
-		$this->_check_request_token($request->get_from_post('yze_request_token'));
+		//$this->_check_request_token($request->get_from_post('yze_request_token'));
 
 		$response = $this->$method();
 		//如果控制器中的方法没有return Redirect，默认通过get转到当前的uri

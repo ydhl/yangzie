@@ -528,7 +528,6 @@ class YZE_Request extends YZE_Object
 			foreach ($router_info as $router => $acontroller) {
 				$_['controller_name'] = strtolower($acontroller['controller']);
 				$_['module'] = $module;
-				
 				if (preg_match("#^/{$router}\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches) || 
 				preg_match("#^/{$router}/?$#i", $uri, $matches)) {
 					$config_args = $matches;
@@ -544,12 +543,14 @@ class YZE_Request extends YZE_Object
 		
 		//默认按照 /module/controller/var/ 解析
 		$uri_split 				= explode("/", trim($uri, "/"));
-		$_['module'] 			= strtolower($uri_split[0]);
+		
 		//把controller-name 转换成controller_name
 		if(@$uri_split[1]){
 			$path = self::the_val(str_replace("-", "_", $uri_split[1]), "index");
 			$_['controller_name']	= pathinfo($path, PATHINFO_FILENAME );
+			$_['module'] 			= strtolower($uri_split[0]);
 		}else{
+			$_['module'] 			= pathinfo($uri_split[0], PATHINFO_FILENAME );
 			$_['controller_name']	= "index";
 		}
 		

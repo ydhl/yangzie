@@ -319,10 +319,10 @@ class YZE_Exception_Controller extends YZE_Resource_Controller{
 		
 		
 		if(!$this->exception){
-			return new YZE_Simple_View(APP_VIEWS_INC."500",  array("exception"=>$this->exception), $this);
+			return new YZE_Simple_View(YZE_APP_VIEWS_INC."500",  array("exception"=>$this->exception), $this);
 		}
 		
-		return new YZE_Simple_View(APP_VIEWS_INC.$this->exception->error_number(), array("exception"=>$this->exception), $this);
+		return new YZE_Simple_View(YZE_APP_VIEWS_INC.$this->exception->error_number(), array("exception"=>$this->exception), $this);
 	}
 	private $exception;
 	public function set_exception(Exception $e){

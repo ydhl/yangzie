@@ -22,7 +22,7 @@
  * @author liizii
  *
  */
-abstract class YZE_Unresume_Exception extends \Exception{
+class YZE_Unresume_Exception extends \Exception{
 	/**
 	 * 返回异常的错误号，与http状态码相对应，如500 404等
 	 * 
@@ -30,7 +30,7 @@ abstract class YZE_Unresume_Exception extends \Exception{
 	 * 
 	 * @return integerr
 	 */
-	public abstract function error_number();
+	public function error_number(){return 500;}
 }
 class YZE_View_Not_Found_Exception extends YZE_Unresume_Exception{
 	public function error_number(){return 404;}

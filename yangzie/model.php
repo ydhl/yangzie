@@ -209,9 +209,9 @@ abstract class YZE_Model extends YZE_Object{
 	 * 删除所有记录
 	 * @return bool
 	 */
-	public static function remove_all($class){
+	public static function remove_all(){
 		$sql = new YZE_SQL();
-		$sql->delete()->from($class,'a');
+		$sql->delete()->from(get_called_class(),'a');
 		return YZE_DBAImpl::getDBA()->execute($sql);
 	}
 	/**

@@ -136,7 +136,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		do_action(YZE_HOOK_BEFORE_GET, $this);
 		$request = YZE_Request::get_instance();
 		$dispatch = YZE_Dispatch::get_instance();
-		//YZE_Session::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
+		YZE_Session::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
 		if (!method_exists($this, "get")) {
 			throw new YZE_Action_Not_Found_Exception("get");
 		}

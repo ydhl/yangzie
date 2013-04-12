@@ -9,6 +9,7 @@ function yze_load_app(){
 	}
 	include_once YZE_APP_INC.'__config__.php';
 	@include_once YZE_APP_INC.'__aros_acos__.php';
+	@include_once YZE_APP_INC.'__hooks__.php';
 	$app_module = new App_Module();
 
 	$module_include_files = $app_module->get_module_config('include_files');
@@ -74,8 +75,9 @@ function yze_run($controller = null){
 		 */
 		$session = YZE_Session::get_instance();
 		//检查系统配置
-		yze_system_check();
+	
 		$dispatch = YZE_Dispatch::get_instance();
+		yze_system_check();
 		$dispatch->init($controller);
 		/**
 		 * 登录认证请求，开发者需要实现系统的认证处理逻辑，
@@ -113,13 +115,6 @@ function yze_run($controller = null){
 		//一切都ok，将把非get请求的处理进行事务提交
 		$request->commit();
 
-	}catch (YZE_Auth_Failed_Exception $e){
-		//FIXME 并不知道要去中个地址
-		//把当前uri中产生的异常保存下来，以便恢复后显示它
-		$session->save_uri_exception("/users/signin/", $e);
-		//身份验证失败，导向登录页面，并把当前的uri带过去，登录成功后又返回
-		$response = new YZE_Redirect("/users/signin/?back_uri=".urlencode($request->the_uri()),$request->controller_obj());
-
 	}catch (YZE_Unresume_Exception $e){
 		/**
 		 * 这里表示在请求的处理过程中出现了不可恢复的异常。
@@ -127,10 +122,15 @@ function yze_run($controller = null){
 		 * 不可恢复的异常指的是不能通过重新请求来重试的异常
 		 */
 		$request->rollback();
-
 		$error_controller = new YZE_Exception_Controller();
 		$error_controller->set_exception($e);
-		$response = $error_controller->do_get();
+		
+		if( !YZE_Hook::the_hook()->has_hook(YZE_HOOK_UNRESUME_EXCEPTION) ){
+			$response = $error_controller->do_get();
+		}else{
+			$response = YZE_Hook::the_hook()->do_filter(YZE_HOOK_UNRESUME_EXCEPTION, 
+				array("exception"=>$e, "controller"=> ($dispatch ? $dispatch->controller_obj() : new YZE_Exception_Controller())));
+		}
 
 	}catch (YZE_Resume_Exception $e){
 		/**
@@ -167,6 +167,8 @@ function yze_run($controller = null){
 			$response = $request->dispatch();
 		}
 		$request->rollback();
+	}catch(Exception $e){
+		echo return_json_result(1, 1, $e->getMessage(), array());die;
 	}
 
 	/**

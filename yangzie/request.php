@@ -374,7 +374,7 @@ class YZE_Request extends YZE_Object
 	{
 		$dispatch = YZE_Dispatch::get_instance();
 		$request_method = $this->method();
-		YZE_Object::silent_include_file($dispatch->module().'/validates/'.$dispatch->controller()."_validate.class.php");
+		YZE_Object::silent_include_file(YZE_APP_MODULES_INC.$dispatch->module().'/validates/'.$dispatch->controller()."_validate.class.php");
 		$validate_cls = self::format_class_name($dispatch->controller(),"Validate");
 
 		if(!class_exists("$validate_cls"))return;

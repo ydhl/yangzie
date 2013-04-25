@@ -23,6 +23,7 @@ function yze_load_app(){
 			$module_name = basename($module);
 			$class = ucfirst(strtolower($module_name))."_Module";
 			$object = new $class();
+			$object->check();
 			$include_files = $object->get_module_config('include_files');
 			foreach((array)$include_files as $include_file){
 				include_once YZE_APP_MODULES_INC.strtolower($object->get_module_config("name"))."/".$include_file;

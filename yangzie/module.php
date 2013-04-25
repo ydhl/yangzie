@@ -63,7 +63,20 @@ abstract class YZE_Base_Module{
 		}
 		return $_;
 	}
-
+	/**
+	 * 加载该模块之间做检查, 出错则招聘异常
+	 * 
+	 * @author leeboo
+	 * 
+	 * @return boolean
+	 * 
+	 * @return 
+	 * 
+	 * @throws YZE_RuntimeException
+	 */
+	public function check(){
+		return true;
+	}
 	/**
 	 * 初始化一些配置项的值，返回数组，键为配置名
 	 * @return array

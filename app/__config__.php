@@ -17,13 +17,8 @@ class App_Module extends YZE_Base_Module{
 	);
 
 	public function check(){
-		//return empty array() if everything is ok
-		//return array  of  error message while has some error
-		$error = array();
-		if ( !is_writable(YZE_APP_CACHES_PATH)){
-			$error[] = vsprintf(__("%s 目录不可写"), YZE_APP_CACHES_PATH);
-		}
-		return $error;
+		//do app check
+		return true
 	}
 
 	protected function _config()

@@ -58,8 +58,21 @@ class YZE_Session{
 	public function isset_($key){
 		return array_key_exists(sha1($key), $_SESSION);
 	}
-	public function destory($key){
-		unset($_SESSION[sha1($key)]);
+	/**
+	 * 删除指定的key，如果不指定key则全部session都将被删除
+	 * 
+	 * @author leeboo
+	 * 
+	 * @param string $key
+	 * 
+	 * @return
+	 */
+	public function destory($key=null){
+		if($key){
+			unset($_SESSION[sha1($key)]);
+		}else{
+			session_destroy();
+		}
 	}
 
 	/**

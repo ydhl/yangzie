@@ -46,7 +46,8 @@ function yze_load_app(){
  */
 function yze_system_check(){
 	$app_config = new App_Module();
-	$error = (array)$app_config->check();
+	$app_config->check();
+	$error = array();
 	
 	if (PHP_VERSION_ID<50300){
 		$error[] = __("yangzie需要php 5.3+以上版本");

@@ -18,7 +18,6 @@ class App_Module extends YZE_Base_Module{
 
 	public function check(){
 		//do app check
-		return true
 	}
 
 	protected function _config()

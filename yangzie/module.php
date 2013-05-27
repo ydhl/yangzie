@@ -64,7 +64,7 @@ abstract class YZE_Base_Module{
 		return $_;
 	}
 	/**
-	 * 加载该模块之间做检查, 出错则招聘异常
+	 * 加载该模块之间做检查, 出错则抛出异常
 	 * 
 	 * @author leeboo
 	 * 

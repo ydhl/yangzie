@@ -13,7 +13,7 @@
  * @package  Yangzie
  * @author   liizii, <libol007@gmail.com>
  * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
- * @link     www.yangzie.net
+ * @link     yangzie.yidianhulian.com
  */
 abstract class YZE_Resource_Controller extends YZE_Object
 {
@@ -218,9 +218,28 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		$session = YZE_Session::get_instance();
 		return $this->_handle_post();
 	}
+	
+	public final function do_exception(){
+		do_action(YZE_HOOK_BEFORE_EXCEPTION, $this);
+		$request = YZE_Request::get_instance();
+		$session = YZE_Session::get_instance();
+		return $this->exception();
+	}
+	
+	/**
+	 * 出现异常后的处理
+	 * 
+	 * @author leeboo
+	 * 
+	 * 
+	 * @return YZE_IResponse
+	 */
+	public function exception(){
+		
+	}
 
 	/**
-	 *  ajax请求时返回的数据
+	 *  ajax提交表单请求时返回的数据，ajax post提交时不返回重定向，直接由该方法返回数据
 	 *
 	 * @author leeboo
 	 *
@@ -245,7 +264,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 			throw new YZE_Action_Not_Found_Exception($method);
 		}
 		//防止表单重复提交
-		//$this->_check_request_token($request->get_from_post('yze_request_token'));
+		$this->_check_request_token($request->get_from_post('yze_request_token'));
 
 		$response = $this->$method();
 		//如果控制器中的方法没有return Redirect，默认通过get转到当前的uri

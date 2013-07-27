@@ -10,7 +10,7 @@ class Generate_Controller_Script extends AbstractScript{
 	private $model;
 	private $uri_args = array();
 
-	protected $http_methods = array("get","post","delete","put");
+	protected $http_methods = array("get","post","delete","put","exception");
 	
 	public function generate(){
 		$argv = $this->args;
@@ -28,7 +28,7 @@ class Generate_Controller_Script extends AbstractScript{
 		//$this->save_entry();
 		$this->save_class();
 		$this->save_test();
-		$this->check_action();
+		
 		echo "update __module__ file :\t";
 		$this->update_module();
 		echo get_colored_text("Ok.\r\nDone.", "blue");
@@ -121,13 +121,57 @@ include \"load.php\";
 * @package $module
 */
 class $class extends YZE_Resource_Controller {
+	/**
+	 * get 请求返回视图
+	* \$this->layout = ''; 设置该视图的布局模板，默认为tpl.layout.php,位于app/vendor/layouts
+	* \$this->set_view_data('arg_name', 'arg_value'); 给视图设置数据, arg_value可以是任何php变量
+	* 视图中通过 \$this->get_data('arg_name')来取得控制器设置的数据
+	* 
+	 */
+	public function get(){
+		\$request = YZE_Request::get_instance();
+		\$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
+	}
+	
+	/**
+	 * post请求用于对请求资源的创建
+	 *
+	 */
+	public function post(){
+		\$request = YZE_Request::get_instance();
+	}
+	
+	/**
+	 * delete请求用于对请求资源的删除
+	 *
+	 */
+	public function delete(){
+		\$request = YZE_Request::get_instance();
+	}
+	
+	/**
+	 * put请求用于对请求资源的更新
+	 *
+	 */
+	public function put(){
+		\$request = YZE_Request::get_instance();
+	}
+	
+	/**
+	 * exception表示在处理的过程中出现了异常，在该方法中决定如何处理异常，返回响应YZE_IResponse
+	 *
+	 */
+	public function exception(){
+		\$request = YZE_Request::get_instance();
+	}
+	
 	public function get_response_guid(){
 		//如果该控制器的响应输出需要缓存，这里返回生成缓存文件的唯一id
-		//该id根据请求的输入参数生成
 		return null;
 	}
+	
 	protected function post_result_of_ajax(){
-		//这里返回该控制器在ajax请求时返回地数据
+		//这里返回ajax post请求时返回地数据
 		return array();
 	}
 	protected \$module_name = \"$module\";
@@ -137,6 +181,16 @@ class $class extends YZE_Resource_Controller {
 ?>";
 		echo "create controller:\t\t";
 		$this->create_file($class_file_path, $class_file_content);
+		
+		if($this->view_format){
+			$this->create_view();
+			$this->create_layout();
+		}
+		
+		if(!$this->novalidate){
+			$this->create_validate();
+			$this->create_validate_test();
+		}
 	}
 	
 	
@@ -148,42 +202,6 @@ class $class extends YZE_Resource_Controller {
 		$this->create_controller($controller);
 	}
 	
-	private function check_action(){
-		//找到controller，判断其中有没有action，如果没有则生成action，及对应的view，validate，test
-		$controller_file = '../modules/'.strtolower($this->module_name).'/controllers/'.strtolower($this->controller).'_controller.class.php';
-		include_once $controller_file;
-		$controller_class = YZE_Object::format_class_name($this->controller, "Controller");
-		$refl = new ReflectionClass($controller_class);
-		$methods = $this->http_methods;
-		$action_code = "";
-		
-		foreach($methods as $method){
-			if(!$refl->hasMethod($method)){
-				$action_code .= "		
-	public function $method(){
-		//Your Code Written in Here.
-				
-		".($method=="get" ? '$this->set_view_data("yze_page_title", "this is controller '.$this->controller.'");' : "")."
-	}
-	";
-			}
-
-			if($method == "get" && $this->view_format){
-				$this->create_view();
-				$this->create_layout();
-			}
-		}
-		
-		if(!$this->novalidate){
-			$this->create_validate();
-			$this->create_validate_test();
-		}
-	
-		$contents = file_get_contents($controller_file);
-		$contents = preg_replace("/(class $controller_class extends YZE_Resource_Controller {)/m", "\\1\r\n$action_code", $contents);
-		echo "update controller :\t\t";
-		$this->create_file($controller_file, $contents,true);
-	}
 	
 	private function validate_code_segment($method){
 		$code = "";
@@ -225,7 +243,7 @@ this is {$controller} view";
 		$formats = explode(" ", $this->view_format);
 		
 		foreach ($formats as $format){
-			$layout = dirname(dirname(__FILE__))."/app/components/layouts/{$format}.layout.php";
+			$layout = dirname(dirname(__FILE__))."/app/vendor/layouts/{$format}.layout.php";
 			if(!file_exists($layout)){
 				$layout_file_content = "<?php
 /**

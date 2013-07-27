@@ -12,8 +12,8 @@ class App_Module extends YZE_Base_Module{
 	public $include_files = array(
 			"app/vendor/pomo/translation_entry.class.php",
 			"app/vendor/pomo/translations.class.php",
-			"app/components/app_auth.class.php",
-			"app/components/i18n.php"
+			"app/vendor/app_auth.class.php",
+			"app/vendor/i18n.php"
 	);
 
 	public function check(){

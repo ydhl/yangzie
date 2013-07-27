@@ -7,7 +7,7 @@
  * @package  Yangzie
  * @author   liizii, <libol007@gmail.com>
  * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
- * @link     www.yangzie.net
+ * @link     yangzie.yidianhulian.com
  */
 class YZE_Request extends YZE_Object
 {

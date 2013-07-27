@@ -8,8 +8,7 @@
  * @package  Yangzie
  * @author   liizii <libol007@gmail.com>
  * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
- * @version  SVN: $Id$
- * @link     http://www.yangzie.net
+ * @link     http://yangzie.yidianhulian.com
  *
  */
 
@@ -23,8 +22,8 @@ define("YZE_APP_CACHES_PATH", YZE_INSTALL_PATH."app".DS."public_html".DS."caches
 
 define("YZE_APP_INC", YZE_APP_PATH);//应用代码目录名称
 define("YZE_APP_MODULES_INC", YZE_APP_PATH."modules/");//应用代码目录名称
-define("YZE_APP_LAYOUTS_INC", YZE_APP_PATH."components/layouts/");
-define("APP_VIEWS_INC", YZE_APP_PATH."components/views/");
+define("YZE_APP_LAYOUTS_INC", YZE_APP_PATH."vendor/layouts/");
+define("APP_VIEWS_INC", YZE_APP_PATH."vendor/views/");
 
 //path_info, rewrite, none
 define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');

@@ -21,7 +21,7 @@
 function yze_get_acos()
 {
 	return array(
-		'/orders/*'	=> "订单设置"
+		'/'	=> ""
 	);
 }
 

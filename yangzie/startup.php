@@ -127,11 +127,12 @@ function yze_run($controller = null){
 		$error_controller = new YZE_Exception_Controller();
 		$error_controller->set_exception($e);
 		
-		if( !YZE_Hook::the_hook()->has_hook(YZE_HOOK_UNRESUME_EXCEPTION) ){
-			$response = $error_controller->do_get();
+		if( YZE_Hook::the_hook()->has_hook(YZE_HOOK_UNRESUME_EXCEPTION) && $request->get_output_format()=="json" ){
+			$response = YZE_Hook::the_hook()->do_filter(YZE_HOOK_UNRESUME_EXCEPTION,
+					array("exception"=>$e, "controller"=> ($dispatch ? $dispatch->controller_obj() : new YZE_Exception_Controller())));
+			
 		}else{
-			$response = YZE_Hook::the_hook()->do_filter(YZE_HOOK_UNRESUME_EXCEPTION, 
-				array("exception"=>$e, "controller"=> ($dispatch ? $dispatch->controller_obj() : new YZE_Exception_Controller())));
+			$response = $error_controller->do_get();
 		}
 
 	}catch (YZE_Resume_Exception $e){

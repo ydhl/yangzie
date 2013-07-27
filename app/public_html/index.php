@@ -7,7 +7,7 @@
  * @author   liizii <libol007@gmail.com>
  * @license  http://www.php.net/license/3_01.txt  PHP License 3.01
  * @version  SVN: $Id$
- * @link     http://www.yangzie.net
+ * @link     http://yangzie.yidianhulian.com
  *
  */
 

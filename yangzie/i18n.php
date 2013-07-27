@@ -40,7 +40,7 @@ function load_default_textdomain() {
 		return;
 	}
 	$locale = get_locale();
-	$mofile =  "components/i18n/$locale.mo";
+	$mofile =  "vendor/i18n/$locale.mo";
 	return load_textdomain('default', $mofile);
 }
 

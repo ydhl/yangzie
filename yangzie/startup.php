@@ -118,24 +118,27 @@ function yze_run($controller = null){
 		$request->commit();
 
 	}catch (YZE_Unresume_Exception $e){
-		/**
-		 * 这里表示在请求的处理过程中出现了不可恢复的异常。
-		 *
-		 * 不可恢复的异常指的是不能通过重新请求来重试的异常
-		 */
 		$request->rollback();
-		$error_controller = new YZE_Exception_Controller();
-		$error_controller->set_exception($e);
 		
-		if( YZE_Hook::the_hook()->has_hook(YZE_HOOK_UNRESUME_EXCEPTION) && $request->get_output_format()=="json" ){
-			$response = YZE_Hook::the_hook()->do_filter(YZE_HOOK_UNRESUME_EXCEPTION,
-					array("exception"=>$e, "controller"=> ($dispatch ? $dispatch->controller_obj() : new YZE_Exception_Controller())));
+		$dispatch = YZE_Dispatch::get_instance();
+		
+		$controller = $dispatch->controller_obj();
+		$response = $controller->do_exception($e);
+		
+// 		$error_controller = new YZE_Exception_Controller();
+// 		$error_controller->set_exception($e);
+		
+// 		if( YZE_Hook::the_hook()->has_hook(YZE_HOOK_UNRESUME_EXCEPTION) && $request->get_output_format()=="json" ){
+// 			$response = YZE_Hook::the_hook()->do_filter(YZE_HOOK_UNRESUME_EXCEPTION,
+// 					array("exception"=>$e, "controller"=> ($dispatch ? $dispatch->controller_obj() : new YZE_Exception_Controller())));
 			
-		}else{
-			$response = $error_controller->do_get();
-		}
+// 		}else{
+// 			$response = $error_controller->do_get();
+// 		}
 
 	}catch (YZE_Resume_Exception $e){
+		$request->rollback();
+		$controller = $dispatch->controller_obj();
 		/**
 		 * 这里表示请求的处理过程中出现了可恢复的异常
 		 * 可恢复的异常表示可以通过重新请求来重试的异常，比如post后数据验证出现的可恢复的异常
@@ -167,11 +170,27 @@ function yze_run($controller = null){
 		if(!$request->is_get()){
 			$response = new YZE_Redirect($referer_uri,$dispatch->controller_obj());
 		}else{
-			$response = $request->dispatch();
+			$response = $controller->do_exception($e);
 		}
-		$request->rollback();
+		
 	}catch(Exception $e){
-		echo return_json_result(1, 1, $e->getMessage(), array());die;
+		$request->rollback();
+		
+		$controller = $dispatch->controller_obj();
+		
+		if( ! $controller){
+			$controller = new YZE_Exception_Controller();
+		}
+		$response = $controller->do_exception($e);
+		
+// 		if( YZE_Hook::the_hook()->has_hook(YZE_HOOK_UNRESUME_EXCEPTION) && $request->get_output_format()=="json" ){
+// 			$response = YZE_Hook::the_hook()->do_filter(YZE_HOOK_UNRESUME_EXCEPTION,
+// 					array("exception"=>$e, "controller"=> ($dispatch ? $dispatch->controller_obj() : new YZE_Exception_Controller())));
+				
+// 		}else{
+// 			$response = $error_controller->do_get();
+// 		}
+// 		echo return_json_result(1, 1, $e->getMessage(), array());die;
 	}
 
 	/**

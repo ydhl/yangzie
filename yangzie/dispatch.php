@@ -99,16 +99,25 @@ class YZE_Dispatch extends YZE_Object{
 		$this->controller = $controller;
 		return $this;
 	}
+	/**
+	 * 控制器名字
+	 * 
+	 * @return string
+	 */
 	public function controller(){
 		return $this->controller;
 	}
 	
+	/**
+	 * 控制器类名
+	 * @return string
+	 */
 	public function controller_class()
 	{
 		return $this->controller_class;
 	}
 	/**
-	 *
+	 * 控制器对象
 	 *
 	 * @author leeboo
 	 *

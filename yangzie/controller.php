@@ -124,7 +124,7 @@ abstract class YZE_Resource_Controller extends YZE_Object
 	}
 	
 	/**
-	 * 处理get方法.get方法用于显示界面,给出响应
+	 * 处理get方法.get方法用于显示界面,给出响应，如果该url有异常，则进入exception处理
 	 *
 	 * @access public
 	 * @author liizii, <libol007@gmail.com>
@@ -134,14 +134,16 @@ abstract class YZE_Resource_Controller extends YZE_Object
 	{
 		//设置请求token
 		do_action(YZE_HOOK_BEFORE_GET, $this);
-		$request = YZE_Request::get_instance();
-		$dispatch = YZE_Dispatch::get_instance();
-		YZE_Session::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
-		if (!method_exists($this, "get")) {
-			throw new YZE_Action_Not_Found_Exception("get");
+		$request 	= YZE_Request::get_instance();
+		$dispatch 	= YZE_Dispatch::get_instance();
+		$session	= YZE_Session::get_instance();
+		
+		if($session->has_exception($request->the_uri())){
+			$response = $this->exception($session->get_uri_exception($request->the_uri()));
+		}else{
+			YZE_Session::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
+			$response = $this->get();
 		}
-
-		$response = $this->get();
 
 		if (!$response) {
 			$response = $this->getResponse();
@@ -219,11 +221,39 @@ abstract class YZE_Resource_Controller extends YZE_Object
 		return $this->_handle_post();
 	}
 	
-	public final function do_exception(){
+	public final function do_exception(Exception $e){
 		do_action(YZE_HOOK_BEFORE_EXCEPTION, $this);
-		$request = YZE_Request::get_instance();
-		$session = YZE_Session::get_instance();
-		return $this->exception();
+		$request 	= YZE_Request::get_instance();
+		$dispatch 	= YZE_Dispatch::get_instance();
+		$session	= YZE_Session::get_instance();
+		
+		$response = $this->exception($session->get_uri_exception($request->the_uri()));
+		
+		if ( ! $response) {
+			$response = $this->getResponse();
+		}
+		if(is_a($response, "YZE_View_Adapter")){
+			$response->check_view();
+		}
+		
+		//如果客户端是ajax请求，则用blank模板，约定ajax请求时不会要求得到整个布局界面，只是取得某一部分
+		if(@$_SERVER['HTTP_X_YZE_REQUEST_CLIENT'] == "AJAX"){
+			$this->layout = "blank";
+		}
+		return $response;
+	}
+	
+	public function get(){
+		//pass
+	}
+	public function post(){
+		//pass
+	}
+	public function delete(){
+		//pass
+	}
+	public function put(){
+		//pass
 	}
 	
 	/**
@@ -231,10 +261,11 @@ abstract class YZE_Resource_Controller extends YZE_Object
 	 * 
 	 * @author leeboo
 	 * 
+	 * @param Exception $e
 	 * 
 	 * @return YZE_IResponse
 	 */
-	public function exception(){
+	public function exception(Exception $e){
 		
 	}
 
@@ -343,10 +374,14 @@ class YZE_Exception_Controller extends YZE_Resource_Controller{
 		
 		return new YZE_Simple_View(YZE_APP_VIEWS_INC.$this->exception->error_number(), array("exception"=>$this->exception), $this);
 	}
-	private $exception;
-	public function set_exception(Exception $e){
+	
+	public function exception(Exception $e){
 		$this->exception = $e;
+		return $this->get();
 	}
+	
+	private $exception;
+	
 	private function output_status_code($error_number){
 		switch ($error_number){
 			case 500: header("HTTP/1.0 500 Internal Server Error"); return;

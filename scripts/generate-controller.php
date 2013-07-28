@@ -10,16 +10,15 @@ class Generate_Controller_Script extends AbstractScript{
 	private $model;
 	private $uri_args = array();
 
-	protected $http_methods = array("get","post","delete","put","exception");
 	
 	public function generate(){
 		$argv = $this->args;
 		$this->controller		= $argv['controller'];
 		$this->novalidate		= $argv['novalidate'];
 		$this->view_format 		= $argv['view_format'];
-		$this->module_name 	= $argv['module_name'];
+		$this->module_name 		= $argv['module_name'];
 		$this->uri 				= $argv['uri'];
-		$this->view_tpl 			= $argv['view_tpl'];
+		$this->view_tpl 		= $argv['view_tpl'];
 		//$this->entry_file 		= $argv['entry_file'];
 
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
@@ -161,7 +160,7 @@ class $class extends YZE_Resource_Controller {
 	 * exception表示在处理的过程中出现了异常，在该方法中决定如何处理异常，返回响应YZE_IResponse
 	 *
 	 */
-	public function exception(){
+	public function exception(Exception \$e){
 		\$request = YZE_Request::get_instance();
 	}
 	
@@ -229,6 +228,8 @@ class $class extends YZE_Resource_Controller {
  * @param type name optional
  *
  */
+ 
+ \$data = \$this->get_data('arg_name');
 ?>
 
 this is {$controller} view";

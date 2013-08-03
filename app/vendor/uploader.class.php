@@ -34,7 +34,7 @@ class Uploader{
 		$filename = uniqid(date("ynj")).".".$ext;
 		$return = $stor->upload('upload', $filename, $path);
 		if(!$return){
-			throw new YZE_Resume_Exception($stor->errmsg());
+			throw new YZE_RuntimeException($stor->errmsg());
 		}
 // 		if($this->watermark){
 // 			$this->addWatermark($dist_path.$filename);
@@ -63,7 +63,7 @@ class Uploader{
 		$this->mk_local_dirs(dirname($path));
 		#构建当前文件夹 
 		if(!@mkdir($path,0777)){
-			throw new YZE_Resume_Exception("Can\'t create dir".$path);
+			throw new YZE_RuntimeException("Can\'t create dir".$path);
 		}
 		@chmod($cd,0777);
 	}
@@ -94,7 +94,7 @@ class Uploader{
 		$fileSize = $_FILES[$name]['size'];
 		$erorinfo = $this->getUploadError($_FILES[$name]);
 		if(!empty($erorinfo)){
-			throw new YZE_Resume_Exception($erorinfo);
+			throw new YZE_RuntimeException($erorinfo);
 		}
 		$this->uploaded_filenames = $filename;
 		return $this->uploadByCopy($filename,$fileTempName,$fileSize);
@@ -199,7 +199,7 @@ class Uploader{
 	                );
 	                $errorinfo = $this->getUploadError($file);
 	                if(!empty($errorinfo)){
-	                    throw new YZE_Resume_Exception($errorinfo);
+	                    throw new YZE_RuntimeException($errorinfo);
 	                }
 	                $this->uploaded_filenames[$index][$sub_index] = $name;
 	                $files[$index][$sub_index] = $this->uploadByCopy($n,$tmpNames[$index][$sub_index],$sizes[$index][$sub_index]);
@@ -213,7 +213,7 @@ class Uploader{
             	);
             	$errorinfo = $this->getUploadError($file);
             	if(!empty($errorinfo)){
-            		throw new YZE_Resume_Exception($errorinfo);
+            		throw new YZE_RuntimeException($errorinfo);
             	}
             	$this->uploaded_filenames[$index] = $name;
             	$files[$index] = $this->uploadByCopy($name,$tmpNames[$index],$sizes[$index]);

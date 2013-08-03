@@ -22,7 +22,7 @@ class YZE_Form extends YZE_Object{
 		foreach ($attrs as $n=>$value){
 			$html .= "$n = '$value' ";
 		}
-		$token = YZE_Session::get_instance()->get_request_token(YZE_Request::get_instance()->the_uri());
+		$token = YZE_Session_Context::get_instance()->get_request_token(YZE_Request::get_instance()->the_uri());
 		if($model){
 			$modify = "<input type='hidden' name='yze_modify_version' value='".$model->get_version_value()."'/>
 					<input type='hidden' name='yze_model_id' value='".$model->get_key()."'/>
@@ -64,17 +64,16 @@ function yze_render_link($action, array $args, $anchor=null){
  * 
  * @author leeboo
  * 
- * @param unknown $object
+ * @param YZE_Model $object
  * @param unknown $name
- * @param string $uri
+ * @param string $uri 未空表示当前uri
  * @return string
  * 
  * @return
  */
-function yze_get_default_value($object, $name, $uri=null)
-{
-	if (YZE_Session::post_cache_has($name, $uri)){
-		return YZE_Session::get_cached_post($name, $uri);
+function yze_get_default_value($object, $name, $uri=null){
+	if (YZE_Session_Context::post_cache_has($name, $uri)){
+		return YZE_Session_Context::get_cached_post($name, $uri);
 	}
 	if ($object){
 		return $object->get($name);
@@ -93,10 +92,10 @@ function yze_get_default_value($object, $name, $uri=null)
  */
 function yze_get_post_error()
 {
-	$session = YZE_Session::get_instance();
-	$uri = YZE_Request::get_instance()->the_uri();
-	if ($session->has_exception($uri)) {
-		return nl2br($session->get_uri_exception($uri)->getMessage());
+	$session 	= YZE_Session_Context::get_instance();
+	$controller = YZE_Dispatch::get_instance()->controller_obj();
+	if (($exception = $session->get_controller_exception($controller))) {
+		return $exception->getMessage();
 	}
 }
 

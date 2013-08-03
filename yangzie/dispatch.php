@@ -35,17 +35,18 @@ class YZE_Dispatch extends YZE_Object{
 		if(($cache_html = $controller->has_response_cache())){
 			return new YZE_Notpl_View($cache_html, $controller);
 		}else{
-			$method = "do_".$request->method();
+			$method = "do_".$request->the_method();
 			return $controller->$method();
 		}
 	}
+	
 	
 	/**
 	 * 
 	 * 
 	 * @author leeboo
 	 * 
-	 * @param string $controller 如果传入则不解析url，不查找routers；而是直接解析controller，controller的格式是/module name/controller name
+	 * @param string $uri 如果传入则解析他，不传入解析请求地址
 	 * @throws YZE_Controller_Not_Found_Exception
 	 * @throws YZE_Action_Not_Found_Exception
 	 * 
@@ -53,7 +54,7 @@ class YZE_Dispatch extends YZE_Object{
 	 */
 	public function init($uri = null){
 		$request = YZE_Request::get_instance();
-		$request_method = $request->method();
+		$request_method = $request->the_method();
 		
 		if( ! $uri ){
 			$uri = $request->the_uri();

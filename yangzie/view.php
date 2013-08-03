@@ -47,51 +47,86 @@ class YZE_Response_304_NotModified implements YZE_IResponse{
 	}
 }
 /**
- * HTTP Location:重定向，表示一次请求的处理输出是重定向
+ * HTTP Location:重定向，表示一次请求的处理输出是重定向到一个新地址
+ * 根据请求返回的格式不同而有不同的输出，如果是html，输出为Header Location:
+ * 如果是json，输出为
+ * 
+ * 同时也时源控制器与目标控制器的纽带，
+ * sourceURI: 源uri
+ * sourceController: 源控制器
+ * 
+ * destinationURI: 目标url
+ * destinationController: 目标控制器
+ * 
  * @author liizii
  *
  */
 class YZE_Redirect implements YZE_IResponse{
-	private $uri;
-	private $data;
-	public function __construct($uri, YZE_Resource_Controller $controller){
-		$this->uri = $uri;
-		$this->controller = $controller;
+	private $sourceURI;
+	private $sourceController;
+	private $destinationURI;
+	private $destinationController;
+	private $innerRedirect = false;
+	
+	/**
+	 * 
+	 * @param unknown $destination_uri 
+	 * @param YZE_Resource_Controller $source_controller
+	 * @param boolean $innerRedirect true表示重定向不需要输出到客户端，直接处理
+	 */
+	public function __construct($destination_uri, YZE_Resource_Controller $source_controller, $innerRedirect=false){
+		$this->destinationURI 	= $destination_uri;
+		$this->sourceURI 		= YZE_Request::get_instance()->the_full_uri();
+		$this->sourceController = $source_controller;
+		$this->innerRedirect 	= $innerRedirect;
 	}
+	
 	public function output(){
-		//如果一次请求是由 .json发起的，那么后续的站内url跳转都自动带上.json后缀
+		//post后重定向，把post处理中设置的数据保存下来，重定向到新页面后再取出来显示
+		//因为post不提供显示视图输出，所以这些数据需要在重定向后的get请求返回的视图中显示
+		//这主要是post处理方法在向get方法中共享数据的方式
+		if ($this->sourceController->get_view_data()) {//有的post提交返回 的是YZE_Notpl_View
+			YZE_Session_Context::get_instance()->save_controller_datas($this->sourceController, $this->sourceController->get_view_data());
+		}
+		
+		//内部重定向，不输出redirect header，直接内部处理
+		if ($this->innerRedirect){
+			return yze_go($this->destinationURI());
+		}
+		
+		$target_uri = $this->destinationURI;
+		
 		$format = YZE_Request::get_instance()->get_output_format();
-		if($format!="tpl"){
-			$url_components = parse_url($this->uri);
+		if($format != "tpl"){
+			$url_components = parse_url($this->destinationURI);
 
 			//不是站内跳转
-			if(@$url_components['host'] && $url_components['host']!=$_SERVER['HTTP_HOST']){
-				header("Location: $this->uri");
+			if(@$url_components['host'] && $url_components['host'] != $_SERVER['HTTP_HOST']){
+				header("Location: $this->destinationURI");
 				return;
 			}
+			
 			//TODO 考虑PATH_INFO
-			header("Location: ".$url_components['path'].".{$format}?".$url_components['query'].
-			(@$url_components['fragment'] ? "#".$url_components['fragment'] : ""));
-			return;
+			$target_uri = @$url_components['path'].".{$format}?".@$url_components['query'].
+			(@$url_components['fragment'] ? "#".$url_components['fragment'] : "");
+			
+			YZE_View_Adapter::build_view($this->sourceController, $target_uri)->output();
+		}else{
+			//如果
+			header("Location: {$target_uri}");
 		}
-		header("Location: $this->uri");
 	}
-	/**
-	 * 返回重定向的地址中的uri， 只包含路径，不包含其它部分
-	 * @return string
-	 */
-	public function the_uri(){
-		return parse_url($this->uri,PHP_URL_PATH);
+	
+	public function destinationURI(){
+		return $this->destinationURI;
 	}
-	/**
-	 * 返回重定向的整个路径
-	 * @return string
-	 */
-	public function the_full_uri(){
-		return $this->uri;
+	
+	public function sourceURI(){
+		return $this->sourceURI();
 	}
 	public function get_data($key){
-		return $this->data[$key];
+		$datas = $this->sourceController->get_datas();
+		return @$datas[$key];
 	}
 }
 
@@ -130,7 +165,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function __construct($data, YZE_Resource_Controller $controller){
 		$this->data = (array)$data;
 		$this->controller = $controller;
-		$this->exception = YZE_Session::get_instance()->get_uri_exception(YZE_Request::get_instance()->the_uri());
+		$this->exception = YZE_Session_Context::get_instance()->get_controller_exception($controller);
 	}
 	public function get_controller(){
 		return $this->controller;
@@ -184,6 +219,23 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function check_view()
 	{
 		return true;
+	}
+	
+	/**
+	 * 
+	 * @param YZE_Resource_Controller $controller
+	 * @param unknown $data
+	 * @param string $success
+	 * @param number $errorcode
+	 * @param string $msg
+	 * 
+	 * @return YZE_IResponse
+	 */
+	public static function build_view(YZE_Resource_Controller $controller, $format, $data, $data_type="data", $success=true, $errorcode=0, $msg=''){
+		if($format=="json") return new YZE_JSON_View($controller, $data, $data_type);
+		if($format=="xml") return new YZE_XML_View($controller, $data, $data_type);
+		return new YZE_Notpl_View($data, $controller);
+		
 	}
 }
 /**
@@ -239,6 +291,51 @@ class YZE_Notpl_View extends YZE_View_Adapter {
 }
 
 /**
+ * 返回json，返回格式{errorcode, success,msg,data}
+ * 
+ * @author apple
+ *
+ */
+class YZE_JSON_View extends YZE_View_Adapter {
+	public function __construct(YZE_Resource_Controller $controller, $data, $data_type="data", $success=true, $errorcode=0, $msg=""){
+		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, $data_type=>"data"), $controller);
+	}
+	protected function display_self(){
+		echo json_encode($this->data);
+	}
+}
+class YZE_XML_View extends YZE_View_Adapter {
+	public function __construct(YZE_Resource_Controller $controller, $data, $data_type="data", $success=true, $errorcode=0, $msg=""){
+		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, $data_type=>"data" ), $controller);
+	}
+	protected function display_self(){
+		$xml = new SimpleXMLElement("<?xml version=\"1.0\"?><root></root>");
+		
+		$this->array_to_xml($this->data,$xml);
+		
+		echo $xml->asXML();
+	}
+	
+	private function array_to_xml($data, &$xml) {
+		foreach($data as $key => $value) {
+			if(is_array($value)) {
+				if(!is_numeric($key)){
+					$subnode = $xml->addChild("$key");
+					$this->array_to_xml($value, $subnode);
+				}
+				else{
+					$subnode = $xml->addChild("item$key");
+					$this->array_to_xml($value, $subnode);
+				}
+			}
+			else {
+				$xml->addChild("$key","$value");
+			}
+		}
+	}
+}
+
+/**
  * layout指定义视图响应的数据定义格式，比如输出html是<html>....</html>，
  * 输出xml的格式是<xml>...</xml>，json是{}等等，
  *
@@ -264,7 +361,11 @@ class YZE_Layout extends YZE_View_Adapter{
 		ob_start();
 		$this->view->output();
 		$yze_content_of_layout = ob_get_clean();
-		include_once YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
+		if ($this->layout){
+			include_once YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
+		}else{
+			echo $yze_content_of_layout;
+		}
 	}
 }
 ?>

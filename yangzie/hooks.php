@@ -32,6 +32,8 @@ define('YZE_HOOK_AFTER_DELETE','do_after_delete');
 define('YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token');
 define('YZE_HOOK_TRANSACTION_COMMIT','transaction_commit');
 define('YZE_HOOK_UNRESUME_EXCEPTION','yze_hook_unresume_exception');
+define('YZE_HOOK_BEFORE_EXCEPTION','yze_hook_before_exception');
+
 /**
  * 解析地址得到请求url，如module/controller/var
  * uri过滤，传入uri分离后的数据或者就是uri字符串本身

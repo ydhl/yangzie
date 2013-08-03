@@ -160,21 +160,23 @@ class $class extends YZE_Resource_Controller {
 	 * exception表示在处理的过程中出现了异常，在该方法中决定如何处理异常，返回响应YZE_IResponse
 	 *
 	 */
-	public function exception(Exception \$e){
+	public function exception(YZE_RuntimeException \$e){
 		\$request = YZE_Request::get_instance();
+		//根据异常的类型做响应的处理，如
+		//if(\$e->isResumeable()){
+		//	\$this->set_view_data('error_message', \$e->getMessage());
+		//	return \$this->get();
+		//}else{
+		//	\$this->set_view_data('error_message', \$e->getMessage()); 
+		//}
 	}
 	
 	public function get_response_guid(){
 		//如果该控制器的响应输出需要缓存，这里返回生成缓存文件的唯一id
 		return null;
 	}
-	
-	protected function post_result_of_ajax(){
-		//这里返回ajax post请求时返回地数据
-		return array();
-	}
+
 	protected \$module_name = \"$module\";
-	protected \$models = array();
 	
 }
 ?>";

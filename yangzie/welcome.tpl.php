@@ -1,32 +1,6 @@
-<?php
-
-?>
 <h1>Yangzie - 简易PHP开发框架。</h1>
 <br/>
-这个界面是开发者第一次安装yangzie后运行看到的界面，这里做些什么？
-<?php 
-if($this->get_data("name")){
-	echo '你提交的post数据是：'.$this->get_data("name");
-}
-?>
-<br/><br/>
-
-<h2>测试对主页资源的post请求</h2>
-<?php 
-$form = new YZE_Form($this, "post");
-$form->begin_form();
-echo yze_get_post_error();
-?>
-<table>
-  <tr>
-    <td>提交内容</td>
-    <td><input name="name" value="<?php yze_get_default_value(null, "name")?>"/></td>
-  </tr>
-  <tr>
-    <td>&nbsp;</td>
-    <td><input type="submit" value="提交"/></td>
-  </tr>
-</table>
-<?php 
-$form->end_form();
-?>
+如果您厌倦了不断的重复、重复、重复的敲写时曾相识、相似、非常相似、完全一样的代码。
+那么，是时候体验一下yangzie框架了，它的世界观很简单：<br/>
+<strong>遵循一种简单的处理逻辑、自动生成重复的代码</strong><br/><br/>
+<a href="/welcome">体验一下</a>

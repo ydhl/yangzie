@@ -58,36 +58,42 @@ class YZE_Session_Context{
 	/**
 	 * 临时保存post提交的数据
 	 *
-	 * @param $uri 处理post的uri
+	 * @param $controller YZE_Resource_Controller
+	 * 
 	 * @param $post filter_special_chars过滤后的数据
+	 * 
 	 * @return void
 	 * @author liizii
 	 * @since 2009-12-10
 	 */
-	public function save_post_datas(/*string*/$uri,array $post){
-		$_SESSION['yze']['post_cache'][sha1($uri)] = $post;
+	public function save_post_datas(YZE_Resource_Controller $controller,array $post){
+		$_SESSION['yze']['post_cache'][get_class($controller)] = $post;
 	}
 	/**
 	 * 取得缓存的post提交的数据
 	 *
-	 * @param  $uri 处理post的uri
+	 * @param  $controller YZE_Resource_Controller
+	 * 
 	 * @return array filter_special_chars过滤后的数据
+	 * 
 	 * @author liizii
 	 * @since 2009-12-10
 	 */
-	public function get_post_datas(/*string*/$uri){
-		return @$_SESSION['yze']['post_cache'][sha1($uri)];
+	public function get_post_datas(YZE_Resource_Controller $controller){
+		return @$_SESSION['yze']['post_cache'][get_class($controller)];
 	}
 	/**
 	 * 清空post提交的数据
 	 *
-	 * @param $uri 处理post的uri
+	 * @param YZE_Resource_Controller $controller
 	 * @return void
 	 * @author liizii
 	 * @since 2009-12-10
 	 */
-	public function clear_post_datas(/*string*/$uri){
-		unset($_SESSION['yze']['post_cache'][sha1($uri)]);
+	public function clear_post_datas(YZE_Resource_Controller $controller){
+		$key = get_class($controller);
+		if (@$_SESSION['yze']['post_cache'][$key])
+			unset($_SESSION['yze']['post_cache'][$key]);
 	}
 	
 	/**
@@ -115,6 +121,32 @@ class YZE_Session_Context{
 		if (@$_SESSION['yze']['exception'][$key]) 
 			unset($_SESSION['yze']['exception'][$key]);
 	}
+	
+	/**
+	 * 保存控制器处理过程中的验证错误
+	 *
+	 * @param YZE_Resource_Controller $controller
+	 * @param Exception $exception
+	 */
+	public function save_controller_validates(YZE_Resource_Controller $controller, $datas){
+		$_SESSION['yze']['validates'][get_class($controller)] = $datas;
+		return $this;
+	}
+	
+	/**
+	 * 取得控制器的验证错误
+	 *
+	 * @param YZE_Resource_Controller $controller
+	 * @return Exception
+	 */
+	public function get_controller_validates(YZE_Resource_Controller $controller){
+		return @$_SESSION['yze']['validates'][get_class($controller)];
+	}
+	public function clear_controller_validates(YZE_Resource_Controller $controller){
+		$key = get_class($controller);
+		if (@$_SESSION['yze']['validates'][$key])
+			unset($_SESSION['yze']['validates'][$key]);
+	}
 
 
 	/**
@@ -124,7 +156,7 @@ class YZE_Session_Context{
 	 * @param array $datas
 	 */
 	public function save_controller_datas(YZE_Resource_Controller $controller, array $datas){
-		$_SESSION['yze']['controller_data'][sha1(get_class($controller))] = $datas;
+		$_SESSION['yze']['controller_data'][get_class($controller)] = $datas;
 	}
 
 	/**
@@ -133,7 +165,7 @@ class YZE_Session_Context{
 	 * @param YZE_Resource_Controller $controller
 	 */
 	public function get_controller_datas(YZE_Resource_Controller $controller){
-		return @$_SESSION['yze']['controller_data'][sha1(get_class($controller))];
+		return @$_SESSION['yze']['controller_data'][get_class($controller)];
 	}
 
 	/**
@@ -142,7 +174,7 @@ class YZE_Session_Context{
 	 * @param YZE_Resource_Controller $controller
 	 */
 	public function clear_controller_datas(YZE_Resource_Controller $controller){
-		unset($_SESSION['yze']['controller_data'][sha1(get_class($controller))]);
+		unset($_SESSION['yze']['controller_data'][get_class($controller)]);
 	}
 	public function set_request_token($uri, $token){
 		$_SESSION['yze']["token"][$uri] = $token;
@@ -156,29 +188,29 @@ class YZE_Session_Context{
 	public function clear_request_token_ext($uri){
 		unset($_SESSION['yze']["token"][$uri]);
 	}
-	public static function get_cached_post($name,$uri=null)
+	public static function get_cached_post($name,YZE_Resource_Controller $controller=null)
 	{
-		if (empty($uri)) {
-			$uri = YZE_Request::get_instance()->the_uri();
+		if (empty($controller)) {
+			$controller = YZE_Request::get_instance()->controller();
 		}
-		$dates = YZE_Session_Context::get_instance()->get_post_datas($uri);
+		$dates = YZE_Session_Context::get_instance()->get_post_datas($controller);
 		return @$dates[$name];
 	}
 
-	public static function post_cache_has($name,$uri=null)
+	public static function post_cache_has($name, YZE_Resource_Controller $controller=null)
 	{
-		if (empty($uri)) {
-			$uri = YZE_Request::get_instance()->the_uri();
+		if (empty($controller)) {
+			$controller = YZE_Request::get_instance()->controller();
 		}
-		return array_key_exists($name,(array)@$_SESSION['yze']['post_cache'][sha1($uri)]);
+		return YZE_Session_Context::get_instance()->get_cached_post($name);
 	}
 
-	public static function post_cache_has_ext($uri=null)
+	public static function post_cache_has_ext(YZE_Resource_Controller $controller=null)
 	{
-		if (empty($uri)) {
-			$uri = YZE_Request::get_instance()->the_uri();
+		if (empty($controller)) {
+			$controller = YZE_Request::get_instance()->controller();
 		}
-		return @$_SESSION['yze']['post_cache'][sha1($uri)];
+		return YZE_Session_Context::get_instance()->get_post_datas($controller);
 	}
 	
 }

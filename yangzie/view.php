@@ -66,31 +66,51 @@ class YZE_Redirect implements YZE_IResponse{
 	private $sourceController;
 	private $destinationURI;
 	private $destinationController;
-	private $innerRedirect = false;
+	private $datas = array();
+	private $outgoing = false;
+	private $url_components;
 	
 	/**
 	 * 
 	 * @param unknown $destination_uri 
 	 * @param YZE_Resource_Controller $source_controller
+	 * @param array $datas 传递给目标控制器的数据
 	 * @param boolean $innerRedirect true表示重定向不需要输出到客户端，直接处理
 	 */
-	public function __construct($destination_uri, YZE_Resource_Controller $source_controller, $innerRedirect=false){
+	public function __construct($destination_uri, YZE_Resource_Controller $source_controller, array $datas=array()){
+		
 		$this->destinationURI 	= $destination_uri;
 		$this->sourceURI 		= YZE_Request::get_instance()->the_full_uri();
 		$this->sourceController = $source_controller;
-		$this->innerRedirect 	= $innerRedirect;
+		$this->datas 			= $datas;
+		
+		$this->url_components = parse_url($this->destinationURI);
+		if(@$this->url_components['host'] && $this->url_components['host'] != $_SERVER['HTTP_HOST']){
+			$this->outgoing = true;
+		}
+		
+		if( ! $this->outgoing){
+			$request = YZE_Request::get_instance();
+			$request->init($destination_uri);
+			
+			$this->destinationController = $request->controller();
+		}
+		
+		
 	}
 	
 	public function output(){
-		//post后重定向，把post处理中设置的数据保存下来，重定向到新页面后再取出来显示
-		//因为post不提供显示视图输出，所以这些数据需要在重定向后的get请求返回的视图中显示
-		//这主要是post处理方法在向get方法中共享数据的方式
-		if ($this->sourceController->get_view_data()) {//有的post提交返回 的是YZE_Notpl_View
-			YZE_Session_Context::get_instance()->save_controller_datas($this->sourceController, $this->sourceController->get_view_data());
+		if ($this->outgoing){
+			header("Location: $this->destinationURI");
+			return;
 		}
 		
-		//内部重定向，不输出redirect header，直接内部处理
-		if ($this->innerRedirect){
+		if ($this->datas) {
+			YZE_Session_Context::get_instance()->save_controller_datas($this->destinationController, $this->datas);
+		}
+		
+		//get请求则内部重定向，不经过浏览器在请求一次
+		if (YZE_Request::get_instance()->is_get()){
 			return yze_go($this->destinationURI());
 		}
 		
@@ -98,21 +118,12 @@ class YZE_Redirect implements YZE_IResponse{
 		
 		$format = YZE_Request::get_instance()->get_output_format();
 		if($format != "tpl"){
-			$url_components = parse_url($this->destinationURI);
-
-			//不是站内跳转
-			if(@$url_components['host'] && $url_components['host'] != $_SERVER['HTTP_HOST']){
-				header("Location: $this->destinationURI");
-				return;
-			}
-			
 			//TODO 考虑PATH_INFO
-			$target_uri = @$url_components['path'].".{$format}?".@$url_components['query'].
-			(@$url_components['fragment'] ? "#".$url_components['fragment'] : "");
+			$target_uri = @$this->url_components['path'].".{$format}?".@$this->url_components['query'].
+			(@$this->url_components['fragment'] ? "#".$this->url_components['fragment'] : "");
 			
 			YZE_View_Adapter::build_view($this->sourceController, $target_uri)->output();
 		}else{
-			//如果
 			header("Location: {$target_uri}");
 		}
 	}
@@ -125,8 +136,7 @@ class YZE_Redirect implements YZE_IResponse{
 		return $this->sourceURI();
 	}
 	public function get_data($key){
-		$datas = $this->sourceController->get_datas();
-		return @$datas[$key];
+		return @$this->datas[$key];
 	}
 }
 
@@ -142,11 +152,6 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 */
 	protected $data;
 
-	/**
-	 * 处理当前请求时出现的异常
-	 * @var Exception
-	 */
-	private $exception;
 	/**
 	 * 视图响应的缓存控制
 	 * @var YZE_HttpCache
@@ -165,7 +170,6 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function __construct($data, YZE_Resource_Controller $controller){
 		$this->data = (array)$data;
 		$this->controller = $controller;
-		$this->exception = YZE_Session_Context::get_instance()->get_controller_exception($controller);
 	}
 	public function get_controller(){
 		return $this->controller;
@@ -197,18 +201,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function get_datas(){
 		return  $this->data;
 	}
-	public function has_exception(){
-		return is_a($this->exception,"Exception");
-	}
-	public function get_exception_message(){
-		if(!$this->has_exception()){
-			return "";
-		}
-		return $this->exception->getMessage();
-	}
-	public function get_exception(){
-		return $this->exception;
-	}
+
 	public function set_cache_config(YZE_HttpCache $cache=null){
 		$this->cache_ctl = $cache;
 	}
@@ -261,10 +254,9 @@ class YZE_Simple_View extends YZE_View_Adapter {
 		$this->format 	= $format;
 	}
 
-	public function check_view()
-	{
+	public function check_view(){
 		if(!file_exists("{$this->tpl}.{$this->format}.php")){
-			throw new YZE_View_Not_Found_Exception("{$this->tpl}.{$this->format}.php");
+			throw new YZE_Resource_Not_Found_Exception(" view {$this->tpl}.{$this->format}.php not found");
 		}
 	}
 
@@ -297,20 +289,44 @@ class YZE_Notpl_View extends YZE_View_Adapter {
  *
  */
 class YZE_JSON_View extends YZE_View_Adapter {
+	/**
+	 * 
+	 * @param YZE_Resource_Controller $controller
+	 * @param unknown $data
+	 * @param string $data_type data 为数据，redirect 为重定向
+	 * @param string $success
+	 * @param number $errorcode
+	 * @param string $msg
+	 */
 	public function __construct(YZE_Resource_Controller $controller, $data, $data_type="data", $success=true, $errorcode=0, $msg=""){
-		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, $data_type=>"data"), $controller);
+		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, "data_type"=>"data"), $controller);
 	}
 	protected function display_self(){
 		echo json_encode($this->data);
 	}
 }
+/**
+ * 把数据转换成xml输出，输出格式<?xml version="1.0"?>
+ * <root><success>1</success><errorcode>0</errorcode><msg></msg><data>your data</data><data_type>data</data_type></root>
+ * 
+ * @author apple
+ *
+ */
 class YZE_XML_View extends YZE_View_Adapter {
+	/**
+	 * 
+	 * @param YZE_Resource_Controller $controller
+	 * @param unknown $data
+	 * @param string $data_type data 为数据，redirect 为重定向
+	 * @param string $success
+	 * @param number $errorcode
+	 * @param string $msg
+	 */
 	public function __construct(YZE_Resource_Controller $controller, $data, $data_type="data", $success=true, $errorcode=0, $msg=""){
-		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, $data_type=>"data" ), $controller);
+		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, "data_type"=>"data" ), $controller);
 	}
 	protected function display_self(){
 		$xml = new SimpleXMLElement("<?xml version=\"1.0\"?><root></root>");
-		
 		$this->array_to_xml($this->data,$xml);
 		
 		echo $xml->asXML();

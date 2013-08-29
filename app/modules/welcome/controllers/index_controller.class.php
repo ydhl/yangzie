@@ -7,11 +7,7 @@
 class Index_Controller extends YZE_Resource_Controller {
 	
 	public function get(){
-		$request 		= YZE_Request::get_instance();
-		if($request->get_from_get("test")=="get_exception"){
-			throw new YZE_RuntimeException("get请求处理时出现了异常");
-		}
-	
+		
 		$this->set_View_Data("yze_page_title", __("Yangzie 简单的PHP开发框架"));
 	}
 	

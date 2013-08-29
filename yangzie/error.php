@@ -63,6 +63,20 @@ class YZE_RuntimeException extends Exception{
 		return true;
 	}
 }
+/**
+ * 严重异常
+ * 
+ * @author apple
+ *
+ */
+class YZE_FatalException extends YZE_RuntimeException{
+	public function __construct ($message = null) {
+		parent::__construct($message, 500);
+	}
+	public function isResumeable(){
+		return false;
+	}
+}
 
 
 /**
@@ -78,7 +92,7 @@ class YZE_Not_Modified_Exception extends YZE_RuntimeException{
 
 
 class YZE_Request_Validate_Failed extends YZE_RuntimeException{
-	public $fields;
+	public $validater;
 	/**
 	 *
 	 * @param unknown_type $fields 关联数组，键为表单项名，值为错误消息
@@ -86,10 +100,14 @@ class YZE_Request_Validate_Failed extends YZE_RuntimeException{
 	 * @param unknown_type $code
 	 * @param unknown_type $previous
 	 */
-	public function __construct($fields, $message)
+	public function __construct(YZEValidate $validater, $message)
 	{
 		parent::__construct($message, 500);
-		$this->fields = $fields;
+		$this->validater = $validater;
+	}
+	
+	public function get_validater(){
+		return $this->validater;
 	}
 
 }

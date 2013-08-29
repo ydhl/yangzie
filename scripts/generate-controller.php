@@ -175,6 +175,13 @@ class $class extends YZE_Resource_Controller {
 		//如果该控制器的响应输出需要缓存，这里返回生成缓存文件的唯一id
 		return null;
 	}
+	
+	/*
+	 * @see YZE_Resouse_Controller::cleanup()
+	 */
+	public function cleanup(){
+		//pass
+	}
 
 	protected \$module_name = \"$module\";
 	
@@ -238,6 +245,7 @@ this is {$controller} view";
 			echo("create view {$controller}.{$format}.php:\t\t\t");
 			$this->create_file($view_file_path, $view_file_content);
 		}
+
 	}
 	
 	protected function create_layout(){

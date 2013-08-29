@@ -53,7 +53,7 @@ abstract class YZEValidate extends YZE_Object
     		}
     	}
         if ($failed) {
-        	throw new YZE_Request_Validate_Failed($failed, join(PHP_EOL, $failed));
+        	throw new YZE_Request_Validate_Failed($this, join(PHP_EOL, $failed));
         }
 
         return true;
@@ -119,6 +119,17 @@ abstract class YZEValidate extends YZE_Object
     	return $this;
     }
     
+    /**
+     * 取得某个字段的错误消息
+     * 
+     * @param unknown $request_method
+     * @param unknown $name
+     * 
+     * 
+     */
+    public function get_validates(){
+    	return $this->validates;
+    }
     
     /**
      * 数据必需要提供

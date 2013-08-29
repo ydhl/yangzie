@@ -18,5 +18,5 @@ require 'init.php';
 require 'load.php';
 
 //开始处理请求
-yze_run();
+yze_go();
 ?>

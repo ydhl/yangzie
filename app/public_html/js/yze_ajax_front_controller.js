@@ -14,7 +14,7 @@ function yze_ajax_front_controller(){
 		        url: url,
 		        type: "GET",
 		        headers: {
-		            "X-YZE-Request-Client" : "AJAX"
+		            "X-YZE-No-Content-Layout" : "yes"
 		        },
 		        data: params,
 		        error: function(jqXHR, textStatus, errorThrown) {alert(errorThrown);},

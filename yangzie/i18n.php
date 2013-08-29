@@ -45,9 +45,9 @@ function load_default_textdomain() {
 }
 
 function get_i18n_cache(){
-	return YZE_Session::get_instance()->get_('i18n');
+	return YZE_Session_Context::get_instance()->get('i18n');
 }
 function set_i18n_cache($i18n){
-	return YZE_Session::get_instance()->set_('i18n', $i18n);
+	return YZE_Session_Context::get_instance()->set('i18n', $i18n);
 }
 ?>

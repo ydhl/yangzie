@@ -10,16 +10,15 @@ class Generate_Controller_Script extends AbstractScript{
 	private $model;
 	private $uri_args = array();
 
-	protected $http_methods = array("get","post","delete","put","exception");
 	
 	public function generate(){
 		$argv = $this->args;
 		$this->controller		= $argv['controller'];
 		$this->novalidate		= $argv['novalidate'];
 		$this->view_format 		= $argv['view_format'];
-		$this->module_name 	= $argv['module_name'];
+		$this->module_name 		= $argv['module_name'];
 		$this->uri 				= $argv['uri'];
-		$this->view_tpl 			= $argv['view_tpl'];
+		$this->view_tpl 		= $argv['view_tpl'];
 		//$this->entry_file 		= $argv['entry_file'];
 
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
@@ -161,8 +160,15 @@ class $class extends YZE_Resource_Controller {
 	 * exception表示在处理的过程中出现了异常，在该方法中决定如何处理异常，返回响应YZE_IResponse
 	 *
 	 */
-	public function exception(){
+	public function exception(YZE_RuntimeException \$e){
 		\$request = YZE_Request::get_instance();
+		//根据异常的类型做响应的处理，如
+		//if(\$e->isResumeable()){
+		//	\$this->set_view_data('error_message', \$e->getMessage());
+		//	return \$this->get();
+		//}else{
+		//	\$this->set_view_data('error_message', \$e->getMessage()); 
+		//}
 	}
 	
 	public function get_response_guid(){
@@ -170,12 +176,14 @@ class $class extends YZE_Resource_Controller {
 		return null;
 	}
 	
-	protected function post_result_of_ajax(){
-		//这里返回ajax post请求时返回地数据
-		return array();
+	/*
+	 * @see YZE_Resouse_Controller::cleanup()
+	 */
+	public function cleanup(){
+		//pass
 	}
+
 	protected \$module_name = \"$module\";
-	protected \$models = array();
 	
 }
 ?>";
@@ -229,12 +237,15 @@ class $class extends YZE_Resource_Controller {
  * @param type name optional
  *
  */
+ 
+ \$data = \$this->get_data('arg_name');
 ?>
 
 this is {$controller} view";
 			echo("create view {$controller}.{$format}.php:\t\t\t");
 			$this->create_file($view_file_path, $view_file_content);
 		}
+
 	}
 	
 	protected function create_layout(){

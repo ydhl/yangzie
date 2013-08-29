@@ -5,16 +5,18 @@ class YZE_Form extends YZE_Object{
 	private $method = "post";
 	private $acl;
 	private $view;
+	private $is_delete_form;
 
 
-	public function __construct(YZE_View_Adapter $view,$form_name,YZE_Model $model=null){
+	public function __construct(YZE_View_Adapter $view,$form_name,YZE_Model $model=null,$is_delete=false){
 		$this->form_name = $form_name;
 		$this->model = $model;
 		$this->view = $view;
 		$this->acl = YZE_ACL::get_instance();
+		$this->is_delete_form = $is_delete;
 	}
 
-	public function begin_form(array $attrs=array(),$is_delete=false){
+	public function begin_form(array $attrs=array()){
 		ob_start();
 		$name = $this->form_name;
 		$model = $this->model;
@@ -22,13 +24,13 @@ class YZE_Form extends YZE_Object{
 		foreach ($attrs as $n=>$value){
 			$html .= "$n = '$value' ";
 		}
-		$token = YZE_Session::get_instance()->get_request_token(YZE_Request::get_instance()->the_uri());
+		$token = YZE_Session_Context::get_instance()->get_request_token(YZE_Request::get_instance()->the_uri());
 		if($model){
 			$modify = "<input type='hidden' name='yze_modify_version' value='".$model->get_version_value()."'/>
 					<input type='hidden' name='yze_model_id' value='".$model->get_key()."'/>
-							<input type='hidden' name='yze_model_name' value='".get_class($model)."'/>
-									<input type='hidden' name='yze_module_name' value='".$model->get_module_name()."'/>
-											<input type='hidden' name='yze_method' value='".($is_delete ? "delete" : "put")."'/>";
+					<input type='hidden' name='yze_model_name' value='".get_class($model)."'/>
+					<input type='hidden' name='yze_module_name' value='".$model->get_module_name()."'/>
+					<input type='hidden' name='yze_method' value='".($this->is_delete_form ? "delete" : "put")."'/>";
 		}
 		echo "<form name='$name' method='{$this->method}' $html>
 		<input type='hidden' name='yze_request_token' value='{$token}'/>
@@ -45,17 +47,16 @@ class YZE_Form extends YZE_Object{
 	}
 }
 
-function yze_render_link($action, array $args, $anchor=null){
-	$path = http_build_query($args).($anchor ? "#{$anchor}" : "");
-	$action = trim($action, "/");
-	
-	switch (YZE_REWRITE_MODE){
-		case YZE_REWRITE_MODE_REWRITE: 	return "/".$action."?".trim($path, "/");
-		case YZE_REWRITE_MODE_PATH_INFO: 	return "index.php/$action?".$path; 
-		case YZE_REWRITE_MODE_NONE:	
-		default: 	
-			return $_SERVER["SERVER_NAME"]."?yze_action=/{$action}&".$path;
-	}
+/**
+ * 显示给定的视图并停止执行
+ * 
+ * @param YZE_View_Adapter $view
+ * @param YZE_Resource_Controller $controller
+ */
+function yze_die(YZE_View_Adapter $view, YZE_Resource_Controller $controller){
+	$layout = new YZE_Layout("error", $view, $controller);
+	$layout->output();
+	die(0);
 }
 
 /**
@@ -64,17 +65,16 @@ function yze_render_link($action, array $args, $anchor=null){
  * 
  * @author leeboo
  * 
- * @param unknown $object
+ * @param YZE_Model $object
  * @param unknown $name
- * @param string $uri
+ * @param string $uri 未空表示当前uri
  * @return string
  * 
  * @return
  */
-function yze_get_default_value($object, $name, $uri=null)
-{
-	if (YZE_Session::post_cache_has($name, $uri)){
-		return YZE_Session::get_cached_post($name, $uri);
+function yze_get_default_value($object, $name, $controller){
+	if (YZE_Session_Context::post_cache_has($name, $controller)){
+		return YZE_Session_Context::get_cached_post($name, $controller);
 	}
 	if ($object){
 		return $object->get($name);
@@ -83,7 +83,7 @@ function yze_get_default_value($object, $name, $uri=null)
 }
 
 /**
- * 返回当前uri的表单最后一次提交出错的出错信息
+ * 返回当前控制器的出错信息
  * 
  * @author leeboo
  * 
@@ -91,14 +91,28 @@ function yze_get_default_value($object, $name, $uri=null)
  * 
  * @return
  */
-function yze_get_post_error()
-{
-	$session = YZE_Session::get_instance();
-	$uri = YZE_Request::get_instance()->the_uri();
-	if ($session->has_exception($uri)) {
-		return nl2br($session->get_uri_exception($uri)->getMessage());
+function yze_controller_error(){
+	$session 	= YZE_Session_Context::get_instance();
+	$controller = YZE_Request::get_instance()->controller();
+	if (($exception = $session->get_controller_exception($controller))) {
+		return $exception->getMessage();
 	}
 }
+
+/**
+ * 取得表单字段的验证错误消息
+ * 
+ */
+function yze_form_field_error(YZE_Resource_Controller $controller, $request_method, $field_name){
+	$datas = YZE_Session_Context::get_instance()->get_controller_validates($controller);
+	if (@ ! $datas[$request_method][$field_name]) return "";
+	$error = "";
+	foreach ($datas[$request_method][$field_name] as $rule => $errs){
+		$error .= $errs['message'];
+	}
+	return $error;
+}
+
 
 /**
  * 把传入的文件压缩成一个文件后返回该文件的uri，比如把所有的css文件压缩成一个；

@@ -58,68 +58,64 @@ class YZE_Session_Context{
 	/**
 	 * 临时保存post提交的数据
 	 *
-	 * @param $controller YZE_Resource_Controller
-	 * 
+	 * @param string $controller_name
 	 * @param $post filter_special_chars过滤后的数据
 	 * 
 	 * @return void
 	 * @author liizii
 	 * @since 2009-12-10
 	 */
-	public function save_post_datas(YZE_Resource_Controller $controller,array $post){
-		$_SESSION['yze']['post_cache'][get_class($controller)] = $post;
+	public function save_post_datas($controller_name, array $post){
+		$_SESSION['yze']['post_cache'][$controller_name] = $post;
 	}
 	/**
 	 * 取得缓存的post提交的数据
 	 *
-	 * @param  $controller YZE_Resource_Controller
-	 * 
+	 * @param  $controller_name
 	 * @return array filter_special_chars过滤后的数据
 	 * 
 	 * @author liizii
 	 * @since 2009-12-10
 	 */
-	public function get_post_datas(YZE_Resource_Controller $controller){
-		return @$_SESSION['yze']['post_cache'][get_class($controller)];
+	public function get_post_datas($controller_name){
+		return @$_SESSION['yze']['post_cache'][$controller_name];
 	}
 	/**
 	 * 清空post提交的数据
 	 *
-	 * @param YZE_Resource_Controller $controller
+	 * @param $controller_name
 	 * @return void
 	 * @author liizii
 	 * @since 2009-12-10
 	 */
-	public function clear_post_datas(YZE_Resource_Controller $controller){
-		$key = get_class($controller);
-		if (@$_SESSION['yze']['post_cache'][$key])
-			unset($_SESSION['yze']['post_cache'][$key]);
+	public function clear_post_datas($controller_name){
+		if (@$_SESSION['yze']['post_cache'][$controller_name])
+			unset($_SESSION['yze']['post_cache'][$controller_name]);
 	}
 	
 	/**
 	 * 保存控制器处理过程中的异常
 	 * 
-	 * @param YZE_Resource_Controller $controller
+	 * @param $controller_name
 	 * @param Exception $exception
 	 */
-	public function save_controller_exception(YZE_Resource_Controller $controller, $exception){
-		$_SESSION['yze']['exception'][get_class($controller)] = $exception;
+	public function save_controller_exception($controller_name, $exception){
+		$_SESSION['yze']['exception'][$controller_name] = $exception;
 		return $this;
 	}
 	
 	/**
 	 * 取得控制器的异常
 	 *
-	 * @param YZE_Resource_Controller $controller
+	 * @param $controller_name
 	 * @return Exception
 	 */
-	public function get_controller_exception(YZE_Resource_Controller $controller){
-		return @$_SESSION['yze']['exception'][get_class($controller)];
+	public function get_controller_exception($controller_name){
+		return @$_SESSION['yze']['exception'][$controller_name];
 	}
-	public function clear_controller_exception(YZE_Resource_Controller $controller){
-		$key = get_class($controller);
-		if (@$_SESSION['yze']['exception'][$key]) 
-			unset($_SESSION['yze']['exception'][$key]);
+	public function clear_controller_exception($controller_name){
+		if (@$_SESSION['yze']['exception'][$controller_name]) 
+			unset($_SESSION['yze']['exception'][$controller_name]);
 	}
 	
 	/**
@@ -128,89 +124,88 @@ class YZE_Session_Context{
 	 * @param YZE_Resource_Controller $controller
 	 * @param Exception $exception
 	 */
-	public function save_controller_validates(YZE_Resource_Controller $controller, $datas){
-		$_SESSION['yze']['validates'][get_class($controller)] = $datas;
+	public function save_controller_validates($controller_name, $datas){
+		$_SESSION['yze']['validates'][$controller_name] = $datas;
 		return $this;
 	}
 	
 	/**
 	 * 取得控制器的验证错误
 	 *
-	 * @param YZE_Resource_Controller $controller
+	 * @param $controller_name
 	 * @return Exception
 	 */
-	public function get_controller_validates(YZE_Resource_Controller $controller){
-		return @$_SESSION['yze']['validates'][get_class($controller)];
+	public function get_controller_validates($controller_name){
+		return @$_SESSION['yze']['validates'][$controller_name];
 	}
-	public function clear_controller_validates(YZE_Resource_Controller $controller){
-		$key = get_class($controller);
-		if (@$_SESSION['yze']['validates'][$key])
-			unset($_SESSION['yze']['validates'][$key]);
+	public function clear_controller_validates($controller_name){
+		if (@$_SESSION['yze']['validates'][$controller_name])
+			unset($_SESSION['yze']['validates'][$controller_name]);
 	}
 
 
 	/**
 	 * 保存controller的数据
 	 * 
-	 * @param YZE_Resource_Controller $controller
+	 * @param $controller_name
 	 * @param array $datas
 	 */
-	public function save_controller_datas(YZE_Resource_Controller $controller, array $datas){
-		$_SESSION['yze']['controller_data'][get_class($controller)] = $datas;
+	public function save_controller_datas($controller_name, array $datas){
+		$_SESSION['yze']['controller_data'][$controller_name] = $datas;
 	}
 
 	/**
 	 * 取得controller的数据
 	 * 
-	 * @param YZE_Resource_Controller $controller
+	 * @param $controller_name
 	 */
-	public function get_controller_datas(YZE_Resource_Controller $controller){
-		return @$_SESSION['yze']['controller_data'][get_class($controller)];
+	public function get_controller_datas($controller_name){
+		return @$_SESSION['yze']['controller_data'][$controller_name];
 	}
 
 	/**
 	 * 清空controller上绑定的所有数据
 	 * 
-	 * @param YZE_Resource_Controller $controller
+	 * @param $controller_name
 	 */
-	public function clear_controller_datas(YZE_Resource_Controller $controller){
-		unset($_SESSION['yze']['controller_data'][get_class($controller)]);
+	public function clear_controller_datas($controller_name){
+		unset($_SESSION['yze']['controller_data'][$controller_name]);
 	}
-	public function set_request_token(YZE_Resource_Controller $controller, $token){
-		$_SESSION['yze']["token"][get_class($controller)] = $token;
+	public function set_request_token($controller_name, $token){
+		$_SESSION['yze']["token"][$controller_name] = $token;
 	}
-	public function get_request_token(YZE_Resource_Controller $controller){
-		return @$_SESSION['yze']["token"][get_class($controller)];
+	public function get_request_token($controller_name){
+		return @$_SESSION['yze']["token"][$controller_name];
 	}
 	public function clear_request_token(){
 		unset($_SESSION['yze']["token"]);
 	}
-	public function clear_request_token_ext(YZE_Resource_Controller $controller){
-		unset($_SESSION['yze']["token"][get_class($controller)]);
+	public function clear_request_token_ext($controller_name){
+		unset($_SESSION['yze']["token"][$controller_name]);
 	}
-	public static function get_cached_post($name,YZE_Resource_Controller $controller=null)
+	public static function get_cached_post($name,$controller_name=null)
 	{
-		if (empty($controller)) {
-			$controller = YZE_Request::get_instance()->controller();
+		if (empty($controller_name)) {
+			$controller_name = get_class(YZE_Request::get_instance()->controller());
 		}
-		$dates = YZE_Session_Context::get_instance()->get_post_datas($controller);
+		$dates = YZE_Session_Context::get_instance()->get_post_datas($controller_name);
 		return @$dates[$name];
 	}
 
-	public static function post_cache_has($name, YZE_Resource_Controller $controller=null)
+	public static function post_cache_has($name, $controller_name=null)
 	{
-		if (empty($controller)) {
-			$controller = YZE_Request::get_instance()->controller();
+		if (empty($controller_name)) {
+			$controller_name = get_class(YZE_Request::get_instance()->controller());
 		}
 		return YZE_Session_Context::get_instance()->get_cached_post($name);
 	}
 
-	public static function post_cache_has_ext(YZE_Resource_Controller $controller=null)
+	public static function post_cache_has_ext($controller_name=null)
 	{
-		if (empty($controller)) {
-			$controller = YZE_Request::get_instance()->controller();
+		if (empty($controller_name)) {
+			$controller_name = get_class(YZE_Request::get_instance()->controller());
 		}
-		return YZE_Session_Context::get_instance()->get_post_datas($controller);
+		return YZE_Session_Context::get_instance()->get_post_datas($controller_name);
 	}
 	
 }

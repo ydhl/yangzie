@@ -84,14 +84,14 @@ function yze_go($uri = null){
 		$request->rollback();
 		
 		if(is_a($e, "YZE_Request_Validate_Failed")){
-			$session->save_controller_validates($controller, $e->get_validater()->get_validates());
+			$session->save_controller_validates(get_class($controller), $e->get_validater()->get_validates());
 		}
 		
 		if( ! $e->isResumeable()){//不可回复的异常，直接有yangzie接手
 			$controller = new YZE_Exception_Controller();
 			$response = $controller->do_exception($e);
 		}else{//可恢复的异常，原来的控制器处理
-			$session->save_controller_exception($controller, $e);
+			$session->save_controller_exception(get_class($controller), $e);
 			$response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
 		}
 	}

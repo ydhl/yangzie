@@ -61,7 +61,7 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	 */
 	public function get_datas(){
 		$request = YZE_Request::get_instance();
-		$cache = YZE_Session_Context::get_instance()->get_controller_datas($this);
+		$cache = YZE_Session_Context::get_instance()->get_controller_datas(get_class($this));
 		if( ! $cache){
 			return $this->get_View_Data();
 		}
@@ -115,10 +115,10 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		$session	= YZE_Session_Context::get_instance();
 		
 		//该请求有异常
-		if(($exception = $session->get_controller_exception($this))){
+		if(($exception = $session->get_controller_exception(get_class($this)))){
 			$response = $this->exception($exception);
 		}else{
-			YZE_Session_Context::get_instance()->set_request_token($request->the_uri(), $request->the_request_token());
+			YZE_Session_Context::get_instance()->set_request_token(get_class($request->controller()), $request->the_request_token());
 			$response = $this->get();
 		}
 
@@ -137,8 +137,8 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		}
 		
 // 		//界面显示后把一些数据清空
-// 		$session->clear_controller_exception($this);
-// 		$session->clear_controller_datas($this);
+// 		$session->clear_controller_exception(get_class($this));
+// 		$session->clear_controller_datas(get_class($this));
 		return $response;
 	}
 
@@ -246,8 +246,8 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	
 	/**
 	 * 根据控制器的处理逻辑，清空控制器在会话上下文中保存的数据，根据情况调用以下的方法
-	 * YZE_Session_Context::get_instance()->clear_controller_datas($this);
-	 * YZE_Session_Context::get_instance()->clear_controller_exception($this);
+	 * YZE_Session_Context::get_instance()->clear_controller_datas(get_class($this));
+	 * YZE_Session_Context::get_instance()->clear_controller_exception(get_class($this));
 	 * 
 	 */
 	public function cleanup(){
@@ -294,8 +294,8 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		}
 
 		//成功处理，清除保存的post数据
-		$session->clear_post_datas($this);
-		$session->clear_request_token_ext($this);
+		$session->clear_post_datas(get_class($this));
+		$session->clear_request_token_ext(get_class($this));
 
 		if(@$_SERVER['HTTP_X_YZE_NO_CONTENT_LAYOUT'] == "yes"){
 			$this->layout = "";
@@ -308,10 +308,13 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	{
 		$session = YZE_Session_Context::get_instance();
 		$request = YZE_Request::get_instance();
-		$saved_token = $session->get_request_token($request->the_uri());
+		$saved_token = $session->get_request_token(get_class($this));
 
 		//uri1中的表单提交到uri2中的情况
-		$refer_saved_token = $session->get_request_token($request->the_referer_uri(true));
+		$source_controller = YZE_Session_Context::get_instance()->get(get_class($this)." from:");
+		$refer_saved_token = $session->get_request_token($source_controller);
+		YZE_Session_Context::get_instance()->destory(get_class($this)." from:");
+		
 		$filtered_data  = do_filter(YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, array("saved_token"=>$saved_token, "post_request_token"=>$post_request_token));
 		$saved_token    = $filtered_data['saved_token'];
 		$post_request_token = $filtered_data['post_request_token'];

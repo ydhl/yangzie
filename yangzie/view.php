@@ -94,9 +94,9 @@ class YZE_Redirect implements YZE_IResponse{
 			$request->init($destination_uri);
 			
 			$this->destinationController = $request->controller();
+			
+			YZE_Session_Context::get_instance()->set(get_class($this->destinationController)." from:",  get_class($source_controller));
 		}
-		
-		
 	}
 	
 	public function output(){
@@ -106,7 +106,7 @@ class YZE_Redirect implements YZE_IResponse{
 		}
 		
 		if ($this->datas) {
-			YZE_Session_Context::get_instance()->save_controller_datas($this->destinationController, $this->datas);
+			YZE_Session_Context::get_instance()->save_controller_datas(get_class($this->destinationController), $this->datas);
 		}
 		
 		//get请求则内部重定向，不经过浏览器在请求一次

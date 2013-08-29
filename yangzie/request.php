@@ -277,7 +277,7 @@ class YZE_Request extends YZE_Object
 		
 
 		if  ( ! $this->is_get() and $this->the_post_datas()) {
-			YZE_Session_Context::get_instance()->save_post_datas($this->controller(), $this->the_post_datas());
+			YZE_Session_Context::get_instance()->save_post_datas(get_class($this->controller()), $this->the_post_datas());
 		}
 		
 		return $this;

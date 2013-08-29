@@ -29,10 +29,11 @@ define('YZE_HOOK_AFTER_POST','do_after_post');
 define('YZE_HOOK_AFTER_GET','do_after_get');
 define('YZE_HOOK_AFTER_PUT','do_after_put');
 define('YZE_HOOK_AFTER_DELETE','do_after_delete');
-define('YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token');
 define('YZE_HOOK_TRANSACTION_COMMIT','transaction_commit');
 define('YZE_HOOK_UNRESUME_EXCEPTION','yze_hook_unresume_exception');
 define('YZE_HOOK_BEFORE_EXCEPTION','yze_hook_before_exception');
+
+define('YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token');
 
 /**
  * 解析地址得到请求url，如module/controller/var
@@ -67,6 +68,7 @@ final class YZE_Hook{
 	}
 	
 	public function do_filter($filter_name,$data){
+
 		if(!$this->has_hook($filter_name))return $data;
 		foreach($this->listeners[$filter_name] as $listeners){
 			if(is_object($listeners['object'])){

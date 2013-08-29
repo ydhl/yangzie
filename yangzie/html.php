@@ -24,7 +24,7 @@ class YZE_Form extends YZE_Object{
 		foreach ($attrs as $n=>$value){
 			$html .= "$n = '$value' ";
 		}
-		$token = YZE_Session_Context::get_instance()->get_request_token(YZE_Request::get_instance()->the_uri());
+		$token = YZE_Session_Context::get_instance()->get_request_token(get_class(YZE_Request::get_instance()->controller()));
 		if($model){
 			$modify = "<input type='hidden' name='yze_modify_version' value='".$model->get_version_value()."'/>
 					<input type='hidden' name='yze_model_id' value='".$model->get_key()."'/>
@@ -73,8 +73,9 @@ function yze_die(YZE_View_Adapter $view, YZE_Resource_Controller $controller){
  * @return
  */
 function yze_get_default_value($object, $name, $controller){
-	if (YZE_Session_Context::post_cache_has($name, $controller)){
-		return YZE_Session_Context::get_cached_post($name, $controller);
+	$controller_name = get_class($controller);
+	if (YZE_Session_Context::post_cache_has($name, $controller_name)){
+		return YZE_Session_Context::get_cached_post($name,  $controller_name);
 	}
 	if ($object){
 		return $object->get($name);
@@ -94,7 +95,7 @@ function yze_get_default_value($object, $name, $controller){
 function yze_controller_error(){
 	$session 	= YZE_Session_Context::get_instance();
 	$controller = YZE_Request::get_instance()->controller();
-	if (($exception = $session->get_controller_exception($controller))) {
+	if (($exception = $session->get_controller_exception(get_class($controller)))) {
 		return $exception->getMessage();
 	}
 }
@@ -104,7 +105,7 @@ function yze_controller_error(){
  * 
  */
 function yze_form_field_error(YZE_Resource_Controller $controller, $request_method, $field_name){
-	$datas = YZE_Session_Context::get_instance()->get_controller_validates($controller);
+	$datas = YZE_Session_Context::get_instance()->get_controller_validates(get_class($controller));
 	if (@ ! $datas[$request_method][$field_name]) return "";
 	$error = "";
 	foreach ($datas[$request_method][$field_name] as $rule => $errs){

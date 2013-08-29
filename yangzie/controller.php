@@ -283,6 +283,7 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 			throw new YZE_Resource_Not_Found_Exception($method);
 		}
 		//防止表单重复提交
+
 		$this->_check_request_token($request->get_from_post('yze_request_token'));
 
 		$response = $this->$method();
@@ -293,8 +294,8 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		}
 
 		//成功处理，清除保存的post数据
-		$session->clear_post_datas($request->the_uri());
-		$session->clear_request_token_ext($request->the_uri());
+		$session->clear_post_datas($this);
+		$session->clear_request_token_ext($this);
 
 		if(@$_SERVER['HTTP_X_YZE_NO_CONTENT_LAYOUT'] == "yes"){
 			$this->layout = "";
@@ -349,7 +350,7 @@ class YZE_Exception_Controller extends YZE_Resource_Controller{
 		return new YZE_Simple_View(YZE_APP_VIEWS_INC.$this->exception->getCode(), array("exception"=>$this->exception), $this);
 	}
 	
-	public function exception(Exception $e){
+	public function exception(YZE_RuntimeException $e){
 		$this->exception = $e;
 		return $this->get();
 	}

@@ -176,17 +176,17 @@ class YZE_Session_Context{
 	public function clear_controller_datas(YZE_Resource_Controller $controller){
 		unset($_SESSION['yze']['controller_data'][get_class($controller)]);
 	}
-	public function set_request_token($uri, $token){
-		$_SESSION['yze']["token"][$uri] = $token;
+	public function set_request_token(YZE_Resource_Controller $controller, $token){
+		$_SESSION['yze']["token"][get_class($controller)] = $token;
 	}
-	public function get_request_token($uri){
-		return @$_SESSION['yze']["token"][$uri];
+	public function get_request_token(YZE_Resource_Controller $controller){
+		return @$_SESSION['yze']["token"][get_class($controller)];
 	}
 	public function clear_request_token(){
 		unset($_SESSION['yze']["token"]);
 	}
-	public function clear_request_token_ext($uri){
-		unset($_SESSION['yze']["token"][$uri]);
+	public function clear_request_token_ext(YZE_Resource_Controller $controller){
+		unset($_SESSION['yze']["token"][get_class($controller)]);
 	}
 	public static function get_cached_post($name,YZE_Resource_Controller $controller=null)
 	{

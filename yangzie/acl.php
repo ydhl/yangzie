@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 class YZE_ACL extends YZE_Object{
 	private $aros_acos;
 	private $acos;
@@ -6,8 +8,8 @@ class YZE_ACL extends YZE_Object{
 	private static $instance;
 	
 	private function __construct(){
-		$this->aros_acos = yze_get_acos_aros();
-		$this->acos =   yze_get_acos();
+		$this->aros_acos = \app\yze_get_acos_aros();
+		$this->acos =   \app\yze_get_acos();
 	}
 	
 	/**

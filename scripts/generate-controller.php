@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 class Generate_Controller_Script extends AbstractScript{
 	private $controller;
 	private $novalidate;
@@ -39,9 +41,9 @@ class Generate_Controller_Script extends AbstractScript{
 
 		$module_file = "$path/__module__.php";
 		include_once $module_file;
-		$module_cls = $module."_Module";
+		$module_cls = "\\app\\".$this->module_name."\\".$module."_Module";
 		$module = new $module_cls;
-		$ref_cls 	= new ReflectionClass($module_cls);
+		$ref_cls 	= new \ReflectionClass($module_cls);
 		$method 	= $ref_cls->getMethod("_config");
 		$method->setAccessible(true);
 		$configs = $method->invoke($module);
@@ -114,6 +116,13 @@ include \"load.php\";
 		$class_file_path = dirname(dirname(__FILE__))
 		."/app/modules/". $module."/controllers/".strtolower($class).".class.php";
 		$class_file_content = "<?php
+namespace app\\$module;
+use \\yangzie\\YZE_Resource_Controller;
+use \\yangzie\\YZE_Request;
+use \\yangzie\\YZE_Redirect;
+use \\yangzie\\YZE_Session_Context;
+use \\yangzie\\YZE_RuntimeException;
+
 /**
 *
 * @version \$Id\$
@@ -155,20 +164,10 @@ class $class extends YZE_Resource_Controller {
 	public function put(){
 		\$request = YZE_Request::get_instance();
 	}
-	
-	/**
-	 * exception表示在处理的过程中出现了异常，在该方法中决定如何处理异常，返回响应YZE_IResponse
-	 *
-	 */
+
 	public function exception(YZE_RuntimeException \$e){
 		\$request = YZE_Request::get_instance();
-		//根据异常的类型做响应的处理，如
-		//if(\$e->isResumeable()){
-		//	\$this->set_view_data('error_message', \$e->getMessage());
-		//	return \$this->get();
-		//}else{
-		//	\$this->set_view_data('error_message', \$e->getMessage()); 
-		//}
+		//出现了严重异常，如何处理，没有任何处理将显示500页面
 	}
 	
 	public function get_response_guid(){
@@ -217,7 +216,7 @@ class $class extends YZE_Resource_Controller {
 		foreach ($this->input as $input){
 			if(stripos(@$input['data-source'], $method)===FALSE)continue;
 			$validate_name = strtolower(substr($input['validate']['name'], 0, 10)) == "validate::" ? $input['validate']['name'] : "'{$input['validate']['name']}'";
-			$code .= @"\$this->set_validate_rule('{$method}', '{$input[name]}', {$validate_name}, '{$input[validate][regx]}', '{$input[validate][message]}');
+			$code .= @"\$this->assert('{$input[name]}', {$validate_name}, '{$input[validate][regx]}', '{$input[validate][message]}');
 ";
 		}
 		return $code;
@@ -232,6 +231,13 @@ class $class extends YZE_Resource_Controller {
 			$view_file_path = dirname(dirname(__FILE__))
 			."/app/modules/". $module."/views/{$controller}.{$format}.php";
 			$view_file_content = "<?php
+namespace app\\$module;
+use \\yangzie\\YZE_Resource_Controller;
+use \\yangzie\\YZE_Request;
+use \\yangzie\\YZE_Redirect;
+use \\yangzie\\YZE_Session_Context;
+use \\yangzie\\YZE_RuntimeException;
+
 /**
  * 视图的描述
  * @param type name optional
@@ -278,6 +284,13 @@ echo \$yze_content_of_layout
 		."/app/modules/". $module."/validates/{$controller}_validate.class.php";
 
 		$validate_file_content = "<?php
+namespace app\\$module;
+use \yangzie\YZE_Resource_Controller;
+use \yangzie\YZE_Request;
+use \yangzie\YZE_Redirect;
+use \yangzie\YZE_Session_Context;
+use \yangzie\YZE_RuntimeException;
+use \yangzie\YZEValidate;
 /**
  *
  * @version \$Id\$
@@ -288,25 +301,25 @@ class ".YZE_Object::format_class_name($controller, "Validate")." extends YZEVali
 	public function init_get_validates(){
 		".$this->validate_code_segment("get")."
 		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('get', 'params name in url', 'validate method name', '', 'error message');
+		//\$this->assert('params name in url', 'validate method name', '', 'error message');
 	}
 	
 	public function init_post_validates(){
 		".$this->validate_code_segment("post")."
 		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
+		//\$this->assert('params name in post', 'validate method name', '', 'error message');
 	}
 	
 	public function init_put_validates(){
 		".$this->validate_code_segment("put")."
 		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
+		//\$this->assert('params name in post', 'validate method name', '', 'error message');
 	}
 	
 	public function init_delete_validates(){
 		".$this->validate_code_segment("delete")."
 		//Written Get Validate Rules Code in Here. such as
-		//\$this->set_validate_rule('post', 'params name in url', 'validate method name', '', 'error message');
+		//\$this->assert('params name in post', 'validate method name', '', 'error message');
 	}
 }?>";
 		echo("create validate :\t\t");

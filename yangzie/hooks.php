@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * 该文件为系统提供hook机制，hook主要用于下面的地方：
  * 1.产生用户的行为消息（create event,update event,read event,delete event）
@@ -21,19 +22,33 @@
  */
 
 #定义架构使用的hook常量
-define('YZE_HOOK_BEFORE_POST','do_before_post');
-define('YZE_HOOK_BEFORE_GET','do_before_get');
-define('YZE_HOOK_BEFORE_PUT','do_before_put');
-define('YZE_HOOK_BEFORE_DELETE','do_before_delete');
-define('YZE_HOOK_AFTER_POST','do_after_post');
-define('YZE_HOOK_AFTER_GET','do_after_get');
-define('YZE_HOOK_AFTER_PUT','do_after_put');
-define('YZE_HOOK_AFTER_DELETE','do_after_delete');
-define('YZE_HOOK_TRANSACTION_COMMIT','transaction_commit');
-define('YZE_HOOK_UNRESUME_EXCEPTION','yze_hook_unresume_exception');
-define('YZE_HOOK_BEFORE_EXCEPTION','yze_hook_before_exception');
+define('YZE_ACTION_BEFORE_POST','do_before_post');
+define('YZE_ACTION_BEFORE_GET','do_before_get');
+define('YZE_ACTION_BEFORE_PUT','do_before_put');
+define('YZE_ACTION_BEFORE_DELETE','do_before_delete');
+define('YZE_ACTION_AFTER_POST','do_after_post');
+define('YZE_ACTION_AFTER_GET','do_after_get');
+define('YZE_ACTION_AFTER_PUT','do_after_put');
+define('YZE_ACTION_AFTER_DELETE','do_after_delete');
+define('YZE_ACTION_TRANSACTION_COMMIT','transaction_commit');
+define('YZE_ACTION_UNRESUME_EXCEPTION','yze_action_unresume_exception');
+define('YZE_ACTION_BEFORE_DO_EXCEPTION','yze_action_before_do_exception');
+define('YZE_ACTION_CHECK_USER_HAS_LOGIN', 'yze_action_check_user_has_login');
 
 define('YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token');
+
+/**
+ * 框架处理时出现了异常
+ * 
+ * @var unknown
+ */
+define('YZE_FILTER_YZE_EXCEPTION', 'yze_filter_yze_exception');
+/**
+ * 获取aro，回调的参数格式是：array('aro'=>'/');
+ * @var unknown
+ */
+define('YZE_FILTER_GET_USER_ARO_NAME', 'yze_filter_get_user_aro_name');
+
 
 /**
  * 解析地址得到请求url，如module/controller/var
@@ -67,7 +82,7 @@ final class YZE_Hook{
 		$this->listeners[$event][] = array("function"=>$func_name,"object"=>$object);
 	}
 	
-	public function do_filter($filter_name,$data){
+	public function do_filter($filter_name, $data){
 
 		if(!$this->has_hook($filter_name))return $data;
 		foreach($this->listeners[$filter_name] as $listeners){
@@ -97,13 +112,9 @@ final class YZE_Hook{
 	}
 }
 
-
 ///////////////////function //////////////////
 
-function do_hook(){
-	
-}
-function do_action($action_name,$args = null){
+function do_action($action_name, $args = null){
 	$hook = YZE_Hook::the_hook();
 	$hook->do_action($action_name,$args);
 }
@@ -116,7 +127,7 @@ function do_action($action_name,$args = null){
  * 
  * @return array;
  */
-function do_filter($filter_name,$filter_data){
+function do_filter($filter_name, $filter_data){
 	$hook = YZE_Hook::the_hook();
 	return $hook->do_filter($filter_name,$filter_data);
 }
@@ -129,7 +140,7 @@ function do_filter($filter_name,$filter_data){
  * @author liizii
  * @since 2009-12-21
  */
-function do_validate($filter_name,$filter_data){
+function do_validate($filter_name, $filter_data){
 	$hook = YZE_Hook::the_hook();
 	return $hook->do_filter($filter_name,$filter_data);
 }

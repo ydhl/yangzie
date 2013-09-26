@@ -1,4 +1,6 @@
 <?php 
+namespace yangzie;
+
 $exception 	= $this->get_data("exception");
 $request 	= YZE_Request::get_instance();
 

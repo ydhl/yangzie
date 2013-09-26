@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * 资源控制器抽象基类，提供控制器的处理机制，子类控制器映射到具体的uri，具体处理请求的
  * action在子类中定义，该类为post，get，put，delete的请求做预处理，然后调用到对应的action
@@ -19,7 +20,6 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	protected $view_data = array();
 	protected $layout = 'tpl';
 
-	protected $module_name = "";
 
 	/**
 	 * @var YZE_HttpCache
@@ -87,13 +87,26 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		//pass
 	}
 
+	/**
+	 * 
+	 * 
+	 * @author leeboo
+	 * 
+	 * @param string $view_tpl 模板的路径
+	 * @param string $format
+	 * @return \yangzie\YZE_Simple_View
+	 * 
+	 * @return
+	 */
 	protected function getResponse($view_tpl=null, $format=null){
-		$request = YZE_Request::get_instance();
+		$request 		= YZE_Request::get_instance();
 		
-		$view_data  = $this->get_datas();
+		$view_data  	= $this->get_datas();
+		$class_name 	= strtolower(get_class($this));
+		$ref 			= new \ReflectionObject($this);
 		
-		$view_tpl = $view_tpl ? $view_tpl : substr(strtolower(get_class($this)), 0, -11);
-		$view = $request->view_path()."/". $view_tpl;
+		$view 		= $view_tpl ? $view_tpl : $request->view_path()."/". substr(str_replace($ref->getNamespaceName()."\\", "", $class_name), 0, -11);
+
 		if( ! $format){
 			$format = $request->get_output_format();
 		}
@@ -110,35 +123,30 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	 */
 	public final function do_Get(){
 		//设置请求token
-		do_action(YZE_HOOK_BEFORE_GET, $this);
+		do_action(YZE_ACTION_BEFORE_GET, $this);
 		$request 	= YZE_Request::get_instance();
 		$session	= YZE_Session_Context::get_instance();
+		YZE_Session_Context::get_instance()->set_request_token(get_class($request->controller()), $request->the_request_token());
 		
 		//该请求有异常
 		if(($exception = $session->get_controller_exception(get_class($this)))){
-			$response = $this->exception($exception);
-		}else{
-			YZE_Session_Context::get_instance()->set_request_token(get_class($request->controller()), $request->the_request_token());
-			$response = $this->get();
+			return $this->do_exception($exception);
 		}
 
+		$response = $this->get();
+		
 		if (!$response) {
 			$response = $this->getResponse();
 		}
-		if(is_a($response, "YZE_View_Adapter")){
-			$response->check_view();
-		}
+
 		if (is_a($response, "YZE_Cacheable")) {
 			$response->set_cache_config($this->cache_config);//内容协商的缓存控制
 		}
-		
-		if(@$_SERVER['HTTP_X_YZE_NO_CONTENT_LAYOUT'] == "yes"){
+
+		if(strcasecmp($request->get_from_get('yze_no_content_layout','') , "yes")==0){
 			$this->layout = "";
 		}
 		
-// 		//界面显示后把一些数据清空
-// 		$session->clear_controller_exception(get_class($this));
-// 		$session->clear_controller_datas(get_class($this));
 		return $response;
 	}
 
@@ -150,7 +158,7 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	 * @return YZE_IResponse
 	 */
 	public final function do_Post(){
-		do_action(YZE_HOOK_BEFORE_POST, $this);
+		do_action(YZE_ACTION_BEFORE_POST, $this);
 		return $this->_handle_post();
 	}
 
@@ -162,26 +170,26 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	 * @return YZE_IResponse
 	 */
 	public final function do_Put(){
-		do_action(YZE_HOOK_BEFORE_PUT,$this);
+		
+		do_action(YZE_ACTION_BEFORE_PUT,$this);
 		$request = YZE_Request::get_instance();
 		$session = YZE_Session_Context::get_instance();
-		//多人同时提交表单
+
 		$yze_model_id 		= $request->get_from_post("yze_model_id");
 		$yze_modify_version = $request->get_from_post("yze_modify_version");
 		$yze_model_name		= $request->get_from_post("yze_model_name");
 		$yze_module_name	= $request->get_from_post("yze_module_name");
 
 		$model = YZE_Model::find($yze_model_id, $yze_model_name);
-
+		
 		if(!$model) {
 			throw new YZE_Resource_Not_Found_Exception(__("您要修改的内容不存在"));
 		}
-		//         include_once "{$yze_module_name}/models/".strtolower($yze_model_name).".class.php";
 
 		if ($yze_modify_version != $model->get_version_value()) {
 			throw new YZE_Model_Update_Conflict_Exception(vsprintf(__("数据已经在%s被更新了, 你编辑的数据是旧的，请刷新后重试"), array($model->get_version_value())));
 		}
-
+		
 		return $this->_handle_post();
 	}
 
@@ -193,30 +201,35 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	 * @return YZE_IResponse
 	 */
 	public final function do_Delete(){
-		do_action(YZE_HOOK_BEFORE_DELETE, $this);
+		do_action(YZE_ACTION_BEFORE_DELETE, $this);
 		$request = YZE_Request::get_instance();
 		$session = YZE_Session_Context::get_instance();
 		return $this->_handle_post();
 	}
 	
 	public final function do_exception(YZE_RuntimeException $e){
-		do_action(YZE_HOOK_BEFORE_EXCEPTION, $this);
+		do_action(YZE_ACTION_BEFORE_DO_EXCEPTION, $this);
 		$request 	= YZE_Request::get_instance();
 		$session	= YZE_Session_Context::get_instance();
 		
-		$response = $this->exception($e);
-		
-		if ( ! $response) {
-			$response = $this->getResponse(null, "error");
+		if($e->isResumeable()){
+			$response = $this->get();
+			
+			if ( ! $response) {
+				$response = $this->getResponse();
+			}
+		}else{
+			$response = $this->exception($e);
+			if( ! $response){
+				$this->set_View_Data("exception", $e);
+				$response = $this->getResponse(YZE_APP_VIEWS_INC."500");
+			}
 		}
-		if(is_a($response, "YZE_View_Adapter")){
-			$response->check_view();
-		}
 		
-		if(@$_SERVER['HTTP_X_YZE_NO_CONTENT_LAYOUT'] == "yes"){
+		if(strcasecmp($request->get_from_get('yze_no_content_layout','') , "yes")==0){
 			$this->layout = "";
 		}
-		
+
 		return $response;
 	}
 	/**
@@ -245,17 +258,40 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	}
 	
 	/**
-	 * 根据控制器的处理逻辑，清空控制器在会话上下文中保存的数据，根据情况调用以下的方法
-	 * YZE_Session_Context::get_instance()->clear_controller_datas(get_class($this));
-	 * YZE_Session_Context::get_instance()->clear_controller_exception(get_class($this));
+	 * 根据控制器的处理逻辑，清空控制器在会话上下文中保存的数据
 	 * 
 	 */
 	public function cleanup(){
-		//pass
+		$request = YZE_Request::get_instance();
+		$session = YZE_Session_Context::get_instance();
+		
+		$controller_name = get_class($this);
+		
+		//clean get cache data
+		if($request->is_get()){
+			$session->clear_controller_exception($controller_name);
+			$session->clear_controller_datas($controller_name);
+			return;
+		}
+		
+		//clean post cache data
+		//成功处理，清除保存的post数据
+		$session->clear_post_datas(get_class($this));
+		$session->clear_request_token_ext(get_class($this));
 	}
-	
 	/**
-	 * 出现异常后的处理
+	 * 在ajax post请求时返回的json数据
+	 * 
+	 * @author leeboo
+	 * 
+	 * 
+	 * @return array
+	 */
+	protected function post_result_of_ajax(){
+		
+	}
+	/**
+	 * 出现不可恢复的异常后的处理, 如何处理
 	 * 
 	 * @author leeboo
 	 * 
@@ -283,24 +319,31 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 			throw new YZE_Resource_Not_Found_Exception($method);
 		}
 		//防止表单重复提交
-
+		
 		$this->_check_request_token($request->get_from_post('yze_request_token'));
 
 		$response = $this->$method();
-		
+
 		//如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
-		if (!$response) {
-			$response = new YZE_Redirect($request->the_uri(), $this);
+		if ( ! $response) {
+			$response = new YZE_Redirect($request->the_full_uri(), $this, $this->get_datas());
 		}
-
-		//成功处理，清除保存的post数据
-		$session->clear_post_datas(get_class($this));
-		$session->clear_request_token_ext(get_class($this));
-
-		if(@$_SERVER['HTTP_X_YZE_NO_CONTENT_LAYOUT'] == "yes"){
+		
+		if(strcasecmp($request->get_from_get('yze_no_content_layout','') , "yes")==0){
 			$this->layout = "";
 		}
+		if(strcasecmp($request->get_from_get('yze_ajax_form', '') , "yes")==0){//post直接返回结果
+			$this->layout = "";
+			return new YZE_Notpl_View(json_encode($this->post_result_of_ajax()), $this);
+		}
+		
+		if(strcasecmp($request->get_from_get('yze_iframe_form','') , "yes")==0){
+			$this->layout = "";
+			return new YZE_Notpl_View("<script>window.parent.yze_iframe_form_submitCallback(".json_encode($this->post_result_of_ajax()).");</script>",  $this);
+		}
+		
 
+		
 		return $response;
 	}
 
@@ -312,9 +355,9 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 
 		//uri1中的表单提交到uri2中的情况
 		$source_controller = YZE_Session_Context::get_instance()->get(get_class($this)." from:");
+		$source_controller = $source_controller ? $source_controller : get_class($this);
 		$refer_saved_token = $session->get_request_token($source_controller);
-		YZE_Session_Context::get_instance()->destory(get_class($this)." from:");
-		
+
 		$filtered_data  = do_filter(YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, array("saved_token"=>$saved_token, "post_request_token"=>$post_request_token));
 		$saved_token    = $filtered_data['saved_token'];
 		$post_request_token = $filtered_data['post_request_token'];
@@ -325,7 +368,6 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		//$saved_token：j7ffqj40saoqerojp0pukrbar3_1300802801 $post_request_token：j7ffqj40saoqerojp0pukrbar3_1300802799
 		//TODO 为什么会差1-2ms???
 		if (strcasecmp($saved_token, $post_request_token)!=0 && strcasecmp($refer_saved_token, $post_request_token)!=0 ) {
-			YZE_Object::log("请求验证失败，出现该提示的原因可能是您点击过快，或者长时间没有操作，请重试。saveed_token: $saved_token post_request_token: $post_request_token");
 			throw new YZE_Form_Token_Validate_Exception(__("请求验证失败，出现该提示的原因可能是您点击过快，或者长时间没有操作，请重试(REQUEST_TOKEN_NOT_MATCH)。"));
 		}
 	}

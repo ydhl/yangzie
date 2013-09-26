@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 if(!preg_match("/cli/i",php_sapi_name())){
 	echo wrap_output(__("请在命令行下运行,进入到".dirname(__FILE__).", 运行php generate.php"));die();
 }
@@ -16,7 +18,7 @@ if(true){
 		$command = $cmds["cmd"];
 		clear_terminal();
 		echo get_colored_text(wrap_output("开始生成...\r\n"), "blue");
-		$class_name = "Generate_".ucfirst(strtolower($command))."_Script";
+		$class_name = "\yangzie\Generate_".ucfirst(strtolower($command))."_Script";
 		$object = new $class_name($cmds);
 		$object->generate();
 		echo get_colored_text(wrap_output("\r\n生成结束, 回车返回.\r\n"), "blue");
@@ -197,7 +199,7 @@ function display_mvc_wizard(){
 function is_controller_exists($controller, $module){
 	if(file_exists(YZE_APP_MODULES_INC.$module."/__module__.php")){
 		include_once YZE_APP_MODULES_INC.$module."/__module__.php";
-		$class = ucfirst(strtolower($module))."_Module";
+		$class = "\\app\\".$module."\\".ucfirst(strtolower($module))."_Module";
 		$object = new $class();
 		return $object->get_uris_of_controller($controller);
 		
@@ -318,7 +320,7 @@ function is_validate_name($input){
 }
 
 function is_validate_table($table){
-	$app_module = new App_Module();
+	$app_module = new \app\App_Module();
 	$db = mysql_connect(
 			$app_module->get_module_config("db_host"),
 			$app_module->get_module_config("db_user"),

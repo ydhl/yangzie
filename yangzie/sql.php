@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * 构建查询语句类。
  * 

@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 class YZE_Form extends YZE_Object{
 	private $form_name;
 	private $model;
@@ -16,7 +18,7 @@ class YZE_Form extends YZE_Object{
 		$this->is_delete_form = $is_delete;
 	}
 
-	public function begin_form(array $attrs=array()){
+	public function begin_form(array $attrs=array(), $is_upload_form = false){
 		ob_start();
 		$name = $this->form_name;
 		$model = $this->model;
@@ -32,15 +34,17 @@ class YZE_Form extends YZE_Object{
 					<input type='hidden' name='yze_module_name' value='".$model->get_module_name()."'/>
 					<input type='hidden' name='yze_method' value='".($this->is_delete_form ? "delete" : "put")."'/>";
 		}
-		echo "<form name='$name' method='{$this->method}' $html>
+		echo "<form name='$name' method='{$this->method}' $html ".($is_upload_form ?  'enctype="multipart/form-data"' : '').">
 		<input type='hidden' name='yze_request_token' value='{$token}'/>
 		$modify";
 	}
 	public function end_form(){
 		echo '</form>';
 		$form = ob_get_clean();
-		$app_auth = new  App_Auth();
-		$aroname = $app_auth->get_request_aro_name();
+		
+		$aro = do_filter(YZE_FILTER_GET_USER_ARO_NAME, array("aro"=>"/"));
+		$aroname = $aro['aro'];
+		
 		if($this->acl->check_byname($aroname, $this->form_name)){
 			echo $form;
 		}
@@ -67,15 +71,19 @@ function yze_die(YZE_View_Adapter $view, YZE_Resource_Controller $controller){
  * 
  * @param YZE_Model $object
  * @param unknown $name
- * @param string $uri 未空表示当前uri
- * @return string
+ * @param string $controller 处理的控制器
+ * @return int $index 如果name是数据，则表示数组的索引
  * 
  * @return
  */
-function yze_get_default_value($object, $name, $controller){
+function yze_get_default_value($object, $name, $controller, $index=null){
 	$controller_name = get_class($controller);
 	if (YZE_Session_Context::post_cache_has($name, $controller_name)){
-		return YZE_Session_Context::get_cached_post($name,  $controller_name);
+		$cache_data = YZE_Session_Context::get_cached_post($name,  $controller_name);
+		if( is_array($cache_data)){
+			return @$cache_data[$index];
+		}
+		return $cache_data;
 	}
 	if ($object){
 		return $object->get($name);
@@ -92,11 +100,12 @@ function yze_get_default_value($object, $name, $controller){
  * 
  * @return
  */
-function yze_controller_error(){
+function yze_controller_error($begin_tag=null, $end_tag=null){
 	$session 	= YZE_Session_Context::get_instance();
 	$controller = YZE_Request::get_instance()->controller();
+	
 	if (($exception = $session->get_controller_exception(get_class($controller)))) {
-		return $exception->getMessage();
+		return $begin_tag.$exception->getMessage().$end_tag;
 	}
 }
 

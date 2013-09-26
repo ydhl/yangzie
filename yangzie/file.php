@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * 判断一个相同文件是否真的存在
  * 

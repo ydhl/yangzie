@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * 会话上下文，处理请求过程中的数据传递及相关控制
  * 
@@ -183,6 +184,13 @@ class YZE_Session_Context{
 	public function clear_request_token_ext($controller_name){
 		unset($_SESSION['yze']["token"][$controller_name]);
 	}
+	
+	public function copy($src_controller_name, $dest_controller_name){
+		foreach (array("token") as $key){
+			$_SESSION['yze'][$key][$dest_controller_name] = @$_SESSION['yze'][$key][$src_controller_name];
+		}
+	}
+	
 	public static function get_cached_post($name,$controller_name=null)
 	{
 		if (empty($controller_name)) {

@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * HTTP的缓存接口
  * @author liizii

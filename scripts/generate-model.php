@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 class Generate_Model_Script extends AbstractScript{
 	private $base;
 	private $module_name;
@@ -34,7 +36,7 @@ class Generate_Model_Script extends AbstractScript{
 		$table = $this->table_name;
 		$package=$this->module_name;
 		
-		$app_module = new App_Module();
+		$app_module = new \app\App_Module();
 		$db = mysql_connect(
 			$app_module->get_module_config("db_host"),
 			$app_module->get_module_config("db_user"),
@@ -70,6 +72,12 @@ class Generate_Model_Script extends AbstractScript{
 		const $v = '$c';";
 		}
 		$code = "<?php
+namespace app\\$package;
+use \yangzie\YZE_Model;
+use \yangzie\YZE_SQL;
+use \yangzie\YZE_DBAException;
+use \yangzie\YZE_DBAImpl;
+
 /**
  * 
  * 

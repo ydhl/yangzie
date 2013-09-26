@@ -1,4 +1,8 @@
 <?php
+namespace yangzie;
+use \PDO;
+use \app\App_Module;
+
 /**
  * 与数据库进行交互DatabaseAdvisor接口，负责对数据库的crud操作，并且返回model，
  * 以及到事务的支持。
@@ -246,13 +250,19 @@ class YZE_DBAImpl extends YZE_Object
 	}
 
 	public function beginTransaction(){
-		if($this->conn)$this->conn->beginTransaction();
+		try{
+			if($this->conn)$this->conn->beginTransaction();
+		}catch(\Exception $e){}
 	}
 	public function commit(){
-		if($this->conn)$this->conn->commit();
+		try{
+			if($this->conn)$this->conn->commit();
+		}catch(\Exception $e){}
 	}
 	public function rollBack(){
+		try{
 		if($this->conn)$this->conn->rollBack();
+		}catch(\Exception $e){}
 	}
 
 	private function _build_entity(YZE_Model $entity,$raw_datas,$select_tables){

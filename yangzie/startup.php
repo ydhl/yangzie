@@ -1,4 +1,7 @@
 <?php
+namespace yangzie;
+use \app\App_Module;
+
 /**
  * 加载所有的模块及其设置其配置
  */
@@ -20,14 +23,14 @@ function yze_load_app(){
 		if(@file_exists("{$module}/__module__.php")){
 			include_once "{$module}/__module__.php";
 			
-			$module_name = basename($module);
-			$class = ucfirst(strtolower($module_name))."_Module";
+			$module_name = strtolower(basename($module));
+			$class = "\\app\\{$module_name}\\".ucfirst($module_name)."_Module";
 			$object = new $class();
 			$object->check();
-			$include_files = $object->get_module_config('include_files');
-			foreach((array)$include_files as $include_file){
-				include_once YZE_APP_MODULES_INC.strtolower($object->get_module_config("name"))."/".$include_file;
-			}
+// 			$include_files = $object->get_module_config('include_files');
+// 			foreach((array)$include_files as $include_file){
+// 				include_once YZE_APP_MODULES_INC.strtolower($object->get_module_config("name"))."/".$include_file;
+// 			}
 		}
 		if(@file_exists("{$module}/__hooks__.php")){
 			include_once "{$module}/__hooks__.php";
@@ -71,39 +74,58 @@ function yze_go($uri = null){
 		
 		$request = YZE_Request::get_instance();
 		$session = YZE_Session_Context::get_instance();
+		$dba		= YZE_DBAImpl::getDBA();
 		
-		$request->init($uri);
+		$oldController = $request->controller();
+		
+		$request->init($uri);//重置上下文环境
 		yze_system_check();
 		$controller = $request->controller();
 		
-		$request->auth()->validate()->begin_transaction();
+		//如果yze_go 是从一个控制器的处理中再次调用的，则为新的控制器copy一个上下文环境
+		if($oldController){
+			YZE_Session_Context::get_instance()->copy(get_class($oldController), get_class($controller));
+		}
+		
+		$request->auth()->validate();
+		$dba->beginTransaction();
 		
 		$response = $request->dispatch();
-		$request->commit();
+		$dba->commit();
 	}catch(YZE_RuntimeException $e){
-		$request->rollback();
-		
-		if(is_a($e, "YZE_Request_Validate_Failed")){
+		log4web($e->getMessage(), "YZE_RuntimeException");
+		$dba->rollback();
+		if( ! @$controller){
+			$controller = new YZE_Exception_Controller();
+		}
+		if(is_a($e, "\\yangzie\\YZE_Request_Validate_Failed")){
 			$session->save_controller_validates(get_class($controller), $e->get_validater()->get_validates());
 		}
 		
-		if( ! $e->isResumeable()){//不可回复的异常，直接有yangzie接手
-			$controller = new YZE_Exception_Controller();
+		$session->save_controller_exception(get_class($controller), $e);
+		if($request->is_get()){
 			$response = $controller->do_exception($e);
-		}else{//可恢复的异常，原来的控制器处理
-			$session->save_controller_exception(get_class($controller), $e);
+		}else{
 			$response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
 		}
+		
+		$filter_data = do_filter(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
+		$response = $filter_data['response'];
 	}
 
-	if(is_a($response,"YZE_View_Adapter")){
+	if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
 		$layout = new YZE_Layout($controller->get_layout(), $response, $controller);
 		$output = $layout->get_output();
 		if(($guid = $controller->get_response_guid()) && !file_exists(YZE_APP_CACHES_PATH.$guid)){
 			file_put_contents(YZE_APP_CACHES_PATH.$guid, $output);
 		}
+
+		
 		echo $output;
 	}else{
+// 		ob_start();
+// 		print_r($response);
+// 		log4web(ob_get_clean(), "startup-redirect");
 		$response->output();
 	}
 	

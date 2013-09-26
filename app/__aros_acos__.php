@@ -1,4 +1,5 @@
 <?php
+namespace app;
 /**
  * 用户分组的形式是：
  *  /------组根
@@ -39,8 +40,8 @@ function yze_get_aco_desc($aconame)
 function yze_get_acos_aros(){
 	return
 	array("/" => array(
-	    "deny"=>"*",//默认任何aro禁止访问所有aco
-	    "allow"=>array()
+	    "deny"=>array(),//默认任何aro禁止访问所有aco
+	    "allow"=>"*"
 	)
 	);
 }

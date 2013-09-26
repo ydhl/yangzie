@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 /**
  * 表示一个请求的响应结果。可能是可查看的内容，比如html，xml，json，yaml等，
  * 也可以只是一些http响应头，比如 301 redirect，304 not modified等
@@ -69,20 +71,24 @@ class YZE_Redirect implements YZE_IResponse{
 	private $datas = array();
 	private $outgoing = false;
 	private $url_components;
+	private $innerRedirect;
 	
 	/**
+	 * <b>注意，如果内部重定向，则会出现一url对应多个控制器的情况</b>
 	 * 
 	 * @param unknown $destination_uri 
 	 * @param YZE_Resource_Controller $source_controller
 	 * @param array $datas 传递给目标控制器的数据
 	 * @param boolean $innerRedirect true表示重定向不需要输出到客户端，直接处理
+	 * 
 	 */
-	public function __construct($destination_uri, YZE_Resource_Controller $source_controller, array $datas=array()){
+	public function __construct($destination_uri, YZE_Resource_Controller $source_controller, array $datas=array(), $innerRedirect=false){
 		
 		$this->destinationURI 	= $destination_uri;
 		$this->sourceURI 		= YZE_Request::get_instance()->the_full_uri();
 		$this->sourceController = $source_controller;
 		$this->datas 			= $datas;
+		$this->innerRedirect	= $innerRedirect;
 		
 		$this->url_components = parse_url($this->destinationURI);
 		if(@$this->url_components['host'] && $this->url_components['host'] != $_SERVER['HTTP_HOST']){
@@ -110,7 +116,7 @@ class YZE_Redirect implements YZE_IResponse{
 		}
 		
 		//get请求则内部重定向，不经过浏览器在请求一次
-		if (YZE_Request::get_instance()->is_get()){
+		if (YZE_Request::get_instance()->is_get() && $this->innerRedirect){
 			return yze_go($this->destinationURI());
 		}
 		
@@ -252,6 +258,7 @@ class YZE_Simple_View extends YZE_View_Adapter {
 		parent::__construct($data,$controller);
 		$this->tpl 		= $tpl_name;
 		$this->format 	= $format;
+		
 	}
 
 	public function check_view(){
@@ -261,6 +268,8 @@ class YZE_Simple_View extends YZE_View_Adapter {
 	}
 
 	protected function display_self(){
+		
+		$this->check_view();
 		require "{$this->tpl}.{$this->format}.php";
 	}
 }
@@ -378,7 +387,7 @@ class YZE_Layout extends YZE_View_Adapter{
 		$this->view->output();
 		$yze_content_of_layout = ob_get_clean();
 		if ($this->layout){
-			include_once YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
+			include YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
 		}else{
 			echo $yze_content_of_layout;
 		}

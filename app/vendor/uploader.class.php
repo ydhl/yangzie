@@ -1,15 +1,19 @@
 <?php
+namespace ydhl;
+
 class Uploader{
 	const IMAGE = 'image';
 	const FLASH = 'flash';
 	const VIDEO = 'video';
 	const MOVIE = 'moive';
 	const ARCHIVE = 'archive';
+	const ANYTHING = 'anything';
 	private $upload_path;
 	public $file_type;
 	private $watermark = true;//是否加水印，默认要加
 	
 	private $uploaded_filenames = array();
+	private $uploaded_filesizes = array();
 	
 	/**
 	 * @param string $upload_path 上传文件的保存路径
@@ -18,7 +22,7 @@ class Uploader{
 		$this->upload_path = $upload_path;
 	}
 	/**
-	 * 把临时目录中的上传文件copy到正式目录，并返回文件的web路径
+	 * 把临时目录中的上传文件copy到正式目录，并返回文件的绝对路径
 	 *
 	 * @param unknown_type $name
 	 * @param unknown_type $path
@@ -27,19 +31,18 @@ class Uploader{
 	 */
 	private function uploadByCopy($name, $path, $size){
 		$ext = pathinfo($name,PATHINFO_EXTENSION);
-		//$dist_path = rtrim($this->upload_path,DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
-		//$this->mk_local_dirs($dist_path);
-		//SAE Storage
-		$stor = new SaeStorage();
+		$dist_path = rtrim($this->upload_path,DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+		if(defined("YZE_DEVELOP_MODE") && YZE_DEVELOP_MODE){//本地开发
+	 		$this->mk_local_dirs($dist_path);
+		}
 		$filename = uniqid(date("ynj")).".".$ext;
-		$return = $stor->upload('upload', $filename, $path);
-		if(!$return){
-			throw new YZE_RuntimeException($stor->errmsg());
+		if(!copy($path,$dist_path.$filename)){
+			throw new UploadException("Can't upload file,can not copy (".$path.") to (".$dist_path.$filename.")");
 		}
 // 		if($this->watermark){
 // 			$this->addWatermark($dist_path.$filename);
 // 		}
-		return $return;
+		return $dist_path.$filename;
 	}
 
 	private function addWatermark($dist_path_filename){	
@@ -62,8 +65,8 @@ class Uploader{
 		#构建上级文件夹 
 		$this->mk_local_dirs(dirname($path));
 		#构建当前文件夹 
-		if(!@mkdir($path,0777)){
-			throw new YZE_RuntimeException("Can\'t create dir".$path);
+		if(!@mkdir($path, 0777)){
+			throw new UploadException("Can\'t create dir ".$path);
 		}
 		@chmod($cd,0777);
 	}
@@ -94,12 +97,17 @@ class Uploader{
 		$fileSize = $_FILES[$name]['size'];
 		$erorinfo = $this->getUploadError($_FILES[$name]);
 		if(!empty($erorinfo)){
-			throw new YZE_RuntimeException($erorinfo);
+			throw new UploadException($erorinfo);
 		}
 		$this->uploaded_filenames = $filename;
+		$this->uploaded_filesizes = $fileSize;
 		return $this->uploadByCopy($filename,$fileTempName,$fileSize);
 	}
 
+	public function hasUploadFile($name){
+		if(@$_FILES[$name]['name'])return true;
+		return false;
+	}
 	public function convert_to_relative($prefix_path, $full_path)
 	{
         return self::remove_abspath($prefix_path, $full_path);
@@ -199,9 +207,10 @@ class Uploader{
 	                );
 	                $errorinfo = $this->getUploadError($file);
 	                if(!empty($errorinfo)){
-	                    throw new YZE_RuntimeException($errorinfo);
+	                    throw new UploadException($errorinfo);
 	                }
 	                $this->uploaded_filenames[$index][$sub_index] = $name;
+	                $this->uploaded_filesizes[$index][$sub_index] = $sizes[$index][$sub_index];
 	                $files[$index][$sub_index] = $this->uploadByCopy($n,$tmpNames[$index][$sub_index],$sizes[$index][$sub_index]);
             	}
             }else{
@@ -213,9 +222,10 @@ class Uploader{
             	);
             	$errorinfo = $this->getUploadError($file);
             	if(!empty($errorinfo)){
-            		throw new YZE_RuntimeException($errorinfo);
+            		throw new UploadException($errorinfo);
             	}
             	$this->uploaded_filenames[$index] = $name;
+            	$thi->uploaded_filesizes[$index] = $sizes[$index];
             	$files[$index] = $this->uploadByCopy($name,$tmpNames[$index],$sizes[$index]);
             }
 		}
@@ -232,51 +242,51 @@ class Uploader{
 		$this->errorCode = $files['error'];
 		switch ($this->errorCode){
 			case UPLOAD_ERR_INI_SIZE :
-				return __("The uploaded file exceeds the upload_max_filesize directive in php.ini.");
+				return \yangzie\__("The uploaded file exceeds the upload_max_filesize directive in php.ini.");
 				//"上传的文件超过了 php.ini 中 upload_max_filesize 选项限制的值"
 			case UPLOAD_ERR_FORM_SIZE :
-				return __("The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.");
+				return \yangzie\__("The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.");
 				//"上传文件的大小超过了 HTML 表单中 MAX_FILE_SIZE 选项指定的值"
 			case UPLOAD_ERR_PARTIAL :
-				return __("The uploaded file was only partially uploaded.");
+				return \yangzie\__("The uploaded file was only partially uploaded.");
 				//"文件只有部分被上传"
 				break;
 			case UPLOAD_ERR_NO_FILE :
-				return __("No file was uploaded.");
+				return \yangzie\__("No file was uploaded.");
 				//"没有文件被上传"
 				break;
 			case UPLOAD_ERR_NO_TMP_DIR:
-				return __("Missing a temporary folder.");
+				return \yangzie\__("Missing a temporary folder.");
 				//"找不到临时文件夹"
 				break;
 			case UPLOAD_ERR_CANT_WRITE:
-				return __("Failed to write file to disk");
+				return \yangzie\__("Failed to write file to disk");
 				//"文件写入失败"
 				break;
 			case UPLOAD_ERR_EXTENSION:
-				return __("File upload stopped by extension.");
+				return \yangzie\__("File upload stopped by extension.");
 		}
 		$ext = strtolower(pathinfo($files['name'],PATHINFO_EXTENSION));
 		switch($this->file_type){
 			case self::FLASH:
 				if(!preg_match("/^application\/x-shockwave-flash\/*/",$files['type'])){
-					return __(vsprintf("只能上传 Flash：%s",array($files['type'])));
+					return \yangzie\__(vsprintf("只能上传 Flash：%s",array($files['type'])));
 				}
 				break;
 			case self::ARCHIVE:
 				if(!in_array($ext,array('rar','zip'))){
-					return __(vsprintf("附件只能上传.RAR .ZIP格式：%s",array($files['type'])));
+					return \yangzie\__(vsprintf("附件只能上传.RAR .ZIP格式：%s",array($files['type'])));
 				}
 				break;
 			case self::IMAGE:
 				if(!preg_match("/^image\/*/",$files['type'])){
-					return __(vsprintf("只能上传图片：%s",array($files['type'])));
+					return \yangzie\__(vsprintf("只能上传图片：%s",array($files['type'])));
 				}
 				break;
 			default:
 				if(in_array($ext,
 					array('php','php3','phar','vbs','dll','js','exe','dll','com','bat','cmd','vbe','jse','wsf','wsh','py','pyw','pl','htm','html'))){
-					return __(vsprintf("不允许上传 %s 文件",array($ext)));
+					return \yangzie\__(vsprintf("不允许上传 %s 文件",array($ext)));
 				}
 				break;
 		}
@@ -318,8 +328,32 @@ class Uploader{
 		}
 	}
 	
-	public function get_uploaded_filenames(){
+	/**
+	 * 上传文件的名字，如果是传单个文件：返回的便是文件名
+	 * 如果上传的是多个文件，uploaded_filenames[index][file_name]
+	 * 
+	 * @author leeboo
+	 * 
+	 * @return array
+	 */
+	public function get_uploaded_filename(){
 		return $this->uploaded_filenames;
 	}
+	
+	/**
+	 * 上传文件的名字，如果是传单个文件：返回的便是文件大小
+	 * 如果上传的是多个文件，uploaded_filesizes[index][file_name]
+	 *
+	 * @author leeboo
+	 *
+	 * @return array
+	 */
+	public function get_uploaded_filesize(){
+		return $this->uploaded_filesizes;
+	}
+}
+
+class UploadException extends \Exception{
+	
 }
 ?>

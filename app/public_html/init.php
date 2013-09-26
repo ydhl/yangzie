@@ -30,7 +30,7 @@ define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');
 define('YZE_REWRITE_MODE_REWRITE', 'yze_rewrite_mode_rewrite');
 define('YZE_REWRITE_MODE_NONE', 'yze_rewrite_mode_none');
 define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_REWRITE);
-define("YZE_DEVELOP_MODE",  true);
+define("YZE_DEVELOP_MODE",  true );
 
 ini_set('include_path', get_include_path().PS."../..");
 

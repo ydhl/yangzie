@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * 该文件中定义了系统的所有资源及这些资源对应的控制器映射
  */
@@ -30,8 +31,8 @@ class YZE_Router{
 		foreach(glob(YZE_APP_MODULES_INC."*") as $module){
 			if(@file_exists("{$module}/__module__.php")){
 				include_once "{$module}/__module__.php";
-				$module_name = basename($module);
-				$class = ucfirst(strtolower($module_name))."_Module";
+				$module_name = strtolower(basename($module));
+				$class = "\\app\\{$module_name}\\".ucfirst($module_name)."_Module";
 				$object = new $class();
 				$mappings = $object->get_module_config('routers');
 				if($mappings){

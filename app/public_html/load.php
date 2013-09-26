@@ -12,8 +12,8 @@
  * @link     http://yangzie.yidianhulian.com
  *
  */
+namespace  app;
 
-require_once YANGZIE.'/auth.php';
 require_once YANGZIE.'/file.php';
 require_once YANGZIE.'/yangzie.php';
 require_once YANGZIE.'/validate.php';
@@ -42,15 +42,15 @@ require_once YANGZIE.'/i18n.php';
  * 1. 加载应用配置文件app/__config__.php，根据其中的配置进行系统初始化，比如数据库配置
  * 2. 加载应用中所有的模块配置文件，__module__.php，根据其中的配置加载模块的包含路径，自动包含的文件，url映射等等
  */
-yze_load_app();
+\yangzie\yze_load_app();
 
 //启动会话,yze_load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
-session_start();
+\session_start();
 
 //加载及初始化所有模块的url映射，它们指定了uri到controller的映射
-YZE_Router::load_routers();
+\yangzie\YZE_Router::load_routers();
 
 //加载l10n本地语言翻译处理，根据用户的请求中的指示，决定合适的显示语言
-load_default_textdomain();
+\yangzie\load_default_textdomain();
 
 ?>

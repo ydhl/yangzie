@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 /**
  * 数据验证基类
  * 
@@ -27,7 +29,18 @@ abstract class YZEValidate extends YZE_Object
     const DS_COOKIE = "cookie";
     const DS_SESSION = "session";
     
-    public $validates = array();
+   /**
+    * array(arg_name => array(
+    * 		function,extra_value,message
+    * ))
+    * @var unknown
+    */
+   protected $validates = array();
+   /**
+    * 验证的结果
+    * @var array(arg=>message);
+    */
+   protected $validate_result = array();
 
     /**
      * 验证方法，取得模块对于某个uri设置的数据验证规则，并一一验证它们
@@ -42,25 +55,25 @@ abstract class YZEValidate extends YZE_Object
      * @package  Yangzie
      * @author   liizii <libol007@gmail.com>
      */
-    public function do_validate($request_method="get")
-    {
-    	$failed = array();
-    	foreach ((array)@$this->validates[$request_method] as $name => $rules) {
-    		foreach ($rules as $rule => $rule_data) {
-    			if (!$this->$rule($request_method, $name, $rule_data['value'])) {
-    				$failed[$name] = $this->validates[$request_method][$name][$rule]['message'];
-    			}
-    		}
+    public function do_validate($request_method="get"){
+    	foreach ((array)@$this->validates as $name => $rules) {
+    		$function = $rules['function'];
+    		$this->$function($request_method, $name, $rules['extra_value']);
     	}
-        if ($failed) {
-        	throw new YZE_Request_Validate_Failed($this, join(PHP_EOL, $failed));
+	
+        if ($this->validate_result) {
+        	throw strcasecmp($request_method,"get")==0 ? new YZE_FatalException(join(PHP_EOL, $this->validate_result)) : new YZE_Request_Validate_Failed($this, join(PHP_EOL, $this->validate_result));
         }
 
         return true;
     }
-    public function set_error_message($method, $name, $rule, $msg)
+    public function set_error_message($name, $msg, $append=false)
     {
-    	$this->validates[$method][$name][$rule]['message'] = $msg;
+    	if($append){
+    		@$this->validate_result[$name] .= $msg;
+    	}else{
+    		@$this->validate_result[$name] = $msg;
+    	}
     	return $this;
     }
     /**
@@ -80,11 +93,10 @@ abstract class YZEValidate extends YZE_Object
     /**
      * 绑定数据与验证规则
      * 
-     * @param string $request_method      请求方法（Get,Post），浏览器上的PUT，DELETE也是POST请求 
-     * @param string $name       要验证数据的名字
-     * @param string $rule_name  验证规则名字
-     * @param unknow $rule_value 用于对数据进行验证比较的值
-     * @param string $message    出错时显示的内容
+     * @param string $arg_name       要验证数据的名字
+     * @param string $assert_function  验证方法 参数是$request_method, $name, $extra_value, 验证成功返回true，验证失败调用set_error_message($name, $message)设置错误消息
+     * @param unknow $extra_value 需要用到的其它值
+     * @param string $message    出错时显示的内容，如果$assert_function是自定义方法，则消息由这个方法返回，忽略该参数
      * 
      * @return bool
      * 
@@ -92,10 +104,11 @@ abstract class YZEValidate extends YZE_Object
      * @package  Yangzie
      * @author   liizii <libol007@gmail.com>
      */
-    public function set_validate_rule($request_method, $name, $rule_name, $rule_value, $message)
+    public function assert($arg_name, $assert_function, $extra_value, $message)
     {
-        $this->validates[$request_method][$name][$rule_name]['value'] = $rule_value;
-        $this->validates[$request_method][$name][$rule_name]['message'] = $message;
+        $this->validates[$arg_name]['extra_value'] 	= $extra_value;
+        $this->validates[$arg_name]['message'] 	= $message;
+        $this->validates[$arg_name]['function'] 	= $assert_function;
         return $this;
     }
 
@@ -104,18 +117,18 @@ abstract class YZEValidate extends YZE_Object
      * 
      * @author leeboo
      * 
-     * @param unknown_type $request_method 请求方法，同时数据也从这里取得
-     * @param unknown_type $name 验证的数据中
+     * @param unknown_type $name 验证的数据名
      * @param unknown_type $regular 验证表达式
      * @param unknown_type $message 错误消息
      * @return YZEValidate
      * 
      * @return
      */
-    public function set_regular_validate_rule($request_method, $name, $regular, $message)
-    {
-    	$this->validates[$request_method][$name]["regular_validate"]['value'] = $regular;
-    	$this->validates[$request_method][$name]["regular_validate"]['message'] = $message;
+    public function set_regular_validate_rule($name, $regular, $message){
+    	$this->validates[$arg_name]['extra_value'] 	= $regular;
+        $this->validates[$arg_name]['message'] 		= $message;
+        $this->validates[$arg_name]['function'] 		= "regular_validate";
+        
     	return $this;
     }
     
@@ -144,45 +157,66 @@ abstract class YZEValidate extends YZE_Object
      * @package  Yangzie
      * @author   liizii <libol007@gmail.com>
      */
-    public function required($method, $name, $rule)
-    {
-        return array_key_exists($name, $this->get_datas($method));
+    public function required($method, $name, $rule){
+        if( ! array_key_exists($name, $this->get_datas($method))){
+        	$this->set_error_message($name, $this->validates[$name]['message']);
+        	return false;
+        }
+        return true;
     }
     
-    public function regex($method, $name, $rule)
-    {
+    public function regex($method, $name, $rule){
     	$datas = $this->get_datas($method);
-    	return preg_match($rule, $datas[$name]) ? true : false;
+    	if ( ! preg_match($rule, $datas[$name]) ){
+    		$this->set_error_message($name, $this->validates[$name]['message']);
+    		return false;
+    	}
+    	return false;
     }
     
-    public function not_empty($method, $name, $rule)
-    {
+    public function not_empty($method, $name, $rule){
     	$datas = $this->get_datas($method);
-    	return !empty($datas[$name]);
+    	if (empty($datas[$name])){
+    		$this->set_error_message($name, $this->validates[$name]['message']);
+    		return false;
+    	}
+    	return true;
     }
 
-    public function is_email($method, $name, $rule)
-    {
+    public function is_email($method, $name, $rule){
         $datas = $this->get_datas($method);
-        return filter_var(@$datas[$name], FILTER_VALIDATE_EMAIL);
+        if( ! filter_var(@$datas[$name], FILTER_VALIDATE_EMAIL)){
+        	$this->set_error_message($name, $this->validates[$name]['message']);
+        	return false;
+        }
+        return true;
     }
 
-    public function equal($method, $name, $rule)
-    {
+    public function equal($method, $name, $rule){
         $datas = $this->get_datas($method);
-        return @$datas[$name]==$rule;
+        if (@$datas[$name] != $rule){
+        	$this->set_error_message($name, $this->validates[$name]['message']);
+        	return false;
+        }
+        return true;
     }
     
-    public function verify_code($method, $name, $rule)
-    {
+    public function verify_code($method, $name, $rule){
     	$datas = $this->get_datas($method);
-        return $rule == @$datas[$name];
+        if ( $rule != @$datas[$name] ){
+        	$this->set_error_message($name, $this->validates[$name]['message']);
+        	return false;
+        }
+        return true;
     }
     
-    public function date_format($method, $name, $rule)
-    {
-        $datas = $this->get_datas($method);
-       return strtotime($datas[$name]);
+    public function date_format($method, $name, $rule){
+	$datas = $this->get_datas($method);
+	if ( ! strtotime($datas[$name]) ){
+       		$this->set_error_message($name, $this->validates[$name]['message']);
+       		return false;
+       }
+       return true;
     }
     
     /**
@@ -201,7 +235,11 @@ abstract class YZEValidate extends YZE_Object
     public function alphanumeric($method, $name, $rule)
     {
         $datas = $this->get_datas($method);
-        return is_numeric(@$datas[$name]);
+        if ( ! is_numeric(@$datas[$name])){
+        	$this->set_error_message($name, $this->validates[$name]['message']);
+        	return false;
+        }
+        return true;
     }
     
     /**
@@ -221,7 +259,11 @@ abstract class YZEValidate extends YZE_Object
     {
         $datas = $this->get_datas($method);
         $number = intval(@$datas[$name]);
-        return $number>=$rule[0] && $number<=$rule[1];
+        if( $number>=$rule[0] && $number<=$rule[1] ){
+        	return true;
+        }
+        $this->set_error_message($name, $this->validates[$name]['message']);
+        return false;
     }
     
     /**

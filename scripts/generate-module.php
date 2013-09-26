@@ -1,4 +1,6 @@
 <?php
+namespace yangzie;
+
 class Generate_Module_Script extends AbstractScript{
 	private $module_name;
 	const USAGE = "generate module,usage:
@@ -36,6 +38,8 @@ php generate.php -cmd module  -mod module_name
 		//生成module 配置文件
 		$module = ucfirst($module);
 		$config_file ="<?php
+namespace app\\".$this->module_name.";
+use \yangzie\YZE_Base_Module as YZE_Base_Module;
 /**
  *
  * @version \$Id\$
@@ -47,9 +51,12 @@ class {$module}_Module extends YZE_Base_Module{
     protected function _config(){
         return array(
         'name'=>'{$module}',
-        'include_path'=>array(),#加载模块时设置自动包含的路径
-        'include_files'=>array(),#加载模块时要自动包含的文件
         'routers' => array(
+        	/*'uri'	=> array(
+			'controller'	=> 'controller name',
+        		'args'	=> array(
+        		),
+        	),*/
         )
         );
     }

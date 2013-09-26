@@ -1,10 +1,21 @@
 <?php
+namespace yangzie;
 /**
  * 定义异常及错误码
  *
  * @author liizii
  *
  */
+
+
+class YZE_Need_Signin_Exception extends YZE_RuntimeException{
+	public function __construct ($message = null) {
+		parent::__construct($message, 500);
+	}
+	public function isResumeable(){
+		return false;
+	}
+}
 
 class YZE_Permission_Deny_Exception extends YZE_RuntimeException{
 	public function __construct ($message = null) {
@@ -55,7 +66,7 @@ class YZE_DBAException extends YZE_RuntimeException{
 		return false;
 	}
 }
-class YZE_RuntimeException extends Exception{
+class YZE_RuntimeException extends \Exception{
 	public function __construct ($message = null) {
 		parent::__construct($message, 500);
 	}

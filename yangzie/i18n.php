@@ -1,9 +1,11 @@
 <?php
+namespace yangzie;
+
 function translate( $text, $domain = 'default' ) {
 	if(!class_exists("Translations"))return $text;
 	
 	$l10n = get_i18n_cache();
-	$empty = new Translations();
+	$empty = new \Translations();
 	if ( isset($l10n[$domain]) )
 		$translations = $l10n[$domain];
 	else

@@ -1,4 +1,5 @@
 <?php
+namespace yangzie;
 /**
  * model抽象，封装了基本的表与model的映射、操作。
  * yangzie约定表都必需包含以下的字段内容：
@@ -202,6 +203,24 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public function remove(){
 		YZE_DBAImpl::getDBA()->delete($this);
+		return $this;
+	}
+	
+	/**
+	 * 从数据库中刷新
+	 * 
+	 * @author leeboo
+	 * 
+	 * 
+	 * @return
+	 */
+	public function refresh(){
+		$new = YZE_Model::find($this->get_key(), get_class($this));
+		if($new){
+			foreach ($new->get_records() as $name => $value){
+				$this->set($name, $value);
+			}
+		}
 		return $this;
 	}
 	

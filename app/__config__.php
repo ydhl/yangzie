@@ -6,7 +6,7 @@ if (defined("YZE_DEVELOP_MODE") && YZE_DEVELOP_MODE){
 	define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html/upload/");//end by /
 	define("SAE_MYSQL_USER",  "root");
 	define("SAE_MYSQL_HOST_M",  "localhost");
-	define("SAE_MYSQL_DB",  "ydweixin");
+	define("SAE_MYSQL_DB",  "");
 	define("SAE_MYSQL_PORT",  "3306");
 	define("SAE_MYSQL_PASS",  "ydhl");
 	define("SITE_URI", "http://ydweixin.local.com/");
@@ -17,9 +17,7 @@ if (defined("YZE_DEVELOP_MODE") && YZE_DEVELOP_MODE){
 	define("UPLOAD_SITE_URI", "http://ydweixin.local.com/");
 }
 
-define("JIAOLIUPING_URI", "http://jiaoliuping.com");
-define("JIAOLIUPING_API_SITES", JIAOLIUPING_URI."/api/sites.json");
-define("JIAOLIUPING_API_GET_USER", JIAOLIUPING_URI."/api/userinfo.json");
+
 define("APLICATION_NAME", "易点服务助手");
 
 
@@ -39,7 +37,6 @@ class App_Module extends \yangzie\YZE_Base_Module{
 			
 			'app/vendor/uploader.class.php',
 			'app/vendor/httpclient.php',
-			'app/vendor/jiaoliuping.php',
 			'app/vendor/sae.php',
 			'app/vendor/log4web.php',
 	);

@@ -207,7 +207,8 @@ class YZE_Request extends YZE_Object
 		//init
 		$this->_init($newUri);
 		
-		$request_method = self::the_val($this->get_from_post("yze_method"), strtolower($_SERVER['REQUEST_METHOD']));
+		$request_method = self::the_val($this->get_from_post("yze_method"), 
+				strtolower($_SERVER['REQUEST_METHOD']));
 		$this->set_method($request_method);
 		
 		$uri = $this->the_uri($newUri);
@@ -228,7 +229,6 @@ class YZE_Request extends YZE_Object
 			$controller_name 	= @$config_args['controller_name'];
 			$curr_module 		= @$config_args['module'];
 		}
-
 		if (  @$curr_module && $controller_name) {
 			$this->set_module($curr_module)->set_controller_name($controller_name);
 		}elseif( !$this->controller_name() ){
@@ -238,6 +238,7 @@ class YZE_Request extends YZE_Object
 		}
 		
 		$controller_cls = $this->controller_class();
+		
 		if (!($controller = $this->controller())) {
 			throw new YZE_Resource_Not_Found_Exception("Controller $controller_cls Not Found");
 		}
@@ -551,6 +552,7 @@ class YZE_Request extends YZE_Object
 	 * @return string
 	 */
 	public function controller_name($is_sort = false){
+		if(!$this->module()) return "";
 		return $is_sort ? $this->controller_name  : "\\app\\".$this->module()."\\".$this->controller_name;
 	}
 	
@@ -560,6 +562,7 @@ class YZE_Request extends YZE_Object
 	 */
 	public function controller_class($is_sort = false)
 	{
+		if(!$this->module()) return "";
 		return $is_sort ? $this->controller_class : "\\app\\".$this->module()."\\".$this->controller_class;
 	}
 	/**

@@ -1,4 +1,15 @@
-yangzie
-=======
+## Yangzie -- simple, develop fast framework for PHP
 
-very very simple php framework, I don't need strong framework, I just want a simple, suitable and do more, write less, can auto generate code for me
+* YDHL: <http://yidianhulian.com>
+* Tags: php, web
+
+## Features
+
+### single entry application, support url rewrite, pathinfo
+
+
+## Usages
+
+### rewrite
+
+* open http server rewrite module

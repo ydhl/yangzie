@@ -3,7 +3,7 @@ namespace yangzie;
 use \app\App_Module;
 
 /**
- * 加载所有的模块及其设置其配置
+ * 加载所有的模块，设置其配置
  */
 function yze_load_app(){
 	#加载app配置
@@ -27,10 +27,6 @@ function yze_load_app(){
 			$class = "\\app\\{$module_name}\\".ucfirst($module_name)."_Module";
 			$object = new $class();
 			$object->check();
-// 			$include_files = $object->get_module_config('include_files');
-// 			foreach((array)$include_files as $include_file){
-// 				include_once YZE_APP_MODULES_INC.strtolower($object->get_module_config("name"))."/".$include_file;
-// 			}
 		}
 		if(@file_exists("{$module}/__hooks__.php")){
 			include_once "{$module}/__hooks__.php";
@@ -78,11 +74,12 @@ function yze_go($uri = null){
 		
 		$oldController = $request->controller();
 		
-		$request->init($uri);//重置上下文环境
+		$request->init($uri);//初始化请求上下文环境
 		yze_system_check();
 		$controller = $request->controller();
 		
 		//如果yze_go 是从一个控制器的处理中再次调用的，则为新的控制器copy一个上下文环境
+		//比如内部重定向
 		if($oldController){
 			YZE_Session_Context::get_instance()->copy(get_class($oldController), get_class($controller));
 		}
@@ -93,11 +90,11 @@ function yze_go($uri = null){
 		$response = $request->dispatch();
 		$dba->commit();
 	}catch(YZE_RuntimeException $e){
-		log4web($e->getMessage(), "YZE_RuntimeException");
 		$dba->rollback();
 		if( ! @$controller){
 			$controller = new YZE_Exception_Controller();
 		}
+		//验证出现异常的，先保存现场；便于后面回复
 		if(is_a($e, "\\yangzie\\YZE_Request_Validate_Failed")){
 			$session->save_controller_validates(get_class($controller), $e->get_validater()->get_validates());
 		}
@@ -123,9 +120,6 @@ function yze_go($uri = null){
 		
 		echo $output;
 	}else{
-// 		ob_start();
-// 		print_r($response);
-// 		log4web(ob_get_clean(), "startup-redirect");
 		$response->output();
 	}
 	

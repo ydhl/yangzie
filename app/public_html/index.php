@@ -10,13 +10,14 @@
  * @link     http://yangzie.yidianhulian.com
  *
  */
-//sae_xhprof_start();
+
 //初始化系统的一些配置信息，比如系统变量，yangzie的包含路径及一些php的配置问题
 require 'init.php';
 
-//加载系统需要的代码及初始化yangzie的名个功能处理
+//加载系统需要的代码及初始化yangzie的各个功能处理
 require 'load.php';
 
+//自动加载处理
 function __autoload($class_name) {
 	$_ = preg_split("{\\\\}", strtolower($class_name));
 
@@ -41,5 +42,4 @@ function __autoload($class_name) {
 
 //开始处理请求
 \yangzie\yze_go();
-//sae_xhprof_end();
 ?>

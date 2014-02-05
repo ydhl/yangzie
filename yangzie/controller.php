@@ -212,18 +212,10 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		$request 	= YZE_Request::get_instance();
 		$session	= YZE_Session_Context::get_instance();
 		
-		if($e->isResumeable()){
-			$response = $this->get();
-			
-			if ( ! $response) {
-				$response = $this->getResponse();
-			}
-		}else{
-			$response = $this->exception($e);
-			if( ! $response){
-				$this->set_View_Data("exception", $e);
-				$response = $this->getResponse(YZE_APP_VIEWS_INC."500");
-			}
+		$response = $this->exception($e);
+		if( ! $response){
+			$this->set_View_Data("exception", $e);
+			$response = $this->getResponse(YZE_APP_VIEWS_INC."500");
 		}
 		
 		if(strcasecmp($request->get_from_get('yze_no_content_layout','') , "yes")==0){
@@ -269,6 +261,7 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		
 		//clean get cache data
 		if($request->is_get()){
+			
 			$session->clear_controller_exception($controller_name);
 			$session->clear_controller_datas($controller_name);
 			return;

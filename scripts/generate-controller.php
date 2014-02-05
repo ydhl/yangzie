@@ -167,7 +167,8 @@ class $class extends YZE_Resource_Controller {
 
 	public function exception(YZE_RuntimeException \$e){
 		\$request = YZE_Request::get_instance();
-		//出现了严重异常，如何处理，没有任何处理将显示500页面
+		//出现了异常，如何处理，没有任何处理将显示500页面
+		//如果想显示get的返回内容可调用 get
 	}
 	
 	public function get_response_guid(){
@@ -180,6 +181,7 @@ class $class extends YZE_Resource_Controller {
 	 */
 	public function cleanup(){
 		//pass
+		parent::cleanup();
 	}
 
 	protected \$module_name = \"$module\";

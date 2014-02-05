@@ -18,6 +18,7 @@ use \yangzie\YZE_Session_Context;
 
 function check_exception($datas){
 	//如果array("exception"=>$e, "controller"=>$controller, "response"=>$response)
+	// /signin写死
 	if(is_a($datas['exception'], "\\yangzie\\YZE_Need_Signin_Exception")){
 		$datas['response'] = new YZE_Redirect("/signin", $datas['controller']);
 	}

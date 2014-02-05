@@ -1,1 +1,0 @@
-<?php echo $yze_content_of_layout; ?>

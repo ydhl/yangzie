@@ -2,11 +2,23 @@
 namespace yangzie;
 
 class YZE_Object{
+	private static $loaded_modules = array();
+	
+	public static function set_loaded_modules($module_name, $module_info){
+		self::$loaded_modules[strtolower($module_name)] = $module_info;
+	}
+	
+	public static function loaded_module($module_name){
+		return @self::$loaded_modules[strtolower($module_name)];
+	}
+	
 	//subclass impl this.
 	public function output(){
 
 	}
 
+	
+	
 	/**
 	 * 取得一个变量的值，该方法主要是增加了默认值处理，如果变量为假值，返回默认值
 	 *

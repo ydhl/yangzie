@@ -32,7 +32,7 @@ class Generate_Controller_Script extends AbstractScript{
 		
 		echo "update __module__ file :\t";
 		$this->update_module();
-		echo get_colored_text("Ok.\r\nDone.", "blue");
+		echo get_colored_text("Ok.", "blue","white")."\r\nDone.";
 	}
 	
 	private function update_module(){

@@ -14,32 +14,6 @@
 //初始化系统的一些配置信息，比如系统变量，yangzie的包含路径及一些php的配置问题
 require 'init.php';
 
-//加载系统需要的代码及初始化yangzie的各个功能处理
-require 'load.php';
-
-//自动加载处理
-function __autoload($class_name) {
-	$_ = preg_split("{\\\\}", strtolower($class_name));
-
-	if($_[0]=="app"){
-		
-		if(preg_match("{_controller$}i", $class_name)){
-			$file = YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $_[1] . DS . "controllers" . DS . $_[2] . ".class.php";
-		}else if(preg_match("{_validate$}i", $class_name)){
-			$file = YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $_[1] . DS . "validates" . DS . $_[2] . ".class.php";
-		}else if(preg_match("{_model$}i", $class_name)){
-			$file = YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $_[1] . DS . "models" . DS . $_[2] . ".class.php";
-		}else{
-			$file = YZE_INSTALL_PATH . strtr(strtolower($class_name), array("\\"=>"/")) . ".class.php";
-		}
-
-		if(@$file && file_exists($file)){
-			
-			include $file;
-		}
-	}
-}
-
 //开始处理请求
 \yangzie\yze_go();
 ?>

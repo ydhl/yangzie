@@ -27,11 +27,16 @@ class YZE_Router{
 	}
 
 	public static function load_routers(){
-
+		
 		foreach(glob(YZE_APP_MODULES_INC."*") as $module){
-			if(@file_exists("{$module}/__module__.php")){
-				include_once "{$module}/__module__.php";
+			$phar_wrap = is_file($module) ? "phar://" :"";
+			
+			if(@file_exists("{$phar_wrap}{$module}/__module__.php")){
+				include_once "{$phar_wrap}{$module}/__module__.php";
 				$module_name = strtolower(basename($module));
+				if($phar_wrap) {
+					$module_name = ucfirst(preg_replace('/\.phar$/',"", $module_name));
+				}
 				$class = "\\app\\{$module_name}\\".ucfirst($module_name)."_Module";
 				$object = new $class();
 				$mappings = $object->get_module_config('routers');

@@ -20,16 +20,27 @@ function yze_load_app(){
 		include_once $path;
 	}
 	foreach(glob(YZE_APP_MODULES_INC."*") as $module){
-		if(@file_exists("{$module}/__module__.php")){
-			include_once "{$module}/__module__.php";
+		$phar_wrap = "";
+		if(is_file($module)){//phar
+			$phar_wrap = "phar://";
+		}
+
+		if(@file_exists("{$phar_wrap}{$module}/__module__.php")){
+			require_once "{$phar_wrap}{$module}/__module__.php";
 			
 			$module_name = strtolower(basename($module));
+			if($phar_wrap) {
+				$module_name = ucfirst(preg_replace('/\.phar$/',"", $module_name));
+			}
 			$class = "\\app\\{$module_name}\\".ucfirst($module_name)."_Module";
 			$object = new $class();
 			$object->check();
+			
+			\yangzie\YZE_Object::set_loaded_modules($module_name, 
+					array("is_phar"=>$phar_wrap ? true : false));
 		}
-		if(@file_exists("{$module}/__hooks__.php")){
-			include_once "{$module}/__hooks__.php";
+		if(@file_exists("{$phar_wrap}{$module}/__hooks__.php")){
+			include_once "{$phar_wrap}{$module}/__hooks__.php";
 		}
 	}
 }

@@ -8,7 +8,6 @@ if(!preg_match("/cli/i",php_sapi_name())){
 
 chdir("../app/public_html");
 include_once 'init.php';
-include_once 'load.php';
 include_once '../../scripts/generate-controller.php';
 include_once '../../scripts/generate-model.php';
 include_once '../../scripts/generate-module.php';
@@ -17,12 +16,12 @@ if(true){
 	while(($cmds = display_home_wizard())){
 		$command = $cmds["cmd"];
 		clear_terminal();
-		echo get_colored_text(wrap_output("开始生成...\r\n"), "blue");
+		echo get_colored_text(wrap_output("开始生成..."), "blue", "white")."\r\n";
 		$class_name = "\yangzie\Generate_".ucfirst(strtolower($command))."_Script";
 		$object = new $class_name($cmds);
 		$object->generate();
-		echo get_colored_text(wrap_output("\r\n生成结束, 回车返回.\r\n"), "blue");
-		fgets(STDIN);
+		echo "\r\n".get_colored_text(wrap_output("生成结束."), "blue", "white")."\r\n";
+		//fgets(STDIN);
 		die();
 	}
 }
@@ -38,16 +37,17 @@ function display_home_wizard(){
   
 伙计，你想要生成什么？
 	
-\t\t1.  生成VC代码：\t\tcontroller，view，validate文件
+\t\t1.  生成代码：\t\tcontroller，view，validate文件
 \t\t2.  生成Model：	\t\t根据表生成Model文件
 
 \t\t3.  删除module：\t\t删除模块
 \t\t4.  删除控制器：\t\t删除控制器及对应的验证器、视图
-\t\t5.  goodbye
+\t\t5.  把module打包成phar
+\t\t6.  goodbye
 	
 请选择: "));
 	
-	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3,4,5))){
+	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3,4,5,6))){
 		echo wrap_output("请选择操作对应的序号: ");
 	}
 	
@@ -56,11 +56,45 @@ function display_home_wizard(){
 		case 2:  return display_model_wizard();
 		case 3:  return display_delete_module_wizard();
 		case 4:  return display_delete_controller_wizard();
-		case 5:  die(wrap_output("
+		case 5:  return display_phar_wizard();
+		case 6:  die(wrap_output("
 退出.
 "));
 		default: return array();
 	}
+}
+
+
+function display_phar_wizard(){
+	clear_terminal();
+	echo vsprintf(wrap_output(__( "
+================================================================
+		YANGZIE Generate Script
+		易点互联®
+================================================================
+	
+打包模块为phar，%s返回上一步, 请输入模块名:  ")), get_colored_text(" CTRL+B ", "red", "white"));
+	
+	while (!is_validate_name(($module = get_input()))){
+		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
+	}
+	
+	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/".$module)){
+		echo wrap_output("模块不存在");
+	}else{
+		phar_module($module);
+		echo wrap_output("保持于tmp/{$module}.phar\r\n");
+	}
+
+	return array();
+}
+
+function phar_module($module){
+	// create with alias "project.phar"
+	@mkdir(dirname(dirname(__FILE__))."/tmp/");
+	$phar = new \Phar(dirname(dirname(__FILE__))."/tmp/".$module.'.phar', 0, $module.'.phar');
+	$phar->buildFromDirectory(dirname(dirname(__FILE__))."/app/modules/".$module);
+	$phar->setStub($phar->createDefaultStub('__module__.php'));
 }
 
 function display_delete_controller_wizard(){
@@ -155,7 +189,7 @@ function display_mvc_wizard(){
 			$uri = $uris[$uri-1];
 		}
 	}else{
-		echo wrap_output(__("3. (3/8)映射URI, 回车表示不映射:  "));
+		echo wrap_output(__("3. (3/8)映射URI, 默认URI为/{$module}/{$controller}:  "));
 		$uri = get_input();
 	}
 	
@@ -380,7 +414,7 @@ abstract class AbstractScript{
 
 	public function create_file($file_path,$content,$force=false){
 		if(file_exists($file_path) && !$force){
-			echo get_colored_text("file exists\r\n", "red");return;
+			echo get_colored_text("file exists", "red", "white")."\r\n";return;
 		}
 
 		$f = fopen($file_path,'w+');
@@ -390,7 +424,7 @@ abstract class AbstractScript{
 		chmod($file_path,0777);
 		fwrite($f,$content);
 		fclose($f);
-		echo get_colored_text("OK.\r\n","blue");
+		echo get_colored_text("OK.","blue","white")."\r\n";
 	}
 
 }

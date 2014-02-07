@@ -318,10 +318,6 @@ class YZE_Request extends YZE_Object
 	 */
 	public function validate(){
 		$request_method = $this->the_method();
-		$validate_file = YZE_APP_MODULES_INC.$this->module().'/validates/'.$this->controller_name(true)."_validate.class.php";
-		if(file_exists($validate_file)){
-			include_once  $validate_file;
-		}
 		
 		$validate_cls = self::format_class_name($this->controller_name(),"Validate");
 
@@ -535,10 +531,6 @@ class YZE_Request extends YZE_Object
 	private function set_controller_name($controller){
 		$this->controller_class = self::format_class_name($controller, "Controller");
 		$class = "\\app\\".$this->module()."\\".$this->controller_class;
-		$controller_file_path = $this->controller_file();
-		if(file_exists($controller_file_path)){
-			include_once $controller_file_path;
-		}
 
 		if(class_exists($class)){
 			$this->controller = new $class;
@@ -576,19 +568,7 @@ class YZE_Request extends YZE_Object
 	{
 		return $this->controller;
 	}
-	/**
-	 * 返回控制器的绝对路径
-	 * 
-	 * @author leeboo
-	 * 
-	 * @return string
-	 * 
-	 * @return
-	 */
-	public function controller_file()
-	{
-		return YZE_APP_PATH."modules/".$this->module()."/controllers/".strtolower($this->controller_class).".class.php";
-	}
+	
 	public function set_module($module)
 	{
 		$this->module = $module;
@@ -623,7 +603,12 @@ class YZE_Request extends YZE_Object
 	
 	public function view_path()
 	{
-		return YZE_APP_PATH."modules/".$this->module()."/views";
+		$info = \yangzie\YZE_Object::loaded_module($this->module());
+		if($info['is_phar']){
+			return "phar://".YZE_APP_PATH."modules/".$this->module().".phar/views";
+		}else{
+			return YZE_APP_PATH."modules/".$this->module()."/views";
+		}
 	}
 }
 ?>

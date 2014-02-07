@@ -30,9 +30,9 @@ class Generate_Controller_Script extends AbstractScript{
 		$this->save_class();
 		$this->save_test();
 		
-		echo "update __module__ file :\t";
+		echo __("update __module__ file :\t");
 		$this->update_module();
-		echo get_colored_text("Ok.", "blue","white")."\r\nDone.";
+		echo get_colored_text(__("Ok."), "blue","white")."\r\nDone.";
 	}
 	
 	private function update_module(){
@@ -89,7 +89,7 @@ class Generate_Controller_Script extends AbstractScript{
 		if(empty($controller)){
 			return;
 		}
-		echo "create controller phpt file:\t";
+		echo __("create controller phpt file:\t");
 		$class = YZE_Object::format_class_name($controller,"Controller");
 		$class_file_path = dirname(dirname(__FILE__))
 		."/tests/". $module."/" ."".strtolower($class).".class.phpt";
@@ -188,7 +188,7 @@ class $class extends YZE_Resource_Controller {
 	
 }
 ?>";
-		echo "create controller:\t\t";
+		echo __("create controller:\t\t");
 		$this->create_file($class_file_path, $class_file_content);
 		
 		if($this->view_format){
@@ -250,7 +250,7 @@ use \\yangzie\\YZE_RuntimeException;
 ?>
 
 this is {$controller} view";
-			echo("create view {$controller}.{$format}.php:\t\t\t");
+			echo __("create view {$controller}.{$format}.php:\t\t\t");
 			$this->create_file($view_file_path, $view_file_content);
 		}
 
@@ -271,7 +271,7 @@ this is {$controller} view";
 echo \$yze_content_of_layout
 ?>
 ";
-				echo("create layout {$format} :\t\t\t");
+				echo __("create layout {$format} :\t\t\t");
 				$this->create_file($layout, $layout_file_content);
 			}
 		}
@@ -324,7 +324,7 @@ class ".YZE_Object::format_class_name($controller, "Validate")." extends YZEVali
 		//\$this->assert('params name in post', 'validate method name', '', 'error message');
 	}
 }?>";
-		echo("create validate :\t\t");
+		echo __("create validate :\t\t");
 		$this->create_file($validate_file_path, $validate_file_content);
 	}
 
@@ -346,7 +346,7 @@ include \"load.php\";
 //write you test code here
 ?>
 --EXPECT--";
-		echo("create validate test :\t\t");
+		echo __("create validate test :\t\t");
 		$this->create_file($validate_file_path, $test_file_content);
 	}
 }

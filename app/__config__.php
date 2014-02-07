@@ -49,7 +49,6 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	public $include_files = array(
 			"app/vendor/pomo/translation_entry.class.php",
 			"app/vendor/pomo/translations.class.php",
-			"app/vendor/i18n.php"
 	);
 	
 	//加载应用时需要检查什么

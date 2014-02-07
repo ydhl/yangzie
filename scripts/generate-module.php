@@ -3,22 +3,21 @@ namespace yangzie;
 
 class Generate_Module_Script extends AbstractScript{
 	private $module_name;
-	const USAGE = "generate module,usage:
-
-php generate.php -cmd module  -mod module_name
-    -cmd controller：命令名
-    -mod module_name：模块名
-";
 
 	public function generate(){
 		$argv = $this->args;
 		$this->module_name = $argv['module_name'];
 
 		if(empty($this->module_name)){
-			die(__(Generate_Module_Script::USAGE));
+			die(__("generate module,usage:
+
+php generate.php -cmd module  -mod module_name
+    -cmd controller：命令名
+    -mod module_name：模块名
+"));
 		}
 
-		echo "module at 'app/modules/".$this->module_name."';\r\n";
+		echo __("module at 'app/modules/".$this->module_name."';\n");
 		
 		$this->save_module();
 	}
@@ -62,7 +61,7 @@ class {$module}_Module extends YZE_Base_Module{
     }
 }
 ?>";
-		echo "create __module__.php:\t\t";
+		echo __("create __module__.php:\t\t");
 		$this->create_file("$path/__module__.php",$config_file);
 		
 		//如果module没有在app config中，则加入

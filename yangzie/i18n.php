@@ -38,10 +38,17 @@ function load_textdomain($domain, $mofile) {
 }
 
 function load_default_textdomain() {
-	if(!function_exists("get_locale")){
+	$local = do_filter("get_locale", "zh-cn");
+	
+	if(!function_exists("\yangzie\script_locale") && !$local){
 		return;
 	}
-	$locale = get_locale();
+	if(function_exists("\yangzie\script_locale")){// for script tool
+		$locale = script_locale();
+	}else{
+		$locale = $local;
+	}
+
 	$mofile =  "vendor/i18n/$locale.mo";
 	return load_textdomain('default', $mofile);
 }

@@ -24,12 +24,12 @@ class Generate_Model_Script extends AbstractScript{
 		//Model 
 		$model_class = YZE_Object::format_class_name($this->class_name,"Model");
 		$handleResult = $this->create_model_code($model_class);
-		echo "create model :\t\t\t";
+		echo __("create model :\t\t\t");
 		$this->save_class($handleResult, $model_class, $this->module_name);
-		echo "create model phpt file :\t";
+		echo __("create model phpt file :\t");
 		$this->save_test($handleResult, $model_class, $this->module_name);
 		
-		echo "Done!\r\n";
+		echo __("Done!\n");
 	}
 	
 	public function create_model_code($class){

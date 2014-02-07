@@ -1,8 +1,17 @@
 <?php
 namespace yangzie;
 
+global $language;
+$language = "zh-cn";
+
 if(!preg_match("/cli/i",php_sapi_name())){
-	echo wrap_output(__("请在命令行下运行,进入到".dirname(__FILE__).", 运行php generate.php"));die();
+	echo wrap_output(vsprintf(__("请在命令行下运行,进入到%s, 运行php generate.php",dirname(__FILE__))));die();
+}
+
+function script_locale(){
+	global $language;
+// 	echo $language;
+	return $language;
 }
 
 
@@ -16,11 +25,11 @@ if(true){
 	while(($cmds = display_home_wizard())){
 		$command = $cmds["cmd"];
 		clear_terminal();
-		echo get_colored_text(wrap_output("开始生成..."), "blue", "white")."\r\n";
+		echo get_colored_text(wrap_output(__("开始生成...")), "blue", "white")."\r\n";
 		$class_name = "\yangzie\Generate_".ucfirst(strtolower($command))."_Script";
 		$object = new $class_name($cmds);
 		$object->generate();
-		echo "\r\n".get_colored_text(wrap_output("生成结束."), "blue", "white")."\r\n";
+		echo "\r\n".get_colored_text(wrap_output(__("生成结束.")), "blue", "white")."\r\n";
 		//fgets(STDIN);
 		die();
 	}
@@ -37,17 +46,22 @@ function display_home_wizard(){
   
 伙计，你想要生成什么？
 	
-\t\t1.  生成代码：\t\tcontroller，view，validate文件
-\t\t2.  生成Model：\t\t根据表生成Model文件
-\t\t3.  删除module：\t\t删除模块
-\t\t4.  删除控制器：\t\t删除控制器及对应的验证器、视图
-\t\t5.  把module打包成phar
-\t\t6.  goodbye
+\t1.  生成代码：\t\tcontroller，view，validate文件
+\t2.  生成Model：\t\t根据表生成Model文件
+			
+\t3.  删除module：\t\t删除模块
+\t4.  删除控制器：\t\t删除控制器及对应的验证器、视图
+			
+\t5.  把module打包成phar
+			
+\t6.  中文
+\t7.  English
+\t8.  goodbye
 	
 请选择: "));
 	
-	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3,4,5,6))){
-		echo wrap_output("请选择操作对应的序号: ");
+	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3, 4, 5, 6, 7, 8))){
+		echo wrap_output(__("请选择操作对应的序号: "));
 	}
 	
 	switch ($input){
@@ -56,13 +70,28 @@ function display_home_wizard(){
 		case 3:  return display_delete_module_wizard();
 		case 4:  return display_delete_controller_wizard();
 		case 5:  return display_phar_wizard();
-		case 6:  die(wrap_output("
+		case 6:  return switch_to_zh();
+		case 7:  return switch_to_en();
+		case 8:  die(wrap_output("
 退出.
 "));
 		default: return array();
 	}
 }
 
+function switch_to_zh(){
+	global $language;
+	$language = "zh-cn";
+	load_default_textdomain();
+	display_home_wizard();
+}
+
+function switch_to_en(){
+	global $language;
+	$language = "en";
+	load_default_textdomain();
+	display_home_wizard();
+}
 
 function display_phar_wizard(){
 	clear_terminal();
@@ -93,9 +122,9 @@ function display_phar_wizard(){
 	}
 
 	phar_module($module, $key_path);
-	echo wrap_output("phar保持于tmp/{$module}.phar\r\n");
+	echo wrap_output(vsprintf(__("phar保持于tmp/%s.phar\r\n"),$module));
 	if($key_path){
-		echo wrap_output("请把对应的公钥copy到modules/{$module}.phar.pubkey\r\n");
+		echo wrap_output(vsprintf(__("请把对应的公钥改名为%s.phar.pubkey并跟phar文件放在一起\r\n"),$module));
 	}
 	return array();
 }
@@ -104,8 +133,8 @@ function phar_module($module, $key_path){
 	@mkdir(dirname(dirname(__FILE__))."/tmp/");
 	$phar = new \Phar(dirname(dirname(__FILE__))."/tmp/".$module.'.phar', 0, $module.'.phar');
 	$phar->buildFromDirectory(dirname(dirname(__FILE__))."/app/modules/".$module);
-	$phar->setStub($phar->createDefaultStub('__module__.php'));
-	
+	//$phar->setStub($phar->createDefaultStub('__module__.php'));
+	$phar->compressFiles(\Phar::GZ);
 	if($key_path){
 		$private = openssl_get_privatekey(file_get_contents($key_path));
 		$pkey = '';
@@ -134,7 +163,7 @@ function display_delete_controller_wizard(){
 	}
 	
 	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}_controller.class.php")){
-		echo wrap_output("控制器不存在");
+		echo wrap_output(__("控制器不存在"));
 	}else{
 		unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}_controller.class.php");
 		@unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/validates/{$controller}_validate.class.php");
@@ -143,7 +172,7 @@ function display_delete_controller_wizard(){
 		}
 		unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}_controller.class.phpt");
 		@unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}_validate.class.phpt");
-		echo wrap_output("控制器及视图、验证器、单元测试文件删除成功");
+		echo wrap_output(__("控制器及视图、验证器、单元测试文件删除成功"));
 	}
 
 	return array();
@@ -164,11 +193,11 @@ function display_delete_module_wizard(){
 	}
 	
 	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/".$module)){
-		echo wrap_output("模块不存在");
+		echo wrap_output(__("模块不存在"));
 	}else{
 		rrmdir(dirname(dirname(__FILE__))."/app/modules/".$module);
 		rrmdir(dirname(dirname(__FILE__))."/tests/".$module);
-		echo wrap_output("模块删除成功");
+		echo wrap_output(__("模块删除成功"));
 	}
 
 	return array();
@@ -195,11 +224,11 @@ function display_mvc_wizard(){
 	}
 	
 	if(($uris = is_controller_exists($controller, $module))){
-		echo wrap_output(__("3. (3/8)控制器已存在，映射URI的是:\r\n\r\n"));
+		echo wrap_output(__("3. (3/8)控制器已存在，映射URI的是:\n\n"));
 		foreach ($uris as $index => $uri){
-			echo "\t ".($index+1).". {$uri}\r\n";
+			echo "\t ".($index+1).". {$uri}\n";
 		}
-		echo wrap_output(__("\r\n\t选择一个或者输入新的, 回车表示不映射:"));
+		echo wrap_output(__("\n\t选择一个或者输入新的, 回车表示不映射:"));
 		$uri = get_input();
 		
 		if (is_numeric($uri)){

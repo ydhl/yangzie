@@ -38,8 +38,7 @@ function display_home_wizard(){
 伙计，你想要生成什么？
 	
 \t\t1.  生成代码：\t\tcontroller，view，validate文件
-\t\t2.  生成Model：	\t\t根据表生成Model文件
-
+\t\t2.  生成Model：\t\t根据表生成Model文件
 \t\t3.  删除module：\t\t删除模块
 \t\t4.  删除控制器：\t\t删除控制器及对应的验证器、视图
 \t\t5.  把module打包成phar
@@ -73,7 +72,8 @@ function display_phar_wizard(){
 		易点互联®
 ================================================================
 	
-打包模块为phar，%s返回上一步, 请输入模块名:  ")), get_colored_text(" CTRL+B ", "red", "white"));
+打包phar，%s返回上一步
+1. (1/2)请输入模块名:  ")), get_colored_text(" CTRL+B ", "red", "white"));
 	
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
@@ -81,20 +81,37 @@ function display_phar_wizard(){
 	
 	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/".$module)){
 		echo wrap_output("模块不存在");
-	}else{
-		phar_module($module);
-		echo wrap_output("保持于tmp/{$module}.phar\r\n");
 	}
 
+	echo wrap_output(__("2. (2/2)phar 签名私钥路径，回车表示不签名 
+  ［ 采用私钥进行签名后，只有使用对应的公钥才能正确使用phar包，
+    生成私钥：openssl genrsa -out mykey.pem 1024
+    生成公钥：openssl rsa -in mykey.pem -pubout -out mykey.pub］:"));
+	while (!file_exists(($key_path = get_input()))){
+		if(!$key_path)break;//回车
+		echo get_colored_text(wrap_output(__("\t文件不存在，请输入绝对路径:  ")), "red");
+	}
+
+	phar_module($module, $key_path);
+	echo wrap_output("phar保持于tmp/{$module}.phar\r\n");
+	if($key_path){
+		echo wrap_output("请把对应的公钥copy到modules/{$module}.phar.pubkey\r\n");
+	}
 	return array();
 }
 
-function phar_module($module){
-	// create with alias "project.phar"
+function phar_module($module, $key_path){
 	@mkdir(dirname(dirname(__FILE__))."/tmp/");
 	$phar = new \Phar(dirname(dirname(__FILE__))."/tmp/".$module.'.phar', 0, $module.'.phar');
 	$phar->buildFromDirectory(dirname(dirname(__FILE__))."/app/modules/".$module);
 	$phar->setStub($phar->createDefaultStub('__module__.php'));
+	
+	if($key_path){
+		$private = openssl_get_privatekey(file_get_contents($key_path));
+		$pkey = '';
+		openssl_pkey_export($private, $pkey);
+		$phar->setSignatureAlgorithm(\Phar::OPENSSL, $pkey);
+	}
 }
 
 function display_delete_controller_wizard(){

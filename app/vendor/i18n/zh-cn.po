@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: yangzie\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-02-08 00:59+0800\n"
+"POT-Creation-Date: 2014-02-08 14:38+0800\n"
 "PO-Revision-Date: \n"
 "Last-Translator: leeboo <leeboo@yidianhulian.com>\n"
 "Language-Team: liizii\n"
@@ -62,7 +62,7 @@ msgstr ""
 
 #: scripts/generate-controller.php:33
 msgid "update __module__ file :\t"
-msgstr ""
+msgstr "更新 __module__ file :\t"
 
 #: scripts/generate-controller.php:35
 msgid "Ok."
@@ -96,20 +96,11 @@ msgstr ""
 msgid "Done!\n"
 msgstr ""
 
-#: scripts/generate-module.php:12
-msgid ""
-"generate module,usage:\r\n"
-"\r\n"
-"php generate.php -cmd module  -mod module_name\r\n"
-"    -cmd controller：命令名\r\n"
-"    -mod module_name：模块名\r\n"
-msgstr ""
-
-#: scripts/generate-module.php:20
+#: scripts/generate-module.php:11
 msgid "module at 'app/modules/"
 msgstr ""
 
-#: scripts/generate-module.php:64
+#: scripts/generate-module.php:55
 msgid "create __module__.php:\t\t"
 msgstr ""
 

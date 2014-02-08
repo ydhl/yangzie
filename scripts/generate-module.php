@@ -8,15 +8,6 @@ class Generate_Module_Script extends AbstractScript{
 		$argv = $this->args;
 		$this->module_name = $argv['module_name'];
 
-		if(empty($this->module_name)){
-			die(__("generate module,usage:
-
-php generate.php -cmd module  -mod module_name
-    -cmd controller：命令名
-    -mod module_name：模块名
-"));
-		}
-
 		echo __("module at 'app/modules/".$this->module_name."';\n");
 		
 		$this->save_module();

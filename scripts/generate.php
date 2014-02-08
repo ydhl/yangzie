@@ -38,7 +38,7 @@ if(true){
 
 function display_home_wizard(){
 	clear_terminal();
-	echo wrap_output(__( "
+	echo wrap_output(__("
 ================================================================
 \t\tYANGZIE Generate Script
 \t\t易点互联®
@@ -95,7 +95,7 @@ function switch_to_en(){
 
 function display_phar_wizard(){
 	clear_terminal();
-	echo vsprintf(wrap_output(__( "
+	echo wrap_output(vsprintf(__( "
 ================================================================
 		YANGZIE Generate Script
 		易点互联®
@@ -205,7 +205,7 @@ function display_delete_module_wizard(){
 
 function display_mvc_wizard(){
 	clear_terminal();
-	echo vsprintf(wrap_output(__( "
+	echo wrap_output(vsprintf(__( "
 ================================================================
 		YANGZIE Generate Script
 		易点互联®

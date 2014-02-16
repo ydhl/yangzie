@@ -212,7 +212,7 @@ function display_mvc_wizard(){
 ================================================================
   
 你将生成VC代码结构，请根据提示进操作，%s返回上一步：
-1. (1/8)所在功能模块:  ")), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/8)所在功能模块:  "), get_colored_text(" CTRL+B ", "red", "white")));
 	
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");

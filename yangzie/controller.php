@@ -26,12 +26,21 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	 */
 	protected $cache_config;
 	protected $session;
+	/**
+	 * 
+	 * @var YZE_Request
+	 */
 	protected $request;
+	/**
+	 * 所在模块
+	 * @var YZE_Base_Module
+	 */
+	protected $module;
 
 	public function __construct(){
 		$this->request = YZE_Request::get_instance();
 		$this->session = YZE_Session_Context::get_instance();
-
+		$this->module = $this->request->module_obj();
 		//init layout
 		$request = YZE_Request::get_instance();
 		if($request->get_output_format()){
@@ -365,7 +374,7 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		}
 	}
 }
-class YZE_Default_Controller extends YZE_Resource_Controller{
+class Yze_Default_Controller extends YZE_Resource_Controller{
 	public function get(){
 		$this->set_View_Data("yze_page_title", __("Yangzie 简单的PHP开发框架"));
 		return new YZE_Simple_View(YANGZIE."/welcome", $this->get_datas(), $this);

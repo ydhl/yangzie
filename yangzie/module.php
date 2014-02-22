@@ -1,7 +1,6 @@
 <?php
 namespace yangzie;
 abstract class YZE_Base_Module{
-	public $validate_required = array();
 	/**
 	 * 模块的名字
 	 * @var string

@@ -184,8 +184,6 @@ class $class extends YZE_Resource_Controller {
 		parent::cleanup();
 	}
 
-	protected \$module_name = \"$module\";
-	
 }
 ?>";
 		echo __("create controller:\t\t");

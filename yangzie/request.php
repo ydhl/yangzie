@@ -229,12 +229,13 @@ class YZE_Request extends YZE_Object
 			$controller_name 	= @$config_args['controller_name'];
 			$curr_module 		= @$config_args['module'];
 		}
+
 		if (  @$curr_module && $controller_name) {
 			$this->set_module($curr_module)->set_controller_name($controller_name);
-		}elseif( !$this->controller_name() ){
+		}else/*if( !$this->controller_name() )*/{
 			$this->controller_name = "yze_default";
-			$this->controller_class = "YZE_Default_Controller";
-			$this->controller = new YZE_Default_Controller();
+			$this->controller_class = "Yze_Default_Controller";
+			$this->controller = new Yze_Default_Controller();
 		}
 		
 		$controller_cls = $this->controller_class();
@@ -530,12 +531,18 @@ class YZE_Request extends YZE_Object
 	
 	private function set_controller_name($controller){
 		$this->controller_class = self::format_class_name($controller, "Controller");
+		$this->controller_name = $controller;
+		if(class_exists($this->controller_class)){
+			$this->controller = new $this->controller_class;
+			return $this;
+		}
+		
 		$class = "\\app\\".$this->module()."\\".$this->controller_class;
 
 		if(class_exists($class)){
 			$this->controller = new $class;
 		}
-		$this->controller_name = $controller;
+
 		return $this;
 	}
 	/**
@@ -574,6 +581,11 @@ class YZE_Request extends YZE_Object
 		$this->module = $module;
 		$this->module_class = YZE_Object::format_class_name($module, "Module");
 	
+		if(class_exists($this->module_class)){
+			$this->module_obj = new $this->module_class;
+			return $this;
+		}
+		
 		$class = "\\app\\".$module."\\".$this->module_class;
 		
 		if(class_exists($class)){

@@ -55,6 +55,7 @@ require_once YANGZIE.'/error.php';
 require_once YANGZIE.'/daemon/daemon-functions.php';
 require_once YANGZIE.'/html.php';
 require_once YANGZIE.'/i18n.php';
+require_once YANGZIE.'/rpc.php';
 
 
 //自动加载处理

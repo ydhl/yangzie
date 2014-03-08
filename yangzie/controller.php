@@ -170,6 +170,14 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		do_action(YZE_ACTION_BEFORE_POST, $this);
 		return $this->_handle_post();
 	}
+	
+	public final function do_rpc(){
+		$rpc = new YangzieRPC();
+		$callable = $this->request->get_from_post("callable");
+		$args = json_decode(html_entity_decode($this->request->get_from_post("args")));
+		$this->layout = "";
+		return new YZE_Notpl_View(json_encode($rpc->invoke($callable, $args)), $this);
+	}
 
 	/**
 	 * put方法,更新数据
@@ -361,8 +369,8 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		$refer_saved_token = $session->get_request_token($source_controller);
 
 		$filtered_data  = do_filter(YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, array("saved_token"=>$saved_token, "post_request_token"=>$post_request_token));
-		$saved_token    = $filtered_data['saved_token'];
-		$post_request_token = $filtered_data['post_request_token'];
+		$saved_token    = @$filtered_data['saved_token'];
+		$post_request_token = @$filtered_data['post_request_token'];
 
 		if (!$post_request_token) {
 			throw new YZE_Form_Token_Validate_Exception(__("请求验证失败，出现该提示的原因可能是您点击过快，或者长时间没有操作，请重试(MISSING_POST_REQUEST_TOKEN)。"));

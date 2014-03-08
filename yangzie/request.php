@@ -244,7 +244,7 @@ class YZE_Request extends YZE_Object
 			throw new YZE_Resource_Not_Found_Exception("Controller $controller_cls Not Found");
 		}
 		
-		if (!method_exists($controller, $request_method)) {
+		if ( ! method_exists($controller, $request_method) && $request_method != "rpc") {
 			throw new YZE_Resource_Not_Found_Exception($controller_cls."::".$request_method);
 		}
 		

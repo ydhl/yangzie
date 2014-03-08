@@ -35,8 +35,10 @@ define("YZE_DEVELOP_MODE",  true );
 
 ini_set('include_path', get_include_path().PS."../..");
 
-require_once YANGZIE.'/file.php';
 require_once YANGZIE.'/yangzie.php';
+require_once YANGZIE.'/hooks.php';//framework hook处理,hook处理程序
+require_once YANGZIE.'/file.php';
+
 require_once YANGZIE.'/validate.php';
 require_once YANGZIE.'/session.php';
 require_once YANGZIE.'/request.php';
@@ -48,7 +50,7 @@ require_once YANGZIE.'/model.php';
 require_once YANGZIE.'/sql.php';
 require_once YANGZIE.'/acl.php';
 require_once YANGZIE.'/module.php';
-require_once YANGZIE.'/hooks.php';//framework hook处理,hook处理程序
+
 require_once YANGZIE.'/router.php';
 require_once YANGZIE.'/startup.php';
 require_once YANGZIE.'/error.php';

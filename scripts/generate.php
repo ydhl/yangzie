@@ -15,7 +15,7 @@ function script_locale(){
 }
 
 
-chdir("../app/public_html");
+chdir("./app/public_html");
 include_once 'init.php';
 include_once '../../scripts/generate-controller.php';
 include_once '../../scripts/generate-model.php';
@@ -54,13 +54,16 @@ function display_home_wizard(){
 			
 \t5.  把module打包成phar
 			
-\t6.  中文
-\t7.  English
-\t8.  goodbye
+\t6.  运行单元测试
+
+\t7.  中文
+\t8.  English
+
+\t9.  quit
 	
 请选择: "));
 	
-	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3, 4, 5, 6, 7, 8))){
+	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3, 4, 5, 6, 7, 8, 9))){
 		echo wrap_output(__("请选择操作对应的序号: "));
 	}
 	
@@ -70,12 +73,59 @@ function display_home_wizard(){
 		case 3:  return display_delete_module_wizard();
 		case 4:  return display_delete_controller_wizard();
 		case 5:  return display_phar_wizard();
-		case 6:  return switch_to_zh();
-		case 7:  return switch_to_en();
-		case 8:  die(wrap_output("
+		case 6:  return _run_test();
+		case 7:  return switch_to_zh();
+		case 8:  return switch_to_en();
+		case 9:  die(wrap_output("
 退出.
 "));
 		default: return array();
+	}
+}
+
+function _run_test(){
+	clear_terminal();
+	echo wrap_output(vsprintf(__( "
+================================================================
+		YANGZIE Generate Script
+		易点互联®
+================================================================
+	
+选择要运行的单元测试，%s返回上一步
+
+"), get_colored_text(" CTRL+B ", "red", "white")));
+	
+	$index = 0;
+	$tests = array();
+	foreach(glob("../../tests/*")  as $f){
+		if(is_dir($f)) {
+			$index++;
+			$test = basename($f);
+			$tests[$index] = $f;
+			echo "\t".($index).". {$test} \n";
+		}
+	}
+	if($tests){
+		$tests[0] = "";
+		echo wrap_output(__("\t0. 运行全部单元测试\n:"));
+	}else{
+		echo wrap_output(__("\t没有单元测试\n"));
+	}
+	while (!array_key_exists(($selectedIndex = get_input()), $tests)){
+		echo get_colored_text(wrap_output(__("\t选择的单元测试不存在，请重新选择:  ")), "red");
+	}
+	
+	include "../../tests/config.php";
+	$php = getenv("TEST_PHP_EXECUTABLE");
+	if (empty($php) || !file_exists($php)) {
+		echo get_colored_text(wrap_output(__("请修改tests/config.php中的TEST_PHP_EXECUTABLE为php.exe的全路径 ")), "red");die;
+	}
+
+	
+	if($selectedIndex==="0"){
+		system("php ../../tests/run-tests.php  ../../tests");
+	}else{
+		system("php ../../tests/run-tests.php ".$tests[$selectedIndex]);
 	}
 }
 

@@ -2,59 +2,75 @@
 namespace yangzie;
 
 /**
+ * RPC客户端
  * 
- * @param unknown $remote
- * @param unknown $callable
- * @param unknown $args
+ * @author leeboo
+ *
  */
-function yangzie_rpc_invoke($remote="localhost", $callable, $args){
-	if( ! $remote || strcmp($remote,"localhost")===0){
-		return yangzie_rpc_invoke_local($callable, $args);
-	}
-	return yangzie_rpc_invoke_remote($callable, $args);
-}
+class YangzieRPC extends YZE_Object{
+	private $http_code;
 
-function yangzie_rpc_invoke_remote($callable, $args){
-	$client = new RPCClient();
-}
+	private $url;
 
-function yangzie_rpc_invoke_local($callable, $args){
+	private $timeout = 30;
 
-}
+	private $connecttimeout = 30;
 
+	private $ssl_verifypeer = FALSE;
 
-class RPCClient{
+	private $http_info;
 
-	/* Contains the last HTTP status code returned. */
-	public $http_code;
+	private $useragent = 'yangzie';
 
-	/* Contains the last API call. */
-	public $url;
+	private $boundary = "yze.rpc";
 
-	/* Set timeout default. */
-	public $timeout = 30;
-
-	/* Set connect timeout. */
-	public $connecttimeout = 30;
-
-	/* Verify SSL Cert. */
-	public $ssl_verifypeer = FALSE;
-
-
-	/* Contains the last HTTP headers returned. */
-	public $http_info;
-
-	/* Set the useragnet. */
-	public $useragent = 'yangzie';
-
-	static $boundary = "yze.rpc";
-
-	function post($url, $params) {
-		$query = self::build_http_query_multi($params);
-		return $this->http($url,'POST', $query);
+	
+	public function __construct(){
+		
 	}
 
-	public static function build_http_query_multi($params) {
+
+	/**
+	 * 执行rpc调用
+	 *
+	 * @param unknown $remote
+	 * @param unknown $callable
+	 * @param unknown $args
+	 */
+	public function invoke( $callable, $args, $remote="localhost"){
+		if( ! $remote || strcmp($remote,"localhost")===0){
+			return $this->invoke_local($callable, $args);
+		}
+		return $this->invoke_remote($remote, $callable, $args);
+	}
+	
+	/**
+	 * 访问yze.rpc
+	 * 
+	 * @author leeboo
+	 * 
+	 * @param unknown $remote
+	 * @param unknown $callable
+	 * @param unknown $args
+	 * @return Ambigous <\yangzie\API, mixed>
+	 * 
+	 * @return
+	 */
+	private function invoke_remote($remote, $callable, $args){
+		return $this->post($remote, array("yze_method"=>"rpc", "callable"=>$callable, "args"=>json_encode($args)));
+	}
+	
+	private function invoke_local($callable, $args){
+		return call_user_func_array($callable, $args);
+	}
+	
+	
+	private function post($url, $params) {
+		$query = $this->build_http_query_multi($params);
+		return $this->http($url, $query);
+	}
+
+	private function build_http_query_multi($params) {
 		if (!$params) return '';
 
 		// Urlencode both keys and values
@@ -66,7 +82,7 @@ class RPCClient{
 		// Ref: Spec: 9.1.1 (1)
 		uksort($params, 'strcmp');
 		$pairs = array();
-		self::$boundary = $boundary = uniqid('------------------');
+		$this->boundary = $boundary = uniqid('------------------');
 		$MPboundary = '--'.$boundary;
 		$endMPboundary = $MPboundary. '--';
 		$multipartbody = '';
@@ -102,7 +118,7 @@ class RPCClient{
 	 *
 	 * @return API results
 	 */
-	function http($url, $method, $postfields = NULL) {
+	private function http($url, $postfields = NULL) {
 		$this->http_info = array();
 		$ci = curl_init();
 		/* Curl settings */
@@ -119,19 +135,19 @@ class RPCClient{
 			curl_setopt($ci, CURLOPT_POSTFIELDS, $postfields);
 		}
 
-		$header_array = array("Content-Type: multipart/form-data; boundary=" . self::$boundary , "Expect: ");
+		$header_array = array("Content-Type: multipart/form-data; boundary=" . $this->boundary , "Expect: ");
 		curl_setopt($ci, CURLOPT_HTTPHEADER, $header_array );
 		curl_setopt($ci, CURLINFO_HEADER_OUT, TRUE );
 
-		curl_setopt($ci, CURLOPT_URL, $url);
+		curl_setopt($ci, CURLOPT_URL, rtrim($url, "/")."/yze.rpc");
 		$response = curl_exec($ci);
 		$curl_info = curl_getinfo($ci);
 		$this->http_code = curl_getinfo($ci, CURLINFO_HTTP_CODE);
 		$this->http_info = array_merge($this->http_info, curl_getinfo($ci));
 		$this->url = $url;
-		
+// 		print_r($curl_info);
 		curl_close ($ci);
-		return $response;
+		return json_decode($response);
 	}
 
 }

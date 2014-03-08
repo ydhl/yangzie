@@ -97,10 +97,10 @@ class Generate_Controller_Script extends AbstractScript{
 		$class class Controller Unit Test
 --FILE--
 <?php
+namespace app\\$module;
 ini_set(\"display_errors\",0);
 chdir(dirname(dirname(dirname(__FILE__))).\"/app/public_html\");
 include \"init.php\";
-include \"load.php\";
 //write you test code here
 ?>
 --EXPECT--";
@@ -337,10 +337,10 @@ class ".YZE_Object::format_class_name($controller, "Validate")." extends YZEVali
 {$controller}_validate class Controller Unit Test
 --FILE--
 <?php
+namespace app\\$module;
 ini_set(\"display_errors\",0);
 chdir(dirname(dirname(dirname(__FILE__))).\"/app/public_html\");
 include \"init.php\";
-include \"load.php\";
 //write you test code here
 ?>
 --EXPECT--";

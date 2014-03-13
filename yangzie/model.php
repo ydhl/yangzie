@@ -170,6 +170,9 @@ abstract class YZE_Model extends YZE_Object{
 	public static function find_by_id($id){
 		return YZE_DBAImpl::getDBA()->find($id,get_called_class());
 	}
+	public static function find_all(){
+		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
+	}
 	/**
 	 * 根据主键数组查询对象。返回关联数组，键为主键，
 	 * 

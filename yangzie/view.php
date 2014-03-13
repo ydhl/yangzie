@@ -96,7 +96,7 @@ class YZE_Redirect implements YZE_IResponse{
 		}
 		
 		if( ! $this->outgoing){
-			$request = YZE_Request::get_instance();
+			$request = YZE_Request::get_instance(true);
 			$request->init($destination_uri);
 			
 			$this->destinationController = $request->controller();

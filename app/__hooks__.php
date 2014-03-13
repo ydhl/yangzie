@@ -18,7 +18,7 @@ use \yangzie\YZE_Session_Context;
 
 function check_exception($datas){
 	//如果array("exception"=>$e, "controller"=>$controller, "response"=>$response)
-	// /signin写死
+	// 把signin替换成自己的登录url
 	if(is_a($datas['exception'], "\\yangzie\\YZE_Need_Signin_Exception")){
 		$datas['response'] = new YZE_Redirect("/signin", $datas['controller']);
 	}
@@ -26,10 +26,8 @@ function check_exception($datas){
 }
 
 function do_auth($datas){
-	$user = YZE_Session_Context::get_instance()->get("login_user");
-	if($user){
-		$datas['user'] = $user;
-	}
+	//这里判断用户是否登录，并把用户登录的标志，如uid，或者用户对象设置在datas['user']中
+	//$datas['user'] = $user;//datas['user']有值表示登录成功
 	return $datas;
 }
 

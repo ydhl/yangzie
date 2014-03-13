@@ -434,9 +434,9 @@ class YZE_Request extends YZE_Object
 	}
 	
 	private function need_auth($req_method){
-		
-		$need_auth_methods = $this->get_auth_methods($this->controller_name(), "need");
-		$no_auth_methods = $this->get_auth_methods($this->controller_name(), "noneed");
+
+		$need_auth_methods = $this->get_auth_methods($this->controller_name(true), "need");
+		$no_auth_methods = $this->get_auth_methods($this->controller_name(true), "noneed");
 
 		//不需要验证
 		if($no_auth_methods && ($no_auth_methods=="*" || preg_match("/$no_auth_methods/", $req_method))) {

@@ -175,8 +175,16 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		$rpc = new YangzieRPC();
 		$callable = $this->request->get_from_post("callable");
 		$args = json_decode(html_entity_decode($this->request->get_from_post("args")));
+		$data = $rpc->invoke($callable, $args);
+
 		$this->layout = "";
-		return new YZE_Notpl_View(json_encode($rpc->invoke($callable, $args)), $this);
+		if($data instanceof YZE_Model){
+			return new YZE_Notpl_View($data->toJson(), $this);
+		}elseif(is_object($data)){
+			return new YZE_Notpl_View(json_encode($data->__toString()), $this);
+		}else{
+			return new YZE_Notpl_View(json_encode($data), $this);
+		}
 	}
 
 	/**
@@ -244,27 +252,19 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 	/**
 	 * @return YZE_IResponse
 	 */
-	public function get(){
-		//pass
-	}
+	public function get(){}
 	/**
 	 * @return YZE_IResponse
 	 */
-	public function post(){
-		//pass
-	}
+	public function post(){}
 	/**
 	 * @return YZE_IResponse
 	 */
-	public function delete(){
-		//pass
-	}
+	public function delete(){}
 	/**
 	 * @return YZE_IResponse
 	 */
-	public function put(){
-		//pass
-	}
+	public function put(){}
 	
 	/**
 	 * 根据控制器的处理逻辑，清空控制器在会话上下文中保存的数据

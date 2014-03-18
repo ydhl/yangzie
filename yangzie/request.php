@@ -159,9 +159,12 @@ class YZE_Request extends YZE_Object
 	 */
 	public static function get_instance($newInstance = false)
 	{
-		if (!isset(self::$instance) || $newInstance) {
-			$c = __CLASS__;
+		$c = __CLASS__;
+		if (!isset(self::$instance) ) {
 			self::$instance = new $c;
+		}
+		if($newInstance){
+			return new $c;
 		}
 		return self::$instance;
 	}

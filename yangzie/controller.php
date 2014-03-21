@@ -142,23 +142,26 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 			return $this->do_exception($exception);
 		}
 
-		$response = $this->get();
+		return $this->wrapGet($this->get());
 		
+	}
+	
+	protected function wrapGet($response){
+		$request = YZE_Request::get_instance();
 		if (!$response) {
 			$response = $this->getResponse();
 		}
-
+		
 		if (is_a($response, "YZE_Cacheable")) {
 			$response->set_cache_config($this->cache_config);//内容协商的缓存控制
 		}
-
+		
 		if(strcasecmp($request->get_from_get('yze_no_content_layout','') , "yes")==0){
 			$this->layout = "";
 		}
 		
 		return $response;
 	}
-
 	/**
 	 * post方法.用于处理用户数据提交,提交成功后重定向
 	 *
@@ -178,13 +181,30 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		$data = $rpc->invoke($callable, $args);
 
 		$this->layout = "";
-		if($data instanceof YZE_Model){
-			return new YZE_Notpl_View($data->toJson(), $this);
-		}elseif(is_object($data)){
-			return new YZE_Notpl_View(json_encode($data->__toString()), $this);
+		
+		if(is_array($data)){
+			return new YZE_Notpl_View($this->rpc_serialize_arr($data), $this);
 		}else{
-			return new YZE_Notpl_View(json_encode($data), $this);
+			return new YZE_Notpl_View($this->rpc_serialize($data), $this);
 		}
+	}
+	
+	private function rpc_serialize($data){
+		if($data instanceof YZE_Model){
+			return $data->toJson();
+		}elseif(is_object($data)){
+			return json_encode($data->__toString());
+		}else{
+			return json_encode($data);
+		}
+	}
+	
+	private function rpc_serialize_arr($data){
+		$arr = array();
+		foreach ($data as $index=>$d){
+			$arr[$index] = $this->rpc_serialize($d);
+		}
+		return json_encode($arr);
 	}
 
 	/**

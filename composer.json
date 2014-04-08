@@ -1,0 +1,21 @@
+{
+    "name": "ydhl/yangzie",
+    "type": "library",
+    "description": "Yangzie Framework",
+    "keywords": ["framework"],
+    "homepage": "https://github.com/ydhl/yangzie",
+    "license": "PHP License 3.01",
+    "authors": [
+        {
+            "name": "YDHL",
+            "email": "leeboo@yidianhulian.com",
+            "homepage": "http://yidianhulian.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "autoload": {
+    }
+}

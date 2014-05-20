@@ -12,7 +12,6 @@ $selected_menu = $this->get_data("selected_menu");
 </head>
 
 <body>
-	
-			<?php echo $yze_content_of_layout;	?>
+<?php echo $this->content_of_view();?>
 </body>
 </html>

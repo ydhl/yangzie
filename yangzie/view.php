@@ -163,6 +163,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 * @var YZE_HttpCache
 	 */
 	private $cache_ctl;
+	protected $view_sections=array();
 	/**
 	 *
 	 * @var YZE_Resource_Controller
@@ -185,6 +186,15 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 			$this->cache_ctl->output();
 		}
 		$this->display_self();
+	}
+	public function view_sections(){
+		return $this->view_sections;
+	}
+	public function begin_section(){
+		ob_start();
+	}
+	public function end_section($section){
+		$this->view_sections[$section] = ob_get_clean();
 	}
 	/**
 	 * 取得视图的输出内容
@@ -376,6 +386,8 @@ class YZE_XML_View extends YZE_View_Adapter {
 class YZE_Layout extends YZE_View_Adapter{
 	private $view;
 	private $layout;
+	private $content_of_view;
+	private $content_of_section;
 	public function __construct($layout,YZE_View_Adapter $view,  YZE_Resource_Controller $controller){
 		parent::__construct($view->get_datas(),$controller);
 		$this->view 	= $view;
@@ -385,12 +397,21 @@ class YZE_Layout extends YZE_View_Adapter{
 	protected function display_self(){
 		ob_start();
 		$this->view->output();
-		$yze_content_of_layout = ob_get_clean();
+		$this->content_of_section = $this->view->view_sections();
+		$this->content_of_view = ob_get_clean();
 		if ($this->layout){
 			include YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
 		}else{
-			echo $yze_content_of_layout;
+			echo $this->content_of_view;
 		}
+	}
+	
+	protected function content_of_section($section){
+		return $this->content_of_section[$section];
+	}
+	
+	protected function content_of_view(){
+		return $this->content_of_view;
 	}
 }
 ?>

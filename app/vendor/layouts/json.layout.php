@@ -1,6 +1,1 @@
-<?php
-				/**
-				* json布局
-				*/
-echo $yze_content_of_layout
-				?>
+<?php echo $this->content_of_view()?>

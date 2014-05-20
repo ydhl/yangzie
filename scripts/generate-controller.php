@@ -266,7 +266,7 @@ this is {$controller} view";
 /**
   * {$format}布局
   */
-echo \$yze_content_of_layout
+echo \$this->content_of_view()
 ?>
 ";
 				echo __("create layout {$format} :\t\t\t");

@@ -1,13 +1,12 @@
-## Yangzie -- simple, develop fast framework for PHP
+## Yangzie -- 轻松构造模块化的应用
 
-* YDHL: <http://yidianhulian.com>
-* Tags: php, web
+* 易点互联: <http://yidianhulian.com>
+* Tags: php, web, module
 
 ## 特性
 
-* 模块
+* 模块化
 
-* RPC
-** 调用Controller
-** 调用Model方法，validatas，views
-** 调用方法
+** 模块之间保持松耦合，各自独立
+
+** 

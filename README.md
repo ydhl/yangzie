@@ -10,16 +10,16 @@
 4. 模块代码要独立，模块之间的访问通过uri来实现代码模块之间的松耦合
 5. 响应的内容要自由，同一个uri可以响应输出不同的格式，如html，pdf等
 6. 请求要么成功，要么异常
-7. 功能复用比代码重用跟有价值
+7. 功能复用比代码重用更有价值
 
 ## Yangzie的处理流程
-1. 初始化请求，解析请求信息，uri路由
-2. 验证用户是否登录（如果需要）
-3. 验证用户是否有权限（如果需要）
-4. 验证器验证数据
-5. 指派到控制器
-6. 控制器返回响应
-7. 输出响应
+1. 初始化请求，解析请求信息，uri路由。出现异常进入yangzie的异常处理
+2. 验证用户是否登录（如果需要）。出现异常进入yangzie的异常处理
+3. 验证用户是否有权限（如果需要）。出现异常进入yangzie的异常处理
+4. 验证器验证数据。出现异常进入yangzie的异常处理
+5. 指派到控制器。出现异常进入控制器的exception方法
+6. 控制器返回响应。出现异常进入exception的异常处理
+7. 输出响应。出现异常进入exception的异常处理
 
 ## 特性
 
@@ -82,10 +82,23 @@
  YZE_Vadilater::NOT_EMPTY是yangzie提供的验证方法
 
 * 通过脚本生成基础代码
+ * 通过脚本可生成mvc代码结构
+ * 在yangzie根目录执行 php  scripts/generate.php 便可进入yangzie脚本窗口，根据窗口的提示便可生成相关的代码文件
+
+* 输出缓存
 
 ## Controller
+ * 控制器是具体访问uri的处理中心，控制器主要有下面几种方法，分别处理uri所代表的资源的增删改查操作
+  * __get__：获取uri指向的信息，请求数据通过get请求传递，返回YZE_IResponse
+  * __post__：创建信息，请求数据通过post请求传递，返回YZE_Redirect
+  * __delete__：删除信息，请求数据通过post请求传递，返回YZE_Redirect
+  * __put__：修改信息，请求数据通过post请求传递，返回YZE_Redirect
+  * __exception(YZE_RuntimeException $e) __：在前4中方法中的代码出现任何未抓取的异常时，都将进入该方法进行异常处理。也是返回YZE_IResponse，如果没有任何返回，则显示vander/views/500.tpl.php界面；如果像重新显示该资源内容（如post失败后，想重新显示get的内容），可以通过 return $this->wrapGet($this->get());
+  * 
+  
+
 ## Model
-## View
+## View, Response
 ## Validater
 
 ## 代码结构

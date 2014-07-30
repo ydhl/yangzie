@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <buildpath>
 	<buildpathentry kind="src" path="app"/>
-	<buildpathentry kind="src" path="scripts"/>
+	<buildpathentry kind="src" path="tmp"/>
 	<buildpathentry kind="src" path="tests"/>
+	<buildpathentry kind="src" path=".settings"/>
 	<buildpathentry kind="src" path="yangzie"/>
 	<buildpathentry kind="con" path="org.eclipse.php.core.LANGUAGE"/>
+	<buildpathentry kind="src" path="scripts"/>
 </buildpath>

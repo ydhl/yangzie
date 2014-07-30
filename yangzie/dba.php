@@ -1,6 +1,7 @@
 <?php
 namespace yangzie;
 use \PDO;
+use \PDOStatement;
 use \app\App_Module;
 
 /**
@@ -235,6 +236,7 @@ class YZE_DBAImpl extends YZE_Object
 				
 			$sql->insert('t',$entity->get_records())
 			->from(get_class($entity),"t");
+			
 			$this->execute($sql);
 			$insert_id = $this->conn->lastInsertId();
 				

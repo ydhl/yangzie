@@ -68,6 +68,20 @@ class YZE_Request extends YZE_Object
 		}
 		return $default;
 	}
+	
+	public function get_from_request($name, $default=null)
+	{
+		if(array_key_exists($name, $this->post)){
+			return @$this->post[$name];
+		}
+		if(array_key_exists($name, $this->cookie)){
+			return @$this->cookie[$name];
+		}
+		if(array_key_exists($name, $this->get)){
+			return @$this->get[$name];
+		}
+		return $default;
+	}
 
 	/**
 	 * 请求的资源的URI，每次请求，URI是唯一且在一次请求内是不变的
@@ -157,7 +171,7 @@ class YZE_Request extends YZE_Object
 	 *
 	 * @return YZE_Request
 	 */
-	public static function get_instance($newInstance = false)
+	public static function get_instance($newInstance=false)
 	{
 		$c = __CLASS__;
 		if (!isset(self::$instance) ) {
@@ -171,7 +185,7 @@ class YZE_Request extends YZE_Object
 	
 	private function _init($newUri){
 		$this->method = null;
-		$this->vars = null;
+		$this->vars = array();
 		
 		$this->controller_name = null;
 		$this->controller_class = null;
@@ -204,13 +218,15 @@ class YZE_Request extends YZE_Object
 	 * 解析请求的uri，如果没有传入url，默认解析当前请求的uri
 	 * 
 	 * @param string $uri
+	 * @param string $method 该请求的方式
+	 * @param string $format 请求返回的格式
 	 * @return YZE_Request
 	 */
-	public function init($newUri=null){
+	public function init($newUri=null, $method=null, $format=null){
 		//init
 		$this->_init($newUri);
 		
-		$request_method = self::the_val($this->get_from_post("yze_method"), 
+		$request_method = $method ? $method : self::the_val($this->get_from_post("yze_method"), 
 				strtolower($_SERVER['REQUEST_METHOD']));
 		$this->set_method($request_method);
 		
@@ -224,9 +240,12 @@ class YZE_Request extends YZE_Object
 
 		$routers = YZE_Router::get_instance()->get_routers();
 
-		$config_args 		= self::parse_url($routers, $uri);
+		$config_args 		= self::parse_url($routers, $uri);//地址映射及返回格式
 
 		$this->set_vars(@(array)$config_args['args']);
+		if($format){
+			$this->set_var("__yze_resp_format__", $format);
+		}
 		
 		if($config_args){
 			$controller_name 	= @$config_args['controller_name'];
@@ -238,7 +257,7 @@ class YZE_Request extends YZE_Object
 		}else/*if( !$this->controller_name() )*/{
 			$this->controller_name = "yze_default";
 			$this->controller_class = "Yze_Default_Controller";
-			$this->controller = new Yze_Default_Controller();
+			$this->controller = new Yze_Default_Controller($this);
 		}
 		
 		$controller_cls = $this->controller_class();
@@ -266,11 +285,6 @@ class YZE_Request extends YZE_Object
 		return $this->method;
 	}
 	
-	public function get_var($key, $default=null)
-	{
-		$vars = $this->vars;
-		return array_key_exists($key, $vars) ? $vars[$key] : $default;
-	}
 
 	public function is_post()
 	{
@@ -296,19 +310,17 @@ class YZE_Request extends YZE_Object
 
 	public function auth(){
 		$req_method = $this->the_method();
-
+		
 		if($this->need_auth($req_method)) {//需要验证
-			
-			$user_filter = do_filter(YZE_ACTION_CHECK_USER_HAS_LOGIN,  array('user'=>null));
-			if( ! $user_filter['user'])throw new YZE_Need_Signin_Exception();
-			
+			do_filter(YZE_ACTION_CHECK_USER_HAS_LOGIN,  array('user'=>null));
+
 			$aro = do_filter(YZE_FILTER_GET_USER_ARO_NAME, array("aro"=>"/"));
 
 			//验证请求的方法是否有权限调用
 			$acl = YZE_ACL::get_instance();
 			$aco_name = "/".$this->module()."/".$this->controller_name(true)."/".$req_method;
 			if(!$acl->check_byname($aro['aro'], $aco_name)){
-				throw new YZE_Permission_Deny_Exception(vsprintf(__("没有访问资源 <strong>%s</strong> 的权限"),
+				throw new YZE_Permission_Deny_Exception(vsprintf(__("没有访问该页面的权限"),
 						array(\app\yze_get_aco_desc($aco_name))));
 			}
 		}
@@ -327,7 +339,7 @@ class YZE_Request extends YZE_Object
 
 		if(!class_exists("$validate_cls"))return $this;
 
-		$validate = new $validate_cls();
+		$validate = new $validate_cls($this);
 		$validate_method = "init_{$request_method}_validates";
 		$validate->$validate_method();
 		$validate->do_validate($request_method);
@@ -361,7 +373,7 @@ class YZE_Request extends YZE_Object
 	 * @return
 	 */
 	public function get_output_format(){
-		$format = $this->get_var("__yze_resp_format__");//api 指定的输出格式,如http://domain/action.json
+		$format = $this->get_var("__yze_resp_format__");//指定的输出格式,如http://domain/action.json
 		if($format){
 			return $format;
 		}elseif($this->is_mobile_client()){//客户端是移动设备
@@ -436,10 +448,22 @@ class YZE_Request extends YZE_Object
 		return $this->vars = $vars;
 	}
 	
+	public function set_var($name, $val){
+		$this->vars[$name] = $val;
+		return $this;
+	}
+	public function get_var($key, $default=null)
+	{
+		$vars = $this->vars;
+		return array_key_exists($key, $vars) ? $vars[$key] : $default;
+	}
+	
+	
 	private function need_auth($req_method){
-
+		
 		$need_auth_methods = $this->get_auth_methods($this->controller_name(true), "need");
 		$no_auth_methods = $this->get_auth_methods($this->controller_name(true), "noneed");
+
 
 		//不需要验证
 		if($no_auth_methods && ($no_auth_methods=="*" || preg_match("/$no_auth_methods/", $req_method))) {
@@ -536,14 +560,14 @@ class YZE_Request extends YZE_Object
 		$this->controller_class = self::format_class_name($controller, "Controller");
 		$this->controller_name = $controller;
 		if(class_exists($this->controller_class)){
-			$this->controller = new $this->controller_class;
+			$this->controller = new $this->controller_class($this);
 			return $this;
 		}
 		
 		$class = "\\app\\".$this->module()."\\".$this->controller_class;
 
 		if(class_exists($class)){
-			$this->controller = new $class;
+			$this->controller = new $class($this);
 		}
 
 		return $this;

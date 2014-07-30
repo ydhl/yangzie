@@ -72,21 +72,27 @@ function yze_system_check(){
 }
 
 /**
- * 开始处理请求，如果没有指定uri，默认处理当前的uri请求
+ * 开始处理请求，如果没有指定uri，默认处理当前的uri请求, 如果没有指定method，则以请求的方法为主（get post put delete）
  * 
  * @param string $uri
+ * @param string $method
+ * @param bool $return true则return，false直接输出
  */
-function yze_go($uri = null){
+function yze_go($uri = null, $method=null, $return=null){
 	try{
 		
 		$request = YZE_Request::get_instance();
 		$session = YZE_Session_Context::get_instance();
-		$dba		= YZE_DBAImpl::getDBA();
+		$dba     = YZE_DBAImpl::getDBA();
 		
 		$oldController = $request->controller();
+		if($oldController){
+			$format = $request->get_output_format();
+		}
 		
-		$request->init($uri);//初始化请求上下文环境
-		yze_system_check();
+		$request->init($uri, $method, $format);//初始化请求上下文环境
+
+// 		yze_system_check();
 		$controller = $request->controller();
 		
 		//如果yze_go 是从一个控制器的处理中再次调用的，则为新的控制器copy一个上下文环境
@@ -95,12 +101,16 @@ function yze_go($uri = null){
 			YZE_Session_Context::get_instance()->copy(get_class($oldController), get_class($controller));
 		}
 		
+		$action = "YZE_ACTION_BEFORE_".strtoupper($request->the_method());
+		do_action(constant($action), $controller);
+		
 		$request->auth()->validate();
 		$dba->beginTransaction();
 		
 		$response = $request->dispatch();
 		$dba->commit();
 	}catch(YZE_RuntimeException $e){
+
 		$dba->rollback();
 		if( ! @$controller){
 			$controller = new YZE_Exception_Controller();
@@ -109,7 +119,7 @@ function yze_go($uri = null){
 		if(is_a($e, "\\yangzie\\YZE_Request_Validate_Failed")){
 			$session->save_controller_validates(get_class($controller), $e->get_validater()->get_validates());
 		}
-		
+		\app\log4web($e->getMessage(), "startup error");
 		$session->save_controller_exception(get_class($controller), $e);
 		if($request->is_get()){
 			$response = $controller->do_exception($e);
@@ -120,7 +130,7 @@ function yze_go($uri = null){
 		$filter_data = do_filter(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
 		$response = $filter_data['response'];
 	}
-
+	$controller->cleanup();
 	if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
 		$layout = new YZE_Layout($controller->get_layout(), $response, $controller);
 		$output = $layout->get_output();
@@ -128,12 +138,14 @@ function yze_go($uri = null){
 			file_put_contents(YZE_APP_CACHES_PATH.$guid, $output);
 		}
 
-		
-		echo $output;
-	}else{
-		$response->output();
+		if($return){
+			return $output;
+		}else{
+			echo $output;
+		}
+	}else{//header output
+		return $response->output($return);
 	}
 	
-	$controller->cleanup();
 }
 ?>

@@ -146,6 +146,7 @@ class YangzieRPC extends YZE_Object{
 		$this->http_info = array_merge($this->http_info, curl_getinfo($ci));
 		$this->url = $url;
 // 		print_r($curl_info);
+		//print_r($response);
 		curl_close ($ci);
 		return $response;
 	}

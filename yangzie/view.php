@@ -10,9 +10,10 @@ namespace yangzie;
  */
 interface YZE_IResponse{
 	/**
-	 * 输出响应
+	 * 输出响应,
+	 * return  为true表示返回不输出
 	 */
-	public function output();
+	public function output($return=false);
 
 	/**
 	 * 取得控制器设置在响应中的值
@@ -33,7 +34,7 @@ class YZE_Response_304_NotModified implements YZE_IResponse{
 		$this->headers = $headers;
 		$this->controller = $controller;
 	}
-	public function output(){
+	public function output($return=false){
 		header("HTTP/1.1 304 Not Modified");
 		foreach ((array)$this->headers as $name => $value){
 			header("{$name}: {$value}");
@@ -83,7 +84,6 @@ class YZE_Redirect implements YZE_IResponse{
 	 * 
 	 */
 	public function __construct($destination_uri, YZE_Resource_Controller $source_controller, array $datas=array(), $innerRedirect=false){
-		
 		$this->destinationURI 	= $destination_uri;
 		$this->sourceURI 		= YZE_Request::get_instance()->the_full_uri();
 		$this->sourceController = $source_controller;
@@ -92,7 +92,7 @@ class YZE_Redirect implements YZE_IResponse{
 		
 		$this->url_components = parse_url($this->destinationURI);
 		if(@$this->url_components['host'] && $this->url_components['host'] != $_SERVER['HTTP_HOST']){
-			$this->outgoing = true;
+			$this->outgoing = true;//访问外部网站
 		}
 		
 		if( ! $this->outgoing){
@@ -105,32 +105,32 @@ class YZE_Redirect implements YZE_IResponse{
 		}
 	}
 	
-	public function output(){
+	public function output($return=false){
 		if ($this->outgoing){
 			header("Location: $this->destinationURI");
-			return;
+			\app\log4web("Location: $this->destinationURI", "Location");
+			return ;
 		}
 		
 		if ($this->datas) {
 			YZE_Session_Context::get_instance()->save_controller_datas(get_class($this->destinationController), $this->datas);
 		}
 		
-		//get请求则内部重定向，不经过浏览器在请求一次
-		if (YZE_Request::get_instance()->is_get() && $this->innerRedirect){
-			return yze_go($this->destinationURI());
-		}
-		
+		$format = $this->sourceController->getRequest()->get_output_format();
 		$target_uri = $this->destinationURI;
 		
-		$format = YZE_Request::get_instance()->get_output_format();
 		if($format != "tpl"){
-			//TODO 考虑PATH_INFO
-			$target_uri = @$this->url_components['path'].".{$format}?".@$this->url_components['query'].
+			$ext = pathinfo($this->url_components['path'], PATHINFO_EXTENSION   );
+			$target_uri = @preg_replace('/\.'.$ext.'$/', "", $this->url_components['path']).".{$format}?".@$this->url_components['query'].
 			(@$this->url_components['fragment'] ? "#".$this->url_components['fragment'] : "");
-			
-			YZE_View_Adapter::build_view($this->sourceController, $target_uri)->output();
+		}
+
+		//内部重定向，不经过浏览器在请求一次
+		if ($this->innerRedirect){
+			return yze_go($target_uri, "get", $return);
 		}else{
 			header("Location: {$target_uri}");
+			\app\log4web("Location: {$target_uri}", "Location");
 		}
 	}
 	
@@ -163,7 +163,6 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 * @var YZE_HttpCache
 	 */
 	private $cache_ctl;
-	protected $view_sections=array();
 	/**
 	 *
 	 * @var YZE_Resource_Controller
@@ -181,28 +180,21 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function get_controller(){
 		return $this->controller;
 	}
-	public final function output(){
+	public final function output($return=false){
+		ob_start();
 		if($this->cache_ctl){
 			$this->cache_ctl->output();
 		}
 		$this->display_self();
-	}
-	public function view_sections(){
-		return $this->view_sections;
-	}
-	public function begin_section(){
-		ob_start();
-	}
-	public function end_section($section){
-		$this->view_sections[$section] = ob_get_clean();
+		$data = ob_get_clean();
+		if($return)return $data;
+		echo $data;
 	}
 	/**
 	 * 取得视图的输出内容
 	 */
 	public function get_output(){
-		ob_start();
-		$this->output();
-		return ob_get_clean();
+		return $this->output(true);
 	}
 
 	/**
@@ -264,10 +256,10 @@ class YZE_Simple_View extends YZE_View_Adapter {
 	 * @param array $data
 	 * @param YZE_Resource_Controller $controller
 	 */
-	public function __construct($tpl_name, $data, YZE_Resource_Controller $controller, $format="tpl"){
+	public function __construct($tpl_name, $data, YZE_Resource_Controller $controller, $format=null){
 		parent::__construct($data,$controller);
 		$this->tpl 		= $tpl_name;
-		$this->format 	= $format;
+		$this->format 	= $format ? $format : $controller->getRequest()->get_output_format();
 		
 	}
 
@@ -386,8 +378,6 @@ class YZE_XML_View extends YZE_View_Adapter {
 class YZE_Layout extends YZE_View_Adapter{
 	private $view;
 	private $layout;
-	private $content_of_view;
-	private $content_of_section;
 	public function __construct($layout,YZE_View_Adapter $view,  YZE_Resource_Controller $controller){
 		parent::__construct($view->get_datas(),$controller);
 		$this->view 	= $view;
@@ -397,21 +387,12 @@ class YZE_Layout extends YZE_View_Adapter{
 	protected function display_self(){
 		ob_start();
 		$this->view->output();
-		$this->content_of_section = $this->view->view_sections();
-		$this->content_of_view = ob_get_clean();
+		$yze_content_of_layout = ob_get_clean();
 		if ($this->layout){
 			include YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
 		}else{
-			echo $this->content_of_view;
+			echo $yze_content_of_layout;
 		}
-	}
-	
-	protected function content_of_section($section){
-		return $this->content_of_section[$section];
-	}
-	
-	protected function content_of_view(){
-		return $this->content_of_view;
 	}
 }
 ?>

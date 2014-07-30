@@ -42,6 +42,12 @@ abstract class YZEValidate extends YZE_Object
     */
    protected $validate_result = array();
 
+   protected  $request;
+   
+   public function __construct($request=null){
+   	$this->request = $request ? $request : YZE_Request::get_instance();
+   }
+   
     /**
      * 验证方法，取得模块对于某个uri设置的数据验证规则，并一一验证它们
      *
@@ -280,9 +286,9 @@ abstract class YZEValidate extends YZE_Object
     public function get_datas($gpcs)
     {
         switch (strtolower($gpcs)){
-        case "get":return $_GET;
+        case "get":return $this->request->the_get_datas();
         case "post":
-        case "put":return $_POST;
+        case "put":return $this->request->the_post_datas();;
         case "cookie":return $_COOKIE;
         case "session":return $_SESSION;
         case "file":$_FILES;

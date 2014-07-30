@@ -26,7 +26,7 @@ class YZE_Form extends YZE_Object{
 		foreach ($attrs as $n=>$value){
 			$html .= "$n = '$value' ";
 		}
-		$token = YZE_Session_Context::get_instance()->get_request_token(get_class(YZE_Request::get_instance()->controller()));
+		$token = yze_request_token();
 		if($model){
 			$modify = "<input type='hidden' name='yze_modify_version' value='".$model->get_version_value()."'/>
 					<input type='hidden' name='yze_model_id' value='".$model->get_key()."'/>
@@ -49,6 +49,10 @@ class YZE_Form extends YZE_Object{
 			echo $form;
 		}
 	}
+}
+
+function yze_request_token(){
+	return YZE_Session_Context::get_instance()->get_request_token(get_class(YZE_Request::get_instance()->controller()));
 }
 
 /**
@@ -85,7 +89,11 @@ function yze_get_default_value($object, $name, $controller, $index=null){
 		}
 		return $cache_data;
 	}
-	if ($object){
+	if ($object && is_array($object)){
+		return @$object[$name];
+	}
+	
+	if ($object ){
 		return $object->get($name);
 	}
 	return "";
@@ -103,9 +111,9 @@ function yze_get_default_value($object, $name, $controller, $index=null){
 function yze_controller_error($begin_tag=null, $end_tag=null){
 	$session 	= YZE_Session_Context::get_instance();
 	$controller = YZE_Request::get_instance()->controller();
-	
+
 	if (($exception = $session->get_controller_exception(get_class($controller)))) {
-		return $begin_tag.$exception->getMessage().$end_tag;
+		return $begin_tag.nl2br($exception->getMessage()).$end_tag;
 	}
 }
 

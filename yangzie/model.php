@@ -31,7 +31,9 @@ abstract class YZE_Model extends YZE_Object{
 	 * 返回表名
 	 */
 	public function get_table(){
-		return $this->table;
+		$data = array("table"=>$this->table, "module"=>$this->get_module_name());
+		$result = do_filter("get_table", $data);
+		return $result["table"];
 	}
 	/**
 	 * 返回主键字段名,
@@ -170,6 +172,77 @@ abstract class YZE_Model extends YZE_Object{
 	public static function find_by_id($id){
 		return YZE_DBAImpl::getDBA()->find($id,get_called_class());
 	}
+	/**
+	 * 删除数据库中的一条记录
+	 * 
+	 * @author leeboo
+	 * 
+	 * @param unknown $id
+	 * @throws YZE_DBAException
+	 * @return boolean 
+	 * 
+	 * @return
+	 */
+	public static function remove_by_id($id){
+		$class = get_called_class();
+		
+		if(!($class instanceof YZE_Model) && !class_exists($class)){
+			throw new YZE_DBAException("Model Class $class not found");
+		}
+		
+		$entity = $class instanceof YZE_Model ? $class : new $class;
+		
+		$sql = new YZE_SQL();
+		$sql->delete()->from(get_called_class(), "t")
+			->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
+		return YZE_DBAImpl::getDBA()->execute($sql) == 1;
+	}
+	
+	public static function remove_by_attrs($attrs){
+		$class = get_called_class();
+	
+		if(!($class instanceof YZE_Model) && !class_exists($class)){
+			throw new YZE_DBAException("Model Class $class not found");
+		}
+	
+		$entity = $class instanceof YZE_Model ? $class : new $class;
+	
+		$sql = new YZE_SQL();
+		$sql->delete()->from(get_called_class(), "t");
+		foreach ($attrs as $name => $value){
+			$sql->where("t", $name, YZE_SQL::EQ, $value);
+		}
+		
+		return YZE_DBAImpl::getDBA()->execute($sql) == 1;
+	}
+	
+	/**
+	 * 直接更新数据库中的记录
+	 * 
+	 * @author leeboo
+	 * 
+	 * @param unknown $id
+	 * @param unknown $attrs
+	 * @throws YZE_DBAException
+	 * @return boolean
+	 * 
+	 * @return
+	 */
+	public static function update_by_id($id, $attrs){
+		$class = get_called_class();
+	
+		if(!($class instanceof YZE_Model) && !class_exists($class)){
+			throw new YZE_DBAException("Model Class $class not found");
+		}
+	
+		$entity = $class instanceof YZE_Model ? $class : new $class;
+	
+		$sql = new YZE_SQL();
+		$sql->update("t", $attrs)->from(get_called_class(), "t")
+		->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
+		return YZE_DBAImpl::getDBA()->execute($sql) == 1;
+	}
+	
 	public static function find_all(){
 		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
 	}
@@ -191,6 +264,31 @@ abstract class YZE_Model extends YZE_Object{
 		return $_;
 	}
 	
+	/**
+	 * 根据字段属性查找
+	 * 
+	 * @author leeboo
+	 * 
+	 * @param array $attrs
+	 * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
+	 * 
+	 * @return
+	 */
+	public static function find_by_attrs(array $attrs)
+	{
+		$sql = new YZE_SQL();
+		$sql->from(get_called_class(),"o");
+		foreach ($attrs as $att=>$value){
+			$sql->where("o", $att, YZE_SQL::EQ, $value);
+		}
+		
+		$objects = YZE_DBAImpl::getDBA()->select($sql);
+		$_ = array();
+		foreach ($objects as $object){
+			$_[$object->get_key()] = $object;
+		}
+		return $_;
+	}
 	
 	/**
 	 * 持久到数据库,返回自己
@@ -247,7 +345,7 @@ abstract class YZE_Model extends YZE_Object{
 	/**
 	 * 从post提交数据中更新自己
 	 */
-	public function save_from_post($posts,$prefix)
+	public function save_from_post($posts,$prefix="")
 	{
 		foreach ( $this->get_columns() as $name => $define) {
 			if (array_key_exists($prefix.$name, $posts)) {

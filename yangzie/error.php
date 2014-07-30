@@ -120,7 +120,9 @@ class YZE_Request_Validate_Failed extends YZE_RuntimeException{
 	public function get_validater(){
 		return $this->validater;
 	}
-
+	public function isResumeable(){
+		return true;
+	}
 }
 class YZE_Model_Update_Conflict_Exception extends YZE_RuntimeException{
 	public function __construct ($message = null) {

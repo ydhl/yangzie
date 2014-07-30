@@ -137,7 +137,7 @@ class $class extends YZE_Resource_Controller {
 	* 
 	 */
 	public function get(){
-		\$request = YZE_Request::get_instance();
+		\$request = \$this->request;
 		\$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
 	}
 	
@@ -146,7 +146,7 @@ class $class extends YZE_Resource_Controller {
 	 *
 	 */
 	public function post(){
-		\$request = YZE_Request::get_instance();
+		\$request = \$this->request;
 	}
 	
 	/**
@@ -154,7 +154,7 @@ class $class extends YZE_Resource_Controller {
 	 *
 	 */
 	public function delete(){
-		\$request = YZE_Request::get_instance();
+		\$request = \$this->request;
 	}
 	
 	/**
@@ -162,11 +162,11 @@ class $class extends YZE_Resource_Controller {
 	 *
 	 */
 	public function put(){
-		\$request = YZE_Request::get_instance();
+		\$request = \$this->request;
 	}
 
 	public function exception(YZE_RuntimeException \$e){
-		\$request = YZE_Request::get_instance();
+		\$request = \$this->request;
 		//出现了异常，如何处理，没有任何处理将显示500页面
 		//如果想显示get的返回内容可调用 get
 	}

@@ -39,6 +39,7 @@
  * 自定义错误提示。用户输入错误在所难免，但出错后应该友好的提醒用户哪里错了，（当然输入正确的数据应该还在那里），把__yze_controller_error()__放在合适的地方，出错后便会把错误消息显示在这里。该api是把错误消息集中显示在某个地方。如果想在错误的输入项附近显示错误消息，则只需要合适的地方调用__yze_field_error($field_name)__。如 &lt;input type="text" name="email" value="&lt;?php yze_get_default_value($user, "email", $this->controller)?&gt;"/&gt; &lt;?php yze_field_error("email") ?&gt;
 
 * 灵活的URI路由。可定义表意明确的，可读性更好的uri
+  * uri是资源的请求地址，同时也是API，因为一个uri定义了明确的输入，和明确的输出
   * 默认的路由规则是/module/controller/variable1/variable2。可通过$request->get_Var(1)；得到variable1。
   * 可以在module文件夹下的__module__.php中自定义路由规则：
   <pre>

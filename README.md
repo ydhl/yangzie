@@ -5,12 +5,12 @@
 
 ## Yangzie的哲学
 1. 一次请求一次响应
-2.一个uri表示一个资源，通过http的方法表示对资源进行何种操作，get表示获取，post表示增加，put表示修改，delete表示删除
-3.对资源的访问不需要通过http，在服务器端可以通过uri直接操作另外的uri
-4.模块代码要独立，模块之间的访问通过uri来实现代码模块之间的松耦合
-5.响应的内容要自由，同一个uri可以响应输出不同的格式，如html，pdf等
-6.请求要么成功，要么异常
-7.功能复用比代码重用跟有价值
+2. 一个uri表示一个资源，通过http的方法表示对资源进行何种操作，get表示获取，post表示增加，put表示修改，delete表示删除
+3. 对资源的访问不需要通过http，在服务器端可以通过uri直接操作另外的uri
+4. 模块代码要独立，模块之间的访问通过uri来实现代码模块之间的松耦合
+5. 响应的内容要自由，同一个uri可以响应输出不同的格式，如html，pdf等
+6. 请求要么成功，要么异常
+7. 功能复用比代码重用跟有价值
 
 ## Yangzie的处理流程
 1. 初始化请求，解析请求信息，uri路由
@@ -54,7 +54,7 @@
 		),
 	),
  </code>
-   <pre>
+   </pre>
  该例子中的映射可处理example.com/account/123232。这比example.com/account.php?id=123232更直观。同时被和yangzie的视图处理，可以任意返回需要的数据格式
  
 * 验证器，把数据验证代码独立出来
@@ -67,7 +67,6 @@
  <code>
  $this->assert('name', 'check_name', '', '');
  $this->assert('email', YZE_Vadilater::NOT_EMPTY, '', 'email不能为空');
- 
  protected function check_name($method, $name, $rule){
 	$datas = $this->get_datas($method);
 	$willCheck = $datas[$name];//取当前编辑框内值

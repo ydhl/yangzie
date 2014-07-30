@@ -1,4 +1,4 @@
-## Yangzie -- 轻松构造模块化的应用
+# Yangzie -- 轻松构造模块化的应用
 
 * 易点互联: <http://yidianhulian.com>
 * Tags: php, web, module
@@ -83,6 +83,29 @@
  * 在yangzie根目录执行 php  scripts/generate.php 便可进入yangzie脚本窗口，根据窗口的提示便可生成相关的代码文件
 
 * 输出缓存
+
+## 模块
+一个模块是一组功能逻辑的集合。在yangzie中一个模块可以是一个文件夹，也可以是phar包（yangzie-cli可把一个模块目录打包成phar）。
+模块的目录结构如下：
+<pre>
++module name
+ | + controllers 
+ | + models
+ | + views
+ | + validates
+ | - __module__.php
+ | - __hooks__.php
+</pre>
+__module__.php中定义了该模块的接口URI。用户可通过浏览器直接访问这些URI，其他模块或者系统也可以通过编程访问这些URI。他们的区别是该URI响应不同（不同的响应格式），用户得到的是可读性好，美观的响应，如html，pdf。程序得到的是结构良好便于程序处理的响应，如xml，json，但含义一样。
+
+模块只是复杂系统的一部分，肯定需要与同一个系统或者不同系统的模块之间进行功能调用。yangzie不建议直接在一个模块中直接应用另一个模块的代码（虽然完全可以这样做，php的require或者include另一个模块的php文件），yangzie提供两种方法进行模块之间的功能调用
+
+1. 通过uri调用，跟通过浏览器访问uri一样，只是是通过代码来完成的：__yze_go($uri, $method, $return)__。method表示对资源的操作，return为true表示以变量返回，false表示直接输出
+2. 通过uri调用会重新走一遍yangzie的处理流程，得到控制器的处理结果，稍显复杂。可以通过hook的方式直接调用到具体的逻辑代码
+
+他们的区别：
+* uri调用返回的是文本内容，如json，xml等；通过hook调用可以得到的是php的数据格式如数组，对象等
+* 如果调用不成功，都将抛出异常__YZE_RPC_Exception__
 
 ## Controller
  * 控制器是具体访问uri的处理中心，控制器主要有下面几种方法，分别处理uri所代表的资源的增删改查操作

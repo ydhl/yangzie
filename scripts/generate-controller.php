@@ -129,60 +129,60 @@ use \\yangzie\\YZE_RuntimeException;
 * @package $module
 */
 class $class extends YZE_Resource_Controller {
-	/**
-	 * get 请求返回视图
-	* \$this->layout = ''; 设置该视图的布局模板，默认为tpl.layout.php,位于app/vendor/layouts
-	* \$this->set_view_data('arg_name', 'arg_value'); 给视图设置数据, arg_value可以是任何php变量
-	* 视图中通过 \$this->get_data('arg_name')来取得控制器设置的数据
-	* 
-	 */
-	public function get(){
-		\$request = \$this->request;
-		\$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
-	}
-	
-	/**
-	 * post请求用于对请求资源的创建
-	 *
-	 */
-	public function post(){
-		\$request = \$this->request;
-	}
-	
-	/**
-	 * delete请求用于对请求资源的删除
-	 *
-	 */
-	public function delete(){
-		\$request = \$this->request;
-	}
-	
-	/**
-	 * put请求用于对请求资源的更新
-	 *
-	 */
-	public function put(){
-		\$request = \$this->request;
-	}
-
-	public function exception(YZE_RuntimeException \$e){
-		\$request = \$this->request;
-		//出现了异常，如何处理，没有任何处理将显示500页面
-		//如果想显示get的返回内容可调用 get
-	}
-	
-	public function get_response_guid(){
-		//如果该控制器的响应输出需要缓存，这里返回生成缓存文件的唯一id
-		return null;
-	}
-	
-	/*
-	 * @see YZE_Resouse_Controller::cleanup()
-	 */
-	public function cleanup(){
-		//pass
-		parent::cleanup();
-	}
+    /**
+     * get 请求返回视图
+     * \$this->layout = ''; 设置该视图的布局模板，默认为tpl.layout.php,位于app/vendor/layouts
+     * \$this->set_view_data('arg_name', 'arg_value'); 给视图设置数据, arg_value可以是任何php变量
+     * 视图中通过 \$this->get_data('arg_name')来取得控制器设置的数据
+     * 
+     */
+    public function get(){
+        \$request = \$this->request;
+        \$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
+    }
+    
+    /**
+     * post请求用于对请求资源的创建
+     *
+     */
+    public function post(){
+        \$request = \$this->request;
+    }
+    
+    /**
+     * delete请求用于对请求资源的删除
+     *
+     */
+    public function delete(){
+        \$request = \$this->request;
+    }
+    
+    /**
+     * put请求用于对请求资源的更新
+     *
+     */
+    public function put(){
+        \$request = \$this->request;
+    }
+    
+    public function exception(YZE_RuntimeException \$e){
+        \$request = \$this->request;
+        //出现了异常，如何处理，没有任何处理将显示500页面
+        //如果想显示get的返回内容可调用 get
+    }
+    
+    public function get_response_guid(){
+        //如果该控制器的响应输出需要缓存，这里返回生成缓存文件的唯一id
+        return null;
+    }
+    
+    /*
+     * @see YZE_Resouse_Controller::cleanup()
+     */
+    public function cleanup(){
+        //pass
+        parent::cleanup();
+    }
 
 }
 ?>";
@@ -298,29 +298,29 @@ use \yangzie\YZEValidate;
  */
 class ".YZE_Object::format_class_name($controller, "Validate")." extends YZEValidate{
 	
-	public function init_get_validates(){
-		".$this->validate_code_segment("get")."
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->assert('params name in url', 'validate method name', '', 'error message');
-	}
-	
-	public function init_post_validates(){
-		".$this->validate_code_segment("post")."
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->assert('params name in post', 'validate method name', '', 'error message');
-	}
-	
-	public function init_put_validates(){
-		".$this->validate_code_segment("put")."
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->assert('params name in post', 'validate method name', '', 'error message');
-	}
-	
-	public function init_delete_validates(){
-		".$this->validate_code_segment("delete")."
-		//Written Get Validate Rules Code in Here. such as
-		//\$this->assert('params name in post', 'validate method name', '', 'error message');
-	}
+    public function init_get_validates(){
+        ".$this->validate_code_segment("get")."
+        //Written Get Validate Rules Code in Here. such as
+        //\$this->assert('params name in url', 'validate method name', '', 'error message');
+    }
+    
+    public function init_post_validates(){
+        ".$this->validate_code_segment("post")."
+        //Written Get Validate Rules Code in Here. such as
+        //\$this->assert('params name in post', 'validate method name', '', 'error message');
+    }
+    
+    public function init_put_validates(){
+        ".$this->validate_code_segment("put")."
+        //Written Get Validate Rules Code in Here. such as
+        //\$this->assert('params name in post', 'validate method name', '', 'error message');
+    }
+    
+    public function init_delete_validates(){
+        ".$this->validate_code_segment("delete")."
+        //Written Get Validate Rules Code in Here. such as
+        //\$this->assert('params name in post', 'validate method name', '', 'error message');
+    }
 }?>";
 		echo __("create validate :\t\t");
 		$this->create_file($validate_file_path, $validate_file_content);

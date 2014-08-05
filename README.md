@@ -4,8 +4,8 @@
 * Tags: php, web, module
 
 ## Yangzie的哲学
-1. 小到一个函数，大到一个系统都奉行输入－处理－输出的原则。
-2. 模块化，任何模块不在代码层面依赖其他模块，即使他们之前有功能逻辑上的依赖性
+1. 小到一个函数，大到一个系统都奉行输入－处理－输出的原则，输入、输出都要明确定义。
+2. 模块化，任何模块不在代码层面依赖其他模块，即使他们之间有功能逻辑上的依赖性
 3. 功能复用比代码重用更有价值
 
 ## Yangzie的处理流程
@@ -38,6 +38,15 @@
  * 在用户提交的数据验证器验证失败后，之前提交的数据会自动回显；避免用户重复再输入
  * 自定义错误提示。用户输入错误在所难免，但出错后应该友好的提醒用户哪里错了，（当然输入正确的数据应该还在那里），把__yze_controller_error()__放在合适的地方，出错后便会把错误消息显示在这里。该api是把错误消息集中显示在某个地方。如果想在错误的输入项附近显示错误消息，则只需要合适的地方调用__yze_field_error($field_name)__。如 &lt;input type="text" name="email" value="&lt;?php yze_get_default_value($user, "email", $this->controller)?&gt;"/&gt; &lt;?php yze_field_error("email") ?&gt;
 
+# URI
+
+## 解析规则
+
+* 如果在 __module.php__ 中定义了映射，则以该定义进行映射。url定义中可以自由设置正则表达式，
+   比如(?P<pa_id>\d+)，这时便可通过$request->get_var("pa_id")得到实际的值
+* 如果没有定义映射，则按照如下规则进行解析：/module/controller/var1/var2....
+   第一个为模块，第二个为控制器，后面解析成变量，可通过$request->get_Var(1); $request->get_Var(2); 取到对应的值
+
 * 灵活的URI路由。可定义表意明确的，可读性更好的uri
   * uri是资源的请求地址，同时也是API，因为一个uri定义了明确的输入，和明确的输出
   * 默认的路由规则是/module/controller/variable1/variable2。可通过$request->get_Var(1)；得到variable1。
@@ -53,6 +62,11 @@
  </code>
    </pre>
  该例子中的映射可处理example.com/account/123232。这比example.com/account.php?id=123232更直观。同时被和yangzie的视图处理，可以任意返回需要的数据格式
+ 
+ # 数据提交
+ yangzie会防止数据重复提交，比如在网络比较慢的情况下用户重复点击了提交按钮
+ 
+ * 同一个uri可以直接使用在ajax环境中
  
 * 验证器，把数据验证代码独立出来
  * 数据验证是必不可少的，但在正式的逻辑处理之前，重复的写数据验证代码是很痛苦的。
@@ -93,19 +107,44 @@
  | + models
  | + views
  | + validates
- | - __module__.php
- | - __hooks__.php
+ | __module__.php
+ | __hooks__.php
 </pre>
-__module__.php中定义了该模块的接口URI。用户可通过浏览器直接访问这些URI，其他模块或者系统也可以通过编程访问这些URI。他们的区别是该URI响应不同（不同的响应格式），用户得到的是可读性好，美观的响应，如html，pdf。程序得到的是结构良好便于程序处理的响应，如xml，json，但含义一样。
+ __module__.php中定义了该模块的接口URI。用户可通过浏览器直接访问这些URI，其他模块或者系统也可以通过编程访问这些URI。他们的区别是该URI响应不同（不同的响应格式），用户得到的是可读性好，美观的响应，如html，pdf。程序得到的是结构良好便于程序处理的响应，如xml，json，但含义一样。
 
 模块只是复杂系统的一部分，肯定需要与同一个系统或者不同系统的模块之间进行功能调用。yangzie不建议直接在一个模块中直接应用另一个模块的代码（虽然完全可以这样做，php的require或者include另一个模块的php文件），yangzie提供两种方法进行模块之间的功能调用
 
-1. 通过uri调用，跟通过浏览器访问uri一样，只是是通过代码来完成的：__yze_go($uri, $method, $return)__。method表示对资源的操作，return为true表示以变量返回，false表示直接输出
-2. 通过uri调用会重新走一遍yangzie的处理流程，得到控制器的处理结果，稍显复杂。可以通过hook的方式直接调用到具体的逻辑代码
+### 通过URI API
+
+通过编程访问另一个模块中定义的URI：__yze_go($uri, $method, $return)__。method表示对资源的操作，return为true表示以变量返回，false表示直接输出。这里的$uri需要指定返回的数据格式，如/order/3328473894.xml。
+
+* 通过uri调用，yangzie会解析uri，指派到controller，处理响应
+* 出现异常会抛出到调用环境中
+
+### 通过HOOK
+
+被调用的模块可以在__hooks__.php中定义hook name，然后注册hook处理函数：
+<pre>
+<code>
+define("HOOK_NAME","4");
+YZE_Hook::the_hook()->add_hook(YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, function($data){
+	
+});
+</code>
+</pre>
+
+调用的模块可以通过yangzie hook api来触发hook，从而完成调用
+<pre>
+<code>
+do_hook(HOOK_NAME, $data);
+</code>
+</pre>
 
 他们的区别：
 * uri调用返回的是文本内容，如json，xml等；通过hook调用可以得到的是php的数据格式如数组，对象等
-* 如果调用不成功，都将抛出异常__YZE_RPC_Exception__
+* 如果调用不成功，都将抛出异常到调用环境中
+
+## 请求的生命周期
 
 ## Controller
  * 控制器是具体访问uri的处理中心，控制器主要有下面几种方法，分别处理uri所代表的资源的增删改查操作
@@ -120,6 +159,7 @@ __module__.php中定义了该模块的接口URI。用户可通过浏览器直接
 ## Model
 ## View, Response
 ## Validater
+## 全局唯一的YZE_Request
 
 ## 代码结构
 

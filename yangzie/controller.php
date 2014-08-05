@@ -145,7 +145,6 @@ abstract class YZE_Resource_Controller extends YZE_Object{
 		if(($exception = $session->get_controller_exception(get_class($this)))){
 			return $this->do_exception($exception);
 		}
-
 		return $this->wrapGet($this->get());
 		
 	}

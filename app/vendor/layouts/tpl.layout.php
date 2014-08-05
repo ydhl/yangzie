@@ -1,5 +1,4 @@
-<?php  namespace yangzie;use app\front\User_Model;
-$selected_menu = $this->get_data("selected_menu");
+<?php  namespace yangzie;
 ?>
 <!DOCTYPE html>
 <html lang="en">

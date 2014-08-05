@@ -3,7 +3,6 @@
 	<buildpathentry kind="src" path="app"/>
 	<buildpathentry kind="src" path="tmp"/>
 	<buildpathentry kind="src" path="tests"/>
-	<buildpathentry kind="src" path=".settings"/>
 	<buildpathentry kind="src" path="yangzie"/>
 	<buildpathentry kind="con" path="org.eclipse.php.core.LANGUAGE"/>
 	<buildpathentry kind="src" path="scripts"/>

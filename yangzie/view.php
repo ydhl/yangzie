@@ -1,4 +1,5 @@
 <?php
+
 namespace yangzie;
 
 /**
@@ -8,142 +9,143 @@ namespace yangzie;
  * @access public
  * @author liizii, <libol007@gmail.com>
  */
-interface YZE_IResponse{
-	/**
-	 * 输出响应,
-	 * return  为true表示返回不输出
-	 */
-	public function output($return=false);
-
-	/**
-	 * 取得控制器设置在响应中的值
-	 * @package $key
-	*/
-	public function get_data($key);
-
-
+interface YZE_IResponse {
+    /**
+     * 输出响应,
+     * return 为true表示返回不输出
+     */
+    public function output($return = false);
+    
+    /**
+     * 取得控制器设置在响应中的值
+     * 
+     * @package $key
+     */
+    public function get_data($key);
 }
 /**
  * 只输出http头，无message－body，表示请求的内容没有修改，客户端应该使用缓存的内容。
+ * 
  * @author liizii
- *
+ *        
  */
-class YZE_Response_304_NotModified implements YZE_IResponse{
-	private $headers;
-	public function __construct($headers,YZE_Resource_Controller $controller){
-		$this->headers = $headers;
-		$this->controller = $controller;
-	}
-	public function output($return=false){
-		header("HTTP/1.1 304 Not Modified");
-		foreach ((array)$this->headers as $name => $value){
-			header("{$name}: {$value}");
-		}
-	}
-	public function add_header($header_name,$header_value){
-		//TODO 头中需要进行什么编码？
-		$this->headers[$header_name] = $header_value;
-	}
-
-	public function get_data($key){
-		return $this->headers[$key];
-	}
+class YZE_Response_304_NotModified implements YZE_IResponse {
+    private $headers;
+    public function __construct($headers, YZE_Resource_Controller $controller) {
+        $this->headers = $headers;
+        $this->controller = $controller;
+    }
+    public function output($return = false) {
+        header ( "HTTP/1.1 304 Not Modified" );
+        foreach ( ( array ) $this->headers as $name => $value ) {
+            header ( "{$name}: {$value}" );
+        }
+    }
+    public function add_header($header_name, $header_value) {
+        // TODO 头中需要进行什么编码？
+        $this->headers [$header_name] = $header_value;
+    }
+    public function get_data($key) {
+        return $this->headers [$key];
+    }
 }
 /**
  * HTTP Location:重定向，表示一次请求的处理输出是重定向到一个新地址
  * 根据请求返回的格式不同而有不同的输出，如果是html，输出为Header Location:
  * 如果是json，输出为
- * 
+ *
  * 同时也时源控制器与目标控制器的纽带，
  * sourceURI: 源uri
  * sourceController: 源控制器
- * 
+ *
  * destinationURI: 目标url
  * destinationController: 目标控制器
- * 
- * @author liizii
  *
+ * @author liizii
+ *        
  */
-class YZE_Redirect implements YZE_IResponse{
-	private $sourceURI;
-	private $sourceController;
-	private $destinationURI;
-	private $destinationController;
-	private $datas = array();
-	private $outgoing = false;
-	private $url_components;
-	private $innerRedirect;
-	
-	/**
-	 * <b>注意，如果内部重定向，则会出现一url对应多个控制器的情况</b>
-	 * 
-	 * @param unknown $destination_uri 
-	 * @param YZE_Resource_Controller $source_controller
-	 * @param array $datas 传递给目标控制器的数据
-	 * @param boolean $innerRedirect true表示重定向不需要输出到客户端，直接处理
-	 * 
-	 */
-	public function __construct($destination_uri, YZE_Resource_Controller $source_controller, array $datas=array(), $innerRedirect=false){
-		$this->destinationURI 	= $destination_uri;
-		$this->sourceURI 		= YZE_Request::get_instance()->the_full_uri();
-		$this->sourceController = $source_controller;
-		$this->datas 			= $datas;
-		$this->innerRedirect	= $innerRedirect;
+class YZE_Redirect implements YZE_IResponse {
+    private $sourceURI;
+    private $sourceController;
+    private $destinationURI;
+    private $destinationController;
+    private $datas = array ();
+    private $outgoing = false;
+    private $url_components;
+    private $innerRedirect;
+    
+    /**
+     * <b>注意，如果内部重定向，则会出现一url对应多个控制器的情况</b>
+     *
+     * @param unknown $destination_uri            
+     * @param YZE_Resource_Controller $source_controller            
+     * @param array $datas
+     *            传递给目标控制器的数据
+     * @param boolean $innerRedirect
+     *            true表示重定向不需要输出到客户端，直接处理
+     *            
+     */
+    public function __construct($destination_uri, 
+            YZE_Resource_Controller $source_controller, 
+            array $datas = array(), $innerRedirect = false) {
+        $this->destinationURI = $destination_uri;
+        $this->sourceURI = YZE_Request::get_instance ()->the_full_uri ();
+        $this->sourceController = $source_controller;
+        $this->datas = $datas;
+        $this->innerRedirect = $innerRedirect;
+        
+        $this->url_components = parse_url ( $this->destinationURI );
+        if (@$this->url_components ['host'] && $this->url_components ['host'] != $_SERVER ['HTTP_HOST']) {
+            $this->outgoing = true;//访问外部网站
+        }
 		
-		$this->url_components = parse_url($this->destinationURI);
-		if(@$this->url_components['host'] && $this->url_components['host'] != $_SERVER['HTTP_HOST']){
-			$this->outgoing = true;//访问外部网站
-		}
-		
-		if( ! $this->outgoing){
-			$request = YZE_Request::get_instance(true);
-			$request->init($destination_uri);
+        if( ! $this->outgoing){
+            $request = YZE_Request::get_instance(true);
+            $request->init($destination_uri);
 			
-			$this->destinationController = $request->controller();
+            $this->destinationController = $request->controller();
 			
-			YZE_Session_Context::get_instance()->set(get_class($this->destinationController)." from:",  get_class($source_controller));
-		}
-	}
+            YZE_Session_Context::get_instance()->set(get_class($this->destinationController)." from:",  get_class($source_controller));
+        }
+    }
 	
-	public function output($return=false){
-		if ($this->outgoing){
-			header("Location: $this->destinationURI");
-			\app\log4web("Location: $this->destinationURI", "Location");
-			return ;
-		}
+    public function output($return=false){
+        if ($this->outgoing){
+            header("Location: $this->destinationURI");
+            return ;
+        }
 		
-		if ($this->datas) {
-			YZE_Session_Context::get_instance()->save_controller_datas(get_class($this->destinationController), $this->datas);
-		}
+        if ($this->datas) {
+            YZE_Session_Context::get_instance()->save_controller_datas(get_class($this->destinationController), $this->datas);
+        }
 		
-		$format = $this->sourceController->getRequest()->get_output_format();
-		$target_uri = $this->destinationURI;
+        $format = $this->sourceController->getRequest()->get_output_format();
+        $target_uri = $this->destinationURI;
 		
-		if($format != "tpl"){
-			$ext = pathinfo($this->url_components['path'], PATHINFO_EXTENSION   );
-			$target_uri = @preg_replace('/\.'.$ext.'$/', "", $this->url_components['path']).".{$format}?".@$this->url_components['query'].
+        if($format != "tpl"){
+            $ext = pathinfo($this->url_components['path'], PATHINFO_EXTENSION   );
+            $target_uri = @preg_replace('/\.'.$ext.'$/', "", $this->url_components['path']).".{$format}?".@$this->url_components['query'].
 			(@$this->url_components['fragment'] ? "#".$this->url_components['fragment'] : "");
-		}
+        }
 
-		//内部重定向，不经过浏览器在请求一次
-		if ($this->innerRedirect){
-			return yze_go($target_uri, "get", $return);
-		}else{
-			header("Location: {$target_uri}");
-			\app\log4web("Location: {$target_uri}", "Location");
-		}
-	}
+        //内部重定向，不经过浏览器在请求一次
+        if ($this->innerRedirect){
+            return yze_go($target_uri, "get", $return);
+        }else{
+            header("Location: {$target_uri}");
+        }
+    }
 	
-	public function destinationURI(){
-		return $this->destinationURI;
-	}
+    public function destinationURI(){
+        return $this->destinationURI;
+    }
 	
-	public function sourceURI(){
-		return $this->sourceURI();
-	}
-	public function get_data($key){
-		return @$this->datas[$key];
-	}
+    public function sourceURI(){
+        return $this->sourceURI();
+    }
+    public function get_data($key){
+        return @$this->datas[$key];
+    }
 }
 
 /**
@@ -163,6 +165,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 * @var YZE_HttpCache
 	 */
 	private $cache_ctl;
+	protected $view_sections=array();
 	/**
 	 *
 	 * @var YZE_Resource_Controller
@@ -190,11 +193,21 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 		if($return)return $data;
 		echo $data;
 	}
+	public function view_sections(){
+	    return $this->view_sections;
+	}
+	public function begin_section(){
+	    ob_start();
+	}
+	public function end_section($section){
+	    $this->view_sections[$section] = ob_get_clean();
+	}
+	
 	/**
 	 * 取得视图的输出内容
 	 */
 	public function get_output(){
-		return $this->output(true);
+            return $this->output(true);
 	}
 
 	/**
@@ -204,10 +217,10 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	protected abstract function display_self();
 
 	public function get_data($key){
-		return @$this->data[$key];
+	   return @$this->data[$key];
 	}
 	public function get_datas(){
-		return  $this->data;
+	   return  $this->data;
 	}
 
 	public function set_cache_config(YZE_HttpCache $cache=null){
@@ -378,6 +391,8 @@ class YZE_XML_View extends YZE_View_Adapter {
 class YZE_Layout extends YZE_View_Adapter{
 	private $view;
 	private $layout;
+	private $content_of_view;
+	private $content_of_section;
 	public function __construct($layout,YZE_View_Adapter $view,  YZE_Resource_Controller $controller){
 		parent::__construct($view->get_datas(),$controller);
 		$this->view 	= $view;
@@ -387,12 +402,21 @@ class YZE_Layout extends YZE_View_Adapter{
 	protected function display_self(){
 		ob_start();
 		$this->view->output();
-		$yze_content_of_layout = ob_get_clean();
+		$this->content_of_section = $this->view->view_sections();
+		$this->content_of_view = ob_get_clean();
 		if ($this->layout){
 			include YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
 		}else{
-			echo $yze_content_of_layout;
+			echo $this->content_of_view;
 		}
+	}
+	
+	protected function content_of_section($section){
+		return $this->content_of_section[$section];
+	}
+	
+	protected function content_of_view(){
+		return $this->content_of_view;
 	}
 }
 ?>

@@ -60,6 +60,14 @@ require_once YANGZIE.'/html.php';
 require_once YANGZIE.'/i18n.php';
 require_once YANGZIE.'/rpc.php';
 
+/**
+ * 保存每个请求的上下文，yze_go的嵌套调用
+ *
+ * @var array
+ */
+global $yze_request_stack;
+$yze_request_stack = array();
+
 
 //自动加载处理
 function yze_autoload($class) {

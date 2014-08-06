@@ -167,8 +167,8 @@ class $class extends YZE_Resource_Controller {
     
     public function exception(YZE_RuntimeException \$e){
         \$request = \$this->request;
-        //出现了异常，如何处理，没有任何处理将显示500页面
-        //如果想显示get的返回内容可调用 get
+        //get,post,put,delete处理中出现了异常，如何处理，没有任何处理将显示500页面
+        //如果想显示get的返回内容可调用 return \$this->wrapResponse(\$this->get())
     }
     
     public function get_response_guid(){

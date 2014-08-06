@@ -100,19 +100,22 @@ class YZE_Redirect implements YZE_IResponse {
         }
 		
         if( ! $this->outgoing){
-            $request = YZE_Request::get_instance(true);
-            $request->init($destination_uri);
-			
+            
+            $request = YZE_Request::get_instance();
+            $request = $request->copy();
+            $request->init ($destination_uri);
             $this->destinationController = $request->controller();
-			
-            YZE_Session_Context::get_instance()->set(get_class($this->destinationController)." from:",  get_class($source_controller));
+            $request->remove();;
         }
     }
 	
     public function output($return=false){
         if ($this->outgoing){
-            header("Location: $this->destinationURI");
-            return ;
+            if ( ! $return ){
+                header("Location: $this->destinationURI");
+                return ;
+            }
+            return $this->destinationURI;
         }
 		
         if ($this->datas) {
@@ -130,10 +133,13 @@ class YZE_Redirect implements YZE_IResponse {
 
         //内部重定向，不经过浏览器在请求一次
         if ($this->innerRedirect){
-            return yze_go($target_uri, "get", $return);
-        }else{
-            header("Location: {$target_uri}");
+            return yze_go($target_uri, $this->sourceController->getRequest()->the_method(), true);
         }
+        
+        if ( $return ){
+            return $target_uri;
+        }
+        header("Location: {$target_uri}");
     }
 	
     public function destinationURI(){

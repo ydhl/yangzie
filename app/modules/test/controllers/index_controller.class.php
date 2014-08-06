@@ -22,7 +22,8 @@ class Index_Controller extends YZE_Resource_Controller {
 	public function get(){
 		$request = $this->request;
 		$this->set_view_data('yze_page_title', 'this is controller index');
-		return new YZE_Redirect("/test/go.json?foo=bar", $this, array("foo1"=>"bar1"), true);
+
+		//return new YZE_Redirect("/test/go.json?foo=bar", $this, array("foo1"=>"bar1"), true);
 	}
 	
 	/**
@@ -31,6 +32,9 @@ class Index_Controller extends YZE_Resource_Controller {
 	 */
 	public function post(){
 		$request = $this->request;
+		//\yangzie\yze_go("/test/go.json", "post", true);
+// 		$r = new YZE_Redirect("/test/go.json", $this, array(), true);
+// 		$r->output();
 	}
 	
 	/**
@@ -52,7 +56,9 @@ class Index_Controller extends YZE_Resource_Controller {
 	public function exception(YZE_RuntimeException $e){
 		$request = $this->request;
 		//出现了异常，如何处理，没有任何处理将显示500页面
-		//如果想显示get的返回内容可调用 get
+		//如果想显示get的返回内容可调用 $this->wrapResponse($this->get())
+		
+		return $this->wrapResponse($this->get());
 	}
 	
 	public function get_response_guid(){

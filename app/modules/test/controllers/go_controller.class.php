@@ -21,6 +21,7 @@ class Go_Controller extends YZE_Resource_Controller {
 	 */
 	public function get(){
 		$request = $this->request;
+		//throw new YZE_RuntimeException("d12");
 		$this->Set_view_data("data", $this->get_view_data("foo1"));
 		$this->set_view_data('yze_page_title', 'this is controller go');
 	}
@@ -31,6 +32,7 @@ class Go_Controller extends YZE_Resource_Controller {
 	 */
 	public function post(){
 		$request = $this->request;
+		//throw new YZE_RuntimeException("test");
 	}
 	
 	/**

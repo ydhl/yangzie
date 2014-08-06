@@ -30,6 +30,7 @@ class YZE_Request extends YZE_Object {
     private $uri;
     private $full_uri;
     private $queryString;
+    private $uuid;
     public function the_post_datas() {
         return $this->post;
     }
@@ -116,24 +117,13 @@ class YZE_Request extends YZE_Object {
     }
     
     /**
-     * 会话中查询出来的实体:
-     * array(
-     * 'table name'=>array(
-     * 'key hash'=>entity
-     * )
-     * )
-     *
-     * @var array
-     */
-    private $entity_cache = array ();
-    
-    /**
      * 通用缓存，hash map
      *
      * @var array
      */
     private $cache = array ();
-    private static $instance;
+    private $is_top_request = false;
+    private static $instances = array();
     private function __construct() {
         // 预处理请求数据，把get，post，cookie等数据进行urldecode后编码
         $this->post = $_POST ? self::filter_special_chars ( $_POST, INPUT_POST ) : array ();
@@ -141,46 +131,71 @@ class YZE_Request extends YZE_Object {
         $this->cookie = $_COOKIE ? self::filter_special_chars($_COOKIE, INPUT_COOKIE) : array();
         $this->env    = $_ENV ? self::filter_special_chars($_ENV, INPUT_ENV) : array();
         $this->server = $_SERVER ? self::filter_special_chars($_SERVER, INPUT_SERVER) : array();
+        $this->uuid   = uniqid();
     }
-
+    
+    public function has_request(){
+        return count(self::$instances) > 0;
+    }
+    public function uuid(){
+        return $this->uuid;
+    }
+    /**
+     * 该请求是不是第一个请求
+     */
+    public function is_top_request(){
+        return $this->is_top_request;
+    }
+    
+    public function copy(){
+        $request = clone $this;
+        return $request;
+    }
+    
+    public function remove(){
+        array_pop(self::$instances);
+        
+    }
+    
     /**
      * @return YZE_Request
      */
     public static function get_instance()
     {
-        global $yze_request_stack;
-        $size = count($yze_request_stack);
-        
+        $size = count(self::$instances);
+       
         $c    = __CLASS__;
         
         $request = null;
         if ( $size ) {
-            $request = $yze_request_stack[ $size-1 ];
+            //取得栈定的请求，也就是当前请求
+            $request = self::$instances[ $size-1 ];
         }else{
-            $request = new $c;
+            // 创建top request，后面的request，根据他copy
+            $request = new $c();
         }
         return $request;
-        
-//         $c    = __CLASS__;
-        
-//         if ( ! self::$instance ) {
-//             self::$instance = new $c;
-//         }
-//         return self::$instance;
     }
 
+    public function __clone(){
+        $this->is_top_request   = false;
+        $this->method           = null;
+        $this->cache            = null;
+        $this->vars             = array();
+        $this->controller_name  = null;
+        $this->controller_class = null;
+        $this->controller       = null;
+        $this->module_class     = null;
+        $this->module_obj       = null;
+        $this->module           = null;
+        $this->view_path        = null;
+        $this->queryString      = null;
+        $this->full_uri         = null;
+        $this->uri              = null;
+        $this->uuid             = uniqid();
+    }
+    
     private function _init($newUri){
-    	$this->method = null;
-    	$this->vars = array();
-    	
-    	$this->controller_name = null;
-    	$this->controller_class = null;
-    	$this->controller = null;
-    	$this->module_class = null;
-    	$this->module_obj = null;
-    	$this->module = null;
-    	$this->view_path = null;
-    	
     	if( ! $newUri){
     		switch (YZE_REWRITE_MODE){
     			case YZE_REWRITE_MODE_PATH_INFO:	$this->uri = $_SERVER['PATH_INFO']; break;
@@ -209,7 +224,9 @@ class YZE_Request extends YZE_Object {
      * @return YZE_Request
      */
     public function init($newUri=null, $method=null, $format=null){
-    	//init
+        if(count(self::$instances)==0)$this->is_top_request = true;
+        
+        self::$instances[] = $this;
         $this->_init($newUri);
     	
         $request_method = $method ? $method : self::the_val($this->get_from_post("yze_method"), 
@@ -441,7 +458,7 @@ class YZE_Request extends YZE_Object {
     public function get_var($key, $default=null)
     {
     	$vars = $this->vars;
-    	return array_key_exists($key, $vars) ? $vars[$key] : $default;
+    	return @array_key_exists($key, $vars) ? $vars[$key] : $default;
     }
     
     

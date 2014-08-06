@@ -146,6 +146,8 @@ do_hook(HOOK_NAME, $data);
 
 ## 请求的生命周期
 
+## 多种输出格式的自动支持
+
 ## Controller
  * 控制器是具体访问uri的处理中心，控制器主要有下面几种方法，分别处理uri所代表的资源的增删改查操作
   * __get__：获取uri指向的信息，请求数据通过get请求传递，返回YZE_IResponse

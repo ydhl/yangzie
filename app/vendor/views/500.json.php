@@ -1,11 +1,13 @@
 <?php 
 namespace yangzie;
-
-$exception 	= $this->get_data("exception");
-$request 	= YZE_Request::get_instance();
-
 ?>
-<p>您正处于开发者模式, 如果你访问的是正式环境，请把__config__.php中的YZE_DEVELOP_MODE修改为false</p>
+<h1>服务器出现500错误</h1>
+<?php 
+$exception = $this->get_data("exception");
+$request 	= YZE_Request::get_instance();
+?>
+<h2 class="page-header"><?php echo $exception->getMessage()?></h2>
+
 <p>异常：<?php echo get_class($exception)?></p>
 <p>URI：<?php echo $request->the_uri()?></p>
 <p>Module：<?php echo $request->module()?></p>
@@ -18,3 +20,4 @@ $request 	= YZE_Request::get_instance();
 echo $exception ? $exception->getTraceAsString() : "";
 ?>
 </pre>
+<p style="color:#ff0000;">请根据实际情况修改该页面</p>

@@ -68,18 +68,14 @@ abstract class YZEValidate extends YZE_Object
     	}
 	
         if ($this->validate_result) {
-        	throw strcasecmp($request_method,"get")==0 ? new YZE_FatalException(join(PHP_EOL, $this->validate_result)) : new YZE_Request_Validate_Failed($this, join(PHP_EOL, $this->validate_result));
+        	   throw new YZE_Request_Validate_Failed($this);
         }
 
         return true;
     }
-    public function set_error_message($name, $msg, $append=false)
+    public function set_error_message($name, $msg)
     {
-    	if($append){
-    		@$this->validate_result[$name] .= $msg;
-    	}else{
-    		@$this->validate_result[$name] = $msg;
-    	}
+    	@$this->validate_result[$name] .= $msg;
     	return $this;
     }
     /**
@@ -146,8 +142,8 @@ abstract class YZEValidate extends YZE_Object
      * 
      * 
      */
-    public function get_validates(){
-    	return $this->validates;
+    public function get_result(){
+    	return $this->validate_result;
     }
     
     /**

@@ -23,6 +23,7 @@ class Go_Validate extends YZEValidate{
 		
 		//Written Get Validate Rules Code in Here. such as
 		//$this->assert('params name in post', 'validate method name', '', 'error message');
+	    $this->assert('name', YZEValidate::NOT_EMPTY, '', 'error message219的');
 	}
 	
 	public function init_put_validates(){

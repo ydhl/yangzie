@@ -11,13 +11,19 @@ use \yangzie\YZE_RuntimeException;
  * @param type name optional
  *
  */
-global $yze_request_stack;
+$yze_form = new \yangzie\YZE_Form($this, "test",null);
+$yze_form->begin_form(array(/*"action"=>"/test/go"*/));
 
-$data = $this->get_data('arg_name');
-echo "<pre>";
-echo YZE_Request::get_instance()->get_from_get("foo");
-//echo count($yze_request_stack);
-echo "<hr/>";
-var_dump(\yangzie\yze_go("/test/go/test.json?foo=bar1&go=abc","get",true));
+$session 	= YZE_Session_Context::get_instance();
+$controller = YZE_Request::get_instance()->controller();
 
+//var_dump( get_class($controller));
+//var_dump( $_SESSION);
+        
+echo \yangzie\yze_controller_error();
+?>
+<input name="name" value=""/><input type="submit" value="Go"/>
+<?php echo \yangzie\yze_form_field_error($this->controller, "name")?>
+<?php 
+$yze_form->end_form();
 ?>

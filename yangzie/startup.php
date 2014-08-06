@@ -51,17 +51,44 @@ function yze_load_app() {
 
 /**
  * yangzie入口
- * 开始处理请求，如果没有指定uri，默认处理当前的uri请求, 如果没有指定method，则以请求的方法为主（get post put delete）
+ * 开始处理请求，如果没有指定uri，默认处理当前的uri请求, 
+ * 如果没有指定method，则以请求的方法为主（get post put delete）
  *
  * @param string $uri            
  * @param string $method            
- * @param bool $return
- *            true则return，false直接输出
+ * @param bool $return true则return，false直接输出
+ * @return string
  */
 function yze_go($uri = null, $method = null, $return = null) {
-    global $yze_request_stack;
+
+    $output_view = function($request, $controller, $response, $return) {
+        $layout = new YZE_Layout($controller->get_layout(), $response, $controller);
+        $output = $layout->get_output();
+    
+        $request->remove();
+        $controller->cleanup();
+        if($return){
+            return $output;
+        }
+    
+        echo $output;
+        exit();
+    };
+    
+    $output_header = function($request, $controller, $response, $return){
+        $output = $response->output($return);
+        if($return){
+            $controller->cleanup();
+            $request->remove();
+            return $output;
+        }
+        $controller->cleanup();
+        $request->remove();
+        if ($output)header("Location: {$output}");
+        exit();
+    };
+    
     try {
-        
         $request = YZE_Request::get_instance ();
         $session = YZE_Session_Context::get_instance ();
         $dba     = YZE_DBAImpl::getDBA ();
@@ -71,17 +98,15 @@ function yze_go($uri = null, $method = null, $return = null) {
         if ($oldController) {
             $format = $request->get_output_format ();
         }
-        
-        //yze_go被嵌套调用，这时要复制一个request，新的yze_go不能污染之前的request
-        if ( count( $yze_request_stack ) ){
-            $request = clone $request;
+        //之前已经有请求了，则copy一个新请求
+        if ( $request->has_request() ){
+            $request = $request->copy();
         }
-        $request->init ( $uri, $method, $format ); // 初始化请求上下文环境
-        array_push($yze_request_stack, $request);
+        $request->init ( $uri, $method, $format ); // 初始化请求上下文环境,请求入栈
+        
         $controller = $request->controller ();
         
         // 如果yze_go 是从一个控制器的处理中再次调用的，则为新的控制器copy一个上下文环境
-        // 比如内部重定向
         if ($oldController) {
             $session->copy ( get_class ( $oldController ), get_class ( $controller ) );
         }
@@ -94,50 +119,55 @@ function yze_go($uri = null, $method = null, $return = null) {
 		
         $response = $request->dispatch();
         $dba->commit();
-    }catch(YZE_RuntimeException $e){
-        if( count($yze_request_stack) > 1) {
-            array_pop($yze_request_stack);
+        
+
+        // content output
+        if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
+            return $output_view($request, $controller, $response, $return);
+        }
+        
+        //header output
+        return $output_header($request, $controller, $response, $return);
+    }catch(\Exception $e){
+        //嵌套调用的，把异常往外层抛
+        if( ! $request->is_top_request() ) {
+            $request->remove();
             throw $e;
         }
         
-        
-        $dba->rollback();
-        if( ! @$controller){
+        try{
+            $dba->rollback();
+            if( ! @$controller){
+                $controller = new YZE_Exception_Controller();
+            }
+            //验证出现异常的，先保存现场；便于后面恢复
+            if(is_a($e, "\\yangzie\\YZE_Request_Validate_Failed")){
+                $session->save_controller_validates(get_class($controller), $e->get_validater()->get_result());
+            }
+            
+            $session->save_controller_exception(get_class($controller), $e);
+            if($request->is_get()){
+                $response = $controller->do_exception($e);
+            }else{
+                $response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
+            }
+    		
+            $filter_data = do_filter(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
+            $response = $filter_data['response'];
+            
+
+            // content output
+            if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
+                return $output_view($request, $controller, $response, $return);
+            }
+            
+            //header output
+            return $output_header($request, $controller, $response, $return);
+        }catch (\Exception $notCatch){
             $controller = new YZE_Exception_Controller();
+            $controller->do_exception(new YZE_RuntimeException($notCatch->getMessage()))->output();
+            $request->remove();
         }
-        //验证出现异常的，先保存现场；便于后面回复
-        if(is_a($e, "\\yangzie\\YZE_Request_Validate_Failed")){
-            $session->save_controller_validates(get_class($controller), $e->get_validater()->get_validates());
-        }
-		
-        $session->save_controller_exception(get_class($controller), $e);
-        if($request->is_get()){
-            $response = $controller->do_exception($e);
-        }else{
-            $response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
-        }
-		
-        $filter_data = do_filter(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
-        $response = $filter_data['response'];
     }
-    
-    $controller->cleanup();
-    
-    if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
-        $layout = new YZE_Layout($controller->get_layout(), $response, $controller);
-        $output = $layout->get_output();
-        if(($guid = $controller->get_response_guid()) && !file_exists(YZE_APP_CACHES_PATH.$guid)){
-            file_put_contents(YZE_APP_CACHES_PATH.$guid, $output);
-        }
-        array_pop($yze_request_stack);
-        if($return){
-            return $output;
-        }else{
-            echo $output;
-        }
-    }else{//header output
-        array_pop($yze_request_stack);
-        return $response->output($return);
-    }	
 }
 ?>

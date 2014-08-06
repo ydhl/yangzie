@@ -22,7 +22,7 @@ class Index_Validate extends YZEValidate{
 	public function init_post_validates(){
 		
 		//Written Get Validate Rules Code in Here. such as
-		//$this->assert('params name in post', 'validate method name', '', 'error message');
+		//$this->assert('name', YZEValidate::NOT_EMPTY, '', 'error message');
 	}
 	
 	public function init_put_validates(){

@@ -32,7 +32,7 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public function get_table(){
 		$data = array("table"=>$this->table, "module"=>$this->get_module_name());
-		$result = do_filter("get_table", $data);
+		$result = \yangzie\YZE_Hook::do_hook("get_table", $data);
 		return $result["table"];
 	}
 	/**

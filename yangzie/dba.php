@@ -187,7 +187,7 @@ class YZE_DBAImpl extends YZE_Object
 		if($affected_row){
 			$entity->delete_key();
 		}
-		do_action("db-delete", $entity);
+		\yangzie\YZE_Hook::do_hook("db-delete", $entity);
 		return $entity;
 	}
 	/**
@@ -223,7 +223,7 @@ class YZE_DBAImpl extends YZE_Object
 		}
 		$sql = new YZE_SQL();
 		if($entity->get_key()){//update
-			do_action("db-update", $entity);
+			\yangzie\YZE_Hook::do_hook("db-update", $entity);
 				
 			//自动把version更新
 			$entity->update_version();
@@ -245,7 +245,7 @@ class YZE_DBAImpl extends YZE_Object
 			}
 				
 			$entity->set($entity->get_key_name(),$insert_id);
-			do_action("db-insert", $entity);
+			\yangzie\YZE_Hook::do_hook("db-insert", $entity);
 			return $insert_id;
 		}
 		return false;

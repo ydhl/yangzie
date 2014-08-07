@@ -38,7 +38,7 @@ function load_textdomain($domain, $mofile) {
 }
 
 function load_default_textdomain() {
-	$local = do_filter("get_locale", "zh-cn");
+	$local = \yangzie\YZE_Hook::do_hook("get_locale", "zh-cn");
 	
 	if(!function_exists("\yangzie\script_locale") && !$local){
 		return;

@@ -107,6 +107,7 @@
  | + models
  | + views
  | + validates
+ | + hooks
  | __module__.php
  | __hooks__.php
 </pre>

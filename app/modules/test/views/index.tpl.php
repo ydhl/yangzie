@@ -18,7 +18,7 @@ $session 	= YZE_Session_Context::get_instance();
 $controller = YZE_Request::get_instance()->controller();
 
 //var_dump( get_class($controller));
-//var_dump( $_SESSION);
+var_dump( $this->get_Data("hook"));
         
 echo \yangzie\yze_controller_error();
 ?>

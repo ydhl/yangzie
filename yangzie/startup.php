@@ -15,7 +15,8 @@ function yze_load_app() {
     }
     include_once YZE_APP_INC . '__config__.php';
     @include_once YZE_APP_INC . '__aros_acos__.php';
-    @include_once YZE_APP_INC . '__hooks__.php';
+    YZE_Hook::include_hooks(YZE_APP_INC.'hooks');
+    
     $app_module = new App_Module ();
     
     $module_include_files = $app_module->get_module_config ( 'include_files' );
@@ -43,9 +44,7 @@ function yze_load_app() {
                     "is_phar" => $phar_wrap ? true : false 
             ) );
         }
-        if (@file_exists ( "{$phar_wrap}{$module}/__hooks__.php" )) {
-            include_once "{$phar_wrap}{$module}/__hooks__.php";
-        }
+        YZE_Hook::include_hooks("{$phar_wrap}{$module}/hooks");
     }
 }
 
@@ -112,7 +111,7 @@ function yze_go($uri = null, $method = null, $return = null) {
         }
         
         $action = "YZE_ACTION_BEFORE_" . strtoupper ( $request->the_method () );
-        do_action ( constant ( $action ), $controller );
+        \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
         
         $request->auth ()->validate ();
         $dba->beginTransaction();
@@ -129,6 +128,7 @@ function yze_go($uri = null, $method = null, $return = null) {
         //header output
         return $output_header($request, $controller, $response, $return);
     }catch(\Exception $e){
+        
         //嵌套调用的，把异常往外层抛
         if( ! $request->is_top_request() ) {
             $request->remove();
@@ -144,15 +144,15 @@ function yze_go($uri = null, $method = null, $return = null) {
             if(is_a($e, "\\yangzie\\YZE_Request_Validate_Failed")){
                 $session->save_controller_validates(get_class($controller), $e->get_validater()->get_result());
             }
-            
+
             $session->save_controller_exception(get_class($controller), $e);
             if($request->is_get()){
                 $response = $controller->do_exception($e);
             }else{
                 $response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
             }
-    		
-            $filter_data = do_filter(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
+           
+            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
             $response = $filter_data['response'];
             
 

@@ -22,7 +22,7 @@ class Index_Controller extends YZE_Resource_Controller {
 	public function get(){
 		$request = $this->request;
 		$this->set_view_data('yze_page_title', 'this is controller index');
-
+                $this->set_view_data("hook", \yangzie\YZE_Hook::do_hook("order_test"));
 		//return new YZE_Redirect("/test/go.json?foo=bar", $this, array("foo1"=>"bar1"), true);
 	}
 	

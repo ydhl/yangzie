@@ -171,7 +171,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      * @return YZE_IResponse
      */
     public final function do_Post() {
-        do_action ( YZE_ACTION_BEFORE_POST, $this );
+        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_POST, $this );
         return $this->_handle_post ();
     }
     public final function do_rpc() {
@@ -213,7 +213,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      * @return YZE_IResponse
      */
     public final function do_Put() {
-        do_action ( YZE_ACTION_BEFORE_PUT, $this );
+        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_PUT, $this );
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
         
@@ -245,13 +245,13 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      * @return YZE_IResponse
      */
     public final function do_Delete() {
-        do_action ( YZE_ACTION_BEFORE_DELETE, $this );
+        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DELETE, $this );
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
         return $this->_handle_post ();
     }
     public final function do_exception(YZE_RuntimeException $e) {
-        do_action ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
+        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
         
@@ -386,7 +386,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         if( ! $saved_token)return;
         if( $request->the_referer_uri(true) != $request->the_uri()) return;
         
-        $filtered_data = do_filter ( YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, array (
+        $filtered_data = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, array (
                 "saved_token" => $saved_token,
                 "post_request_token" => $post_request_token 
         ) );

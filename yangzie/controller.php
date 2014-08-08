@@ -174,36 +174,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_POST, $this );
         return $this->_handle_post ();
     }
-    public final function do_rpc() {
-        $rpc = new YangzieRPC ();
-        $callable = $this->request->get_from_post ( "callable" );
-        $args = json_decode ( html_entity_decode ( $this->request->get_from_post ( "args" ) ) );
-        $data = $rpc->invoke ( $callable, $args );
-        
-        $this->layout = "";
-        
-        if (is_array ( $data )) {
-            return new YZE_Notpl_View ( $this->rpc_serialize_arr ( $data ), $this );
-        } else {
-            return new YZE_Notpl_View ( $this->rpc_serialize ( $data ), $this );
-        }
-    }
-    private function rpc_serialize($data) {
-        if ($data instanceof YZE_Model) {
-            return $data->toJson ();
-        } elseif (is_object ( $data )) {
-            return json_encode ( $data->__toString () );
-        } else {
-            return json_encode ( $data );
-        }
-    }
-    private function rpc_serialize_arr($data) {
-        $arr = array ();
-        foreach ( $data as $index => $d ) {
-            $arr [$index] = $this->rpc_serialize ( $d );
-        }
-        return json_encode ( $arr );
-    }
+    
     
     /**
      * put方法,更新数据

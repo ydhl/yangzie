@@ -5,10 +5,10 @@ namespace yangzie;
  */
 class YZE_Router{
 	private static $instance;
-	private $mappings = array("__yze__"=>array(
+	private $mappings = array(/*"__yze__"=>array(
 			'yze.rpc'	=> array('controller'	=> 'yangzie\yze_default',
         		'args'	=> array(),
-        	)));
+        	))*/);
 	private function __construct(){}
 	/**
 	 * 

@@ -11,6 +11,8 @@
 </head>
 
 <body>
+<?php echo $this->content_of_section("test section");?>
+<hr/>
 <?php echo $this->content_of_view();?>
 </body>
 </html>

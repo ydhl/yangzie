@@ -208,7 +208,9 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function end_section($section){
 	    $this->view_sections[$section] = ob_get_clean();
 	}
-	
+	public function content_of_section($section){
+	    return $this->view_sections[$section];
+	}
 	/**
 	 * 取得视图的输出内容
 	 */
@@ -417,11 +419,11 @@ class YZE_Layout extends YZE_View_Adapter{
 		}
 	}
 	
-	protected function content_of_section($section){
+	public function content_of_section($section){
 		return $this->content_of_section[$section];
 	}
 	
-	protected function content_of_view(){
+	public function content_of_view(){
 		return $this->content_of_view;
 	}
 }

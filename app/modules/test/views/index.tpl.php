@@ -11,6 +11,7 @@ use \yangzie\YZE_RuntimeException;
  * @param type name optional
  *
  */
+$this->begin_section();
 $yze_form = new \yangzie\YZE_Form($this, "test",null);
 $yze_form->begin_form(array(/*"action"=>"/test/go"*/));
 
@@ -26,4 +27,6 @@ echo \yangzie\yze_controller_error();
 <?php echo \yangzie\yze_form_field_error($this->controller, "name")?>
 <?php 
 $yze_form->end_form();
+$this->end_section("test section");
+echo $this->content_of_section("test section");
 ?>

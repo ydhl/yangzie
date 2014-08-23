@@ -87,8 +87,7 @@ function yze_ajax_front_controller(){
 			var action =  $(this).attr("action") || getUrl; //如果沒有指定action，那麼post仍然提交到getUrl中
 			var method = $(this).attr("method") || "POST";
 			
-			postData.yze_no_content_layout = "yes";
-			postData.yze_ajax_form = "yes";
+			postData += "&yze_no_content_layout=yes&yze_ajax_form=yes";
 			
 			$.ajax({
 				url: 		action,

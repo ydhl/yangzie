@@ -275,7 +275,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $session = YZE_Session_Context::get_instance ();
         
         $controller_name = get_class ( $this );
-        if( $session->get_controller_exception ( $controller_name ) ) return;
+        
         
         // clean get cache data
         if ($request->is_get ()) {
@@ -287,7 +287,9 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         // clean post cache data
         // 成功处理，清除保存的post数据
-        $session->clear_post_datas ( get_class ( $this ) );
+        if( ! $session->get_controller_exception ( $controller_name ) ){ 
+            $session->clear_post_datas ( get_class ( $this ) );
+        }
         $session->clear_request_token_ext ( get_class ( $this ) );
     }
     /**

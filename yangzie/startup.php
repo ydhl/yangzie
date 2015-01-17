@@ -130,6 +130,7 @@ function yze_go($uri = null, $method = null, $return = null) {
     }catch(\Exception $e){
         
         //嵌套调用的，把异常往外层抛
+        //是请求的控制器自己处理异常好，还是把异常一直抛出到顶级请求来处理好？
         if( ! $request->is_top_request() ) {
             $request->remove();
             throw $e;

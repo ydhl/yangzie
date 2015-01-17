@@ -103,7 +103,11 @@ class YZE_DBAImpl extends YZE_Object
 		return $this->nativeQuery2($sql->__toString());
 	}
 	public function nativeQuery2($sql){
-		return new YZE_PDOStatementWrapper($this->conn->query($sql));
+	    $pdo = $this->conn->query($sql);
+	    if( ! $pdo){
+	        throw new YZE_DBAException("sql error ".$sql);
+	    }
+		return new YZE_PDOStatementWrapper($pdo);
 	}
 	/**
 	 * 同select，区别是直接返回一个对象
@@ -121,9 +125,11 @@ class YZE_DBAImpl extends YZE_Object
 	 * !!!如果是联合查询，没有数据的对象返回null
 	 *
 	 * @param YZE_SQL $sql
+	 * @param $key_field 返回的数组的索引，没有指定则是数字自增，指定指定名，则以该字段的值作为索引
+	 * 
 	 * @return array(Model)
 	 */
-	public function select(YZE_SQL $sql){
+	public function select(YZE_SQL $sql, $key_field=null){
 		$classes = $sql->get_select_classes(true);
 		$statement = $this->conn->query($sql->__toString());
 		if(empty($statement)){
@@ -284,6 +290,7 @@ class YZE_DBAImpl extends YZE_Object
 			}
 		}
 	}
+	
 }
 class YZE_PDOStatementWrapper extends YZE_Object{
 	/**
@@ -303,6 +310,18 @@ class YZE_PDOStatementWrapper extends YZE_Object{
 	}
 	public function f($name,$table_alias=null){
 		return self::filter_var($this->result[$this->index][$table_alias ? "{$table_alias}_{$name}" : $name]);#数据库取出来编码
+	}
+	
+
+	public function getEntity(YZE_Model $entity, $alias=""){
+	   foreach (array_keys($entity->get_columns()) as $field_name) {
+            $field_value = $this->f($field_name, $alias);
+            if (is_null($field_value)) {
+                continue ;
+            }
+            $entity->set( $field_name , self::filter_var($field_value));#数据库取出来编码
+        }
+	    return $entity;
 	}
 }
 ?>

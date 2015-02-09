@@ -285,8 +285,14 @@ class YZE_Simple_View extends YZE_View_Adapter {
 	}
 
 	public function check_view(){
-		if(!file_exists("{$this->tpl}.{$this->format}.php")){
-			throw new YZE_Resource_Not_Found_Exception(" view {$this->tpl}.{$this->format}.php not found");
+		if( ! file_exists("{$this->tpl}.{$this->format}.php")){
+            //if format not exist then use tpl
+            if($this->format == "tpl"){
+                throw new YZE_Resource_Not_Found_Exception(" view {$this->tpl}.{$this->format}.php not found");
+            }else{
+                $this->format = "tpl";
+                $this->check_view();
+            }
 		}
 	}
 
@@ -406,6 +412,18 @@ class YZE_Layout extends YZE_View_Adapter{
 		$this->view 	= $view;
 		$this->layout 	= $layout;
 	}
+    
+    public function check_layout(){
+        if( ! file_exists(YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php")){
+            //if format not exist then use tpl
+            if($this->layout == "tpl"){
+                throw new YZE_Resource_Not_Found_Exception(" layout {$this->layout}.{$this->format}.layout.php not found");
+            }else{
+                $this->layout = "tpl";
+                $this->check_view();
+            }
+        }
+    }
 
 	protected function display_self(){
 		ob_start();
@@ -413,6 +431,7 @@ class YZE_Layout extends YZE_View_Adapter{
 		$this->content_of_section = $this->view->view_sections();
 		$this->content_of_view = ob_get_clean();
 		if ($this->layout){
+            $this->check_layout();
 			include YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
 		}else{
 			echo $this->content_of_view;

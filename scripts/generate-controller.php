@@ -129,38 +129,20 @@ use \\yangzie\\YZE_RuntimeException;
 * @package $module
 */
 class $class extends YZE_Resource_Controller {
-    /**
-     * get 请求返回视图
-     * \$this->layout = ''; 设置该视图的布局模板，默认为tpl.layout.php,位于app/vendor/layouts
-     * \$this->set_view_data('arg_name', 'arg_value'); 给视图设置数据, arg_value可以是任何php变量
-     * 视图中通过 \$this->get_data('arg_name')来取得控制器设置的数据
-     * 
-     */
     public function get(){
         \$request = \$this->request;
+        //\$this->layout = 'tpl name';
         \$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
     }
-    
-    /**
-     * post请求用于对请求资源的创建
-     *
-     */
+
     public function post(){
         \$request = \$this->request;
     }
-    
-    /**
-     * delete请求用于对请求资源的删除
-     *
-     */
+
     public function delete(){
         \$request = \$this->request;
     }
-    
-    /**
-     * put请求用于对请求资源的更新
-     *
-     */
+
     public function put(){
         \$request = \$this->request;
     }
@@ -244,7 +226,7 @@ use \\yangzie\\YZE_RuntimeException;
  *
  */
  
- \$data = \$this->get_data('arg_name');
+\$data = \$this->get_data('arg_name');
 ?>
 
 this is {$controller} view";

@@ -364,6 +364,9 @@ abstract class YZE_Resource_Controller extends YZE_Object {
                 "saved_token" => $saved_token,
                 "post_request_token" => $post_request_token 
         ) );
+        
+        if( ! $filtered_data)return;
+        
         $saved_token = @$filtered_data ['saved_token'];
         $post_request_token = @$filtered_data ['post_request_token'];
         

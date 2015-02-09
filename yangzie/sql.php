@@ -749,7 +749,7 @@ class YZE_SQL extends YZE_Object{
 		}
 		
 		#处理where中有子查询的情况
-		if(is_a($wheres['value'],'YZE_SQL')){
+		if(is_a($wheres['value'],'\yangzie\YZE_SQL')){
 			switch($wheres['op']){
 				case self::NOTIN:	
 					$cond = " NOT IN (".$wheres['value']->__toString().")";break;

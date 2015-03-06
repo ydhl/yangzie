@@ -191,4 +191,20 @@ function yze_compress_file() {
     file_put_contents ( $cache_name, $cache_content );
     return yze_remove_abs_path ( $cache_name );
 }
+
+/**
+ * 在当前请求的url参数的基础上加上args参数，并于url一并返回
+ * 
+ * @param unknown $url
+ * @param unknown $args
+ */
+function yze_merge_query_string($url, $args = array()){
+    $path   = parse_url($url, PHP_URL_PATH);
+    $query  = parse_url($url, PHP_URL_QUERY);
+    $get    = array_merge($_GET, $args);
+    if($query && parse_str($query, $newArgs)){
+        $get    = array_merge($get, $newArgs);
+    }
+    return $url."?".http_build_query($get);
+}
 ?>

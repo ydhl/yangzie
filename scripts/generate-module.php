@@ -21,7 +21,6 @@ class Generate_Module_Script extends AbstractScript{
 		$this->check_dir($path);
 		$this->check_dir($path."/controllers");
 		$this->check_dir($path."/models");
-		$this->check_dir($path."/validates");
 		$this->check_dir($path."/views");
 		$this->check_dir($path."/hooks");
 		$this->check_dir(dirname(dirname(__FILE__))."/tests/".$module);

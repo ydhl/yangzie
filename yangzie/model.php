@@ -6,20 +6,6 @@ namespace yangzie;
  * 	主键
  * 	一个标识一条记录的版本的字段，
  * 
- * model的定义都应该包含如下的protected属性：
- * 	映射的表名：
- * 		protected  $table="test"; 
- * 	主键的字段名
- * 		protected $key_name = "id"; 
- * 	版本字段名
- * 		protected $version = "modified_date"; 
- * 	model属于的模块名
- * 		protected $module_name = "posttest";
- * 	model映射的表的字段定义 
- * 		protected $columns = array(
- * 			'id'=>array(),'version'=>array()
- * 		);
- * 
  * 不提供对复合主键的支持
  * 
  * @author liizii
@@ -27,11 +13,15 @@ namespace yangzie;
  */
 abstract class YZE_Model extends YZE_Object{
 	protected $records = array();
+	//array("attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-one"),"attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-many")  )
+	//$this->attr
+	protected $objects = array();
+	private $cache = array();
 	/**
 	 * 返回表名
 	 */
 	public function get_table(){
-		$data = array("table"=>$this->table, "module"=>$this->get_module_name());
+		$data = array("table"=>$this::TABLE, "module"=>$this->get_module_name());
 		$result = \yangzie\YZE_Hook::do_hook("get_table", $data);
 		return $result["table"];
 	}
@@ -39,7 +29,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * 返回主键字段名,
 	 */
 	public function get_key_name(){
-		return $this->key_name;
+		return $this::KEY_NAME;
 	}
 	/**
 	 * 返回实体对应的字段名,格式是：array('column'=>array(type,nullable))
@@ -49,13 +39,13 @@ abstract class YZE_Model extends YZE_Object{
 		return $this->columns;
 	}
 	public function get_module_name(){
-		return $this->module_name;
+		return $this::MODULE_NAME;
 	}
 	public function get_version_name(){
-		return $this->version;
+		return $this::VERSION;
 	}
 	public function get_version_value(){
-		return $this->get(@$this->version);
+		return $this->get(@$this::VERSION);
 	}
 
 	public function has_set_value($column){
@@ -366,16 +356,61 @@ abstract class YZE_Model extends YZE_Object{
         $new_value = $this->get_version_value();
         switch ($this->getFieldType($this->get_version_name())) {
             case "integer":
-            case "float":$new_value = $new_value+1;break;
-            case "date":$new_value = date("Y-m-d H:i:s");break;
+            case "float":   $new_value = $new_value+1;break;
+            case "date":    $new_value = date("Y-m-d H:i:s");break;
         }
         $this->set($this->get_version_name(), $new_value);
     }
+
 	
-	private function getFieldType($field_name){
-		$columns = $this->get_columns();
-		return @$columns[$field_name]['type'];
+	public function __get($name){
+	    if(array_key_exists($name, $this->objects)){
+	        return $this->get_object($name);
+	    }
+	    return $this->get($name);
+	}
+	
+	public function __set($name, $value){
+	    if(array_key_exists($name, $this->objects)){
+	        return $this->set_object($name, $value);
+	    }
+	    return $this->set($name, $value);
+	}
+	
+
+	private function get_object($field_name){
+	    if( @$this->cache[$field_name]) return $this->cache[$field_name];
+	    $info = $this->objects[$field_name];
+	    $objs = $info['class']::find_by_attrs(array($info['to'] => $this->get($info['from'])));
+	    
+	    if( !count($objs) )return null;
+	    
+	    if($info['type'] == "one-one"){
+            $this->cache[$field_name] = reset($objs);
+	    }else{
+            $this->cache[$field_name] = $objs;
+	    }
+	    return @$this->cache[$field_name];
+	}
+	
+
+	private function set_object($field_name, YZE_Model $value){
+	    if( ! @$this->cache[$field_name]) return $this->cache[$field_name] = array();
+	    
+	    $info = $this->objects[$field_name];
+	    
+	    if($info['type'] == "one-one"){
+            $this->cache[$field_name] = $value;
+	    }else{
+            $this->cache[$field_name][$value->get_key()] = $value;
+	    }
+	    
+	    return $this;
 	}
 
+	private function getFieldType($field_name){
+	    $columns = $this->get_columns();
+	    return @$columns[$field_name]['type'];
+	}
 }
 ?>

@@ -40,7 +40,6 @@ require_once YANGZIE.'/yangzie.php';
 require_once YANGZIE.'/hooks.php';//framework hook处理,hook处理程序
 require_once YANGZIE.'/file.php';
 
-require_once YANGZIE.'/validate.php';
 require_once YANGZIE.'/session.php';
 require_once YANGZIE.'/request.php';
 require_once YANGZIE.'/cache.php';
@@ -78,8 +77,6 @@ function yze_autoload($class) {
 		$file .= YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS ;
 		if(preg_match("{_controller$}i", $class)){
 			$file .= "controllers" . DS . $class_name . ".class.php";
-		}else if(preg_match("{_validate$}i", $class)){
-			$file .= "validates" . DS . $class_name . ".class.php";
 		}else if(preg_match("{_model$}i", $class)){
 			$file .= "models" . DS . $class_name . ".class.php";
 		}else{

@@ -2,7 +2,7 @@
 namespace yangzie;
 
 ?>
-<h1>服务器出现500错误</h1>
+<h1>500</h1>
 <?php 
 $exception = $this->get_data("exception");
 $request 	= YZE_Request::get_instance();

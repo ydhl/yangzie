@@ -3,30 +3,22 @@ namespace yangzie;
 
 class Generate_Controller_Script extends AbstractScript{
 	private $controller;
-	private $novalidate;
 	private $view_format;
 	private $module_name;
 	private $uri;
-	private $view_tpl;
-	private $entry_file;
-	private $model;
 	private $uri_args = array();
 
 	
 	public function generate(){
 		$argv = $this->args;
 		$this->controller		= $argv['controller'];
-		$this->novalidate		= $argv['novalidate'];
 		$this->view_format 		= $argv['view_format'];
 		$this->module_name 		= $argv['module_name'];
 		$this->uri 				= $argv['uri'];
-		$this->view_tpl 		= $argv['view_tpl'];
-		//$this->entry_file 		= $argv['entry_file'];
 
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
 
-		//$this->save_entry();
 		$this->save_class();
 		$this->save_test();
 		
@@ -129,28 +121,20 @@ use \\yangzie\\YZE_RuntimeException;
 * @package $module
 */
 class $class extends YZE_Resource_Controller {
-    public function get(){
+    //通过ajax post表单时返回的数据
+    protected \$post_result_of_json = array();
+    public function index(){
         \$request = \$this->request;
         //\$this->layout = 'tpl name';
         \$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
     }
 
-    public function post(){
-        \$request = \$this->request;
-    }
-
-    public function delete(){
-        \$request = \$this->request;
-    }
-
-    public function put(){
-        \$request = \$this->request;
-    }
-    
     public function exception(YZE_RuntimeException \$e){
         \$request = \$this->request;
+        \$this->layout = 'error';
         //get,post,put,delete处理中出现了异常，如何处理，没有任何处理将显示500页面
-        //如果想显示get的返回内容可调用 return \$this->wrapResponse(\$this->get())
+        //如果想显示get的返回内容可调用 :
+        //return \$this->wrapResponse(\$this->yourmethod())
     }
     
     public function get_response_guid(){
@@ -175,11 +159,6 @@ class $class extends YZE_Resource_Controller {
 			$this->create_view();
 			$this->create_layout();
 		}
-		
-		if(!$this->novalidate){
-			$this->create_validate();
-			$this->create_validate_test();
-		}
 	}
 	
 	
@@ -191,18 +170,6 @@ class $class extends YZE_Resource_Controller {
 		$this->create_controller($controller);
 	}
 	
-	
-	private function validate_code_segment($method){
-		$code = "";
-		if(!$this->model)return $code;
-		foreach ($this->input as $input){
-			if(stripos(@$input['data-source'], $method)===FALSE)continue;
-			$validate_name = strtolower(substr($input['validate']['name'], 0, 10)) == "validate::" ? $input['validate']['name'] : "'{$input['validate']['name']}'";
-			$code .= @"\$this->assert('{$input[name]}', {$validate_name}, '{$input[validate][regx]}', '{$input[validate][message]}');
-";
-		}
-		return $code;
-	}
 
 	protected function create_view(){
 		$module = $this->module_name;
@@ -211,7 +178,7 @@ class $class extends YZE_Resource_Controller {
 		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/views");
 		foreach ($formats as $format){
 			$view_file_path = dirname(dirname(__FILE__))
-			."/app/modules/". $module."/views/{$controller}.{$format}.php";
+			."/app/modules/". $module."/views/{$controller}-index.{$format}.php";
 			$view_file_content = "<?php
 namespace app\\$module;
 use \\yangzie\\YZE_Resource_Controller;
@@ -255,79 +222,6 @@ echo \$this->content_of_view()
 				$this->create_file($layout, $layout_file_content);
 			}
 		}
-	}
-	
-	protected function create_validate(){
-		$module 	= $this->module_name;
-		$controller = $this->controller;
-		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/validates");
-	
-		$validate_file_path = dirname(dirname(__FILE__))
-		."/app/modules/". $module."/validates/{$controller}_validate.class.php";
-
-		$validate_file_content = "<?php
-namespace app\\$module;
-use \yangzie\YZE_Resource_Controller;
-use \yangzie\YZE_Request;
-use \yangzie\YZE_Redirect;
-use \yangzie\YZE_Session_Context;
-use \yangzie\YZE_RuntimeException;
-use \yangzie\YZEValidate;
-/**
- *
- * @version \$Id\$
- * @package $module
- */
-class ".YZE_Object::format_class_name($controller, "Validate")." extends YZEValidate{
-	
-    public function init_get_validates(){
-        ".$this->validate_code_segment("get")."
-        //Written Get Validate Rules Code in Here. such as
-        //\$this->assert('params name in url', 'validate method name', '', 'error message');
-    }
-    
-    public function init_post_validates(){
-        ".$this->validate_code_segment("post")."
-        //Written Get Validate Rules Code in Here. such as
-        //\$this->assert('params name in post', 'validate method name', '', 'error message');
-    }
-    
-    public function init_put_validates(){
-        ".$this->validate_code_segment("put")."
-        //Written Get Validate Rules Code in Here. such as
-        //\$this->assert('params name in post', 'validate method name', '', 'error message');
-    }
-    
-    public function init_delete_validates(){
-        ".$this->validate_code_segment("delete")."
-        //Written Get Validate Rules Code in Here. such as
-        //\$this->assert('params name in post', 'validate method name', '', 'error message');
-    }
-}?>";
-		echo __("create validate :\t\t");
-		$this->create_file($validate_file_path, $validate_file_content);
-	}
-
-	protected function create_validate_test(){
-		$module 	= $this->module_name;
-		$controller = $this->controller;
-		$this->check_dir(dirname(dirname(__FILE__))."/tests/". $module);
-	
-		$validate_file_path = dirname(dirname(__FILE__))."/tests/". $module."/{$controller}_validate.class.phpt";
-		
-		$test_file_content = "--TEST--
-{$controller}_validate class Controller Unit Test
---FILE--
-<?php
-namespace app\\$module;
-ini_set(\"display_errors\",0);
-chdir(dirname(dirname(dirname(__FILE__))).\"/app/public_html\");
-include \"init.php\";
-//write you test code here
-?>
---EXPECT--";
-		echo __("create validate test :\t\t");
-		$this->create_file($validate_file_path, $test_file_content);
 	}
 }
 ?>

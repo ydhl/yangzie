@@ -34,7 +34,6 @@ class YZE_Auth_Failed_Exception extends YZE_RuntimeException {
  * 对于一些请求，所请求的对象不存在时的异常，这时将使用Error_Controller来处理
  * 所以是不可恢复的，由于请求的内容不存在，恢复后显示也是错的.
  *
- * 在validate中验证时，可抛出该异常
  *
  * @author liizii
  *        
@@ -77,31 +76,7 @@ class YZE_Not_Modified_Exception extends YZE_RuntimeException {
         parent::__construct ( $message, 302 );
     }
 }
-class YZE_Request_Validate_Failed extends YZE_RuntimeException {
-    public $validater;
-    /**
-     *
-     * @param unknown_type $fields
-     *            关联数组，键为表单项名，值为错误消息
-     * @param unknown_type $message            
-     * @param unknown_type $code            
-     * @param unknown_type $previous            
-     */
-    public function __construct(YZEValidate $validater) {
-        parent::__construct ( "", 500 );
-        $this->validater = $validater;
-    }
-    public function get_validater() {
-        return $this->validater;
-    }
-    
-}
 class YZE_Model_Update_Conflict_Exception extends YZE_RuntimeException {
-    public function __construct($message = null) {
-        parent::__construct ( $message, 500 );
-    }
-}
-class YZE_Form_Token_Validate_Exception extends YZE_RuntimeException {
     public function __construct($message = null) {
         parent::__construct ( $message, 500 );
     }

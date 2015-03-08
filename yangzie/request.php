@@ -14,6 +14,7 @@ namespace yangzie;
  */
 class YZE_Request extends YZE_Object {
     private $method;
+    private $request_method;
     private $vars;
     private $post = array ();
     private $get = array ();
@@ -219,20 +220,18 @@ class YZE_Request extends YZE_Object {
      *
      * @param string $uri            
      * @param string $method
-     *            该请求的方式
+     *            该请求的方法
      * @param string $format
      *            请求返回的格式, 如果uri中没有明确指定格式，则返回该格式
      * @return YZE_Request
      */
-    public function init($newUri = null, $method = null, $format = null) {
+    public function init($newUri = null, $action = null, $format = null, $request_method=null) {
         if (count ( self::$instances ) == 0)
             $this->is_top_request = true;
         
         self::$instances [] = $this;
         $this->_init ( $newUri );
-        
-        $request_method = $method ? $method : self::the_val ( $this->get_from_post ( "yze_method" ), strtolower ( $_SERVER ['REQUEST_METHOD'] ) );
-        $this->set_method ( $request_method );
+
         
         $uri = $this->the_uri ();
         if ($newUri) {
@@ -270,8 +269,17 @@ class YZE_Request extends YZE_Object {
             throw new YZE_Resource_Not_Found_Exception ( "Controller $controller_cls Not Found" );
         }
         
-        if (! method_exists ( $controller, $request_method ) /*&& $request_method != "rpc"*/) {
-            throw new YZE_Resource_Not_Found_Exception ( $controller_cls . "::" . $request_method );
+        if($request_method){
+            $this->request_method = $request_method;
+        }else{
+            $this->request_method = $_SERVER['REQUEST_METHOD'];
+        }
+
+        $method = ($this->is_get() ? "" : "post_") . self::the_val($action ? $action : $this->get_var("action"), "index");
+        $this->set_method ( $method );
+
+        if (! method_exists ( $controller, $method )) {
+            throw new YZE_Resource_Not_Found_Exception ( $controller_cls . "::" . $method . " not found" );
         }
         
         if (! $this->is_get () and $this->the_post_datas ()) {
@@ -288,10 +296,10 @@ class YZE_Request extends YZE_Object {
         return $this->method;
     }
     public function is_post() {
-        return strcasecmp ( $this->the_method (), "post" ) === 0;
+        return ! $this->is_get();
     }
     public function is_get() {
-        return strcasecmp ( $this->the_method (), "get" ) === 0;
+        return strcasecmp ( $this->request_method, "get" ) === 0;
     }
     
     /**
@@ -329,24 +337,6 @@ class YZE_Request extends YZE_Object {
         return $this;
     }
     
-    /**
-     * 如果uri指定有验证，则对请求数据进行验证，验证失败抛出YZE_Request_Validate_Failed异常
-     */
-    public function validate() {
-        $request_method = $this->the_method ();
-        
-        $validate_cls = self::format_class_name ( $this->controller_name (), "Validate" );
-        
-        if (! class_exists ( "$validate_cls" ))
-            return $this;
-        
-        $validate = new $validate_cls ( $this );
-        $validate_method = "init_{$request_method}_validates";
-        $validate->$validate_method ();
-        $validate->do_validate ( $request_method );
-        
-        return $this;
-    }
     public function check_request(YZE_HttpCache $cache) {
         if (! $cache)
             return;
@@ -540,8 +530,11 @@ class YZE_Request extends YZE_Object {
         if (($cache_html = $controller->has_response_cache ())) {
             return new YZE_Notpl_View ( $cache_html, $controller );
         } else {
-            $method = "do_" . $this->the_method ();
-            return $controller->$method ();
+            if ($this->is_get()){
+                return $controller->do_Get();
+            }else{
+                return $controller->do_Post();
+            }
         }
     }
     private function set_controller_name($controller) {

@@ -58,7 +58,7 @@ function yze_load_app() {
  * @param bool $return true则return，false直接输出
  * @return string
  */
-function yze_go($uri = null, $method = null, $return = null) {
+function yze_go($uri = null, $method = null, $return = null, $request_method=null) {
 
     $output_view = function($request, $controller, $response, $return) {
         $layout = new YZE_Layout($controller->get_layout(), $response, $controller);
@@ -101,7 +101,7 @@ function yze_go($uri = null, $method = null, $return = null) {
         if ( $request->has_request() ){
             $request = $request->copy();
         }
-        $request->init ( $uri, $method, $format ); // 初始化请求上下文环境,请求入栈
+        $request->init ( $uri, $method, $format , $request_method); // 初始化请求上下文环境,请求入栈
         
         $controller = $request->controller ();
         
@@ -110,10 +110,10 @@ function yze_go($uri = null, $method = null, $return = null) {
             $session->copy ( get_class ( $oldController ), get_class ( $controller ) );
         }
         
-        $action = "YZE_ACTION_BEFORE_" . strtoupper ( $request->the_method () );
+        $action = "YZE_ACTION_BEFORE_" .  ( $request->is_get() ? "GET" : "POST");
         \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
-        
-        $request->auth ()->validate ();
+
+        $request->auth ();
         $dba->beginTransaction();
 		
         $response = $request->dispatch();
@@ -128,7 +128,7 @@ function yze_go($uri = null, $method = null, $return = null) {
         //header output
         return $output_header($request, $controller, $response, $return);
     }catch(\Exception $e){
-        
+        $controller = $request->controller ();
         //嵌套调用的，把异常往外层抛
         //是请求的控制器自己处理异常好，还是把异常一直抛出到顶级请求来处理好？
         if( ! $request->is_top_request() ) {
@@ -141,22 +141,18 @@ function yze_go($uri = null, $method = null, $return = null) {
             if( ! @$controller){
                 $controller = new YZE_Exception_Controller();
             }
-            //验证出现异常的，先保存现场；便于后面恢复
-            if(is_a($e, "\\yangzie\\YZE_Request_Validate_Failed")){
-                $session->save_controller_validates(get_class($controller), $e->get_validater()->get_result());
-            }
 
             $session->save_controller_exception(get_class($controller), $e);
             if($request->is_get()){
                 $response = $controller->do_exception($e);
-            }else{
+            }else{                
                 $response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
             }
-           
+
             $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
             $response = $filter_data['response'];
             
-
+           
             // content output
             if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
                 return $output_view($request, $controller, $response, $return);

@@ -98,15 +98,15 @@ class YZE_Redirect implements YZE_IResponse {
         if (@$this->url_components ['host'] && $this->url_components ['host'] != $_SERVER ['HTTP_HOST']) {
             $this->outgoing = true;//访问外部网站
         }
-		
+        
         if( ! $this->outgoing){
-            
             $request = YZE_Request::get_instance();
             $request = $request->copy();
-            $request->init ($destination_uri);
+            $request->init ($destination_uri,null,null,"get");
             $this->destinationController = $request->controller();
             $request->remove();;
         }
+        
     }
 	
     public function output($return=false){
@@ -230,7 +230,12 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function get_datas(){
 	   return  $this->data;
 	}
-
+	public function set_data($key, $data){
+	    $this->data[$key] = $data;
+	}
+	public function set_datas(array $datas){
+	    $this->data = $datas;
+	}
 	public function set_cache_config(YZE_HttpCache $cache=null){
 		$this->cache_ctl = $cache;
 	}
@@ -439,7 +444,7 @@ class YZE_Layout extends YZE_View_Adapter{
 	}
 	
 	public function content_of_section($section){
-		return $this->content_of_section[$section];
+		return @$this->content_of_section[$section];
 	}
 	
 	public function content_of_view(){

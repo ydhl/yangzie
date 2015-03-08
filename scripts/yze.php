@@ -1,7 +1,7 @@
 <?php
 namespace yangzie;
 
-global $language;
+global $language, $db;
 $language = "zh-cn";
 
 if(!preg_match("/cli/i",php_sapi_name())){
@@ -46,7 +46,7 @@ function display_home_wizard(){
   
 伙计，你想要生成什么？
 	
-\t1.  生成代码：\t\tcontroller，view，validate文件
+\t1.  生成代码：\t\tcontroller，view文件
 \t2.  生成Model：\t\t根据表生成Model文件
 			
 \t3.  删除module：\t\t删除模块
@@ -216,12 +216,10 @@ function display_delete_controller_wizard(){
 		echo wrap_output(__("控制器不存在"));
 	}else{
 		unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}_controller.class.php");
-		@unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/validates/{$controller}_validate.class.php");
 		foreach (glob(dirname(dirname(__FILE__))."/app/modules/{$module}/views/{$controller}.*") as $file){
 			unlink($file);
 		}
 		unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}_controller.class.phpt");
-		@unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}_validate.class.phpt");
 		echo wrap_output(__("控制器及视图、验证器、单元测试文件删除成功"));
 	}
 
@@ -294,35 +292,15 @@ function display_mvc_wizard(){
 	echo wrap_output(__("4. (4/8)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  "));
 	$view_format = get_input();
 	
-	echo wrap_output(__("5. (5/8)是否生成验证器(yn),默认为y:  "));
-	$need_validate = get_input();
-	$need_validate = $need_validate ? $need_validate : "y";
-	
-	if($view_format || $need_validate){
-		if($view_format && $need_validate){
-			echo wrap_output(__("6. (6/8)验证器、视图使用的Model:  "));
-		}else if($view_format){
-			echo wrap_output(__("6. (6/8)视图使用的Model:  "));
-		}else if($need_validate){
-			echo wrap_output(__("6. (5/8)验证器使用的Model:  "));
-		}
-		$model = get_input();
-	}
-	
-	if($view_format){
-		echo wrap_output(__("7. (7/8)视图样板组件名:  "));
-		$view_tpl = get_input();
-	}
 	return @array(
 		"cmd" => "controller",
 		"controller"=>$controller,
-		"model"=>$model,
-		"novalidate"=>strtolower($need_validate)!="y",
-		"view_format"=>$view_format ,
-		"module_name"=>$module,
-		"uri"=>$uri,
-		"view_tpl"=>$view_tpl,
-		"controller"=>$controller,
+        "uri"=>$uri,
+        "module_name"=>$module,
+        "view_format"=>$view_format ,
+	        
+// 		"model"=>$model,
+// 		"view_tpl"=>$view_tpl
 	);
 }
 
@@ -338,6 +316,7 @@ function is_controller_exists($controller, $module){
 }
 
 function display_model_wizard(){
+    global $db;
 	clear_terminal();
 	echo wrap_output(vsprintf(__( "
 ================================================================
@@ -348,7 +327,7 @@ function display_model_wizard(){
 你将生成Model代码结构，请根据提示进操作，%s返回上一步：
 1. (1/4)表名: "), get_colored_text(" CTRL+B ", "red", "white")));
 	while (!is_validate_table(($table=get_input()))){
-		echo get_colored_text(wrap_output(vsprintf(__("\t表不存在(%s)，请重输:  "), mysql_error())), "red");
+		echo get_colored_text(wrap_output(vsprintf(__("\t表不存在(%s)，请重输:  "), mysqli_error($db))), "red");
 	}
 
 	echo wrap_output(__("2. (2/4)Model类名:  "));
@@ -359,17 +338,10 @@ function display_model_wizard(){
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t功能模块名,  请重输:  ")), "red");
 	}
-
-
-	echo wrap_output(__("4. (4/4)同步方向(model: 基于model ;  table: 基于table), 默认table:  "));
-	while (!in_array(($base = get_input()), array("","model","table"))){
-		echo get_colored_text(wrap_output(__("\t请输入model 或 table:  ")), "red");
-		$base = !$base ? "table" : $base;
-	}
 	
 	return array(
 			"cmd" => "model",
-			"base"=>$base,
+			"base"=>"table",
 			"module_name"=>$module,
 			"class_name"=>$model,
 			"table_name"=>$table,
@@ -450,14 +422,15 @@ function is_validate_name($input){
 }
 
 function is_validate_table($table){
+    global $db;
 	$app_module = new \app\App_Module();
-	$db = mysql_connect(
+	$db = mysqli_connect(
 			$app_module->get_module_config("db_host"),
 			$app_module->get_module_config("db_user"),
 			$app_module->get_module_config("db_psw")
 	);
-	mysql_select_db($app_module->get_module_config("db_name"),$db);
-	return mysql_query("show full columns from $table",$db);
+	mysqli_select_db($db, $app_module->get_module_config("db_name"));
+	return mysqli_query($db, "show full columns from $table");
 }
 
 

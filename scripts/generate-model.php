@@ -37,32 +37,26 @@ class Generate_Model_Script extends AbstractScript{
 		$package=$this->module_name;
 		
 		$app_module = new \app\App_Module();
-		$db = mysql_connect(
+		$db = mysqli_connect(
 			$app_module->get_module_config("db_host"),
 			$app_module->get_module_config("db_user"),
 			$app_module->get_module_config("db_psw")
 		);
-		mysql_select_db($app_module->get_module_config("db_name"),$db);
-		mysql_query("set names utf8",$db);
-		$result = mysql_query("show full columns from $table",$db);
+		mysqli_select_db($db, $app_module->get_module_config("db_name"));
+		mysqli_query($db, "set names utf8");
+		$result = mysqli_query($db, "show full columns from $table");
 		
 		if (!$result) {
-			die($table . mysql_error($db)."\r\n");
+			die($table . mysqli_error($db)."\r\n");
 		}
 		$constant = array();
-		while ($row=mysql_fetch_assoc($result)) {
+		while ($row=mysqli_fetch_assoc($result)) {
 			$row['Key']=="PRI" ? $key = $row['Field'] : null;
 			$type_info = $this->get_type_info($row['Type']);
 			$constant = array_merge((array)$constant,(array)$this->getEnumConstant($row['Type']));
 			
-			@$fielddefine .= "
-	'".$row['Field']."'=>array(
-		'type'		=> '".$type_info['type']."',
-		'null'		=> ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",
-		'length'	=> '".$type_info['length']."',
-		'default'	=> '".$row['Default']."',
-		'comment'	=> '".$row['Comment']."'
-	),";
+			@$fielddefine .= "       ".str_pad("'".$row['Field']."'", 12," ")." => array('type' => '".$type_info['type']."', 'null' => ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",'length' => '".$type_info['length']."','default'	=> '".$row['Default']."',),
+";
 			
 		}
 		
@@ -86,11 +80,16 @@ use \yangzie\YZE_DBAImpl;
  */
 class $class extends YZE_Model{
 	$constantdefine
-	protected \$table= \"$table\";
-	protected \$version = 'modified_on';
-	protected \$module_name = \"$package\";
-	protected \$key_name = \"$key\";
-	protected \$columns = array($fielddefine);
+	const TABLE= \"$table\";
+	const VERSION = 'modified_on';
+	const MODULE_NAME = \"$package\";
+	const KEY_NAME = \"$key\";
+	protected \$columns = array(
+$fielddefine
+    );
+    //array('attr'=>array('from'=>'id','to'=>'id','class'=>'','type'=>'one-one||one-many') )
+	//\$this->attr
+	protected \$objects = array();
 
 }?>";
 		return $code;

@@ -1,18 +1,25 @@
-<?php  namespace yangzie;
+<?php  
+namespace yangzie;
+
 ?>
 <!DOCTYPE html>
-<html lang="en">
 <head>
 <meta charset="utf-8">
-<title><?php echo $this->get_data("yze_page_title")?></title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="">
-<meta name="author" content="">
-</head>
+<title><?php echo $this->get_data("yze_page_title")?> － Yangzie Demo</title>
 
+<?php //load js?>
+<link rel="stylesheet" type="text/css" href="/bootstrap3/css/bootstrap-theme.min.css" />
+<link rel="stylesheet" type="text/css" href="/bootstrap3/css/bootstrap.min.css" />
+
+<?php //load css?>
+<script type="text/javascript" src="/js/jquery-1.11.2.min.js"></script>
+<script type="text/javascript" src="/bootstrap3/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/yze_ajax_front_controller.js"></script>
+
+</head>
 <body>
-<?php echo $this->content_of_section("test section");?>
-<hr/>
-<?php echo $this->content_of_view();?>
+    <div class="container">
+        <?php echo $this->content_of_view();?>
+    </div>
 </body>
 </html>

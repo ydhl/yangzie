@@ -8,13 +8,12 @@ class YZE_Form extends YZE_Object {
     private $method = "post";
     private $acl;
     private $view;
-    private $is_delete_form;
-    public function __construct(YZE_View_Adapter $view, $form_name, YZE_Model $model = null, $is_delete = false) {
+    
+    public function __construct(YZE_View_Adapter $view, $form_name, YZE_Model $model = null) {
         $this->form_name = $form_name;
         $this->model = $model;
         $this->view = $view;
         $this->acl = YZE_ACL::get_instance ();
-        $this->is_delete_form = $is_delete;
     }
     public function begin_form(array $attrs = array(), $is_upload_form = false) {
         ob_start ();
@@ -29,8 +28,7 @@ class YZE_Form extends YZE_Object {
             $modify = "<input type='hidden' name='yze_modify_version' value='" . $model->get_version_value () . "'/>
 					<input type='hidden' name='yze_model_id' value='" . $model->get_key () . "'/>
 					<input type='hidden' name='yze_model_name' value='" . get_class ( $model ) . "'/>
-					<input type='hidden' name='yze_module_name' value='" . $model->get_module_name () . "'/>
-					<input type='hidden' name='yze_method' value='" . ($this->is_delete_form ? "delete" : "put") . "'/>";
+					<input type='hidden' name='yze_module_name' value='" . $model->get_module_name () . "'/>";
         }
         echo "<form name='$name' method='{$this->method}' $html " . ($is_upload_form ? 'enctype="multipart/form-data"' : '') . ">
 		<input type='hidden' name='yze_request_token' value='{$token}'/>
@@ -116,26 +114,10 @@ function yze_controller_error($begin_tag = null, $end_tag = null) {
     $controller = YZE_Request::get_instance ()->controller ();
     
     if (($exception = $session->get_controller_exception ( get_class ( $controller ) ))) {
-        if(is_a($exception, "\\yangzie\\YZE_Request_Validate_Failed")){
-            $err = "";
-            foreach ($exception->get_validater()->get_result() as $msg){
-                $err .= $begin_tag . $msg . $end_tag;
-            }
-            return $err;
-        }
-        
         return $begin_tag . $exception->getMessage() . $end_tag;
     }
 }
 
-/**
- * 取得表单字段的验证错误消息
- */
-function yze_form_field_error(YZE_Resource_Controller $controller,  $field_name) {
-    $datas = YZE_Session_Context::get_instance ()->get_controller_validates ( get_class ( $controller ) );
-
-    return @ $datas [$field_name];
-}
 
 /**
  * 把传入的文件压缩成一个文件后返回该文件的uri，比如把所有的css文件压缩成一个；

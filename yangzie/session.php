@@ -127,32 +127,6 @@ class YZE_Session_Context {
             unset ( $_SESSION ['yze'] ['exception'] [$controller_name] );
     }
     
-    /**
-     * 保存控制器处理过程中的验证错误
-     *
-     * @param YZE_Resource_Controller $controller            
-     * @param Exception $exception            
-     */
-    public function save_controller_validates($controller_name, $datas) {
-        $_SESSION ['yze'] ['validates'] [$controller_name] = $datas;
-        return $this;
-    }
-    
-    /**
-     * 取得控制器的验证错误
-     *
-     * @param
-     *            $controller_name
-     * @return Exception
-     */
-    public function get_controller_validates($controller_name) {
-        return @$_SESSION ['yze'] ['validates'] [$controller_name];
-    }
-    public function clear_controller_validates($controller_name){
-		if (@$_SESSION['yze']['validates'][$controller_name])
-			unset($_SESSION['yze']['validates'][$controller_name]);
-	}
-
 
 	/**
 	 * 保存controller的数据

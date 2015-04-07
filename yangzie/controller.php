@@ -179,7 +179,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         $method = $request->the_method ();
         // 防止表单重复提交
-        $this->_check_request_token ( $request->get_from_post ( 'yze_request_token' ) );
+        $this->check_request_token ();
         $response = $this->$method ();
         
         // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
@@ -281,9 +281,11 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     public function exception(YZE_RuntimeException $e) {
     }
     
-    private function _check_request_token($post_request_token) {
-        $session = YZE_Session_Context::get_instance ();
+    protected function check_request_token() {
         $request = $this->request;
+        $post_request_token = $request->get_from_post ( 'yze_request_token' );
+        $session = YZE_Session_Context::get_instance ();
+       
         $saved_token = $session->get_request_token ( get_class ( $this ) );
         if( ! $saved_token)return;
         if( $request->the_referer_uri(true) != $request->the_uri()) return;

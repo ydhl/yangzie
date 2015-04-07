@@ -100,11 +100,13 @@ class YZE_Redirect implements YZE_IResponse {
         }
         
         if( ! $this->outgoing){
+        		try{
             $request = YZE_Request::get_instance();
             $request = $request->copy();
             $request->init ($destination_uri,null,null,"get");
             $this->destinationController = $request->controller();
-            $request->remove();;
+            $request->remove();
+            }catch(\Exception $e){}
         }
         
     }
@@ -118,7 +120,7 @@ class YZE_Redirect implements YZE_IResponse {
             return $this->destinationURI;
         }
 		
-        if ($this->datas) {
+        if ($this->datas && $this->destinationController) {
             YZE_Session_Context::get_instance()->save_controller_datas(get_class($this->destinationController), $this->datas);
         }
 		

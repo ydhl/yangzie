@@ -40,7 +40,10 @@ class YZE_DBAImpl extends YZE_Object
 		}
 		return self::$me;
 	}
-
+	
+	public function quote($value){
+	    return $this->conn->quote($value);
+	}
 
 	public function find_by(array $ids, $class)
 	{
@@ -319,7 +322,7 @@ class YZE_PDOStatementWrapper extends YZE_Object{
             if (is_null($field_value)) {
                 continue ;
             }
-            $entity->set( $field_name , self::filter_var($field_value));#数据库取出来编码
+            $entity->set( $field_name , $field_value);#数据库取出来编码
         }
 	    return $entity;
 	}

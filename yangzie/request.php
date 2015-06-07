@@ -283,10 +283,24 @@ class YZE_Request extends YZE_Object {
         }
         
         if (! $this->is_get () and $this->the_post_datas ()) {
-            YZE_Session_Context::get_instance ()->save_post_datas ( get_class ( $this->controller () ), $this->the_post_datas () );
+            $model = $this->get_modify_model();
+            
+            YZE_Session_Context::get_instance ()->save_post_datas ( 
+                get_class ( $this->controller () ), 
+                $this->the_post_datas (), 
+                $model);
         }
         
         return $this;
+    }
+    
+    public function get_modify_model(){
+        $class = $this->get_from_post("yze_model_name");
+        if( ! class_exists($class))return null;
+        
+        $key   = $this->get_from_post("yze_model_id");
+        if( ! $key)return null;
+        return YZE_Model::find($key, $class);
     }
     
     /**

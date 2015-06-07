@@ -265,7 +265,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         // clean post cache data
         // 成功处理，清除保存的post数据
         if( ! $session->get_controller_exception ( $controller_name ) ){ 
-            $session->clear_post_datas ( get_class ( $this ) );
+            $session->clear_post_datas ( get_class ( $this ) , $request->get_modify_model());
         }
         $session->clear_request_token_ext ( get_class ( $this ) );
     }

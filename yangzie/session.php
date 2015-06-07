@@ -70,21 +70,30 @@ class YZE_Session_Context {
      * @author liizii
      * @since 2009-12-10
      */
-    public function save_post_datas($controller_name, array $post) {
-        $_SESSION ['yze'] ['post_cache'] [$controller_name] = $post;
+    public function save_post_datas($controller_name, array $post, YZE_Model $model=null) {
+        if($model){
+            $_SESSION ['yze'] ['post_cache'] [$controller_name][get_class($model).$model->get_key()] = $post;
+        }else{
+            $_SESSION ['yze'] ['post_cache'] [$controller_name]['default'] = $post;
+        }
     }
     /**
      * 取得缓存的post提交的数据
      *
-     * @param
-     *            $controller_name
+     * @param $controller_name
+     * @param $model 如果传入则只返回该model的缓存，否则返回全部
+     * 
      * @return array filter_special_chars过滤后的数据
      *        
      * @author liizii
      * @since 2009-12-10
      */
-    public function get_post_datas($controller_name) {
-        return @$_SESSION ['yze'] ['post_cache'] [$controller_name];
+    public function get_post_datas($controller_name, YZE_Model $model=null) {
+        if($model){
+            return @$_SESSION ['yze'] ['post_cache'] [$controller_name][get_class($model).$model->get_key()];
+        }else{
+            return @$_SESSION ['yze'] ['post_cache'] [$controller_name];
+        }
     }
     /**
      * 清空post提交的数据
@@ -95,9 +104,14 @@ class YZE_Session_Context {
      * @author liizii
      * @since 2009-12-10
      */
-    public function clear_post_datas($controller_name) {
-        if (@$_SESSION ['yze'] ['post_cache'] [$controller_name])
-            unset ( $_SESSION ['yze'] ['post_cache'] [$controller_name] );
+    public function clear_post_datas($controller_name, YZE_Model $model=null) {
+        if (@$_SESSION ['yze'] ['post_cache'] [$controller_name]){
+            if($model){
+                unset ( $_SESSION ['yze'] ['post_cache'] [$controller_name][get_class($model).$model->get_key()] );
+            }else{
+                unset ( $_SESSION ['yze'] ['post_cache'] [$controller_name] );
+            }
+        }
     }
     
     /**
@@ -174,24 +188,27 @@ class YZE_Session_Context {
 		}
 	}
 	
-	public static function get_cached_post($name,$controller_name=null)
+	public static function get_cached_post($name,$controller_name=null, YZE_Model $model=null)
 	{
 		if (empty($controller_name)) {
 			$controller_name = get_class(YZE_Request::get_instance()->controller());
 		}
 		$dates = YZE_Session_Context::get_instance()->get_post_datas($controller_name);
-		return @$dates[$name];
-	}
-
-	public static function post_cache_has($name, $controller_name=null)
-	{
-		if (empty($controller_name)) {
-			$controller_name = get_class(YZE_Request::get_instance()->controller());
+		
+		if ($model){
+		    return @$dates[get_class($model).$model->get_key()][$name];
+		}else{
+		    return @$dates['default'][$name];
 		}
-		return YZE_Session_Context::get_instance()->get_cached_post($name);
+		
 	}
 
-	public static function post_cache_has_ext($controller_name=null)
+	public static function post_cache_has($name, $controller_name=null, YZE_Model $model=null)
+	{
+		return self::get_cached_post($name, $controller_name, $model);
+	}
+
+	public static function post_cache_has_ext($controller_name=null, YZE_Model $model=null)
 	{
 		if (empty($controller_name)) {
 			$controller_name = get_class(YZE_Request::get_instance()->controller());

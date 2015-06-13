@@ -17,6 +17,7 @@ class YZE_SQL extends YZE_Object{
 	const ISNOTNULL	= "is not null";
 	const NOTIN 	= "not in";
 	const IN 		= "in";
+	const FIND_IN_SET   = "FIND_IN_SET";
 	const BETWEEN 	= "between";
 	const LIKE 		= "like";
 	const BEFORE_LIKE 	= "like before";
@@ -113,11 +114,12 @@ class YZE_SQL extends YZE_Object{
 	 * @param unknown_type $value
 	 * @return YZE_SQL
 	 */
-	public function where($table_alias,$column,$op,$value=null){
+	public function where($table_alias,$column,$op,$value=null, $is_column = false){
 		$this->where[] = array(
 			"alias"	=> $table_alias,
 			"field"	=> $column,
 			"op"	=> $op,
+	        "is_column"	=> $is_column,
 			"value"	=> $value,
 			"andor"	=> "AND",
 		);
@@ -135,6 +137,7 @@ class YZE_SQL extends YZE_Object{
 			"alias"	=> $table_alias,
 			"field"	=> $column,
 			"op"	=> $op,
+	        "is_column"	=> $is_column,
 			"value"	=> $value,
 			"andor"	=> "OR",
 		);
@@ -419,6 +422,10 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public static function new_SQL(){
 		return new YZE_SQL();
+	}
+	
+	public function clean_where(){
+	    $this->where	= array();
 	}
 	
 	/**
@@ -755,17 +762,19 @@ class YZE_SQL extends YZE_Object{
 					$cond = " NOT IN (".$wheres['value']->__toString().")";break;
 				case self::IN:		
 					$cond = " IN (".$wheres['value']->__toString().")";break;
+				case self::EQ:
+				    $cond = " = (".$wheres['value']->__toString().")";break;
 				case self::BETWEEN:
 				default:				$cond = " IS NOT NULL";break;
 			}
 			return $column.$cond;
 		}
-		$quoted_value = $this->_quoteValue($wheres['value']);
+		$quoted_value = $wheres['is_column'] ? "`".$wheres['value']."`" : $this->_quoteValue($wheres['value']);
 		switch($wheres['op']){
 			case self::LIKE:		$cond = " LIKE '%".@mysql_escape_string(self::defilter_var($wheres['value']))."%'";break;
 			case self::BEFORE_LIKE:	$cond = " LIKE '%".@mysql_escape_string(self::defilter_var($wheres['value']))."'";break;
 			case self::END_LIKE:	$cond = " LIKE '".@mysql_escape_string(self::defilter_var($wheres['value']))."%'";break;
-			
+			case self::FIND_IN_SET: return $cond = " FIND_IN_SET (".$quoted_value.", $column)";
 			case self::EQ:			$cond = " = ".$quoted_value;break;
 			case self::NOTIN:		$cond = " NOT IN (".($quoted_value ? join(",",(array)$quoted_value) : 'NULL').")";break;
 			case self::IN:			$cond = " IN (".($quoted_value ? join(",",(array)$quoted_value) : 'NULL').")";break;

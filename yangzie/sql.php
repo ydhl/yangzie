@@ -125,6 +125,12 @@ class YZE_SQL extends YZE_Object{
 		);
 		return $this;
 	}
+	public function nativeWhere($where){
+			$this->where[] = array(
+			"native"	=> $where
+		);
+		return $this;
+	}
 	/**
 	 * 构建OR where条件段，e.g. or_where('item','part_no',YZE_SQL::LIKE,'%Good%')
 	 * @param unknown_type $table
@@ -535,6 +541,10 @@ class YZE_SQL extends YZE_Object{
 		$where = "";
 		$last_and_or = null;
 		foreach((array)$this->where as $wheres){
+			if( @$wheres['native']){
+				$where .= $wheres['native'];		
+				continue;	
+			}
 			if(@$not_first){#第一个where前不需要and or
 				$where .= " ".$last_and_or." ".$this->_buildWhere($wheres);
 			}else{

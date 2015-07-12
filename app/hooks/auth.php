@@ -21,4 +21,12 @@ YZE_Hook::add_hook(YZE_ACTION_CHECK_USER_HAS_LOGIN, function ($datas){
 	//这里判断用户是否登录，未登录抛出YZE_Need_Signin_Exception异常
 	throw new YZE_Need_Signin_Exception();
 });
+
+YZE_Hook::add_hook ( YZE_HOOK_GET_LOGIN_USER, function ($datas) {
+    return $_SESSION['loginuser'];
+} );
+
+YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function ($data) {
+    $_SESSION['loginuser'] = $data;
+} );
 ?>

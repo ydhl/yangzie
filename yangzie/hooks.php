@@ -53,6 +53,16 @@ define ( 'YZE_FILTER_GET_USER_ARO_NAME', 'yze_filter_get_user_aro_name' );
  * uri过滤，传入uri分离后的数据或者就是uri字符串本身
  */
 define ( 'YZE_HOOK_FILTER_URI', 'filter_uri' );
+/**
+ * 取得登录的用户，由YZE_HOOK_SET_LOGIN_USER设置
+ * @var unknown
+ */
+define ( 'YZE_HOOK_GET_LOGIN_USER', 'YZE_HOOK_GET_LOGIN_USER' );
+/**
+ * 设置登录的用户，比如设置在回话中，参数是用户信息
+ * @var unknown
+ */
+define ( 'YZE_HOOK_SET_LOGIN_USER', 'YZE_HOOK_SET_LOGIN_USER' );
 final class YZE_Hook {
     private static $listeners = array ();
     /**

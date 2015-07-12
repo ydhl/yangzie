@@ -343,11 +343,28 @@ class YZE_JSON_View extends YZE_View_Adapter {
 	 * @param number $errorcode
 	 * @param string $msg
 	 */
-	public function __construct(YZE_Resource_Controller $controller, $data, $data_type="data", $success=true, $errorcode=0, $msg=""){
-		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, "data_type"=>"data"), $controller);
+	public function __construct(YZE_Resource_Controller $controller, $data){
+		parent::__construct($data,$controller);
 	}
 	protected function display_self(){
 		echo json_encode($this->data);
+	}
+
+
+	public static function error($controller, $message =null, $code =null) {
+	    return new YZE_JSON_View($controller,  array (
+	            'success' => false,
+	            "data" => null,
+	            "code" => $code,
+	            "msg" => $message
+	    ) );
+	}
+	public static function success($controller, $data = null) {
+	    return new YZE_JSON_View($controller,  array (
+	            'success' => true,
+	            "data" => $data,
+	            "msg" => null
+	    ) );
 	}
 }
 /**
@@ -367,8 +384,8 @@ class YZE_XML_View extends YZE_View_Adapter {
 	 * @param number $errorcode
 	 * @param string $msg
 	 */
-	public function __construct(YZE_Resource_Controller $controller, $data, $data_type="data", $success=true, $errorcode=0, $msg=""){
-		parent::__construct(array('success'=>$success, 'errorcode'=>$errorcode, 'msg'=>$msg, 'data'=>$data, "data_type"=>"data" ), $controller);
+	public function __construct(YZE_Resource_Controller $controller, $data){
+		parent::__construct($data, $controller);
 	}
 	protected function display_self(){
 		$xml = new SimpleXMLElement("<?xml version=\"1.0\"?><root></root>");
@@ -393,6 +410,22 @@ class YZE_XML_View extends YZE_View_Adapter {
 				$xml->addChild("$key","$value");
 			}
 		}
+	}
+	
+	public static function error($controller, $message =null, $code =null) {
+	    return new YZE_XML_View($controller, array (
+	            'success' => false,
+	            "data" => null,
+	            "code" => $code,
+	            "msg" => $message
+	    ) );
+	}
+	public static function success($controller, $data = null) {
+	    return new YZE_XML_View($controller, array (
+	            'success' => true,
+	            "data" => $data,
+	            "msg" => null
+	    ) );
 	}
 }
 

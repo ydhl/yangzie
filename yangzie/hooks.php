@@ -97,7 +97,7 @@ final class YZE_Hook {
         foreach(glob($dir."/*") as $file){
             if (is_dir($file)) {
                 self::include_hooks($file);
-            }else{
+            }else if(is_file($file)){
                 require_once $file;
             }
         }

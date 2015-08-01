@@ -145,7 +145,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         // 该请求有异常
         if (($exception = $session->get_controller_exception ( get_class ( $this ) ))) {
-            return $this->do_exception ( $exception );
+            return $this->do_exception ( is_a($exception, "YZE_RuntimeException") ? $exception : new YZE_RuntimeException($exception->getMessage()) );
         }
         
         $method = $request->the_method ();

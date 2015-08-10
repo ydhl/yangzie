@@ -335,14 +335,12 @@ class YZE_Request extends YZE_Object {
                     'user' => null 
             ) );
             
-            $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME, array (
-                    "aro" => "/" 
-            ) );
+            $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME);
             
             // 验证请求的方法是否有权限调用
             $acl = YZE_ACL::get_instance ();
             $aco_name = "/" . $this->module () . "/" . $this->controller_name ( true ) . "/" . $req_method;
-            if (! $acl->check_byname ( $aro ['aro'], $aco_name )) {
+            if (! $acl->check_byname ( $aro, $aco_name )) {
                 throw new YZE_Permission_Deny_Exception ( vsprintf ( __ ( "没有访问该页面的权限" ), array (
                         \app\yze_get_aco_desc ( $aco_name ) 
                 ) ) );

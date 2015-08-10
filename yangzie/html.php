@@ -38,10 +38,7 @@ class YZE_Form extends YZE_Object {
         echo '</form>';
         $form = ob_get_clean ();
         
-        $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME, array (
-                "aro" => "/" 
-        ) );
-        $aroname = $aro ['aro'];
+        $aroname = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME );
         
         if ($this->acl->check_byname ( $aroname, $this->form_name )) {
             echo $form;

@@ -42,7 +42,7 @@ define ( 'YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token' )
  */
 define ( 'YZE_FILTER_YZE_EXCEPTION', 'yze_filter_yze_exception' );
 /**
- * 获取aro，回调的参数格式是：array('aro'=>'/');
+ * 获取aro，回调的参数格式是：'/';
  * 
  * @var unknown
  */

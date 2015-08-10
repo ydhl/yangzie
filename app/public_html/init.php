@@ -34,7 +34,7 @@ define('YZE_REWRITE_MODE_NONE', 'yze_rewrite_mode_none');
 define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_REWRITE);
 define("YZE_DEVELOP_MODE",  true );
 
-ini_set('include_path', get_include_path().PS."../..");
+ini_set('include_path', get_include_path().PS.dirname(dirname(dirname(__FILE__))));
 
 require_once YANGZIE.'/yangzie.php';
 require_once YANGZIE.'/hooks.php';//framework hook处理,hook处理程序

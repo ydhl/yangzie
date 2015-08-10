@@ -443,6 +443,7 @@ class YZE_XML_View extends YZE_View_Adapter {
  *
  */
 class YZE_Layout extends YZE_View_Adapter{
+  
 	private $view;
 	private $layout;
 	private $content_of_view;
@@ -453,17 +454,6 @@ class YZE_Layout extends YZE_View_Adapter{
 		$this->layout 	= $layout;
 	}
     
-    public function check_layout(){
-        if( ! file_exists(YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php")){
-            //if format not exist then use tpl
-            if($this->layout == "tpl"){
-                throw new YZE_Resource_Not_Found_Exception(" layout {$this->layout}.{$this->format}.layout.php not found");
-            }else{
-                $this->layout = "tpl";
-                $this->check_view();
-            }
-        }
-    }
 
 	protected function display_self(){
 		ob_start();
@@ -471,19 +461,31 @@ class YZE_Layout extends YZE_View_Adapter{
 		$this->content_of_section = $this->view->view_sections();
 		$this->content_of_view = ob_get_clean();
 		if ($this->layout){
-            $this->check_layout();
-			include YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
+		    if(YZE_Request::get_instance()->is_mobile_client()){
+		        $moblayoutfile = YZE_APP_LAYOUTS_INC."{$this->layout}.moblayout.php";
+		        if( file_exists($moblayoutfile) ){
+		            include $moblayoutfile;
+		            return;
+		        }   
+		    }
+		    $layoutfile = YZE_APP_LAYOUTS_INC."{$this->layout}.layout.php";
+		    if( file_exists($layoutfile) ){
+		        include $layoutfile;
+		        return;
+		    }
+		    throw new YZE_Resource_Not_Found_Exception(" layout {$moblayoutfile} not found");
 		}else{
 			echo $this->content_of_view;
 		}
 	}
 	
 	public function content_of_section($section){
-		return @$this->content_of_section[$section];
+		return $this->content_of_section[$section];
 	}
 	
 	public function content_of_view(){
 		return $this->content_of_view;
 	}
+
 }
 ?>

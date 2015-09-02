@@ -1,12 +1,19 @@
 <?php
-$js = $_GET["css"];
+$css = $_GET["css"];
 header("Content-Type:text/css");
-if ($js) {
+if ($css) {
 	$module = $_GET["module"];
-	$js_info = explode(",", $js);
-	foreach ($js_info as $js_name) {
-		$file = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR."modules".DIRECTORY_SEPARATOR.$module.DIRECTORY_SEPARATOR."views".DIRECTORY_SEPARATOR."css".DIRECTORY_SEPARATOR.$js_name.".css";
-		echo file_get_contents($file);
-	}
+	$css_info = explode(",", $css);
+	
+    $current_dir   = dirname(__FILE__);
+    foreach ($css_info as $css_name) {  
+        $file = $current_dir.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."modules".DIRECTORY_SEPARATOR.$module.DIRECTORY_SEPARATOR."views".DIRECTORY_SEPARATOR."css".DIRECTORY_SEPARATOR.$css_name;      
+        if ( ! file_exists($file) ) {
+            $file = $css_name[0] == "/" ? $current_dir . $css_name : $current_dir . DIRECTORY_SEPARATOR . $css_name;
+        }
+        if ( file_exists($file) ) {
+            echo file_get_contents($file);
+        }
+    }
 }
 ?>

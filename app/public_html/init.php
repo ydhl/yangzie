@@ -22,10 +22,11 @@ define("YZE_APP_PATH", YZE_INSTALL_PATH."app".DS);//应用代码路径
 define("YZE_PUBLIC_HTML", YZE_INSTALL_PATH."app".DS."public_html".DS);//应用代码路径
 define("YZE_APP_CACHES_PATH", YZE_INSTALL_PATH."app".DS."public_html".DS."caches".DS);//缓存存放路径
 
-define("YZE_APP_INC", YZE_APP_PATH);//应用代码目录名称
-define("YZE_APP_MODULES_INC", YZE_APP_PATH."modules/");//应用代码目录名称
-define("YZE_APP_LAYOUTS_INC", YZE_APP_PATH."vendor/layouts/");
-define("YZE_APP_VIEWS_INC", YZE_APP_PATH."vendor/views/");
+define("YZE_APP_INC",           YZE_APP_PATH);//应用代码目录名称
+define("YZE_APP_MODULES_INC",   YZE_APP_PATH."modules/");//应用代码目录名称
+define("YZE_APP_VENDOR",        YZE_APP_PATH."vendor/");
+define("YZE_APP_LAYOUTS_INC",   YZE_APP_PATH."vendor/layouts/");
+define("YZE_APP_VIEWS_INC",     YZE_APP_PATH."vendor/views/");
 
 //path_info, rewrite, none
 define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');
@@ -79,6 +80,8 @@ function yze_autoload($class) {
 			$file .= "controllers" . DS . $class_name . ".class.php";
 		}else if(preg_match("{_model$}i", $class)){
 			$file .= "models" . DS . $class_name . ".class.php";
+		}else if(preg_match("{_module$}i", $class)){
+		    $file .= "__module__.php";
 		}else{
 			$file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
 		}
@@ -91,18 +94,15 @@ function yze_autoload($class) {
 
 spl_autoload_register("\app\yze_autoload");
 
+//启动会话,yze_load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
+\session_start();
+
 /**
  * 加载应用：
  * 1. 加载应用配置文件app/__config__.php，根据其中的配置进行系统初始化，比如数据库配置
  * 2. 加载应用中所有的模块配置文件，__module__.php，根据其中的配置加载模块的包含路径，自动包含的文件，url映射等等
  */
 \yangzie\yze_load_app();
-
-//启动会话,yze_load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
-\session_start();
-
-//加载及初始化所有模块的url映射，它们指定了uri到controller的映射
-\yangzie\YZE_Router::load_routers();
 
 //加载l10n本地语言翻译处理，根据用户的请求中的指示，决定合适的显示语言
 \yangzie\load_default_textdomain();

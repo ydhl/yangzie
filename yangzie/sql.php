@@ -417,6 +417,13 @@ class YZE_SQL extends YZE_Object{
 		);
 		return $this;
 	}
+	public function group_by_function($group_by){
+	    $this->group_by[] = array(
+	            'group_by'	=> $group_by,
+	            'function'  => true
+	    );
+	    return $this;
+	}
 	
 	/**
 	 *
@@ -694,7 +701,11 @@ class YZE_SQL extends YZE_Object{
 	
 	private function _group_by(){
 		foreach ($this->group_by as $group_by){
-			$by[] = $group_by['use_alias'] ? $group_by['alias']."_".$group_by['group_by'] : $group_by['alias'].".".$group_by['group_by'];
+		    if(@$group_by['function']){
+		        $by[] = $group_by['group_by'];
+		    }else{
+			    $by[] = $group_by['use_alias'] ? $group_by['alias']."_".$group_by['group_by'] : $group_by['alias'].".".$group_by['group_by'];
+		    }
 		}
 		return @$by ? " GROUP BY ".join(',',$by) : "";
 	}

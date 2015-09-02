@@ -136,20 +136,6 @@ class $class extends YZE_Resource_Controller {
         //如果想显示get的返回内容可调用 :
         //return \$this->wrapResponse(\$this->yourmethod())
     }
-    
-    public function get_response_guid(){
-        //如果该控制器的响应输出需要缓存，这里返回生成缓存文件的唯一id
-        return null;
-    }
-    
-    /*
-     * @see YZE_Resouse_Controller::cleanup()
-     */
-    public function cleanup(){
-        //pass
-        parent::cleanup();
-    }
-
 }
 ?>";
 		echo __("create controller:\t\t");

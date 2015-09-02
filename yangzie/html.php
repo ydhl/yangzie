@@ -46,7 +46,8 @@ class YZE_Form extends YZE_Object {
     }
 }
 function yze_request_token() {
-    return YZE_Session_Context::get_instance ()->get_request_token ( get_class ( YZE_Request::get_instance ()->controller () ) );
+    $request = YZE_Request::get_instance();
+    return YZE_Session_Context::get_instance ()->get_request_token ($request->the_uri());
 }
 
 /**
@@ -108,9 +109,9 @@ function yze_get_default_value($object, $name, $controller, $index = null) {
  */
 function yze_controller_error($begin_tag = null, $end_tag = null) {
     $session = YZE_Session_Context::get_instance ();
-    $controller = YZE_Request::get_instance ()->controller ();
+    $uri = YZE_Request::get_instance ()->the_uri();
     
-    if (($exception = $session->get_controller_exception ( get_class ( $controller ) ))) {
+    if (($exception = $session->get_controller_exception ( $uri ))) {
         return $begin_tag . $exception->getMessage() . $end_tag;
     }
 }

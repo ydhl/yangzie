@@ -63,157 +63,128 @@ class YZE_Session_Context {
     /**
      * 临时保存post提交的数据
      *
-     * @param string $controller_name            
+     * @param string $uri            
      * @param $post filter_special_chars过滤后的数据            
      *
      * @return void
      * @author liizii
      * @since 2009-12-10
      */
-    public function save_post_datas($controller_name, array $post, YZE_Model $model=null) {
-        if($model){
-            $_SESSION ['yze'] ['post_cache'] [$controller_name][get_class($model).$model->get_key()] = $post;
-        }else{
-            $_SESSION ['yze'] ['post_cache'] [$controller_name]['default'] = $post;
-        }
+    public function save_post_datas($uri, array $post) {
+        $_SESSION ['yze'] ['post_cache'] [$uri] = $post;
+        return $this;
     }
     /**
      * 取得缓存的post提交的数据
      *
-     * @param $controller_name
-     * @param $model 如果传入则只返回该model的缓存，否则返回全部
+     * @param $uri
      * 
      * @return array filter_special_chars过滤后的数据
      *        
      * @author liizii
      * @since 2009-12-10
      */
-    public function get_post_datas($controller_name, YZE_Model $model=null) {
-        if($model){
-            return @$_SESSION ['yze'] ['post_cache'] [$controller_name][get_class($model).$model->get_key()];
-        }else{
-            return @$_SESSION ['yze'] ['post_cache'] [$controller_name];
-        }
+    public function get_post_datas($uri) {
+        return @$_SESSION ['yze'] ['post_cache'] [$uri];
     }
     /**
      * 清空post提交的数据
      *
-     * @param
-     *            $controller_name
+     * @param $uri
      * @return void
      * @author liizii
      * @since 2009-12-10
      */
-    public function clear_post_datas($controller_name, YZE_Model $model=null) {
-        if (@$_SESSION ['yze'] ['post_cache'] [$controller_name]){
-            if($model){
-                unset ( $_SESSION ['yze'] ['post_cache'] [$controller_name][get_class($model).$model->get_key()] );
-            }else{
-                unset ( $_SESSION ['yze'] ['post_cache'] [$controller_name] );
-            }
-        }
+    public function clear_post_datas($uri) {
+        if(array_key_exists($uri, @$_SESSION ['yze'] ['post_cache']));
+            unset($_SESSION ['yze'] ['post_cache'] [$uri]);
+            
+        return $this;
     }
     
     /**
      * 保存控制器处理过程中的异常
      *
-     * @param
-     *            $controller_name
+     * @param $uri
      * @param Exception $exception            
      */
-    public function save_controller_exception($controller_name, $exception) {
-        $_SESSION ['yze'] ['exception'] [$controller_name] = $exception;
+    public function save_controller_exception($uri, $exception) {
+        $_SESSION ['yze'] ['exception'] [$uri] = $exception;
         return $this;
     }
     
     /**
      * 取得控制器的异常
      *
-     * @param
-     *            $controller_name
+     * @param $uri
      * @return Exception
      */
-    public function get_controller_exception($controller_name) {
-        return @$_SESSION ['yze'] ['exception'] [$controller_name];
+    public function get_controller_exception($uri) {
+        return @$_SESSION ['yze'] ['exception'] [$uri];
     }
-    public function clear_controller_exception($controller_name) {
-        if (@$_SESSION ['yze'] ['exception'] [$controller_name])
-            unset ( $_SESSION ['yze'] ['exception'] [$controller_name] );
+    public function clear_controller_exception($uri) {
+        if (@$_SESSION ['yze'] ['exception'] [$uri])
+            unset ( $_SESSION ['yze'] ['exception'] [$uri] );
+        return $this;
     }
     
 
 	/**
 	 * 保存controller的数据
 	 * 
-	 * @param $controller_name
+	 * @param $uri
 	 * @param array $datas
 	 */
-	public function save_controller_datas($controller_name, array $datas){
-		$_SESSION['yze']['controller_data'][$controller_name] = $datas;
+	public function save_controller_datas($uri, array $datas){
+		$_SESSION['yze']['controller_data'][$uri] = $datas;
 	}
 
 	/**
 	 * 取得controller的数据
 	 * 
-	 * @param $controller_name
+	 * @param $uri
 	 */
-	public function get_controller_datas($controller_name){
-		return @$_SESSION['yze']['controller_data'][$controller_name];
+	public function get_controller_datas($uri){
+		return @$_SESSION['yze']['controller_data'][$uri];
 	}
 
 	/**
 	 * 清空controller上绑定的所有数据
 	 * 
-	 * @param $controller_name
+	 * @param $uri
 	 */
-	public function clear_controller_datas($controller_name){
-		unset($_SESSION['yze']['controller_data'][$controller_name]);
+	public function clear_controller_datas($uri){
+		unset($_SESSION['yze']['controller_data'][$uri]);
 	}
-	public function set_request_token($controller_name, $token){
-		$_SESSION['yze']["token"][$controller_name] = $token;
+	public function set_request_token($uri, $token){
+		$_SESSION['yze']["token"][$uri] = $token;
+		return $this;
 	}
-	public function get_request_token($controller_name){
-		return @$_SESSION['yze']["token"][$controller_name];
+	public function get_request_token($uri){
+		return @$_SESSION['yze']["token"][$uri];
 	}
 	public function clear_request_token(){
 		unset($_SESSION['yze']["token"]);
 	}
-	public function clear_request_token_ext($controller_name){
-		unset($_SESSION['yze']["token"][$controller_name]);
+	public function clear_request_token_ext($uri){
+		unset($_SESSION['yze']["token"][$uri]);
 	}
 	
-	public function copy($src_controller_name, $dest_controller_name){
+	public function copy($olduri, $newuri){
 		foreach (array("token") as $key){
-			$_SESSION['yze'][$key][$dest_controller_name] = @$_SESSION['yze'][$key][$src_controller_name];
+			$_SESSION['yze'][$key][$newuri] = @$_SESSION['yze'][$key][$olduri];
 		}
 	}
 	
-	public static function get_cached_post($name,$controller_name=null, YZE_Model $model=null)
-	{
-		if (empty($controller_name)) {
-			$controller_name = get_class(YZE_Request::get_instance()->controller());
-		}
-		$dates = YZE_Session_Context::get_instance()->get_post_datas($controller_name);
-		
-		if ($model){
-		    return @$dates[get_class($model).$model->get_key()][$name];
-		}else{
-		    return @$dates['default'][$name];
-		}
-		
+	public static function get_cached_post($name){
+		$uri = YZE_Request::get_instance()->the_uri();
+		$dates = YZE_Session_Context::get_instance()->get_post_datas($uri);
+		return @$dates[$name];
 	}
 
-	public static function post_cache_has($name, $controller_name=null, YZE_Model $model=null)
-	{
-		return self::get_cached_post($name, $controller_name, $model);
-	}
-
-	public static function post_cache_has_ext($controller_name=null, YZE_Model $model=null)
-	{
-		if (empty($controller_name)) {
-			$controller_name = get_class(YZE_Request::get_instance()->controller());
-		}
-		return YZE_Session_Context::get_instance()->get_post_datas($controller_name);
+	public static function post_cache_has(){
+		$uri = YZE_Request::get_instance()->the_uri();
+		return YZE_Session_Context::get_instance()->get_post_datas($uri);
 	}
 	
 }

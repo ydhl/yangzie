@@ -121,7 +121,7 @@ class YZE_Redirect implements YZE_IResponse {
         }
 		
         if ($this->datas && $this->destinationController) {
-            YZE_Session_Context::get_instance()->save_controller_datas(get_class($this->destinationController), $this->datas);
+            YZE_Session_Context::get_instance()->save_controller_datas($this->destinationURI, $this->datas);
         }
 		
         $format = $this->sourceController->getRequest()->get_output_format();
@@ -237,6 +237,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	}
 	public function set_datas(array $datas){
 	    $this->data = $datas;
+	    return $this;
 	}
 	public function set_cache_config(YZE_HttpCache $cache=null){
 		$this->cache_ctl = $cache;

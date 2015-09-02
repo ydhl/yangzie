@@ -75,7 +75,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      */
     public function get_datas() {
         $request = $this->request;
-        $cache = YZE_Session_Context::get_instance ()->get_controller_datas ( get_class ( $this ) );
+        $cache = YZE_Session_Context::get_instance ()->get_controller_datas ( $request->the_uri() );
         if (! $cache) {
             return $this->view_data;
         }
@@ -141,14 +141,16 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     public final function do_Get() {
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
-        YZE_Session_Context::get_instance ()->set_request_token ( get_class ( $request->controller () ), $request->the_request_token () );
+        $method = $request->the_method ();
+        
+        YZE_Session_Context::get_instance ()->set_request_token ( 
+            $request->the_uri(), $request->the_request_token () );
         
         // 该请求有异常
-        if (($exception = $session->get_controller_exception ( get_class ( $this ) ))) {
+        if (($exception = $session->get_controller_exception ( $request->the_uri() ))) {
             return $this->do_exception ( is_a($exception, "YZE_RuntimeException") ? $exception : new YZE_RuntimeException($exception->getMessage()) );
         }
         
-        $method = $request->the_method ();
         return $this->wrapResponse ( $this->$method () );
     }
     protected function wrapResponse($response) {
@@ -252,22 +254,19 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
         
-        $controller_name = get_class ( $this );
-        
-        
         // clean get cache data
         if ($request->is_get ()) {
-            $session->clear_controller_exception ( $controller_name );
-            $session->clear_controller_datas ( $controller_name );
+            $session->clear_controller_exception ( $request->the_uri() );
+            $session->clear_controller_datas ( $request->the_uri() );
             return;
         }
         
         // clean post cache data
         // 成功处理，清除保存的post数据
-        if( ! $session->get_controller_exception ( $controller_name ) ){ 
-            $session->clear_post_datas ( get_class ( $this ) , $request->get_modify_model());
+        if( ! $session->get_controller_exception ( $request->the_uri() ) ){ 
+            $session->clear_post_datas ( $request->the_uri() );
         }
-        $session->clear_request_token_ext ( get_class ( $this ) );
+        $session->clear_request_token_ext ( $request->the_uri() );
     }
     /**
      * 出现不可恢复的异常后的处理, 如何处理
@@ -286,7 +285,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $post_request_token = $request->get_from_post ( 'yze_request_token' );
         $session = YZE_Session_Context::get_instance ();
        
-        $saved_token = $session->get_request_token ( get_class ( $this ) );
+        $saved_token = $session->get_request_token ( $request->the_uri() );
         if( ! $saved_token)return;
         if( $request->the_referer_uri(true) != $request->the_uri()) return;
         
@@ -310,7 +309,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     }
 }
 class Yze_Default_Controller extends YZE_Resource_Controller {
-    public function get() {
+    public function index() {
         $this->set_View_Data ( "yze_page_title", __ ( "Yangzie 简单的PHP开发框架" ) );
         return new YZE_Simple_View ( YANGZIE . "/welcome", $this->get_datas (), $this );
     }
@@ -318,7 +317,7 @@ class Yze_Default_Controller extends YZE_Resource_Controller {
 class YZE_Exception_Controller extends YZE_Resource_Controller {
     private $exception;
     
-    public function get() {
+    public function index() {
         $this->layout = "error";
         $this->output_status_code ( $this->exception ? $this->exception->getCode () : 0 );
 
@@ -334,7 +333,7 @@ class YZE_Exception_Controller extends YZE_Resource_Controller {
     }
     public function exception(YZE_RuntimeException $e) {
         $this->exception = $e;
-        return $this->get ();
+        return $this->index ();
     }
     
     private function output_status_code($error_number) {

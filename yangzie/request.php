@@ -105,7 +105,8 @@ class YZE_Request extends YZE_Object {
      * 每个人每次请求的token都是唯一的
      */
     public function the_request_token() {
-        return session_id () . '_' . $_SERVER ['REQUEST_TIME'];
+        return session_id() . '_' . uniqid();
+//         return session_id() . '_' . $_SERVER['REQUEST_TIME'];
     }
     /**
      */
@@ -231,7 +232,12 @@ class YZE_Request extends YZE_Object {
         
         self::$instances [] = $this;
         $this->_init ( $newUri );
-
+        
+        if($request_method){
+            $this->request_method = $request_method;
+        }else{
+            $this->request_method = $_SERVER['REQUEST_METHOD'];
+        }
         
         $uri = $this->the_uri ();
         if ($newUri) {
@@ -244,7 +250,6 @@ class YZE_Request extends YZE_Object {
         $routers = YZE_Router::get_instance ()->get_routers ();
         
         $config_args = self::parse_url ( $routers, $uri ); // 地址映射及返回格式
-        
         $this->set_vars ( @( array ) $config_args ['args'] );
         if ($format && ! $this->get_var ( "__yze_resp_format__" )) {
             $this->set_var ( "__yze_resp_format__", $format );
@@ -265,17 +270,14 @@ class YZE_Request extends YZE_Object {
         
         $controller_cls = $this->controller_class ();
         
+        
         if (! ($controller = $this->controller ())) {
             throw new YZE_Resource_Not_Found_Exception ( "Controller $controller_cls Not Found" );
         }
         
-        if($request_method){
-            $this->request_method = $request_method;
-        }else{
-            $this->request_method = $_SERVER['REQUEST_METHOD'];
-        }
-
-        $method = ($this->is_get() ? "" : "post_") . self::the_val($action ? $action : $this->get_var("action"), "index");
+        
+        $action = self::the_val($action ? $action : $this->get_var("action"), "index");
+        $method = ($this->is_get() ? "" : "post_") . str_replace("-", "_", $action);
         $this->set_method ( $method );
 
         if (! method_exists ( $controller, $method )) {
@@ -286,9 +288,8 @@ class YZE_Request extends YZE_Object {
             $model = $this->get_modify_model();
             
             YZE_Session_Context::get_instance ()->save_post_datas ( 
-                get_class ( $this->controller () ), 
-                $this->the_post_datas (), 
-                $model);
+                $this->the_uri(),
+                $this->the_post_datas ());
         }
         
         return $this;
@@ -331,9 +332,8 @@ class YZE_Request extends YZE_Object {
         $req_method = $this->the_method ();
         
         if ($this->need_auth ( $req_method )) { // 需要验证
-            \yangzie\YZE_Hook::do_hook ( YZE_ACTION_CHECK_USER_HAS_LOGIN, array (
-                    'user' => null 
-            ) );
+            $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
+            if ( ! $loginuser ) throw new YZE_Need_Signin_Exception ();
             
             $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME);
             
@@ -507,7 +507,7 @@ class YZE_Request extends YZE_Object {
             }
         }
         
-        // 默认按照 /module/controller/var/ 解析
+        // 默认按照 /module/controller/action/var/ 解析
         $str = trim ( $uri, "/" );
         $format_pos = strripos ( $str, "." );
         
@@ -527,10 +527,14 @@ class YZE_Request extends YZE_Object {
             $_ ['controller_name'] = "index";
         }
         
-        if (count ( $uri_split ) > 2) {
-            $_ ['args'] = array_slice ( $uri_split, 2 );
-        }
         
+        
+        if (count ( $uri_split ) > 3) {
+            $_ ['args'] = array_slice ( $uri_split, 3 );
+        }
+        if (count ( $uri_split ) > 2) {
+            $_ ['args']['action'] = $uri_split[2];
+        }
         if (preg_match ( "#\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches )) {
             $_ ['args'] ["__yze_resp_format__"] = $matches ['__yze_resp_format__'];
         }

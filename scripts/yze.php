@@ -59,11 +59,12 @@ function display_home_wizard(){
 \t7.  中文
 \t8.  English
 
-\t9.  quit
-	
+\t9.  检查url映射
+
+\t0.  quit
 请选择: "));
 	
-	while(!in_array(($input = fgets(STDIN)), array(1, 2, 3, 4, 5, 6, 7, 8, 9))){
+	while(!in_array(($input = fgets(STDIN)), array(0,1, 2, 3, 4, 5, 6, 7, 8, 9))){
 		echo wrap_output(__("请选择操作对应的序号: "));
 	}
 	
@@ -77,6 +78,9 @@ function display_home_wizard(){
 		case 7:  return switch_to_zh();
 		case 8:  return switch_to_en();
 		case 9:  die(wrap_output("
+TODO.
+"));
+		case 0:  die(wrap_output("
 退出.
 "));
 		default: return array();

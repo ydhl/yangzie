@@ -15,14 +15,16 @@ function yze_load_app() {
     }
     include_once YZE_APP_INC . '__config__.php';
     @include_once YZE_APP_INC . '__aros_acos__.php';
-    YZE_Hook::include_hooks(YZE_APP_INC.'hooks');
+    
     
     $app_module = new App_Module ();
-    
     $module_include_files = $app_module->get_module_config ( 'include_files' );
     foreach ( ( array ) $module_include_files as $path ) {
         include_once $path;
     }
+    
+    YZE_Hook::include_hooks("app", YZE_APP_INC.'hooks');
+    
     foreach ( glob ( YZE_APP_MODULES_INC . "*" ) as $module ) {
         $phar_wrap = "";
         if (is_file ( $module )) { // phar
@@ -40,11 +42,16 @@ function yze_load_app() {
             $object = new $class ();
             $object->check ();
             
+            $mappings = $object->get_module_config('routers');
+            if($mappings){
+                YZE_Router::get_Instance()->set_Routers($module_name,$mappings);
+            }
+            
             \yangzie\YZE_Object::set_loaded_modules ( $module_name, array (
-                    "is_phar" => $phar_wrap ? true : false 
+                    "is_phar" => $phar_wrap ? true : false
             ) );
         }
-        YZE_Hook::include_hooks("{$phar_wrap}{$module}/hooks");
+        YZE_Hook::include_hooks($module_name, "{$phar_wrap}{$module}/hooks");
     }
 }
 
@@ -93,12 +100,10 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
         $dba     = YZE_DBAImpl::getDBA ();
         $format  = null;
         
-        $oldController = $request->controller ();
-        if ($oldController) {
-            $format = $request->get_output_format ();
-        }
         //之前已经有请求了，则copy一个新请求
         if ( $request->has_request() ){
+            $old_uri = $request->the_uri();
+            $format  = $request->get_output_format ();
             $request = $request->copy();
         }
         $request->init ( $uri, $method, $format , $request_method); // 初始化请求上下文环境,请求入栈
@@ -106,8 +111,8 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
         $controller = $request->controller ();
         
         // 如果yze_go 是从一个控制器的处理中再次调用的，则为新的控制器copy一个上下文环境
-        if ($oldController) {
-            $session->copy ( get_class ( $oldController ), get_class ( $controller ) );
+        if (@$old_uri) {
+            $session->copy ( $old_uri, $request->the_uri() );
         }
         
         $action = "YZE_ACTION_BEFORE_" .  ( $request->is_get() ? "GET" : "POST");
@@ -141,8 +146,7 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
             if( ! @$controller){
                 $controller = new YZE_Exception_Controller();
             }
-
-            $session->save_controller_exception(get_class($controller), $e);
+            $session->save_controller_exception($request->the_uri(), $e);
             if($request->is_get()){
                 $response = $controller->do_exception($e);
             }else{                

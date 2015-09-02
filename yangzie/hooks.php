@@ -31,7 +31,6 @@ define ( 'YZE_ACTION_AFTER_DELETE', 'do_after_delete' );
 define ( 'YZE_ACTION_TRANSACTION_COMMIT', 'transaction_commit' );
 define ( 'YZE_ACTION_UNRESUME_EXCEPTION', 'yze_action_unresume_exception' );
 define ( 'YZE_ACTION_BEFORE_DO_EXCEPTION', 'yze_action_before_do_exception' );
-define ( 'YZE_ACTION_CHECK_USER_HAS_LOGIN', 'yze_action_check_user_has_login' );
 
 define ( 'YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token' );
 
@@ -65,38 +64,65 @@ define ( 'YZE_HOOK_GET_LOGIN_USER', 'YZE_HOOK_GET_LOGIN_USER' );
 define ( 'YZE_HOOK_SET_LOGIN_USER', 'YZE_HOOK_SET_LOGIN_USER' );
 final class YZE_Hook {
     private static $listeners = array ();
+    private static $currModule;
     /**
      * 增加hook
      */
     public static function add_hook($event, $func_name, $object = null) {
-        self::$listeners [$event] [] = array (
+        //include_hooks中已经知道模块名了
+        self::$listeners [$event] [self::$currModule] [] = array (
                 "function" => $func_name,
                 "object" => $object 
         );
     }
-    
-    public static function do_hook($filter_name, $data=array()) {
-        if (! self::has_hook ( $filter_name ))
-            return $data;
-        foreach ( self::$listeners [$filter_name] as $listeners ) {
-            if (is_object ( $listeners ['object'] )) {
-                $data = call_user_func ( array($listeners ['object'], $listeners ['function']), $data);
+    private static function _call_user_func($listeners, $data){
+        foreach ( $listeners as $listener ) {
+            if (is_object ( $listener ['object'] )) {
+                $data = call_user_func ( array($listener ['object'], $listener ['function']), $data);
             } else {
-                $data = call_user_func ( $listeners ['function'], $data );
+                $data = call_user_func ( $listener ['function'], $data );
             }
         }
         return $data;
     }
     
-    public static function has_hook($filter_name) {
-        return @self::$listeners [$filter_name];
+    /**
+     * 
+     * @param unknown hookname
+     * @param unknown $data
+     * @param unknown $module
+     * @return unknown|mixed
+     */
+    public static function do_hook($filter_name, $data=array(), $module=null) {
+        $listeners = self::has_hook ( $filter_name, $module );
+        
+        if (! $listeners) return $data;
+        
+        if ($module){
+            return self::_call_user_func($listeners, $data);
+        }
+        
+        foreach ( $listeners as $_listeners ) {
+            $data = self::_call_user_func($_listeners, $data);
+        }
+        return $data;
     }
     
-    public static function include_hooks($dir){
+    public static function has_hook($filter_name, $module=null) {
+        if($module){
+            return @self::$listeners [$filter_name][$module];
+        }else{
+            return @self::$listeners [$filter_name];
+        }
+        
+    }
+    
+    public static function include_hooks($module, $dir){
         if( ! file_exists($dir) )return;
+        self::$currModule = $module;
         foreach(glob($dir."/*") as $file){
             if (is_dir($file)) {
-                self::include_hooks($file);
+                self::include_hooks($module, $file);
             }else if(is_file($file)){
                 require_once $file;
             }

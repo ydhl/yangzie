@@ -1,6 +1,10 @@
 <?php
 namespace yangzie;
-
+define("YZE_SCRIPT_LOGO", "
+================================================================
+		YANGZIE Generate Script
+		易点互联®
+================================================================");
 global $language, $db;
 $language = "zh-cn";
 
@@ -38,11 +42,7 @@ if(true){
 
 function display_home_wizard(){
 	clear_terminal();
-	echo wrap_output(__("
-================================================================
-\t\tYANGZIE Generate Script
-\t\t易点互联®
-================================================================
+	echo wrap_output(__(YZE_SCRIPT_LOGO."
   
 伙计，你想要生成什么？
 	
@@ -89,11 +89,7 @@ TODO.
 
 function _run_test(){
 	clear_terminal();
-	echo wrap_output(vsprintf(__( "
-================================================================
-		YANGZIE Generate Script
-		易点互联®
-================================================================
+	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
 	
 选择要运行的单元测试，%s返回上一步
 
@@ -149,11 +145,7 @@ function switch_to_en(){
 
 function display_phar_wizard(){
 	clear_terminal();
-	echo wrap_output(vsprintf(__( "
-================================================================
-		YANGZIE Generate Script
-		易点互联®
-================================================================
+	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
 	
 打包phar，%s返回上一步
 1. (1/2)请输入模块名:  ")), get_colored_text(" CTRL+B ", "red", "white"));
@@ -199,11 +191,8 @@ function phar_module($module, $key_path){
 
 function display_delete_controller_wizard(){
 	clear_terminal();
-	echo vsprintf(wrap_output(__( "
-================================================================
-		YANGZIE Generate Script
-		易点互联®
-================================================================
+	echo vsprintf(wrap_output(__( YZE_SCRIPT_LOGO."
+
 删除控制器及其控制器、视图，%s返回上一步
 1. (1/2)所在功能模块: ")), get_colored_text(" CTRL+B ", "red", "white"));
 
@@ -232,11 +221,7 @@ function display_delete_controller_wizard(){
 
 function display_delete_module_wizard(){
 	clear_terminal();
-	echo vsprintf(wrap_output(__( "
-================================================================
-		YANGZIE Generate Script
-		易点互联®
-================================================================
+	echo vsprintf(wrap_output(__( YZE_SCRIPT_LOGO."
 	
 输入要删除的模块名，%s返回上一步:  ")), get_colored_text(" CTRL+B ", "red", "white"));
 	
@@ -257,11 +242,7 @@ function display_delete_module_wizard(){
 
 function display_mvc_wizard(){
 	clear_terminal();
-	echo wrap_output(vsprintf(__( "
-================================================================
-		YANGZIE Generate Script
-		易点互联®
-================================================================
+	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
   
 你将生成VC代码结构，请根据提示进操作，%s返回上一步：
 1. (1/8)所在功能模块:  "), get_colored_text(" CTRL+B ", "red", "white")));
@@ -320,13 +301,55 @@ function is_controller_exists($controller, $module){
 }
 
 function display_model_wizard(){
+    echo wrap_output(__(YZE_SCRIPT_LOGO."
+    
+
+\t1.  生成新Model
+\t2.  刷新Model
+    
+CTRL+B 返回
+请选择: "));
+    
+    while(!in_array(($input = fgets(STDIN)), array(1, 2))){
+        echo wrap_output(__("请选择操作对应的序号: "));
+    }
+    
+    switch ($input){
+        case 1:  return display_model_generate_wizard();
+        case 2:  return display_model_refresh_wizard();
+        default: return array();
+    }
+}
+function display_model_refresh_wizard(){
+    global $db;
+    clear_terminal();
+    echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
+    
+你将刷新Model代码，请根据提示进操作，%s返回上一步：
+1. (1/2)Model类(全)名: "), get_colored_text(" CTRL+B ", "red", "white")));
+    while (true){
+        $cls=get_input();
+        if( !$cls ){
+            echo get_colored_text(wrap_output(__("Model类(全)名:  ")), "red");
+            continue;
+        }
+        if( ! class_exists($cls)){
+            echo get_colored_text(wrap_output(__("$cls 不存在:  ")), "red");
+            continue;
+        } 
+        break;
+    }
+    
+    return array(
+            "cmd" => "refreshmodel",
+            "base"=>"table",
+            "class_name"=>$cls,
+    );
+}
+function display_model_generate_wizard(){
     global $db;
 	clear_terminal();
-	echo wrap_output(vsprintf(__( "
-================================================================
-\t\tYANGZIE Generate Script
-\t\t易点互联®
-================================================================
+	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
 
 你将生成Model代码结构，请根据提示进操作，%s返回上一步：
 1. (1/4)表名: "), get_colored_text(" CTRL+B ", "red", "white")));
@@ -338,18 +361,42 @@ function display_model_wizard(){
 	while (!is_validate_name(($model = get_input()))){
 		echo get_colored_text(wrap_output(__("\t类名遵守PHP变量命名规则,  请重输:  ")), "red");
 	}
+	
 	echo wrap_output(__("3. (3/4)功能模块名,  遵守PHP变量命名规则:  "));
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t功能模块名,  请重输:  ")), "red");
 	}
 	
-	return array(
+	if(class_exists("\\app\\$module\\{$model}_Model")){
+	    echo wrap_output(__("\\app\\$module\\{$model}_Model 已存在，继续操作将覆盖已有文件：  
+\t1.  继续
+\t2.  返回
+"));
+	    
+	    while(!in_array(($input = fgets(STDIN)), array(1, 2))){
+	        echo wrap_output(__("请选择操作对应的序号: "));
+	    }
+	    
+	    switch ($input){
+	        case 1:  return array(
 			"cmd" => "model",
 			"base"=>"table",
 			"module_name"=>$module,
 			"class_name"=>$model,
 			"table_name"=>$table,
 	);
+	        case 2:  display_home_wizard();return;
+	        default: return array();
+	    }
+	}
+	return array(
+	        "cmd" => "model",
+	        "base"=>"table",
+	        "module_name"=>$module,
+	        "class_name"=>$model,
+	        "table_name"=>$table,
+	);
+	
 }
 
 function get_colored_text($text, $fgcolor=null, $bgcolor=null){

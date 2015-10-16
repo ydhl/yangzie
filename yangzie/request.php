@@ -333,6 +333,7 @@ class YZE_Request extends YZE_Object {
         
         if ($this->need_auth ( $req_method )) { // 需要验证
             $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
+            
             if ( ! $loginuser ) throw new YZE_Need_Signin_Exception ();
             
             $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME);

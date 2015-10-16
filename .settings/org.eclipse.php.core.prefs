@@ -1,2 +1,4 @@
 eclipse.preferences.version=1
 include_path=0;/yangzie/app\u00050;/yangzie/yangzie\u00050;/yangzie/tmp\u00050;/yangzie/scripts\u00050;/yangzie/tests\u00050;/yangzie/.settings
+phpVersion=php5.3
+useShortTags=false

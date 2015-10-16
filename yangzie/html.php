@@ -82,7 +82,7 @@ function yze_get_default_value($object, $name, $controller, $index = null) {
     $cache_data = YZE_Session_Context::get_cached_post ( $name, $controller_name , $object);
     if ($cache_data) {
         if (is_array ( $cache_data )) {
-            return @$cache_data [$index];
+            return $index == null ? $cache_data : @$cache_data [$index];
         }
         return $cache_data;
     }

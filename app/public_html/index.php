@@ -1,4 +1,5 @@
 <?php
+use yangzie\YZE_Router;
 /**
  * 该文件是系统的入口
  * 

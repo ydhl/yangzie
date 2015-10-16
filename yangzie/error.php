@@ -8,23 +8,39 @@ namespace yangzie;
  * @author liizii
  *        
  */
-class YZE_Need_Signin_Exception extends YZE_RuntimeException {
-    public function __construct($message = null) {
-        parent::__construct ( $message, 500 );
-    }
-}
-class YZE_Permission_Deny_Exception extends YZE_RuntimeException {
+
+
+class YZE_RuntimeException extends \Exception {
     public function __construct($message = null) {
         parent::__construct ( $message, 500 );
     }
 }
 /**
- * 身份验证失败,表示需要用户登录
+ * 严重异常
  *
- * @author liizii
- *        
+ * @author apple
+ *
  */
-class YZE_Auth_Failed_Exception extends YZE_RuntimeException {
+class YZE_FatalException extends YZE_RuntimeException {
+    public function __construct($message = null) {
+        parent::__construct ( $message, 500 );
+    }
+}
+
+
+class YZE_Suspend_Exception extends YZE_FatalException{
+    public function __construct($message = null) {
+        parent::__construct ( $message, 500 );
+    }
+}
+
+class YZE_Need_Signin_Exception extends YZE_Suspend_Exception {
+    public function __construct($message = null) {
+        parent::__construct ( $message, 500 );
+    }
+}
+
+class YZE_Permission_Deny_Exception extends YZE_Suspend_Exception {
     public function __construct($message = null) {
         parent::__construct ( $message, 500 );
     }
@@ -48,23 +64,6 @@ class YZE_DBAException extends YZE_RuntimeException {
         parent::__construct ( $message, 500 );
     }
 }
-class YZE_RuntimeException extends \Exception {
-    public function __construct($message = null) {
-        parent::__construct ( $message, 500 );
-    }
-}
-/**
- * 严重异常
- *
- * @author apple
- *        
- */
-class YZE_FatalException extends YZE_RuntimeException {
-    public function __construct($message = null) {
-        parent::__construct ( $message, 500 );
-    }
-}
-
 /**
  * Http 302 response
  * 

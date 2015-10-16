@@ -65,7 +65,7 @@ function yze_copy_file($src_file, $dist_dir){
 	
 	yze_make_dirs($dist_dir);
 
-	$dist_file = rtrim($dir,DS).DS.basename($src_file);
+	$dist_file = rtrim($dist_dir,DS).DS.basename($src_file);
 	return copy($src_file,$dist_file) ? $dist_file : false ;
 }
 

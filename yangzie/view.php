@@ -95,11 +95,8 @@ class YZE_Redirect implements YZE_IResponse {
         $this->innerRedirect = $innerRedirect;
         
         $this->url_components = parse_url ( $this->destinationURI );
-        if (@$this->url_components ['host'] && $this->url_components ['host'] != $_SERVER ['HTTP_HOST']) {
-            $this->outgoing = true;//访问外部网站
-        }
         
-        if( ! $this->outgoing){
+        if($this->innerRedirect){
         		try{
             $request = YZE_Request::get_instance();
             $request = $request->copy();
@@ -112,7 +109,7 @@ class YZE_Redirect implements YZE_IResponse {
     }
 	
     public function output($return=false){
-        if ($this->outgoing){
+        if ( ! $this->innerRedirect){
             if ( ! $return ){
                 header("Location: $this->destinationURI");
                 return ;
@@ -134,14 +131,7 @@ class YZE_Redirect implements YZE_IResponse {
         }
 
         //内部重定向，不经过浏览器在请求一次
-        if ($this->innerRedirect){
-            return yze_go($target_uri, $this->sourceController->getRequest()->the_method(), true);
-        }
-        
-        if ( $return ){
-            return $target_uri;
-        }
-        header("Location: {$target_uri}");
+        return yze_go($target_uri, $this->sourceController->getRequest()->the_method(), true);
     }
 	
     public function destinationURI(){

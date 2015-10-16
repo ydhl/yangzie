@@ -2,14 +2,20 @@
 namespace yangzie;
 
 class YZE_ACL extends YZE_Object{
-	private $aros_acos;
-	private $acos;
+	private $acos_aros;
 	private $permission_cache = array();
 	private static $instance;
 	
 	private function __construct(){
-		$this->aros_acos = \app\yze_get_acos_aros();
-		$this->acos =   \app\yze_get_acos();
+		$this->acos_aros = \app\yze_get_acos_aros();
+		krsort($this->acos_aros);
+		$newarr = array();
+		foreach ($this->acos_aros as $aco=>$aros){
+		    krsort($aros['deny']);
+		    krsort($aros['allow']);
+		    $newarr[$aco] = $aros;
+		}
+		$this->acos_aros = $newarr;
 	}
 	
 	/**
@@ -52,7 +58,8 @@ class YZE_ACL extends YZE_Object{
 	}
 	
 	public function check_byname($aroname, $aconame){
-		if ( !$this->_need_controll($aconame, $this->acos)) {//不要求控制
+	    $aconame = $this->_need_controll($aconame);
+		if ( ! $aconame) {//不要求控制
 			return true;
 		}
 
@@ -77,7 +84,6 @@ class YZE_ACL extends YZE_Object{
 		$perm = get_user_permissions();
 
 		if(!$perm)return -1;
-
 		if (is_array(@$perm["deny"])){//配置了拒绝项
 			$denys = $this->_in_array($aconame, $perm["deny"]);//拒绝当前ACO
 			if ($denys){//拒绝当前ACO的所有action
@@ -87,6 +93,7 @@ class YZE_ACL extends YZE_Object{
 
 		if (is_array(@$perm["allow"])){//允许当前ACO
 			$allow = $this->_in_array($aconame, $perm["allow"]);//允许当前ACO
+			
 			if ($allow){//允许当前ACO的所有action
 				return true;
 			}
@@ -97,8 +104,7 @@ class YZE_ACL extends YZE_Object{
 		return -1;
 	}
 
-	private function _check_role_permission($aroname, $aconame)
-	{
+	private function _check_role_permission($aroname, $aconame){
 		if (!trim($aroname)) {
 			return false;
 		}
@@ -106,18 +112,20 @@ class YZE_ACL extends YZE_Object{
 		if(function_exists("get_permissions")){
 			$perm = get_permissions($aroname);
 		}else{
-			$perm = @$this->aros_acos[$aroname];
+			$perm = @$this->acos_aros[$aconame];
 		}
 
+		if($perm["deny"]=="*")return false;//拒绝优先
+		
 		if (is_array(@$perm["deny"])){//配置了拒绝项
-			$denys = $this->_in_array($aconame, $perm["deny"]);//拒绝当前ACO
+			$denys = $this->_in_array($aroname, $perm["deny"]);//拒绝当前ARO
 			if ($denys){//拒绝当前ACO的所有action
 				return false;
 			}
 		}
 
 		if (is_array(@$perm["allow"])){//允许当前ACO
-			$allow = $this->_in_array($aconame, $perm["allow"]);//允许当前ACO
+			$allow = $this->_in_array($aroname, $perm["allow"]);//允许当前ARO
 			if ($allow){//允许当前ACO的所有action
 				return true;
 			}
@@ -133,25 +141,27 @@ class YZE_ACL extends YZE_Object{
 		$aronames = explode("/", $aroname);
 		array_pop($aronames);
 		$aroname = count($aronames)==1 ? "/" : join("/", $aronames);
-		return $this->_check_role_permission($aroname, $aconame);
+		return $this->_check_role_permission($aroname, $aconame, $matched_aco);
 	}
 
-	private function _need_controll($aconame, $acos)
-	{
-		foreach ((array)$acos as $aco=> $desc) {
-			$aco = strtr($aco, array("*"=>".*"));
-			if (preg_match("{".$aco."}", $aconame)){
-				return true;
+	private function _need_controll($aconame){
+		foreach ((array)$this->acos_aros as $aco=>$ignore) {
+			$newaco = strtr($aco, array("*"=>".*"));
+			if (preg_match("{".$newaco."}", $aconame)){
+				return $aco;
 			}
 		}
-		return false;
+		return null;
 	}
+	
 
-	private function _in_array($check, array $arrays)
-	{
+	private function _in_array($check, array $arrays){
 		foreach ($arrays as $k) {
+			if ($k==$check) return true;
+		    if($k{-1} != "*"){
+		        $k .= "/*";
+		    }
 			$k = strtr($k, array("*"=>".*"));
-			//fix /user/apps/get 匹配上了 {/apps/.*} 2012312
 			if (preg_match("{^".$k."$}", $check)) {
 				return true;
 			}

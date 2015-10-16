@@ -183,9 +183,16 @@ abstract class YZE_Model extends YZE_Object{
 		$entity = $class instanceof YZE_Model ? $class : new $class;
 		
 		$sql = new YZE_SQL();
-		$sql->delete()->from(get_called_class(), "t")
-			->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
-		return YZE_DBAImpl::getDBA()->execute($sql) == 1;
+		$sql->delete()->from(get_called_class(), "t");
+		if (is_array($id)) {
+            $sql->where("t", $entity->get_key_name(), YZE_SQL::IN, $id);
+        } else {
+            $sql->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
+        }
+        
+        YZE_DBAImpl::getDBA()->execute($sql);
+        
+        return true;
 	}
 	
 	public static function remove_by_attrs($attrs){
@@ -203,7 +210,9 @@ abstract class YZE_Model extends YZE_Object{
 			$sql->where("t", $name, YZE_SQL::EQ, $value);
 		}
 		
-		return YZE_DBAImpl::getDBA()->execute($sql) == 1;
+		YZE_DBAImpl::getDBA()->execute($sql);
+		
+		return true;
 	}
 	
 	/**
@@ -228,9 +237,15 @@ abstract class YZE_Model extends YZE_Object{
 		$entity = $class instanceof YZE_Model ? $class : new $class;
 	
 		$sql = new YZE_SQL();
-		$sql->update("t", $attrs)->from(get_called_class(), "t")
-		->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
-		return YZE_DBAImpl::getDBA()->execute($sql) == 1;
+		$sql->update("t", $attrs)->from(get_called_class(), "t");
+		if (is_array($id)) {
+		    $sql->where("t", $entity->get_key_name(), YZE_SQL::IN, $id);
+		} else {
+		    $sql->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
+		}
+		YZE_DBAImpl::getDBA()->execute($sql);
+		
+		return true;
 	}
 	
 	public static function find_all(){
@@ -240,10 +255,14 @@ abstract class YZE_Model extends YZE_Object{
 	 * 根据主键数组查询对象。返回关联数组，键为主键，
 	 * 
 	 * @param $ids
-	 * @return array
+	 * @param $class_name 不设置表示当前调用的类
+	 * @return array  key 为索引的数组
 	 */
 	public static function find_by_keys($class_name,$key_name, array $keys)
 	{
+	    if( ! $class_name){
+	        $class_name = get_called_class();
+	    }
 		$sql = new YZE_SQL();
 		$sql->from($class_name,"o")->where("o", $key_name, YZE_SQL::IN, $keys);
 		$objects = YZE_DBAImpl::getDBA()->select($sql);
@@ -260,14 +279,16 @@ abstract class YZE_Model extends YZE_Object{
 	 * @author leeboo
 	 * 
 	 * @param array $attrs
+	 * @param array $fields 要求查询的字段
 	 * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
 	 * 
 	 * @return
 	 */
-	public static function find_by_attrs(array $attrs)
+	public static function find_by_attrs(array $attrs, $fields=array("*"))
 	{
 		$sql = new YZE_SQL();
-		$sql->from(get_called_class(),"o");
+		$sql->select("o", $fields)
+		    ->from(get_called_class(),"o");
 		foreach ($attrs as $att=>$value){
 			$sql->where("o", $att, YZE_SQL::EQ, $value);
 		}
@@ -381,6 +402,11 @@ abstract class YZE_Model extends YZE_Object{
 	private function get_object($field_name){
 	    if( @$this->cache[$field_name]) return $this->cache[$field_name];
 	    $info = $this->objects[$field_name];
+	    if(@$info['method']){
+	        $method = $info['method'];
+	        $this->cache[$field_name] = $this->$method();
+	        return $this->cache[$field_name];
+	    }
 	    $objs = $info['class']::find_by_attrs(array($info['to'] => $this->get($info['from'])));
 	    
 	    if( !count($objs) )return null;

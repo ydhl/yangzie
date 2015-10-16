@@ -18,7 +18,7 @@ function yze_load_app() {
     
     
     $app_module = new App_Module ();
-    $module_include_files = $app_module->get_module_config ( 'include_files' );
+    $module_include_files = $app_module->module_include_files ( );
     foreach ( ( array ) $module_include_files as $path ) {
         include_once $path;
     }
@@ -143,9 +143,10 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
         
         try{
             $dba->rollback();
-            if( ! @$controller){
+            if( ! @$controller || is_a($e, "\\yangzie\\YZE_Suspend_Exception")){
                 $controller = new YZE_Exception_Controller();
             }
+            
             $session->save_controller_exception($request->the_uri(), $e);
             if($request->is_get()){
                 $response = $controller->do_exception($e);
@@ -153,10 +154,10 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
                 $response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
             }
 
-            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,  array("exception"=>$e, "controller"=>$controller, "response"=>$response));
+            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,  
+                    array("exception"=>$e, "controller"=>$controller, "response"=>$response));
             $response = $filter_data['response'];
-            
-           
+
             // content output
             if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
                 return $output_view($request, $controller, $response, $return);

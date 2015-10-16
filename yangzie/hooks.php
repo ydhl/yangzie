@@ -75,15 +75,19 @@ final class YZE_Hook {
                 "object" => $object 
         );
     }
-    private static function _call_user_func($listeners, $data){
+    private static function _call_user_func($listeners, $data, $is_filter){
+        
         foreach ( $listeners as $listener ) {
             if (is_object ( $listener ['object'] )) {
-                $data = call_user_func ( array($listener ['object'], $listener ['function']), $data);
+                $filter_data = call_user_func ( array($listener ['object'], $listener ['function']), $data);
             } else {
-                $data = call_user_func ( $listener ['function'], $data );
+                $filter_data = call_user_func ( $listener ['function'], $data );
+            }
+            if($is_filter){
+                $data = $filter_data;
             }
         }
-        return $data;
+        return $is_filter ? $filter_data : $data;
     }
     
     /**
@@ -91,19 +95,22 @@ final class YZE_Hook {
      * @param unknown hookname
      * @param unknown $data
      * @param unknown $module
+     * @param boolean $is_filter true表示上个hook的结果会进入下个hook，
+     *  false表示每个hook传入的data都是最原始的data;在这种情况下，整个hook执行的结果还是data
+     *  false，通常用于进行event通知，不在乎hook返回的值；只在乎hook的副作用，比如echo
      * @return unknown|mixed
      */
-    public static function do_hook($filter_name, $data=array(), $module=null) {
+    public static function do_hook($filter_name, $data=array(), $module=null, $is_filter=true) {
         $listeners = self::has_hook ( $filter_name, $module );
         
         if (! $listeners) return $data;
         
         if ($module){
-            return self::_call_user_func($listeners, $data);
+            return self::_call_user_func($listeners, $data, $is_filter);
         }
         
         foreach ( $listeners as $_listeners ) {
-            $data = self::_call_user_func($_listeners, $data);
+            $data = self::_call_user_func($_listeners, $data, $is_filter);
         }
         return $data;
     }

@@ -473,6 +473,8 @@ class YZE_SQL extends YZE_Object{
         $this->max = array();
         $this->min = array();
         $this->sum = array();
+        $this->limit_start = 0;
+        $this->limit_end = 0;
         return $this;
 	}
 	/**

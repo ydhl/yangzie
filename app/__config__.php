@@ -3,16 +3,17 @@ namespace  app;
 
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html/upload/");//end by /
 define("YZE_MYSQL_USER",  "root");
-define("YZE_MYSQL_HOST_M",  "127.0.0.1");
-define("YZE_MYSQL_DB",  "ydoa");
+define("YZE_MYSQL_HOST_M",  "");
+define("YZE_MYSQL_DB",  "");
 define("YZE_MYSQL_PORT",  "3306");
-define("YZE_MYSQL_PASS",  "ydhl");
-define("SITE_URI", "http://ydweixin.local.com/");
-define("UPLOAD_SITE_URI", "http://ydweixin.local.com/");
+define("YZE_MYSQL_PASS",  "");
+define("SITE_URI", "your site ");
+define("CDN_SITE_URI", "your cdn site");
+define("UPLOAD_SITE_URI", "your site");
 
 ini_set('error_reporting', E_ALL);//错误级别
 date_default_timezone_set('Asia/Chongqing');//时区
-define("APLICATION_NAME", "Yangzie");//应用名称
+define("APPLICATION_NAME", "Yangzie");//应用名称
 
 /**
  * app模块配置

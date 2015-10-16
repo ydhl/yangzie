@@ -28,19 +28,12 @@ define("YZE_APP_VENDOR",        YZE_APP_PATH."vendor/");
 define("YZE_APP_LAYOUTS_INC",   YZE_APP_PATH."vendor/layouts/");
 define("YZE_APP_VIEWS_INC",     YZE_APP_PATH."vendor/views/");
 
-//path_info, rewrite, none
-define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');
-define('YZE_REWRITE_MODE_REWRITE', 'yze_rewrite_mode_rewrite');
-define('YZE_REWRITE_MODE_NONE', 'yze_rewrite_mode_none');
-define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_REWRITE);
-define("YZE_DEVELOP_MODE",  true );
 
 ini_set('include_path', get_include_path().PS.dirname(dirname(dirname(__FILE__))));
 
-require_once YANGZIE.'/yangzie.php';
 require_once YANGZIE.'/hooks.php';//framework hook处理,hook处理程序
+require_once YANGZIE.'/yangzie.php';
 require_once YANGZIE.'/file.php';
-
 require_once YANGZIE.'/session.php';
 require_once YANGZIE.'/request.php';
 require_once YANGZIE.'/cache.php';
@@ -51,7 +44,6 @@ require_once YANGZIE.'/model.php';
 require_once YANGZIE.'/sql.php';
 require_once YANGZIE.'/acl.php';
 require_once YANGZIE.'/module.php';
-
 require_once YANGZIE.'/router.php';
 require_once YANGZIE.'/startup.php';
 require_once YANGZIE.'/error.php';
@@ -59,40 +51,7 @@ require_once YANGZIE.'/daemon/daemon-functions.php';
 require_once YANGZIE.'/html.php';
 require_once YANGZIE.'/i18n.php';
 
-
-//自动加载处理
-function yze_autoload($class) {
-	$_ = preg_split("{\\\\}", strtolower($class));
-
-	if($_[0]=="app"){
-		
-		$module_name = $_[1];
-		$class_name = $_[2];
-		$loaded_module_info = \yangzie\YZE_Object::loaded_module($module_name);
-		
-		$file = "";
-		if($loaded_module_info['is_phar']){
-			$module_name .= ".phar";
-			$file = "phar://";
-		}
-		$file .= YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS ;
-		if(preg_match("{_controller$}i", $class)){
-			$file .= "controllers" . DS . $class_name . ".class.php";
-		}else if(preg_match("{_model$}i", $class)){
-			$file .= "models" . DS . $class_name . ".class.php";
-		}else if(preg_match("{_module$}i", $class)){
-		    $file .= "__module__.php";
-		}else{
-			$file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
-		}
-
-		if(@$file && file_exists($file)){
-			include $file;
-		}
-	}
-}
-
-spl_autoload_register("\app\yze_autoload");
+spl_autoload_register("\yangzie\yze_autoload");
 
 //启动会话,yze_load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
 \session_start();

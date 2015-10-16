@@ -184,19 +184,20 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $this->check_request_token ();
         $response = $this->$method ();
         
-        // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
-        if (! $response) {
-            $response = new YZE_Redirect ( $request->the_full_uri (), $this, $this->get_datas () );
-        }
         
-        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
+        if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
             $this->layout = "";
             return new YZE_Notpl_View ( json_encode ( $this->post_result_of_json ), $this );
         }
         
-        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
+        if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
             $this->layout = "";
             return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json ) . ");</script>", $this );
+        }
+        
+        // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
+        if (! $response) {
+            $response = new YZE_Redirect ( $request->the_full_uri (), $this, $this->get_datas () );
         }
         
         return $response;

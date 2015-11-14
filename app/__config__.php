@@ -2,10 +2,10 @@
 namespace  app;
 
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html/upload/");//end by /
-define("YZE_MYSQL_USER",  "root");
+define("YZE_MYSQL_USER",  "");
 define("YZE_MYSQL_HOST_M",  "");
 define("YZE_MYSQL_DB",  "");
-define("YZE_MYSQL_PORT",  "3306");
+define("YZE_MYSQL_PORT",  "");
 define("YZE_MYSQL_PASS",  "");
 define("SITE_URI", "your site ");
 define("CDN_SITE_URI", "your cdn site");
@@ -39,7 +39,9 @@ class App_Module extends \yangzie\YZE_Base_Module{
 			"app/vendor/pomo/translation_entry.class.php",
 			"app/vendor/pomo/translations.class.php",
 	);
-	
+	public function module_include_files() {
+	    
+	}
 	//加载应用时需要检查什么
 	public function check(){
 		//return empty array() if everything is ok

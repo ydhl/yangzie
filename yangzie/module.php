@@ -82,5 +82,8 @@ abstract class YZE_Base_Module{
 	 * @return array
 	 */
 	protected abstract function _config();
+	public function module_include_files() {
+	    
+	}
 }
 ?>

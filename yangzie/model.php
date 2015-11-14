@@ -147,6 +147,7 @@ abstract class YZE_Model extends YZE_Object{
                 break;
 		}
 		$this->records[$name] = $value;
+		$this->$name = $value;
 		return $this;
 	}
 

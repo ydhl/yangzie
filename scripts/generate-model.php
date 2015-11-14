@@ -53,17 +53,22 @@ class Generate_Model_Script extends AbstractScript{
 		while ($row=mysqli_fetch_assoc($result)) {
 			$row['Key']=="PRI" ? $key = $row['Field'] : null;
 			$type_info = $this->get_type_info($row['Type']);
-			$constant = array_merge((array)$constant,(array)$this->getEnumConstant($row['Type']));
+			$constant = array_merge((array)$constant,(array)$this->getEnumConstant($row['Field'], $row['Type']));
 			
 			@$fielddefine .= "       ".str_pad("'".$row['Field']."'", 12," ")." => array('type' => '".$type_info['type']."', 'null' => ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",'length' => '".$type_info['length']."','default'	=> '".$row['Default']."',),
 ";
-			
+			@$properConst .= "
+    /**
+     * {$row['Comment']}
+     * @var {$type_info['type']}
+     */
+    const ".strtoupper($row['Field'])." = \"{$row['Field']}\";";
 		}
 		
 		$constantdefine = '';
 		foreach($constant as $c=>$v){
 		    $constantdefine .= "
-		    const $v = '$c';";
+    const $v = '$c';";
 		}
 		
 		return "<?php
@@ -85,6 +90,7 @@ class $class extends YZE_Model{
     const VERSION = 'modified_on';
     const MODULE_NAME = \"$package\";
     const KEY_NAME = \"$key\";
+    $properConst
     protected \$columns = array(
         $fielddefine
     );
@@ -94,11 +100,11 @@ class $class extends YZE_Model{
 }?>";
 	}
 	
-	protected function getEnumConstant($type){
+	protected function getEnumConstant($name, $type){
 		if(preg_match("/^enum\((?<v>.+)\)/",$type,$matches)){
 			foreach(explode(",",$matches['v']) as $c){
 				$c = trim($c,"'");
-				$constant[$c] = strtr(strtoupper($c),array("-"=>"_"," "=>"_"));
+				$constant[$c] = strtoupper($name)."_".strtr(strtoupper($c),array("-"=>"_"," "=>"_"));
 			}
 			return $constant;
 		}
@@ -230,7 +236,7 @@ class Generate_Refreshmodel_Script extends Generate_Model_Script{
         while ($row=mysqli_fetch_assoc($result)) {
             $row['Key']=="PRI" ? $key = $row['Field'] : null;
             $type_info = $this->get_type_info($row['Type']);
-            $constant = array_merge((array)$constant,(array)$this->getEnumConstant($row['Type']));
+            $constant = array_merge((array)$constant,(array)$this->getEnumConstant($row['Field'], $row['Type']));
             	
             @$fielddefine .= "       ".str_pad("'".$row['Field']."'", 12," ")." => array('type' => '".$type_info['type']."', 'null' => ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",'length' => '".$type_info['length']."','default'	=> '".$row['Default']."',),
 ";

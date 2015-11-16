@@ -449,6 +449,7 @@ class YZE_Layout extends YZE_View_Adapter{
 	protected function display_self(){
 		ob_start();
 		$this->view->output();
+		$this->data = $this->view->get_datas();
 		$this->content_of_section = $this->view->view_sections();
 		$this->content_of_view = ob_get_clean();
 		if ($this->layout){

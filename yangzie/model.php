@@ -302,6 +302,33 @@ abstract class YZE_Model extends YZE_Object{
 		return $_;
 	}
 	
+    /**
+     * 根据指定查询条件查询
+     * 
+     * @author HuJinhao
+     * 
+     * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
+     * @param array $fields 要求查询的字段
+     * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
+     * 
+     */
+    public static function find_by_attrs2(array $attrs, $fields=array("*"))
+    {
+        $sql = new YZE_SQL();
+        $sql->select("o", $fields)
+            ->from(get_called_class(),"o");
+        foreach ($attrs as $attr){
+            $sql->where("o", $attr[0], $attr[1], $attr[2]);
+        }
+        
+        $objects = YZE_DBAImpl::getDBA()->select($sql);
+        $_ = array();
+        foreach ($objects as $object){
+            $_[$object->get_key()] = $object;
+        }
+        return $_;
+    }
+    
 	/**
 	 * 持久到数据库,返回自己
 	 */

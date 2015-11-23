@@ -94,7 +94,7 @@ final class YZE_Hook {
      * 
      * @param unknown hookname
      * @param unknown $data
-     * @param unknown $module
+     * @param unknown $module 指定则指调用该module下面的hook，多个可用,分隔，依次调用其中的module
      * @param boolean $is_filter true表示上个hook的结果会进入下个hook，
      *  false表示每个hook传入的data都是最原始的data;在这种情况下，整个hook执行的结果还是data
      *  false，通常用于进行event通知，不在乎hook返回的值；只在乎hook的副作用，比如echo
@@ -105,23 +105,29 @@ final class YZE_Hook {
         
         if (! $listeners) return $data;
         
-        if ($module){
-            return self::_call_user_func($listeners, $data, $is_filter);
-        }
-        
-        foreach ( $listeners as $_listeners ) {
-            $data = self::_call_user_func($_listeners, $data, $is_filter);
-        }
+        $data = self::_call_user_func($listeners, $data, $is_filter);
         return $data;
     }
     
     public static function has_hook($filter_name, $module=null) {
         if($module){
-            return @self::$listeners [$filter_name][$module];
-        }else{
-            return @self::$listeners [$filter_name];
+            $modules = explode(",", $module);
+            $funcs = array();
+            foreach ($modules as $module){
+                foreach ((array)@self::$listeners [$filter_name][$module] as $func){
+                    $funcs[] = $func; 
+                }
+            }
+            return $funcs;
         }
         
+        $funcs = array();
+        foreach (@self::$listeners [$filter_name] as $m=>$_funcs){
+            foreach ((array)$_funcs as $func){
+                $funcs[] = $func;
+            }
+        }
+        return $funcs;
     }
     
     public static function include_hooks($module, $dir){

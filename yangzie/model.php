@@ -147,7 +147,6 @@ abstract class YZE_Model extends YZE_Object{
                 break;
 		}
 		$this->records[$name] = $value;
-		$this->$name = $value;
 		return $this;
 	}
 
@@ -281,18 +280,25 @@ abstract class YZE_Model extends YZE_Object{
 	 * 
 	 * @param array $attrs
 	 * @param array $fields 要求查询的字段
+	 * @param bool $is_first 是否只查询第1个
 	 * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
 	 * 
 	 * @return
 	 */
-	public static function find_by_attrs(array $attrs, $fields=array("*"))
+	public static function find_by_attrs(array $attrs, $fields=array("*"), $is_first=false)
 	{
-		$sql = new YZE_SQL();
+		if ( ! $fields ) $fields = array("*");
+
+	    $sql = new YZE_SQL();
 		$sql->select("o", $fields)
 		    ->from(get_called_class(),"o");
 		foreach ($attrs as $att=>$value){
 			$sql->where("o", $att, YZE_SQL::EQ, $value);
 		}
+		
+	    if ($is_first) {
+            return YZE_DBAImpl::getDBA()->getSingle($sql);
+        }
 		
 		$objects = YZE_DBAImpl::getDBA()->select($sql);
 		$_ = array();
@@ -309,16 +315,23 @@ abstract class YZE_Model extends YZE_Object{
      * 
      * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
      * @param array $fields 要求查询的字段
+     * @param bool $is_first 是否只查询第1个
      * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
      * 
      */
-    public static function find_by_attrs2(array $attrs, $fields=array("*"))
+    public static function find_by_attrs2(array $attrs, $fields=array("*"), $is_first=false)
     {
+        if ( ! $fields ) $fields = array("*");
+        
         $sql = new YZE_SQL();
         $sql->select("o", $fields)
             ->from(get_called_class(),"o");
         foreach ($attrs as $attr){
             $sql->where("o", $attr[0], $attr[1], $attr[2]);
+        }
+        
+        if ($is_first) {
+            return YZE_DBAImpl::getDBA()->getSingle($sql);
         }
         
         $objects = YZE_DBAImpl::getDBA()->select($sql);

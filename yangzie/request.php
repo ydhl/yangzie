@@ -197,12 +197,8 @@ class YZE_Request extends YZE_Object {
                 case YZE_REWRITE_MODE_PATH_INFO :
                     $this->uri = $_SERVER ['PATH_INFO'];
                     break;
-                case YZE_REWRITE_MODE_REWRITE :
-                    $this->uri = parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
-                    break;
-                case YZE_REWRITE_MODE_NONE :
                 default :
-                    $this->uri = $this->get_from_get ( "yze_action", "/" );
+                    $this->uri = parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
             }
             $this->full_uri = $_SERVER ['REQUEST_URI'];
             $this->queryString = $_SERVER ['QUERY_STRING'];
@@ -248,7 +244,7 @@ class YZE_Request extends YZE_Object {
         }
         
         $routers = YZE_Router::get_instance ()->get_routers ();
-        
+
         $config_args = self::parse_url ( $routers, $uri ); // 地址映射及返回格式
         $this->set_vars ( @( array ) $config_args ['args'] );
         if ($format && ! $this->get_var ( "__yze_resp_format__" )) {

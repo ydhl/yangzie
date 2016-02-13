@@ -137,10 +137,11 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
             $format  = $request->get_output_format ();
             $request = $request->copy();
         }
+
         $request->init ( $uri, $method, $format , $request_method); // 初始化请求上下文环境,请求入栈
         
         $controller = $request->controller ();
-        
+
         // 如果yze_go 是从一个控制器的处理中再次调用的，则为新的控制器copy一个上下文环境
         if (@$old_uri) {
             $session->copy ( $old_uri, $request->the_uri() );

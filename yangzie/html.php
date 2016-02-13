@@ -209,7 +209,7 @@ function yze_js_bundle($bundle, $version=""){
  */
 function yze_css_bundle($bundle, $version=""){
 ?>
-<link rel="stylesheet" type="text/css" href="load.php?t=css&v=<?php echo $version?>&b=<?php echo $bundle?>" />
+<link rel="stylesheet" type="text/css" href="/load.php?t=css&v=<?php echo $version?>&b=<?php echo $bundle?>" />
 <?php 
 }
 /**
@@ -227,7 +227,7 @@ function yze_module_js_bundle(){
 function yze_module_css_bundle(){
 	$request = YZE_Request::get_instance();
 ?>
-<link rel="stylesheet" type="text/css" href="load.php?t=css&v=<?php echo $version?>&m=<?php echo $request->module()?>" />
+<link rel="stylesheet" type="text/css" href="/load.php?t=css&v=<?php echo $version?>&m=<?php echo $request->module()?>" />
 <?php 
 }
 ?>

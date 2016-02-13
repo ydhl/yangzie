@@ -274,7 +274,7 @@ function display_mvc_wizard(){
 	
 	
 	
-	echo wrap_output(__("4. (4/8)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  "));
+	echo wrap_output(__("4. (4/8)视图格式(如tpl, xml, json)，多个用空格分隔，默认是tpl:  "));
 	$view_format = get_input();
 	
 	return @array(
@@ -282,7 +282,7 @@ function display_mvc_wizard(){
 		"controller"=>$controller,
         "uri"=>$uri,
         "module_name"=>$module,
-        "view_format"=>$view_format ,
+        "view_format"=>$view_format ? $view_format : "tpl" ,
 	        
 // 		"model"=>$model,
 // 		"view_tpl"=>$view_tpl

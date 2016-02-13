@@ -27,6 +27,8 @@ define("YZE_APP_MODULES_INC",   YZE_APP_PATH."modules/");//应用代码目录名
 define("YZE_APP_VENDOR",        YZE_APP_PATH."vendor/");
 define("YZE_APP_LAYOUTS_INC",   YZE_APP_PATH."vendor/layouts/");
 define("YZE_APP_VIEWS_INC",     YZE_APP_PATH."vendor/views/");
+define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');
+define('YZE_REWRITE_MODE_REWRITE', 'yze_rewrite_mode_rewrite');
 
 
 ini_set('include_path', get_include_path().PS.dirname(dirname(dirname(__FILE__))));

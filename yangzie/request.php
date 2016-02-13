@@ -388,6 +388,9 @@ class YZE_Request extends YZE_Object {
     public function is_mobile_client() {
         return preg_match ( "/android|iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] );
     }
+    public function isInWeixin(){
+    	return preg_match ( "/MicroMessenger/i", $_SERVER ['HTTP_USER_AGENT'] );
+    }
     public static function build_query($data) {
         $ret = array ();
         
@@ -628,7 +631,6 @@ class YZE_Request extends YZE_Object {
         return $this->module_class;
     }
     /**
-     *
      * @return YZE_Base_Module;
      */
     public function module_obj() {
@@ -642,5 +644,41 @@ class YZE_Request extends YZE_Object {
             return YZE_APP_PATH . "modules/" . $this->module () . "/views";
         }
     }
+    /**
+     * 同一个bundle的文件必需在一个目录中
+     * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
+     */
+    public function addCSSBundle($files){
+    	$session = YZE_Session_Context::get_instance();
+    	$session->set($this->module()."-css-bundle", (array)$files);
+    }
+    /**
+     * 同一个bundle的文件必需在一个目录中
+     * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
+     */
+    public function addJSBundle($files){
+    	$session = YZE_Session_Context::get_instance();
+    	$session->set($this->module()."-js-bundle", (array)$files);
+    }
+
+    /**
+     * 返回 module指定的js bundle
+     * @param unknown $module
+     * @return array
+     */
+    public static function jsBundle($module){
+    	$session = YZE_Session_Context::get_instance();
+    	return $session->get($module."-js-bundle");
+    }
+    /**
+     * 返回 module指定的css bundle
+     * @param unknown $module
+     * @return array
+     */
+    public static function cssBundle($module){
+    	$session = YZE_Session_Context::get_instance();
+    	return $session->get($module."-css-bundle");
+    }
+    
 }
 ?>

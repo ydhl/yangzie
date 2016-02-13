@@ -32,16 +32,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	public $db_port = YZE_MYSQL_PORT;
 	public $db_psw= YZE_MYSQL_PASS;
 	public $db_charset= 'UTF8';
-	/**
-	 * 应用启动时需要加载的文件
-	 * 
-	 * @var unknown
-	 */
-	public $include_files = array(
-			"app/vendor/pomo/translation_entry.class.php",
-			"app/vendor/pomo/translations.class.php"
-	);
-    
+	
 	//加载应用时需要检查什么
 	public function check(){
 		//return empty array() if everything is ok
@@ -56,13 +47,57 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		return array();
 	}
 	
+	/**
+	 * 应用启动时需要加载的文件
+	 */
 	public function module_include_files() {
-        $files = array();//全局加载的文件
-        if ($files) {
-            $this->include_files = array_merge($this->include_files, $files);
-        }
+        $files = array(
+			"app/vendor/pomo/translation_entry.class.php",
+			"app/vendor/pomo/translations.class.php"
+		);
         
-        return $this->include_files;
+        return $files;
+	}
+	
+	/**
+	 * js资源分组，在加载时方便直接通过分组名加载; 这里是静态指定，如果模块中需要动态指定，可通过Request->addJSBundle制定
+	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
+	 * @return array(资源路径1，资源路径2)
+	 */
+	public function js_bundle($bundle){
+		$config = array (
+				"bootstrap" => array (
+						"/bootstrap3/js/bootstrap.min.js"
+				),
+				"jquery" => array (
+						"/js/jquery-1.11.2.min.js" 
+				),
+				"pjax" => array (
+						"/js/jquery.pjax.js" 
+				),
+				"yangzie" => array (
+						"/js/json.js",
+						"/js/yze_ajax_front_controller.js",
+						"/js/outerHTML-2.1.0-min.js"
+				) 
+		);
+		return $config[$bundle];
+	}
+	/**
+	 * css资源分组，在加载时方便直接通过分组名加载; 这里是静态指定，如果模块中需要动态指定，可通过Request->addCSSBundle制定
+	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
+	 * @return array(资源路径1，资源路径2)
+	 */
+	public function css_bundle($bundle){
+		$config = array (
+				"bootstrap" => array (
+						"/css/bsfix.css",
+						"/bootstrap3/css/bootstrap.min.css",
+						"/bootstrap3/css/bootstrap-theme.min.css",
+						
+				)
+		);
+		return $config[$bundle];
 	}
 }
 ?>

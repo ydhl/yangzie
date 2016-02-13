@@ -1,5 +1,7 @@
 文档在完善中。。。
 
+V1.5.2
+
 # Yangzie -- 轻松构造模块化的应用
 
 * 易点互联: <http://yidianhulian.com>

@@ -157,6 +157,11 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 * @var array
 	 */
 	protected $data;
+	/**
+	 * 指定该view输出的layout，如果指定了，则优先级最高于controller设置的layout
+	 * @var string
+	 */
+	public $layout;
 
 	/**
 	 * 视图响应的缓存控制
@@ -178,6 +183,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 		$this->data = (array)$data;
 		$this->controller = $controller;
 	}
+	
 	public function get_controller(){
 		return $this->controller;
 	}
@@ -436,7 +442,6 @@ class YZE_XML_View extends YZE_View_Adapter {
 class YZE_Layout extends YZE_View_Adapter{
   
 	private $view;
-	private $layout;
 	private $content_of_view;
 	private $content_of_section;
 	public function __construct($layout,YZE_View_Adapter $view,  YZE_Resource_Controller $controller){
@@ -452,6 +457,9 @@ class YZE_Layout extends YZE_View_Adapter{
 		$this->data = $this->view->get_datas();
 		$this->content_of_section = $this->view->view_sections();
 		$this->content_of_view = ob_get_clean();
+		if($this->view->layout){
+			$this->layout = $this->view->layout;
+		}
 		if ($this->layout){
 		    if(YZE_Request::get_instance()->is_mobile_client()){
 		        $moblayoutfile = YZE_APP_LAYOUTS_INC."{$this->layout}.moblayout.php";

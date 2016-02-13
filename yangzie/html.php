@@ -2,6 +2,7 @@
 
 namespace yangzie;
 
+use app\App_Module;
 class YZE_Form extends YZE_Object {
     private $form_name;
     private $model;
@@ -186,5 +187,47 @@ function yze_merge_query_string($url, $args = array()){
         $get    = array_merge($get, $newArgs);
     }
     return $url."?".http_build_query($get);
+}
+
+/**
+ * 输出css加载html, 工作路径是load文件
+ * 所在的目录，这在css文件中会访问相对路径下的font，img时需要注意, yze会对../和./的路径修改成正确的路径
+ * @param string $bundle, 多个bundle用,号分隔
+ * @param string version 版本
+ */
+function yze_js_bundle($bundle, $version=""){
+?>
+<script type="text/javascript" src="/load.php?t=js&v=<?php echo $version?>&b=<?php echo $bundle?>"></script>
+<?php 
+}
+
+/**
+ * 输出css加载html, 工作路径是load文件
+ * 所在的目录，这在css文件中会访问相对路径下的font，img时需要注意, yze会对../和./的路径修改成正确的路径
+ * @param string $bundle, 多个bundle用,号分隔
+ * @param string version 版本
+ */
+function yze_css_bundle($bundle, $version=""){
+?>
+<link rel="stylesheet" type="text/css" href="load.php?t=css&v=<?php echo $version?>&b=<?php echo $bundle?>" />
+<?php 
+}
+/**
+ * 输出module指定的js bundle，通常在controller中通过request->addJSBundle()加入的
+ */
+function yze_module_js_bundle(){
+	$request = YZE_Request::get_instance();
+	?>
+<script type="text/javascript" src="/load.php?t=js&v=<?php echo $version?>&m=<?php echo $request->module()?>"></script>
+<?php 
+}
+/**
+ * 输出module指定的css bundle，通常在controller中通过request->addCSSBundle()加入的
+ */
+function yze_module_css_bundle(){
+	$request = YZE_Request::get_instance();
+?>
+<link rel="stylesheet" type="text/css" href="load.php?t=css&v=<?php echo $version?>&m=<?php echo $request->module()?>" />
+<?php 
 }
 ?>

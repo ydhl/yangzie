@@ -31,8 +31,7 @@ function yze_get_acos_aros() {
                     ),
                     "desc" => ""//功能说明 
             )
-		)
-    }
+		);
     
 	return $array;
 }

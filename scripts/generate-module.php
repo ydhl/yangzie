@@ -24,7 +24,10 @@ class Generate_Module_Script extends AbstractScript{
 		$this->check_dir($path."/views");
 		$this->check_dir($path."/hooks");
 		$this->check_dir(dirname(dirname(__FILE__))."/tests/".$module);
-
+		
+		$staticPath = dirname(dirname(__FILE__))."/app/public_html/modules/".$module;
+		$this->check_dir($staticPath);
+		
 		//生成module 配置文件
 		$module = ucfirst($module);
 		$config_file ="<?php

@@ -43,7 +43,7 @@ YZE_Hook::add_hook(YZE_FILTER_YZE_EXCEPTION, function ($datas){
     if(! is_a($datas['exception'], "\\yangzie\\YZE_Need_Signin_Exception")) return $datas;
     
     $datas['response'] = new YZE_Redirect("/signin", $datas['controller']);
-    if(isInWeixin()){
+    if($request->isInWeixin()){
         $datas['response'] = new YZE_Redirect("/signin", $datas['controller']);
     }
     return $datas;

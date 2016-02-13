@@ -1,25 +1,20 @@
 <?php  
 namespace yangzie;
-
 ?>
-<!DOCTYPE html>
+<html>
 <head>
 <meta charset="utf-8">
-<title><?php echo $this->get_data("yze_page_title")?> － Yangzie Demo</title>
-
-<?php //load js?>
-<link rel="stylesheet" type="text/css" href="/bootstrap3/css/bootstrap-theme.min.css" />
-<link rel="stylesheet" type="text/css" href="/bootstrap3/css/bootstrap.min.css" />
-
-<?php //load css?>
-<script type="text/javascript" src="/js/jquery-1.11.2.min.js"></script>
-<script type="text/javascript" src="/bootstrap3/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="/js/yze_ajax_front_controller.js"></script>
-
+<title><?php echo $this->get_data("yze_page_title")?> － <?php echo APPLICATION_NAME?></title>
+<?php 
+yze_css_bundle("bootstrap");
+yze_module_css_bundle();
+yze_js_bundle("jquery,bootstrap,yangzie,pjax");
+?>
 </head>
 <body>
     <div class="container">
         <?php echo $this->content_of_view();?>
     </div>
+<?php yze_module_js_bundle();?>
 </body>
 </html>

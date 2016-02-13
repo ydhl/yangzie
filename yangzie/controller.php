@@ -162,7 +162,6 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         if (is_a ( $response, "YZE_Cacheable" )) {
             $response->set_cache_config ( $this->cache_config ); // 内容协商的缓存控制
         }
-        
         return $response;
     }
     

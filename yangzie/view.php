@@ -460,6 +460,10 @@ class YZE_Layout extends YZE_View_Adapter{
 		if($this->view->layout){
 			$this->layout = $this->view->layout;
 		}
+
+		if($_SERVER['X-PJAX']){//pjax 请求，不返回layout
+			$this->layout = "";
+		}
 		if ($this->layout){
 		    if(YZE_Request::get_instance()->is_mobile_client()){
 		        $moblayoutfile = YZE_APP_LAYOUTS_INC."{$this->layout}.moblayout.php";

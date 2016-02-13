@@ -2,7 +2,6 @@
 
 namespace app;
 
-
 /**
  * 用户分组的形式是：
  * /------组根
@@ -20,15 +19,21 @@ function yze_get_aco_desc($aconame) {
     }
     return '';
 }
+function yze_get_ignore_acos() {
+    return array();
+}
 function yze_get_acos_aros() {
-	return array (
-			"/" => array (
-					"deny" => "*",
-					"allow" => array (
-							""
-					),
-					"desc" => "模板描述"
-			),
-	);
+    $array = array (
+            "/" => array (//module/controller/action
+                    "deny" => "",
+                    "allow" => array (
+                            "*" //aro
+                    ),
+                    "desc" => ""//功能说明 
+            )
+		)
+    }
+    
+	return $array;
 }
 ?>

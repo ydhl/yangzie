@@ -108,6 +108,57 @@ class YZE_SQL extends YZE_Object{
 	 */
 	private $classes = array();
 	/**
+	 * 如果在INSERT插入行后会导致在一个UNIQUE索引或PRIMARY KEY中出现重复值，
+	 * 则在出现重复值的行执行UPDATE；并用unique_key 配置的字段作为update的条件
+	 * 如果不会导致唯一值列重复的问题，则插入新行. 用法：
+	 * $unique_key = array("Key_name_A"=>A,"Key_name_B"=>B,"Key_name_C"=>C,"Key_name_D"=>array(D,E));
+	 *
+	 * A,B,C三个是独立唯一的字段，D,E是联合起来唯一的字段
+	 * @var array
+	 */
+	private $unique_key = array();
+	/**
+	 * INSERT_NOT_EXIST;INSERT_EXIST;INSERT_NOT_EXIST_OR_UPDATE时传入的检查某条记录的完整原生sql
+	 * @var unknown
+	 */
+	private $check_sql  = "";
+	private $insert_type = self::INSERT_NORMAL;
+	/**
+	 * 普通插入sql
+	 * @var unknown
+	 */
+    const INSERT_NORMAL    = "insert_normal";
+    /**
+     * 指定的条件不存在时插入
+     * @var unknown
+     */
+    const INSERT_NOT_EXIST = "insert_not_exist";
+    /**
+     * 指定的条件不存在时插入； 存在则更新;这是传入的check sql必须通插入的sql是同一个表，yze会用check sql的where去更新插入的值
+     * @var unknown
+     */
+    const INSERT_NOT_EXIST_OR_UPDATE = "insert_not_exist_or_update";
+    /**
+     * 指定的条件存在是插入
+     * @var unknown
+     */
+    const INSERT_EXIST     = "insert_exist";
+    /**
+     * 有唯一键冲突时进行更新
+     * @var unknown
+     */
+    const INSERT_ON_DUPLICATE_KEY_UPDATE = "insert_on_duplicate_key_update";
+    /**
+     * 有唯一健冲突时先删除原来的，再插入
+     * @var unknown
+     */
+    const INSERT_ON_DUPLICATE_KEY_REPLACE = "insert_on_duplicate_key_replace";
+    /**
+     * 忽略唯一健冲突;数据将不写入数据库
+     * @var unknown
+     */
+    const INSERT_ON_DUPLICATE_KEY_IGNORE  = "insert_on_duplicate_key_ignore";
+	/**
 	 * 构建where条件段，e.g. where('item','part_no',YZE_SQL::LIKE,'%Good%')
 	 * @param unknown_type $table
 	 * @param unknown_type $column
@@ -276,11 +327,20 @@ class YZE_SQL extends YZE_Object{
 	 * 构建插入sql,e.g. insert('item',array('part_no'=>'value','quote_id'=>'34343'));
 	 * @param array $datas 要插入的字段（键）与值
 	 * @param string $alias 插入的表别名
+	 * @param unkonw $extra_info $insert_type==self::INSERT_ON_DUPLICATE_KEY_UPDATE传入唯一键字段数组
+	 * $insert_type==self::INSERT_EXIST,INSERT_NOT_EXIST_OR_UPDATE,INSERT_NOT_EXIST时传入完整的sql；不传入sql则使用自己的where条件
+	 * 其它insert_type设置无意义
 	 * @return YZE_SQL
 	 */
-	public function insert($alias,array $datas){
+	public function insert($alias,array $datas, $insert_type=self::INSERT_NORMAL, $extra_info=null){
 		$this->action = "insert";
 		$this->insert[$alias] = $datas;
+		$this->insert_type = $insert_type;
+		if($insert_type==self::INSERT_ON_DUPLICATE_KEY_UPDATE){
+		  $this->unique_key = (array)$extra_info;
+		}else if($insert_type==self::INSERT_EXIST || $insert_type==self::INSERT_NOT_EXIST || $insert_type==self::INSERT_NOT_EXIST_OR_UPDATE){
+		    $this->check_sql = $extra_info;
+		}
 		return $this;
 	}
 	/**
@@ -677,17 +737,50 @@ class YZE_SQL extends YZE_Object{
 				.($where  ? " \r\nWHERE ".$where : "");
 	}
 	private function _insert(){
+	    $update = array();
 		foreach($this->insert as $alias => $insertDatas){
 			foreach((array)$insertDatas as $field => $value){
-				$insert_column[] = "`".$field."`";
-				$insert_value[] = $this->_quoteValue($value);
+			    $val = $this->_quoteValue($value);
+			    if(($this->insert_type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_UPDATE && ! in_array($field, $this->unique_key))){
+			        $update[] = "`{$field}`=VALUES(`{$field}`)";
+			    }else if($this->insert_type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_REPLACE){
+			        $update[] = "`{$field}`={$val}";
+			    }
+				$insert_column[] = "`{$field}`";
+				$insert_value[]  = $val;
 			}
 		}
-		$where = $this->_where();
-		return "INSERT INTO ".$this->_from()
-				." (".join(",",$insert_column).") \r\nVALUES("
-				.join(",",$insert_value).")"
-				.($where  ? " \r\nWHERE ".$where : "");
+		$class = $this->get_select_classes(true);
+		$class = $class[$alias];
+		$obj = new $class();
+
+		switch ($this->insert_type){
+		    case self::INSERT_EXIST:
+		        $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$class::KEY_NAME." FROM ".$this->_from()." WHERE ".$this->_where();
+		        return "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") SELECT ".join(",",$insert_value)." FROM dual WHERE EXISTS ({$where})";
+		        
+	        case self::INSERT_NOT_EXIST:
+            case self::INSERT_NOT_EXIST_OR_UPDATE:
+                $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$class::KEY_NAME." FROM ".$this->_from()." WHERE ".$this->_where();
+	            return "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") SELECT ".join(",",$insert_value)." FROM dual WHERE NOT EXISTS ({$where})";
+	            
+		    case self::INSERT_ON_DUPLICATE_KEY_IGNORE:
+		        return  "INSERT IGNORE INTO ".$this->_from()." (".join(",",$insert_column).") VALUES(".join(",",$insert_value).")";
+		        
+		    case self::INSERT_ON_DUPLICATE_KEY_UPDATE:
+		       
+		        return  "INSERT INTO ".$this->_from()
+		        ." (".join(",",$insert_column).") VALUES("
+		                .join(",",$insert_value).")  ON DUPLICATE KEY UPDATE ".$class::KEY_NAME." = LAST_INSERT_ID(".$class::KEY_NAME."), ".join(",", $update);
+		                
+		    case self::INSERT_ON_DUPLICATE_KEY_REPLACE:
+		        return  "REPLACE INTO ".$this->_from()." SET ".join(",", $update);
+		        
+	        case self::INSERT_NORMAL:
+	        default :
+		        return  "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") VALUES(".join(",",$insert_value).")";
+		}
+		
 	}
 	private function _update(){
 		foreach($this->update as $alias => $updateDatas){

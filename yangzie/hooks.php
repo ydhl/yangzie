@@ -20,14 +20,18 @@ namespace yangzie;
  */
 
 // 定义架构使用的hook常量
+/**
+ * 在处理post前调用, 这发生在已经做了基本处理，初始花了request和controller，但还没有进入流程前，参数YZE_Request
+ * @var unknown
+ */
 define ( 'YZE_ACTION_BEFORE_POST', 'do_before_post' );
+/**
+ * 在处理get前调用, 这发生在已经做了基本处理，初始花了request和controller，但还没有进入流程前，参数YZE_Request
+ * @var unknown
+ */
 define ( 'YZE_ACTION_BEFORE_GET', 'do_before_get' );
-define ( 'YZE_ACTION_BEFORE_PUT', 'do_before_put' );
-define ( 'YZE_ACTION_BEFORE_DELETE', 'do_before_delete' );
 define ( 'YZE_ACTION_AFTER_POST', 'do_after_post' );
 define ( 'YZE_ACTION_AFTER_GET', 'do_after_get' );
-define ( 'YZE_ACTION_AFTER_PUT', 'do_after_put' );
-define ( 'YZE_ACTION_AFTER_DELETE', 'do_after_delete' );
 define ( 'YZE_ACTION_TRANSACTION_COMMIT', 'transaction_commit' );
 define ( 'YZE_ACTION_UNRESUME_EXCEPTION', 'yze_action_unresume_exception' );
 define ( 'YZE_ACTION_BEFORE_DO_EXCEPTION', 'yze_action_before_do_exception' );

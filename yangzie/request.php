@@ -193,7 +193,17 @@ class YZE_Request extends YZE_Object {
     }
     private function _init($newUri) {
         if (! $newUri) {
-            $this->uri      = @$_SERVER ['PATH_INFO'] ? $_SERVER ['PATH_INFO'] :  parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
+            switch (YZE_REWRITE_MODE) {
+                case YZE_REWRITE_MODE_PATH_INFO :
+                    $this->uri = $_SERVER ['PATH_INFO'];
+                    break;
+                case YZE_REWRITE_MODE_REWRITE :
+                    $this->uri = parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
+                    break;
+                case YZE_REWRITE_MODE_NONE :
+                default :
+                    $this->uri = $this->get_from_get ( "yze_action", "/" );
+            }
             $this->full_uri = $_SERVER ['REQUEST_URI'];
             $this->queryString = $_SERVER ['QUERY_STRING'];
         } else {
@@ -250,6 +260,10 @@ class YZE_Request extends YZE_Object {
             $curr_module = @$config_args ['module'];
         }
         
+        $action = self::the_val($action ? $action : $this->get_var("action"), "index");
+        $method = ($this->is_get() ? "" : "post_") . str_replace("-", "_", $action);
+        $this->set_method ( $method );
+        
         if (@$curr_module && $controller_name) {
             $this->set_module ( $curr_module )->set_controller_name ( $controller_name );
         } else/*if( !$this->controller_name() )*/{
@@ -265,11 +279,6 @@ class YZE_Request extends YZE_Object {
             throw new YZE_Resource_Not_Found_Exception ( "Controller $controller_cls Not Found" );
         }
         
-        
-        $action = self::the_val($action ? $action : $this->get_var("action"), "index");
-        $method = ($this->is_get() ? "" : "post_") . str_replace("-", "_", $action);
-        $this->set_method ( $method );
-
         if (! method_exists ( $controller, $method )) {
             throw new YZE_Resource_Not_Found_Exception ( $controller_cls . "::" . $method . " not found" );
         }
@@ -320,22 +329,24 @@ class YZE_Request extends YZE_Object {
     }
     public function auth() {
         $req_method = $this->the_method ();
-        
         if ($this->need_auth ( $req_method )) { // 需要验证
             $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
             
-            if ( ! $loginuser ) throw new YZE_Need_Signin_Exception ();
+            if ( ! $loginuser ) throw new YZE_Need_Signin_Exception ("请登录");
             
             $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME);
             
             // 验证请求的方法是否有权限调用
             $acl = YZE_ACL::get_instance ();
             $aco_name = "/" . $this->module () . "/" . $this->controller_name ( true ) . "/" . $req_method;
+
             if (! $acl->check_byname ( $aro, $aco_name )) {
-                throw new YZE_Permission_Deny_Exception ( vsprintf ( __ ( "没有访问该页面的权限" ), array (
+              
+                throw new YZE_Permission_Deny_Exception ( vsprintf ( __ ( "没有访问该页面的权限({$aco_name}:{$aro})" ), array (
                         \app\yze_get_aco_desc ( $aco_name ) 
                 ) ) );
             }
+
         }
         return $this;
     }
@@ -441,7 +452,6 @@ class YZE_Request extends YZE_Object {
     private function need_auth($req_method) {
         $need_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "need" );
         $no_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "noneed" );
-        
         // 不需要验证
         if ($no_auth_methods && ($no_auth_methods == "*" || preg_match ( "/$no_auth_methods/", $req_method ))) {
             return false;

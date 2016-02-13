@@ -44,12 +44,15 @@ class Generate_Model_Script extends AbstractScript{
 		);
 		mysqli_select_db($db, $app_module->get_module_config("db_name"));
 		mysqli_query($db, "set names utf8");
-		$result = mysqli_query($db, "show full columns from $table");
 		
-		if (!$result) {
-			die($table . mysqli_error($db)."\r\n");
+		$unique_key = array();
+		$result = mysqli_query($db, "SHOW INDEX FROM  $table");
+		while ($row=mysqli_fetch_assoc($result)) {
+		    $unique_key[$row['Column_name']] = $row['Key_name'];
 		}
-		$constant = array();
+		$constant   = array();
+		
+		$result = mysqli_query($db, "show full columns from $table");
 		while ($row=mysqli_fetch_assoc($result)) {
 			$row['Key']=="PRI" ? $key = $row['Field'] : null;
 			$type_info = $this->get_type_info($row['Type']);
@@ -97,6 +100,10 @@ class $class extends YZE_Model{
     //array('attr'=>array('from'=>'id','to'=>'id','class'=>'','type'=>'one-one||one-many') )
     //\$this->attr
     protected \$objects = array();
+    /**
+     * @see YZE_Model::\$unique_key
+     */
+    protected \$unique_key = ".var_export($unique_key, true).";
 }?>";
 	}
 	

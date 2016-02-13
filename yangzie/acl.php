@@ -1,6 +1,7 @@
 <?php
 namespace yangzie;
 
+use app\yze_get_ignore_acos;
 class YZE_ACL extends YZE_Object{
 	private $acos_aros;
 	private $permission_cache = array();
@@ -67,7 +68,6 @@ class YZE_ACL extends YZE_Object{
 			$check_rst = $this->_check_user_permission($aconame);
 			if($check_rst!==-1)return $check_rst;
 		}
-
 		if(is_array($aroname)){//当前用户有多个角色
 			foreach ($aroname as $value) {
 				$check_rst = $this->_check_role_permission($value, $aconame);
@@ -90,7 +90,7 @@ class YZE_ACL extends YZE_Object{
 				return false;
 			}
 		}
-
+		
 		if (is_array(@$perm["allow"])){//允许当前ACO
 			$allow = $this->_in_array($aconame, $perm["allow"]);//允许当前ACO
 			
@@ -145,6 +145,14 @@ class YZE_ACL extends YZE_Object{
 	}
 
 	private function _need_controll($aconame){
+	    $array = \app\yze_get_ignore_acos();
+	    
+	    foreach ((array)$array as $aco) {
+	        $newaco = strtr($aco, array("*"=>".*"));
+	        if (preg_match("{".$newaco."}", $aconame)){
+	            return null;
+	        }
+	    }
 		foreach ((array)$this->acos_aros as $aco=>$ignore) {
 			$newaco = strtr($aco, array("*"=>".*"));
 			if (preg_match("{".$newaco."}", $aconame)){

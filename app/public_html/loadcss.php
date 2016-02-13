@@ -50,8 +50,12 @@ if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
     }
 }
 
+$app_path = dirname(dirname(dirname(__FILE__)));
 foreach ($files as $file) {
-    echo file_get_contents($file);
-}     
-
+	$path = realpath($file);
+	if(!file_exists($path))continue;
+	if($app_path != substr($path, 0, strlen($app_path))) continue;
+	$path_info = pathinfo($path);
+	if( strcasecmp( $path_info['extension'], "css") === 0) echo file_get_contents($file);
+}
 ?>

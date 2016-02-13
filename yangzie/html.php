@@ -80,7 +80,7 @@ function yze_die(YZE_View_Adapter $view, YZE_Resource_Controller $controller) {
 function yze_get_default_value($object, $name, $controller, $index = null) {
     $controller_name = get_class ( $controller );
     $cache_data = YZE_Session_Context::get_cached_post ( $name, $controller_name , $object);
-    if ($cache_data) {
+    if (isset($cache_data)) {
         if (is_array ( $cache_data )) {
             return $index == null ? $cache_data : @$cache_data [$index];
         }

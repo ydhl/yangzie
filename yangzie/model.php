@@ -13,10 +13,27 @@ namespace yangzie;
  */
 abstract class YZE_Model extends YZE_Object{
 	protected $records = array();
-	//array("attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-one"),"attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-many")  )
-	//$this->attr
+	/**
+	 * 映射：array("attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-one"),"attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-many")  )
+	 * 
+	 * 获取：$this->attr;
+	 */
 	protected $objects = array();
 	private $cache = array();
+	/**
+	 * 如果在INSERT插入行后会导致在一个UNIQUE索引或PRIMARY KEY中出现重复值，
+	 * 则在出现重复值的行执行UPDATE；并用unique_key 配置的字段作为update的条件
+	 * 如果不会导致唯一值列重复的问题，则插入新行. 用法：
+	 * $unique_key = array("A"=>"Key_name_A","B"=>"Key_name_B","C"=>"Key_name_B","D"=>"Key_name_D","E"=>"Key_name_D");
+	 * 
+	 * A,B,C三个是独立唯一的字段，D,E是联合起来唯一的字段
+	 * @var array
+	 */
+	protected $unique_key = array();
+	
+	public function get_unique_key(){
+	    return $this->unique_key;
+	}
 	/**
 	 * 返回表名
 	 */
@@ -248,6 +265,67 @@ abstract class YZE_Model extends YZE_Object{
 		return true;
 	}
 	
+	/**
+     * 更新数据库中单个实体对应表的记录,查询条件自定义
+     * 
+     * @author HuJinhao
+     * @param array $attrs 要更新的属性,表字段键值对,array("field"=>value,...)
+     * @param array $conds 查询条件,表字段键值对,array("field"=>value,...)
+     * @return bool 
+     * 
+     */
+	public static function update($attrs, $conds){
+	    $class = get_called_class();
+            
+        if(!($class instanceof YZE_Model) && !class_exists($class)){
+            throw new YZE_DBAException("Model Class $class not found");
+        }
+    
+        $entity = $class instanceof YZE_Model ? $class : new $class;
+    
+        $sql = new YZE_SQL();
+        $sql->update("t", $attrs)->from(get_called_class(), "t");
+        foreach ((array)$conds as $field => $val) {
+            $sql->where("t", $field, YZE_SQL::EQ, $val);
+        }
+        
+        YZE_DBAImpl::getDBA()->execute($sql);
+        
+        return true;       
+	}
+	
+    /**
+     * 更新数据库中单个实体对应表的记录,查询条件自定义
+     * 
+     * @author HuJinhao
+     * @param array $attrs 要更新的属性,表字段键值对,array("field"=>value,...)
+     * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
+     * @return bool
+     */
+    public static function update2($attrs, $conds){
+        $class = get_called_class();
+            
+        if(!($class instanceof YZE_Model) && !class_exists($class)){
+            throw new YZE_DBAException("Model Class $class not found");
+        }
+    
+        $entity = $class instanceof YZE_Model ? $class : new $class;
+    
+        $sql = new YZE_SQL();
+        $sql->update("t", $attrs)->from(get_called_class(), "t");
+        foreach ((array)$conds as $cond) {
+            if (isset($cond[2])) {
+                $sql->where("t", $cond[0], $cond[1], $cond[2]);
+            } else {
+                $sql->where("t", $cond[0], $cond[1]);
+            }       
+        }
+        
+        YZE_DBAImpl::getDBA()->execute($sql);
+        
+        return true;       
+    }
+    
 	public static function find_all(){
 		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
 	}
@@ -279,19 +357,17 @@ abstract class YZE_Model extends YZE_Object{
 	 * @author leeboo
 	 * 
 	 * @param array $attrs
-	 * @param array $fields 要求查询的字段
 	 * @param bool $is_first 是否只查询第1个
 	 * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
 	 * 
 	 * @return
 	 */
-	public static function find_by_attrs(array $attrs, $fields=array("*"), $is_first=false)
+	public static function find_by_attrs(array $attrs, $is_first=false)
 	{
-		if ( ! $fields ) $fields = array("*");
-
+        $class  = get_called_class();
 	    $sql = new YZE_SQL();
-		$sql->select("o", $fields)
-		    ->from(get_called_class(),"o");
+		$sql->select("o", array("*"))
+		    ->from($class, "o");
 		foreach ($attrs as $att=>$value){
 			$sql->where("o", $att, YZE_SQL::EQ, $value);
 		}
@@ -314,20 +390,23 @@ abstract class YZE_Model extends YZE_Object{
      * @author HuJinhao
      * 
      * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
-     * @param array $fields 要求查询的字段
      * @param bool $is_first 是否只查询第1个
      * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
      * 
      */
-    public static function find_by_attrs2(array $attrs, $fields=array("*"), $is_first=false)
+    public static function find_by_attrs2(array $attrs, $is_first=false)
     {
-        if ( ! $fields ) $fields = array("*");
+        $class  = get_called_class();
         
         $sql = new YZE_SQL();
-        $sql->select("o", $fields)
-            ->from(get_called_class(),"o");
+        $sql->select("o", array("*"))
+            ->from($class,"o");
         foreach ($attrs as $attr){
-            $sql->where("o", $attr[0], $attr[1], $attr[2]);
+            if (isset($attr[2])) {
+                $sql->where("o", $attr[0], $attr[1], $attr[2]);
+            } else {
+                $sql->where("o", $attr[0], $attr[1]);
+            }
         }
         
         if ($is_first) {
@@ -342,14 +421,73 @@ abstract class YZE_Model extends YZE_Object{
         return $_;
     }
     
+    /**
+     * 根据指定查询条件查询指定分页的数据
+     * 
+     * @author HuJinhao
+     * 
+     * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
+     * @param array $fields 要查询的字段
+     * @param int $page 页号
+     * @param int $pageSize 每页显示记录数
+     * @return array("total"=>总记录数, "data"=>array(YZE_Model,YZE_Model,...))
+     * 
+     */
+    public static function find_by_conds(array $conds, $fields=array("*"), $page=1, $pageSize=20)
+    {
+        $class = get_called_class();
+        
+        $sql = new YZE_SQL();
+        $sql->from($class,"o");
+        foreach ($conds as $cond){
+            if (isset($cond[2])) {
+                $sql->where("o", $cond[0], $cond[1], $cond[2]);
+            } else {
+                $sql->where("o", $cond[0], $cond[1]);
+            }
+        }
+        $sql->count("o", "*", "num");
+        $total  = YZE_DBAImpl::getDBA()->getSingle($sql);
+        $result = array("total" => $total->num, "data" => array());
+   
+        $sql->clean_select();
+    
+        if ( ! $fields ) {
+            $fields = array("*");
+        } else {
+            if ( ! in_array($class::KEY_NAME, $fields) ) { //没有传主键字段时需加上
+                $fields[] = $class::KEY_NAME;
+            }
+        }
+        
+        $sql->select("o", $fields);
+        
+        $page = $page >= 1 ? intval($page) : 1;
+        $sql->limit(intval(($page-1))*$pageSize, $pageSize);
+        
+        $objects = YZE_DBAImpl::getDBA()->select($sql);
+        foreach ($objects as $object){
+            $result["data"][$object->get_key()] = $object;
+        }
+        return $result;           
+    }
+    
 	/**
-	 * 持久到数据库,返回自己
+	 * 持久到数据库,返回自己;如果有主键，则更新；没有则插入；
+	 * 插入情况，根据$type进行不同的插入策略
+	 * INSERT_NORMAL：普通插入语句
+	 * INSERT_NOT_EXIST： 指定的where条件查询不出数据时才插入，如果插入、更新成功，会返回主键值，如果插入失败会返回0，这是的entity->get_key()返回0
+	 * INSERT_NOT_EXIST_OR_UPDATE： 指定的$sql条件查询不出数据时才插入, 查询数据则更新这条数据；如果插入、更新成功，会返回主键值，如果插入失败会返回0，这是的entity->get_key()返回0
+	 * INSERT_EXIST： 指定的$sql条件查询出数据时才插入，如果插入、更新成功，会返回主键值，如果插入失败会返回0，这是的entity->get_key()返回0
+	 * INSERT_ON_DUPLICATE_KEY_UPDATE： 有唯一健冲突时更新其它字段
+	 * INSERT_ON_DUPLICATE_KEY_REPLACE： 有唯一健冲突时先删除原来的，然后在插入
+	 * INSERT_ON_DUPLICATE_KEY_IGNORE： 有唯一健冲突时忽略，不抛异常
+	 * @param string $sql 完整的判断查询sql
 	 */
-	public function save(){
-		YZE_DBAImpl::getDBA()->save($this);
+	public function save($type=YZE_SQL::INSERT_NORMAL, YZE_SQL $sql=null){
+	    YZE_DBAImpl::getDBA()->save($this, $type, $sql);
 		return $this;
 	}
-
 	/**
 	 * 从数据库删除对象数据，
 	 * !!! 但这个对象所包含的数据还存在，只是主键不存在了
@@ -395,16 +533,25 @@ abstract class YZE_Model extends YZE_Object{
 	}
 	
 	/**
-	 * 从post提交数据中更新自己
+	 * 持久到数据库,返回自己;如果有主键，则更新；没有则插入；
+	 * 插入情况，根据$type进行不同的插入策略
+	 * INSERT_NORMAL：普通插入语句
+	 * INSERT_NOT_EXIST： 指定的where条件查询不出数据时才插入，如果插入、更新成功，会返回主键值，如果插入失败会返回0，这是的entity->get_key()返回0
+	 * INSERT_NOT_EXIST_OR_UPDATE： 指定的$sql条件查询不出数据时才插入, 查询数据则更新这条数据；如果插入、更新成功，会返回主键值，如果插入失败会返回0，这是的entity->get_key()返回0
+	 * INSERT_EXIST： 指定的$sql条件查询出数据时才插入，如果插入、更新成功，会返回主键值，如果插入失败会返回0，这是的entity->get_key()返回0
+	 * INSERT_ON_DUPLICATE_KEY_UPDATE： 有唯一健冲突时更新其它字段
+	 * INSERT_ON_DUPLICATE_KEY_REPLACE： 有唯一健冲突时先删除原来的，然后在插入
+	 * INSERT_ON_DUPLICATE_KEY_IGNORE： 有唯一健冲突时忽略，不抛异常
+	 * @param string $sql 完整的判断查询sql
 	 */
-	public function save_from_post($posts,$prefix="")
+	public function save_from_post($posts,$prefix="", $type=YZE_SQL::INSERT_NORMAL, YZE_SQL $sql=null)
 	{
 		foreach ( $this->get_columns() as $name => $define) {
 			if (array_key_exists($prefix.$name, $posts)) {
 				$this->set($name, $posts[$prefix.$name]);
 			}
 		}
-		return $this->save();
+		return $this->save($type, $sql);
 	}
 
     /**
@@ -462,7 +609,6 @@ abstract class YZE_Model extends YZE_Object{
 	
 
 	private function set_object($field_name, YZE_Model $value){
-	    if( ! @$this->cache[$field_name]) return $this->cache[$field_name] = array();
 	    
 	    $info = $this->objects[$field_name];
 	    

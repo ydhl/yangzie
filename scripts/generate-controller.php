@@ -114,6 +114,7 @@ use \\yangzie\\YZE_Request;
 use \\yangzie\\YZE_Redirect;
 use \\yangzie\\YZE_Session_Context;
 use \\yangzie\\YZE_RuntimeException;
+use \\yangzie\YZE_JSON_View;
 
 /**
 *

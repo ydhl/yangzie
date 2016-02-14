@@ -12,8 +12,12 @@ class YZE_ACL extends YZE_Object{
 		krsort($this->acos_aros);
 		$newarr = array();
 		foreach ($this->acos_aros as $aco=>$aros){
-		    krsort($aros['deny']);
-		    krsort($aros['allow']);
+		    if(is_array($aros['deny'])) {
+		    	krsort($aros['deny']);
+		    }
+		    if(is_array($aros['allow'])){
+		    	krsort($aros['allow']);
+		    }
 		    $newarr[$aco] = $aros;
 		}
 		$this->acos_aros = $newarr;

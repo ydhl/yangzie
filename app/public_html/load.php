@@ -15,8 +15,11 @@ $bundle_files = array();
 
 if($module){
 	$temp = $type=="js" ? YZE_Request::jsBundle($module) : YZE_Request::cssBundle($module);
-	foreach(@$temp as $file){
-		$bundle_files[] = "/modules/{$module}{$file}";
+	
+	if($temp){
+		foreach($temp as $file){
+			$bundle_files[] = "/modules/{$module}/".ltrim($file,"/");
+		}
 	}
 }else{
 	$app = new App_Module();

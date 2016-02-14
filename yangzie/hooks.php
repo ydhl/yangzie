@@ -126,7 +126,7 @@ final class YZE_Hook {
         }
         
         $funcs = array();
-        foreach (@self::$listeners [$filter_name] as $m=>$_funcs){
+        foreach ((array)@self::$listeners [$filter_name] as $m=>$_funcs){
             foreach ((array)$_funcs as $func){
                 $funcs[] = $func;
             }

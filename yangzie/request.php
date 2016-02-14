@@ -641,7 +641,7 @@ class YZE_Request extends YZE_Object {
         }
     }
     /**
-     * 同一个bundle的文件必需在一个目录中
+     * 
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
     public function addCSSBundle($files){
@@ -649,7 +649,7 @@ class YZE_Request extends YZE_Object {
     	$session->set($this->module()."-css-bundle", (array)$files);
     }
     /**
-     * 同一个bundle的文件必需在一个目录中
+     * 
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
     public function addJSBundle($files){

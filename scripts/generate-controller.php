@@ -134,6 +134,8 @@ class $class extends YZE_Resource_Controller {
         \$this->layout = 'error';
         //get,post,put,delete处理中出现了异常，如何处理，没有任何处理将显示500页面
         //如果想显示get的返回内容可调用 :
+        \$this->post_result_of_json = YZE_JSON_View::error(\$this, \$e->getMessage());
+        //通过request->the_method()判断是那个方法出现的异常
         //return \$this->wrapResponse(\$this->yourmethod())
     }
 }

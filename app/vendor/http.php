@@ -101,7 +101,7 @@ class YDHLHttpClient{
 		}
 		
 		$header_array  = $this->header;
-		$header_array["Expect:"] = "";
+		$header_array[] = "Expect: ";
 		
 		if( $multi )
 		{

@@ -180,11 +180,7 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
             }
             
             $session->save_controller_exception($request->the_uri(), $e);
-            if($request->is_get()){
-                $response = $controller->do_exception($e);
-            }else{                
-                $response = new YZE_Redirect($request->the_full_uri(), $controller, $controller->get_datas());
-            }
+            $response = $controller->do_exception($e);
 
             $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,  
                     array("exception"=>$e, "controller"=>$controller, "response"=>$response));

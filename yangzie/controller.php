@@ -239,7 +239,18 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $session = YZE_Session_Context::get_instance ();
         
         $response = $this->exception ( $e );
-        if (! $response) {
+        
+        if($request->is_post()){
+        	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
+        		$this->layout = "";
+        		return new YZE_Notpl_View ( json_encode ( $this->post_result_of_json ), $this );
+        	}
+        	
+        	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
+        		$this->layout = "";
+        		return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json ) . ");</script>", $this );
+        	}
+        }else if (! $response) {
             $this->set_View_Data ( "exception", $e );
             $response = $this->getResponse ( YZE_APP_VIEWS_INC . "500" );
         }
@@ -286,6 +297,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $session = YZE_Session_Context::get_instance ();
        
         $saved_token = $session->get_request_token ( $request->the_uri() );
+
         if( ! $saved_token)return;
         if( $request->the_referer_uri(true) != $request->the_uri()) return;
         

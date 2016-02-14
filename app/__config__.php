@@ -4,11 +4,11 @@ namespace  app;
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);//end by /
 define("YZE_MYSQL_USER",  "root");
 define("YZE_MYSQL_HOST_M",  "127.0.0.1");
-define("YZE_MYSQL_DB",  "");
+define("YZE_MYSQL_DB",  "ydoa");
 define("YZE_MYSQL_PORT",  "3306");
-define("YZE_MYSQL_PASS",  "");
-define("SITE_URI", "http://localhost/");//网站地址
-define("UPLOAD_SITE_URI", "http://localhost/upload/");//上传文件内容访问地址，比如cdn
+define("YZE_MYSQL_PASS",  "ydhl");
+define("SITE_URI", "http://yangzie.local.com/");//网站地址
+define("UPLOAD_SITE_URI", "http://yangzie.local.com/upload/");//上传文件内容访问地址，比如cdn
 
 
 define("YZE_DEVELOP_MODE",  true );

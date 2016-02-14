@@ -18,7 +18,6 @@ if($module){
 	foreach(@$temp as $file){
 		$bundle_files[] = "/modules/{$module}{$file}";
 	}
-	
 }else{
 	$app = new App_Module();
 	foreach (explode(",", $bundle) as $bundle) {
@@ -38,7 +37,7 @@ foreach ($bundle_files as $bundle_file) {
     if (empty($bundle_file)) continue;
     
     $file = $current_dir . $bundle_file;
-    
+
     if ( ! file_exists($file) ) continue;
     
     $files[]    = $file;
@@ -73,7 +72,6 @@ if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
         exit(0);
     }
 }
-
 
 foreach ($files as $file) {
 	$path = realpath($file);

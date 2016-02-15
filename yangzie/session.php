@@ -102,32 +102,6 @@ class YZE_Session_Context {
         return $this;
     }
     
-    /**
-     * 保存控制器处理过程中的异常
-     *
-     * @param $uri
-     * @param Exception $exception            
-     */
-    public function save_controller_exception($uri, $exception) {
-        $_SESSION ['yze'] ['exception'] [$uri] = $exception;
-        return $this;
-    }
-    
-    /**
-     * 取得控制器的异常
-     *
-     * @param $uri
-     * @return Exception
-     */
-    public function get_controller_exception($uri) {
-        return @$_SESSION ['yze'] ['exception'] [$uri];
-    }
-    public function clear_controller_exception($uri) {
-        if (@$_SESSION ['yze'] ['exception'] [$uri])
-            unset ( $_SESSION ['yze'] ['exception'] [$uri] );
-        return $this;
-    }
-    
 
 	/**
 	 * 保存controller的数据

@@ -32,6 +32,7 @@ class YZE_Request extends YZE_Object {
     private $full_uri;
     private $queryString;
     private $uuid;
+    private $exception;
     public function the_post_datas() {
         return $this->post;
     }
@@ -676,5 +677,11 @@ class YZE_Request extends YZE_Object {
     	return $session->get($module."-css-bundle");
     }
     
+    public function getException(){
+    	return $this->exception;
+    }
+    public function setException(\Exception $exception){
+    	$this->exception = $exception;
+    }
 }
 ?>

@@ -179,7 +179,6 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
                 $controller = new YZE_Exception_Controller();
             }
             
-            $session->save_controller_exception($request->the_uri(), $e);
             $response = $controller->do_exception($e);
 
             $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,  

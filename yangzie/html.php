@@ -110,9 +110,7 @@ function yze_get_default_value($object, $name, $controller, $index = null) {
  */
 function yze_controller_error($begin_tag = null, $end_tag = null) {
     $session = YZE_Session_Context::get_instance ();
-    $uri = YZE_Request::get_instance ()->the_uri();
-    
-    if (($exception = $session->get_controller_exception ( $uri ))) {
+    if (($exception = YZE_Request::get_instance ()->getException (  ))) {
         return $begin_tag . $exception->getMessage() . $end_tag;
     }
 }

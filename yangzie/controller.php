@@ -21,7 +21,11 @@ namespace yangzie;
 abstract class YZE_Resource_Controller extends YZE_Object {
     protected $view_data = array ();
     protected $layout = 'tpl';
-    protected $post_result_of_json = array();
+    protected $view = "";
+    /**
+     * @var YZE_JSON_View
+     */
+    protected $post_result_of_json;
     
     /**
      *
@@ -116,12 +120,19 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     protected function getResponse($view_tpl = null, $format = null) {
         $request = $this->request;
         $method  = $request->the_method();
+        if($request->is_post()){
+        	$method = substr($method, 5);
+        }
          
         $view_data  = $this->get_datas ();
         
         $class_name = strtolower ( get_class ( $this ) );
         $ref  = new \ReflectionObject ( $this );
-        $tpl  = substr ( str_replace ( $ref->getNamespaceName () . "\\", "", $class_name ), 0, - 11 ) . "-" . $method;
+        if($this->view){
+        	$tpl  = $this->view;
+        }else{
+        	$tpl  = substr ( str_replace ( $ref->getNamespaceName () . "\\", "", $class_name ), 0, - 11 ) . "-" . $method;
+        }
         
         $view = $view_tpl ? $view_tpl : $request->view_path () . "/" . $tpl;
         
@@ -145,11 +156,6 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         YZE_Session_Context::get_instance ()->set_request_token ( 
             $request->the_uri(), $request->the_request_token () );
-        
-        // 该请求有异常
-        if (($exception = $session->get_controller_exception ( $request->the_uri() ))) {
-            return $this->do_exception ( is_a($exception, "YZE_RuntimeException") ? $exception : new YZE_RuntimeException($exception->getMessage()) );
-        }
         
         return $this->wrapResponse ( $this->$method () );
     }
@@ -186,12 +192,12 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
             $this->layout = "";
-            return new YZE_Notpl_View ( json_encode ( $this->post_result_of_json ), $this );
+            return $this->post_result_of_json;
         }
         
         if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
             $this->layout = "";
-            return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json ) . ");</script>", $this );
+            return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json->get_datas() ) . ");</script>", $this );
         }
         
         // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
@@ -234,8 +240,10 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     }
     
     public final function do_exception(YZE_RuntimeException $e) {
-        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
         $request = $this->request;
+        $request->setException($e);
+        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
+        
         $session = YZE_Session_Context::get_instance ();
         
         $response = $this->exception ( $e );
@@ -243,12 +251,12 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         if($request->is_post()){
         	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
         		$this->layout = "";
-        		return new YZE_Notpl_View ( json_encode ( $this->post_result_of_json ), $this );
+        		return $this->post_result_of_json;
         	}
         	
         	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
         		$this->layout = "";
-        		return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json ) . ");</script>", $this );
+        		return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json->get_datas() ) . ");</script>", $this );
         	}
         }else if (! $response) {
             $this->set_View_Data ( "exception", $e );
@@ -267,16 +275,13 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         // clean get cache data
         if ($request->is_get ()) {
-            $session->clear_controller_exception ( $request->the_uri() );
             $session->clear_controller_datas ( $request->the_uri() );
             return;
         }
         
         // clean post cache data
         // 成功处理，清除保存的post数据
-        if( ! $session->get_controller_exception ( $request->the_uri() ) ){ 
-            $session->clear_post_datas ( $request->the_uri() );
-        }
+        $session->clear_post_datas ( $request->the_uri() );
         $session->clear_request_token_ext ( $request->the_uri() );
     }
     /**

@@ -201,8 +201,10 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         }
         
         // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
-        if (! $response) {
+        if (! $response && !$this->view) {
             $response = new YZE_Redirect ( $request->the_full_uri (), $this, $this->get_datas () );
+        }else if($this->view){
+        	$response = $this->getResponse();
         }
         
         return $response;

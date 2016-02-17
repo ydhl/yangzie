@@ -181,6 +181,10 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
             
             $response = $controller->do_exception($e);
 
+            if( ! $response){
+            	$response = (new YZE_Exception_Controller())->do_exception($e);
+            }
+            
             $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,  
                     array("exception"=>$e, "controller"=>$controller, "response"=>$response));
             $response = $filter_data['response'];

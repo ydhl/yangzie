@@ -18,7 +18,7 @@ if($module){
 	
 	if($temp){
 		foreach($temp as $file){
-			$bundle_files[] = "/modules/{$module}/".ltrim($file,"/");
+			$bundle_files[] = "/module-assets/{$module}/".ltrim($file,"/");
 		}
 	}
 }else{
@@ -58,7 +58,7 @@ if( "css" == $type){
 }else{
 	header('Content-type: text/javascript');
 }
-header("Cache-Control:must-revalidate");
+header("Cache-Control:max-age=1800");
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $last_modified_time).' GMT');
 header('Etag:' . $eTag);
 header('Expires:' . gmdate('D, d M Y H:i:s', time()+1800).' GMT');//30分钟内客户端不用在做请求

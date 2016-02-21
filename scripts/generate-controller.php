@@ -122,8 +122,6 @@ use \\yangzie\YZE_JSON_View;
 * @package $module
 */
 class $class extends YZE_Resource_Controller {
-    //通过ajax post表单时返回的数据
-    protected \$post_result_of_json = array();
     public function index(){
         \$request = \$this->request;
         //\$this->layout = 'tpl name';

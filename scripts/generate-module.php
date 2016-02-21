@@ -25,7 +25,7 @@ class Generate_Module_Script extends AbstractScript{
 		$this->check_dir($path."/hooks");
 		$this->check_dir(dirname(dirname(__FILE__))."/tests/".$module);
 		
-		$staticPath = dirname(dirname(__FILE__))."/app/public_html/modules/".$module;
+		$staticPath = dirname(dirname(__FILE__))."/app/public_html/module-assets/".$module;
 		$this->check_dir($staticPath);
 		
 		//生成module 配置文件

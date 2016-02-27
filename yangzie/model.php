@@ -211,7 +211,9 @@ abstract class YZE_Model extends YZE_Object{
         
         return true;
 	}
-	
+	public function isEmptyDate($name){
+		return !$this->get($name) || $this->get($name)=="0000-00-00";
+	}
 	public static function remove_by_attrs($attrs){
 		$class = get_called_class();
 	
@@ -325,9 +327,7 @@ abstract class YZE_Model extends YZE_Object{
         
         return true;       
     }
-    public function isEmptyDate($name){
-	    return !$this->get($name) || $this->get($name)=="0000-00-00";
-	}
+    
 	public static function find_all(){
 		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
 	}

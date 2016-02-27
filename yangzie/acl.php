@@ -102,9 +102,9 @@ class YZE_ACL extends YZE_Object{
 				return true;
 			}
 		}
-		if (@$perm["allow"]=="*"){//允许所有
-			return true;
-		}
+		
+		if (@$perm["deny"]=="*")return false;//拒绝优先
+		if (@$perm["allow"]=="*")return true;//允许所有
 		return -1;
 	}
 
@@ -118,8 +118,7 @@ class YZE_ACL extends YZE_Object{
 		}else{
 			$perm = @$this->acos_aros[$aconame];
 		}
-
-		if($perm["deny"]=="*")return false;//拒绝优先
+		
 		
 		if (is_array(@$perm["deny"])){//配置了拒绝项
 			$denys = $this->_in_array($aroname, $perm["deny"]);//拒绝当前ARO
@@ -134,13 +133,12 @@ class YZE_ACL extends YZE_Object{
 				return true;
 			}
 		}
-		if (@$perm["allow"]=="*"){//允许所有
-			return true;
-		}
+		
+		if(@$perm["deny"]=="*")return false;//拒绝优先
+		
+		if (@$perm["allow"]=="*")return true;//允许所有
 
-		if($aroname=="/"){
-			return false;
-		}
+		if($aroname=="/") return false;//都没找到
 
 		$aronames = explode("/", $aroname);
 		array_pop($aronames);

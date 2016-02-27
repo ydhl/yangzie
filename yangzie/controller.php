@@ -190,12 +190,12 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $response = $this->$method ();
         
         
-        if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
+        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
             $this->layout = "";
             return $this->post_result_of_json;
         }
         
-        if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
+        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
             $this->layout = "";
             return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json->get_datas() ) . ");</script>", $this );
         }

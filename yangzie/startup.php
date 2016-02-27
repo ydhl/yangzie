@@ -161,7 +161,6 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
         if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
             return $output_view($request, $controller, $response, $return);
         }
-        
         //header output
         return $output_header($request, $controller, $response, $return);
     }catch(\Exception $e){
@@ -193,7 +192,7 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
             if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
                 return $output_view($request, $controller, $response, $return);
             }
-            
+
             //header output
             return $output_header($request, $controller, $response, $return);
         }catch (\Exception $notCatch){

@@ -70,15 +70,15 @@ function yze_die(YZE_View_Adapter $view, YZE_Resource_Controller $controller) {
  * @author leeboo
  *        
  * @param YZE_Model $object            
- * @param unknown $name            
- * @param string $controller
- *            处理的控制器
+ * @param unknown $name   表单项的名字
+ * @param string propName model属性的名字         
+ * @param string $controller 处理的控制器
  * @return int $index 如果name是数据，则表示数组的索引
  *        
  * @return
  *
  */
-function yze_get_default_value($object, $name, $controller, $index = null) {
+function yze_get_default_value($object, $name, $controller, $index = null, $propName=null) {
     $controller_name = get_class ( $controller );
     $cache_data = YZE_Session_Context::get_cached_post ( $name, $controller_name , $object);
     if (isset($cache_data)) {
@@ -92,7 +92,7 @@ function yze_get_default_value($object, $name, $controller, $index = null) {
     }
     
     if ($object) {
-        return $object->get ( $name );
+        return $object->get ( $propName ? $propName : $name );
     }
     return "";
 }

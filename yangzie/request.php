@@ -533,7 +533,7 @@ class YZE_Request extends YZE_Object {
         if (count ( $uri_split ) > 3) {
             $_ ['args'] = array_slice ( $uri_split, 3 );
         }
-        if (count ( $uri_split ) > 2) {
+        if (count ( $uri_split ) > 2 && ! is_numeric($uri_split[2])) {
             $_ ['args']['action'] = $uri_split[2];
         }
         if (preg_match ( "#\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches )) {

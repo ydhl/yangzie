@@ -32,26 +32,7 @@ define('YZE_REWRITE_MODE_REWRITE', 'yze_rewrite_mode_rewrite');
 
 
 ini_set('include_path', get_include_path().PS.dirname(dirname(dirname(__FILE__))));
-
-require_once YANGZIE.'/hooks.php';//framework hook处理,hook处理程序
-require_once YANGZIE.'/yangzie.php';
-require_once YANGZIE.'/file.php';
-require_once YANGZIE.'/session.php';
-require_once YANGZIE.'/request.php';
-require_once YANGZIE.'/cache.php';
-require_once YANGZIE.'/view.php';//framework resource处理,处理资源与控制器的影射程序
-require_once YANGZIE.'/controller.php';
-require_once YANGZIE.'/dba.php';//Database advisor
-require_once YANGZIE.'/model.php';
-require_once YANGZIE.'/sql.php';
-require_once YANGZIE.'/acl.php';
-require_once YANGZIE.'/module.php';
-require_once YANGZIE.'/router.php';
-require_once YANGZIE.'/startup.php';
-require_once YANGZIE.'/error.php';
-require_once YANGZIE.'/daemon/daemon-functions.php';
-require_once YANGZIE.'/html.php';
-require_once YANGZIE.'/i18n.php';
+require_once YANGZIE.'/init.php';
 
 spl_autoload_register("\yangzie\yze_autoload");
 

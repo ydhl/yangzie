@@ -43,22 +43,22 @@ class YZE_SQL extends YZE_Object{
 	 */
 	private $distinct = null;
 	/**
-	 * array('table name'=>array('alias'=>$alias,'field'=>$field));
+	 * array('table name'=>array(array('alias'=>$alias,'field'=>$field)));
 	 * @var array
 	 */
 	private $count = array();
 	/**
-	 * array('table name'=>array('alias'=>$alias,'field'=>$field,'distinct'=>boolean));
+	 * array('table name'=>array(array('alias'=>$alias,'field'=>$field,'distinct'=>boolean)));
 	 * @var array
 	 */
 	private $sum = array();
 	/**
-	 * array('table name'=>array('alias'=>$alias,'field'=>$field));
+	 * array('table name'=>array(array('alias'=>$alias,'field'=>$field)));
 	 * @var array
 	 */
 	private $min = array();
 	/**
-	 * array('table name'=>array('alias'=>$alias,'field'=>$field));
+	 * array('table name'=>array(array('alias'=>$alias,'field'=>$field)));
 	 * @var array
 	 */
 	private $max = array();
@@ -259,9 +259,9 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function count($table_alias, $field, $count_alias, $distinct=false){
 		$this->action = "select";
-		$this->count[$table_alias]['field'] = $field;
-		$this->count[$table_alias]['alias'] = $count_alias;
-		$this->count[$table_alias]['distinct'] = $distinct;
+		$this->count[$table_alias][]['field'] = $field;
+		$this->count[$table_alias][]['alias'] = $count_alias;
+		$this->count[$table_alias][]['distinct'] = $distinct;
 
 		return $this;
 	}
@@ -274,8 +274,8 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function sum($table_alias,$field,$sum_alias){
 		$this->action = "select";
-		$this->sum[$table_alias]['field'] = $field;
-		$this->sum[$table_alias]['alias'] = $sum_alias;
+		$this->sum[$table_alias][]['field'] = $field;
+		$this->sum[$table_alias][]['alias'] = $sum_alias;
 		return $this;
 	}
 	/**
@@ -287,8 +287,8 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function max($table_alias,$field,$max_alias){
 		$this->action = "select";
-		$this->max[$table_alias]['field'] = $field;
-		$this->max[$table_alias]['alias'] = $max_alias;
+		$this->max[$table_alias][]['field'] = $field;
+		$this->max[$table_alias][]['alias'] = $max_alias;
 		return $this;
 	}
 	/**
@@ -300,8 +300,8 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function min($table_alias,$field,$min_alias){
 		$this->action = "select";
-		$this->min[$table_alias]['field'] = $field;
-		$this->min[$table_alias]['alias'] = $min_alias;
+		$this->min[$table_alias][]['field'] = $field;
+		$this->min[$table_alias][]['alias'] = $min_alias;
 		return $this;
 	}
 	/**
@@ -708,19 +708,27 @@ class YZE_SQL extends YZE_Object{
 			}
 		}
 		#处理count，sum，max，min这些函数查询
-		foreach($this->count as $alias => $count){
-			$select[] = $count['field']=="*" 
-				? "count(".($count['distinct'] ? "distinct" : "")." *) AS {$alias}_".$count['alias'] 
-				: "count(".($count['distinct'] ? "distinct" : "")." {$alias}.".$count['field'].") AS {$alias}_".$count['alias'];
+		foreach($this->count as $counts){
+			foreach($counts as $alias => $count){
+				$select[] = $count['field']=="*" 
+					? "count(".($count['distinct'] ? "distinct" : "")." *) AS {$alias}_".$count['alias'] 
+					: "count(".($count['distinct'] ? "distinct" : "")." {$alias}.".$count['field'].") AS {$alias}_".$count['alias'];
+			}
 		}
-		foreach($this->max as $alias => $max){
-			$select[] = "max({$alias}.".$max['field'].") AS {$alias}_".$max['alias'];
+		foreach($this->max as $maxs){
+			foreach($maxs as $alias => $max){
+				$select[] = "max({$alias}.".$max['field'].") AS {$alias}_".$max['alias'];
+			}
 		}
-		foreach($this->min as $alias => $min){
-			$select[] = "min({$alias}.".$min['field'].") AS {$alias}_".$min['alias'];
+		foreach($this->min as $mins){
+			foreach($mins as $alias => $min){
+				$select[] = "min({$alias}.".$min['field'].") AS {$alias}_".$min['alias'];
+			}
 		}
-		foreach($this->sum as $alias => $sum){
-			$select[] = "sum({$alias}.".$sum['field'].") AS {$alias}_".$sum['alias'];
+		foreach ($this->sum as $sums){
+			foreach($sums as $alias => $sum){
+				$select[] = "sum({$alias}.".$sum['field'].") AS {$alias}_".$sum['alias'];
+			}
 		}
 		
 		$where = $this->_where();

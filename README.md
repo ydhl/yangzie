@@ -4,6 +4,7 @@ V1.5.3
 1. 增加mongodb，redis支持
 2. 修复/module/controller/123,无法解析vars参数bug
 3. 增加init.php，yangzie所有文件由他加载
+3. sql 可以查询多个sum,count,max,min可以查询多个
 
 V1.5.2
 

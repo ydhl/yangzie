@@ -533,8 +533,13 @@ class YZE_Request extends YZE_Object {
         if (count ( $uri_split ) > 3) {
             $_ ['args'] = array_slice ( $uri_split, 3 );
         }
-        if (count ( $uri_split ) > 2 && ! is_numeric($uri_split[2])) {
-            $_ ['args']['action'] = $uri_split[2];
+        if (count ( $uri_split ) > 2) {
+        	if(! is_numeric($uri_split[2])){
+        		$_ ['args']['action'] = $uri_split[2];
+        	}else{
+        		$_ ['args'][] = $uri_split[2];
+        	}
+            
         }
         if (preg_match ( "#\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches )) {
             $_ ['args'] ["__yze_resp_format__"] = $matches ['__yze_resp_format__'];
@@ -645,17 +650,23 @@ class YZE_Request extends YZE_Object {
      * 
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
-    public function addCSSBundle($files){
+    public function addCSSBundle($files, $module=null){
     	$session = YZE_Session_Context::get_instance();
-    	$session->set($this->module()."-css-bundle", (array)$files);
+    	if( ! $module){
+    		$module = $this->module();
+    	}
+    	$session->set($module."-css-bundle", (array)$files);
     }
     /**
      * 
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
-    public function addJSBundle($files){
+    public function addJSBundle($files, $module=null){
     	$session = YZE_Session_Context::get_instance();
-    	$session->set($this->module()."-js-bundle", (array)$files);
+    	if( ! $module){
+    		$module = $this->module();
+    	}
+    	$session->set($module."-js-bundle", (array)$files);
     }
 
     /**

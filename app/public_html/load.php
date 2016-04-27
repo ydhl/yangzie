@@ -6,8 +6,8 @@ require 'init.php';
 $type = strtolower($_GET["t"]);
 if( ! in_array($type, array("js","css")))return;
 
-$bundle = $_GET["b"];//load static bundle
-$module = $_GET["m"];//load module bundle
+$bundle = @$_GET["b"];//load static bundle
+$module = @$_GET["m"];//load module bundle
 if ( ! $bundle && ! $module ) return;
 
 date_default_timezone_set('Asia/Chongqing');

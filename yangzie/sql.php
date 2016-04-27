@@ -259,9 +259,15 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function count($table_alias, $field, $count_alias, $distinct=false){
 		$this->action = "select";
+<<<<<<< HEAD
 		$this->count[][$table_alias] = array('field' => $field,
 		        'alias'=> $count_alias,
 		        'distinct'=> $distinct);
+=======
+		$this->count[$table_alias][]['field'] = $field;
+		$this->count[$table_alias][]['alias'] = $count_alias;
+		$this->count[$table_alias][]['distinct'] = $distinct;
+>>>>>>> 69bcf35349103970bc16fb59a34c49553c28a374
 
 		return $this;
 	}
@@ -274,7 +280,12 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function sum($table_alias,$field,$sum_alias){
 		$this->action = "select";
+<<<<<<< HEAD
 		$this->sum[][$table_alias] = array('field' => $field,'alias' => $sum_alias);
+=======
+		$this->sum[$table_alias][]['field'] = $field;
+		$this->sum[$table_alias][]['alias'] = $sum_alias;
+>>>>>>> 69bcf35349103970bc16fb59a34c49553c28a374
 		return $this;
 	}
 	/**
@@ -286,7 +297,12 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function max($table_alias,$field,$max_alias){
 		$this->action = "select";
+<<<<<<< HEAD
 		$this->max[][$table_alias] = array('field' => $field,'alias' => $max_alias);
+=======
+		$this->max[$table_alias][]['field'] = $field;
+		$this->max[$table_alias][]['alias'] = $max_alias;
+>>>>>>> 69bcf35349103970bc16fb59a34c49553c28a374
 		return $this;
 	}
 	/**
@@ -298,7 +314,12 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function min($table_alias,$field,$min_alias){
 		$this->action = "select";
+<<<<<<< HEAD
 		$this->min[][$table_alias] = array('field' => $field,'alias' => $min_alias);
+=======
+		$this->min[$table_alias][]['field'] = $field;
+		$this->min[$table_alias][]['alias'] = $min_alias;
+>>>>>>> 69bcf35349103970bc16fb59a34c49553c28a374
 		return $this;
 	}
 	/**

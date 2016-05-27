@@ -151,13 +151,13 @@ class YZE_ACL extends YZE_Object{
 	    
 	    foreach ((array)$array as $aco) {
 	        $newaco = strtr($aco, array("*"=>".*"));
-	        if (preg_match("{".$newaco."}", $aconame)){
+	        if (preg_match("{^".$newaco."}", $aconame)){
 	            return null;
 	        }
 	    }
 		foreach ((array)$this->acos_aros as $aco=>$ignore) {
 			$newaco = strtr($aco, array("*"=>".*"));
-			if (preg_match("{".$newaco."}", $aconame)){
+			if (preg_match("{^".$newaco."}", $aconame)){
 				return $aco;
 			}
 		}

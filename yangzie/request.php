@@ -388,6 +388,12 @@ class YZE_Request extends YZE_Object {
     public function isInWeixin(){
     	return preg_match ( "/MicroMessenger/i", $_SERVER ['HTTP_USER_AGENT'] );
     }
+    public function isInIOS(){
+        return preg_match ( "/iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] );
+    }
+    public function isInAndroid(){
+        return preg_match ( "/android/i", $_SERVER ['HTTP_USER_AGENT'] );
+    }
     public static function build_query($data) {
         $ret = array ();
         

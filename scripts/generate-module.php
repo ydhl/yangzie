@@ -6,7 +6,7 @@ class Generate_Module_Script extends AbstractScript{
 
 	public function generate(){
 		$argv = $this->args;
-		$this->module_name = $argv['module_name'];
+		$this->module_name = strtolower($argv['module_name']);
 
 		echo __("module at 'app/modules/".$this->module_name."';\n");
 		

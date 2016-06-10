@@ -1,4 +1,8 @@
 文档在完善中。。。
+
+V1.5.4
+1. 增加master view ，让view 重用做到极致
+
 V1.5.3
 
 1. 增加mongodb，redis支持

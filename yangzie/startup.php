@@ -62,13 +62,15 @@ function yze_load_app() {
             $phar_wrap = "phar://";
         }
         
+        $module_name = strtolower ( basename ( $module ) );
+        if ($phar_wrap) {
+        	$module_name = ucfirst ( preg_replace ( '/\.phar$/', "", $module_name ) );
+        }
+        
         if (@file_exists ( "{$phar_wrap}{$module}/__module__.php" )) {
             require_once "{$phar_wrap}{$module}/__module__.php";
             
-            $module_name = strtolower ( basename ( $module ) );
-            if ($phar_wrap) {
-                $module_name = ucfirst ( preg_replace ( '/\.phar$/', "", $module_name ) );
-            }
+            
             $class = "\\app\\{$module_name}\\" . ucfirst ( $module_name ) . "_Module";
             $object = new $class ();
             $object->check ();

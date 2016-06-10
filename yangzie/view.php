@@ -164,16 +164,46 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public $layout;
 
 	/**
+	 * 指定视图的容器视图，当前视图的内容将在mater view的$this->content_of_view();中输出，
+	 * master view的内容可以嵌套，最顶级的master view的内容将在layout的$this->content_of_view();输出
+	 * master也支持content_of_section
+	 *
+	 * master view的默认查找路径是YZE_APP_VIEWS_INC、模块对应的views下面；你也可以指定决定路径
+	 *
+	 * 设置方式：$this->master_view = "master" 或者 $this->master_view = "mymaster/master"
+	 *
+	 * master view的格式使用请求环境的请求格式
+	 * @var unknown
+	 */
+	public $master_view;
+	
+	/**
+	 * 调用check master后找到的master view的绝对路径
+	 * @var unknown
+	 */
+	protected $master_view_path;
+
+	/**
 	 * 视图响应的缓存控制
 	 * @var YZE_HttpCache
 	 */
 	private $cache_ctl;
-	protected $view_sections=array();
+	
 	/**
 	 *
 	 * @var YZE_Resource_Controller
 	 */
 	protected $controller;#生成Response的Controller
+	
+	
+	public function content_of_section($section){
+		return $this->data["content_of_section"][$section];
+	}
+	
+	public function content_of_view(){
+		return $this->data["content_of_view"];
+	}
+	
 	/**
 	 * 响应视图上要显示的数据，具体是什么内容由响应视图自己决定
 	 *
@@ -187,33 +217,66 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function get_controller(){
 		return $this->controller;
 	}
+	
+	/**
+	 * 没有设置master view，返回false；设置了master view但不存在，抛异常；存在master view，如果存在返回true
+	 * master view可以放在模块的views下面或者vender的views下面
+	 */
+	protected function check_master(){
+		//stub
+	}
+	
+
+	protected function output_master($data, $return=false){
+		$datas = $this->get_datas();
+
+		$master = new YZE_Simple_View($this->master_view_path, array(), $this->controller);
+		
+		$datas['content_of_section'] = $this->view_sections();
+		$datas['content_of_view']    = $data;
+		$master->set_datas($datas);
+		$output = $master->get_output();
+
+		if($return){
+			return $output;
+		}else{
+			echo $output;
+		}
+	}
+	
 	public final function output($return=false){
+
 		ob_start();
 		if($this->cache_ctl){
 			$this->cache_ctl->output();
 		}
+		
 		$this->display_self();
 		$data = ob_get_clean();
+
+		//display_self 中包含来view才能得到view中设置的master view数据
+		if($this->check_master()){
+			return $this->output_master($data, $return);
+		}
+		
 		if($return)return $data;
 		echo $data;
 	}
 	public function view_sections(){
-	    return $this->view_sections;
+	    return $this->data['content_of_section'];
 	}
 	public function begin_section(){
 	    ob_start();
 	}
 	public function end_section($section){
-	    $this->view_sections[$section] = ob_get_clean();
+	    $this->data['content_of_section'][$section] = ob_get_clean();
 	}
-	public function content_of_section($section){
-	    return $this->view_sections[$section];
-	}
+	
 	/**
 	 * 取得视图的输出内容
 	 */
 	public function get_output(){
-            return $this->output(true);
+    	return $this->output(true);
 	}
 
 	/**
@@ -273,8 +336,8 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
  * 在view这里它们是一样的。
  */
 class YZE_Simple_View extends YZE_View_Adapter {
-	private $tpl;
-	private $format;
+
+	
 	/**
 	 * 通过模板、数据构建视图输出
 	 * @param string $tpl 模板的路径全名。
@@ -287,8 +350,42 @@ class YZE_Simple_View extends YZE_View_Adapter {
 		$this->format 	= $format ? $format : $controller->getRequest()->get_output_format();
 		
 	}
-
+	protected function check_master(){
+		if( ! $this->master_view ) return false;
+		
+		$request = YZE_Request::get_instance();
+		$module_view_path = $request->view_path();
+		
+		if( file_exists($module_view_path."/{$this->master_view}.{$this->format}.php")){
+			$this->master_view_path = $module_view_path."/{$this->master_view}";
+			return true;
+		}
+		
+		if( file_exists(YZE_APP_VIEWS_INC."{$this->master_view}.{$this->format}.php")){
+			$this->master_view_path = YZE_APP_VIEWS_INC."{$this->master_view}";
+			return true;
+		}
+		
+		if( file_exists("{$this->master_view}.{$this->format}.php")){
+			$this->master_view_path = "{$this->master_view}";
+			return true;
+		}
+		
+		//如果不是默认的tpl格式，则换成tpl在找一遍，其他情况抛异常
+        if($this->format == "tpl"){
+            throw new YZE_Resource_Not_Found_Exception(" master view {$this->master_view}.{$this->format}.php not found from below path:
+            <ul><li> {$module_view_path}/{$this->master_view}.{$this->format}.php</li>
+            <li> ".YZE_APP_VIEWS_INC."{$this->master_view}.{$this->format}.php</li>
+            <li> {$this->master_view}.{$this->format}.php</li></ul>");
+        }else{
+            $this->format = "tpl";
+            $this->check_master();
+        }
+		return true;
+	}
+	
 	public function check_view(){
+		
 		if( ! file_exists("{$this->tpl}.{$this->format}.php")){
             //if format not exist then use tpl
             if($this->format == "tpl"){
@@ -301,7 +398,7 @@ class YZE_Simple_View extends YZE_View_Adapter {
 	}
 
 	protected function display_self(){
-		
+
 		$this->check_view();
 		require "{$this->tpl}.{$this->format}.php";
 	}
@@ -440,10 +537,12 @@ class YZE_XML_View extends YZE_View_Adapter {
  *
  */
 class YZE_Layout extends YZE_View_Adapter{
-  
+  	/**
+  	 * 
+  	 * @var YZE_View_Adapter
+  	 */
 	private $view;
-	private $content_of_view;
-	private $content_of_section;
+	
 	public function __construct($layout,YZE_View_Adapter $view,  YZE_Resource_Controller $controller){
 		parent::__construct($view->get_datas(),$controller);
 		$this->view 	= $view;
@@ -452,16 +551,16 @@ class YZE_Layout extends YZE_View_Adapter{
     
 
 	protected function display_self(){
-		ob_start();
-		$this->view->output();
 		$this->data = $this->view->get_datas();
-		$this->content_of_section = $this->view->view_sections();
-		$this->content_of_view = ob_get_clean();
-		if($this->view->layout){
+		$this->data['content_of_view'] = $this->view->get_output();
+		$this->data['content_of_section'] = $this->view->view_sections();
+
+		if(isset($this->view->layout)){
 			$this->layout = $this->view->layout;
 		}
 
-		if($_SERVER['X-PJAX']){//pjax 请求，不返回layout
+		if($_SERVER['HTTP_X_PJAX']){//pjax 请求，不返回layout
+			echo "<title>".$this->get_data("yze_page_title")."</title>";//pjax 加载时设置页面标题
 			$this->layout = "";
 		}
 		if ($this->layout){
@@ -479,17 +578,10 @@ class YZE_Layout extends YZE_View_Adapter{
 		    }
 		    throw new YZE_Resource_Not_Found_Exception(" layout {$moblayoutfile} not found");
 		}else{
-			echo $this->content_of_view;
+			echo $this->data['content_of_view'];
 		}
 	}
 	
-	public function content_of_section($section){
-		return $this->content_of_section[$section];
-	}
-	
-	public function content_of_view(){
-		return $this->content_of_view;
-	}
 
 }
 ?>

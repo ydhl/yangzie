@@ -644,6 +644,9 @@ class YZE_Request extends YZE_Object {
     public function module_obj() {
         return $this->module_obj;
     }
+    /**
+     * 返回当前请求的模块views目录，注意结尾无/
+     */
     public function view_path() {
         $info = \yangzie\YZE_Object::loaded_module ( $this->module () );
         if ($info ['is_phar']) {

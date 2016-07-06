@@ -12,6 +12,10 @@ namespace yangzie;
  *
  */
 abstract class YZE_Model extends YZE_Object{
+	/**
+	 * @var YZE_SQL
+	 */
+	private static $sql;
 	protected $records = array();
 	/**
 	 * 映射：array("attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-one"),"attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-many")  )
@@ -53,7 +57,18 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return array
 	 */
 	public function get_columns(){
-		return $this->columns;
+		return static::$columns;
+	}
+	/**
+	 * 返回所有的字段，已,分隔，如果指定了pre，则字段会起别名：{$pre}.{$item} as {$pre}_{$item}
+	 * @param string $pre
+	 */
+	public static function get_column_string($pre=""){
+		$cls = get_called_class();
+		$obj = new $cls;
+		return join(",", array_map(function($item) use ($pre){
+			return $pre ? "{$pre}.{$item} as {$pre}_{$item}" :  "{$item}";
+		}, array_keys($obj->get_columns())));
 	}
 	public function get_module_name(){
 		return $this::MODULE_NAME;
@@ -70,11 +85,7 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	public function has_column($column){
-		return array_key_exists($column,$this->columns);
-	}
-	
-	public function get_all(){
-		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
+		return array_key_exists($column,static::$columns);
 	}
 	
 	/**
@@ -168,14 +179,10 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	/**
-	 * 根据主键查询对象
-	 * id为查询表的主键，
-	 * @param unknown_type $id
-	 * @return YZE_Model 
+	 * 根据主键查询当前类映射表数据
+	 * 
+	 * @param unknown $id
 	 */
-	public static function find($id,$class){
-		return YZE_DBAImpl::getDBA()->find($id,$class);
-	}
 	public static function find_by_id($id){
 		return YZE_DBAImpl::getDBA()->find($id,get_called_class());
 	}
@@ -214,25 +221,7 @@ abstract class YZE_Model extends YZE_Object{
 	public function isEmptyDate($name){
 		return !$this->get($name) || $this->get($name)=="0000-00-00";
 	}
-	public static function remove_by_attrs($attrs){
-		$class = get_called_class();
 	
-		if(!($class instanceof YZE_Model) && !class_exists($class)){
-			throw new YZE_DBAException("Model Class $class not found");
-		}
-	
-		$entity = $class instanceof YZE_Model ? $class : new $class;
-	
-		$sql = new YZE_SQL();
-		$sql->delete()->from(get_called_class(), "t");
-		foreach ($attrs as $name => $value){
-			$sql->where("t", $name, YZE_SQL::EQ, $value);
-		}
-		
-		YZE_DBAImpl::getDBA()->execute($sql);
-		
-		return true;
-	}
 	
 	/**
 	 * 直接更新数据库中的记录
@@ -267,212 +256,10 @@ abstract class YZE_Model extends YZE_Object{
 		return true;
 	}
 	
-	/**
-     * 更新数据库中单个实体对应表的记录,查询条件自定义
-     * 
-     * @author HuJinhao
-     * @param array $attrs 要更新的属性,表字段键值对,array("field"=>value,...)
-     * @param array $conds 查询条件,表字段键值对,array("field"=>value,...)
-     * @return bool 
-     * 
-     */
-	public static function update($attrs, $conds){
-	    $class = get_called_class();
-            
-        if(!($class instanceof YZE_Model) && !class_exists($class)){
-            throw new YZE_DBAException("Model Class $class not found");
-        }
-    
-        $entity = $class instanceof YZE_Model ? $class : new $class;
-    
-        $sql = new YZE_SQL();
-        $sql->update("t", $attrs)->from(get_called_class(), "t");
-        foreach ((array)$conds as $field => $val) {
-            $sql->where("t", $field, YZE_SQL::EQ, $val);
-        }
-        
-        YZE_DBAImpl::getDBA()->execute($sql);
-        
-        return true;       
-	}
-	
-    /**
-     * 更新数据库中单个实体对应表的记录,查询条件自定义
-     * 
-     * @author HuJinhao
-     * @param array $attrs 要更新的属性,表字段键值对,array("field"=>value,...)
-     * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
-     * @return bool
-     */
-    public static function update2($attrs, $conds){
-        $class = get_called_class();
-            
-        if(!($class instanceof YZE_Model) && !class_exists($class)){
-            throw new YZE_DBAException("Model Class $class not found");
-        }
-    
-        $entity = $class instanceof YZE_Model ? $class : new $class;
-    
-        $sql = new YZE_SQL();
-        $sql->update("t", $attrs)->from(get_called_class(), "t");
-        foreach ((array)$conds as $cond) {
-            if (isset($cond[2])) {
-                $sql->where("t", $cond[0], $cond[1], $cond[2]);
-            } else {
-                $sql->where("t", $cond[0], $cond[1]);
-            }       
-        }
-        
-        YZE_DBAImpl::getDBA()->execute($sql);
-        
-        return true;       
-    }
     
 	public static function find_all(){
 		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
 	}
-	/**
-	 * 根据主键数组查询对象。返回关联数组，键为主键，
-	 * 
-	 * @param $ids
-	 * @param $class_name 不设置表示当前调用的类
-	 * @return array  key 为索引的数组
-	 */
-	public static function find_by_keys($class_name,$key_name, array $keys)
-	{
-	    if( ! $class_name){
-	        $class_name = get_called_class();
-	    }
-		$sql = new YZE_SQL();
-		$sql->from($class_name,"o")->where("o", $key_name, YZE_SQL::IN, $keys);
-		$objects = YZE_DBAImpl::getDBA()->select($sql);
-		$_ = array();
-		foreach ($objects as $object){
-			$_[$object->get_key()] = $object;
-		}
-		return $_;
-	}
-	
-	/**
-	 * 根据字段属性查找
-	 * 
-	 * @author leeboo
-	 * 
-	 * @param array $attrs
-	 * @param bool $is_first 是否只查询第1个
-	 * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
-	 * 
-	 * @return
-	 */
-	public static function find_by_attrs(array $attrs, $is_first=false)
-	{
-        $class  = get_called_class();
-	    $sql = new YZE_SQL();
-		$sql->select("o", array("*"))
-		    ->from($class, "o");
-		foreach ($attrs as $att=>$value){
-			$sql->where("o", $att, YZE_SQL::EQ, $value);
-		}
-		
-	    if ($is_first) {
-            return YZE_DBAImpl::getDBA()->getSingle($sql);
-        }
-		
-		$objects = YZE_DBAImpl::getDBA()->select($sql);
-		$_ = array();
-		foreach ($objects as $object){
-			$_[$object->get_key()] = $object;
-		}
-		return $_;
-	}
-	
-    /**
-     * 根据指定查询条件查询
-     * 
-     * @author HuJinhao
-     * 
-     * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
-     * @param bool $is_first 是否只查询第1个
-     * @return multitype:Ambigous <\yangzie\array(Model), multitype:Ambigous <NULL, unknown> > 
-     * 
-     */
-    public static function find_by_attrs2(array $attrs, $is_first=false)
-    {
-        $class  = get_called_class();
-        
-        $sql = new YZE_SQL();
-        $sql->select("o", array("*"))
-            ->from($class,"o");
-        foreach ($attrs as $attr){
-            if (isset($attr[2])) {
-                $sql->where("o", $attr[0], $attr[1], $attr[2]);
-            } else {
-                $sql->where("o", $attr[0], $attr[1]);
-            }
-        }
-        
-        if ($is_first) {
-            return YZE_DBAImpl::getDBA()->getSingle($sql);
-        }
-        
-        $objects = YZE_DBAImpl::getDBA()->select($sql);
-        $_ = array();
-        foreach ($objects as $object){
-            $_[$object->get_key()] = $object;
-        }
-        return $_;
-    }
-    
-    /**
-     * 根据指定查询条件查询指定分页的数据
-     * 
-     * @author HuJinhao
-     * 
-     * @param array $conds 查询条件 array(array(字段名,操作符,值),...)
-     * @param array $fields 要查询的字段
-     * @param int $page 页号
-     * @param int $pageSize 每页显示记录数
-     * @return array("total"=>总记录数, "data"=>array(YZE_Model,YZE_Model,...))
-     * 
-     */
-    public static function find_by_conds(array $conds, $fields=array("*"), $page=1, $pageSize=20)
-    {
-        $class = get_called_class();
-        
-        $sql = new YZE_SQL();
-        $sql->from($class,"o");
-        foreach ($conds as $cond){
-            if (isset($cond[2])) {
-                $sql->where("o", $cond[0], $cond[1], $cond[2]);
-            } else {
-                $sql->where("o", $cond[0], $cond[1]);
-            }
-        }
-        $sql->count("o", "*", "num");
-        $total  = YZE_DBAImpl::getDBA()->getSingle($sql);
-        $result = array("total" => $total->num, "data" => array());
-   
-        $sql->clean_select();
-    
-        if ( ! $fields ) {
-            $fields = array("*");
-        } else {
-            if ( ! in_array($class::KEY_NAME, $fields) ) { //没有传主键字段时需加上
-                $fields[] = $class::KEY_NAME;
-            }
-        }
-        
-        $sql->select("o", $fields);
-        
-        $page = $page >= 1 ? intval($page) : 1;
-        $sql->limit(intval(($page-1))*$pageSize, $pageSize);
-        
-        $objects = YZE_DBAImpl::getDBA()->select($sql);
-        foreach ($objects as $object){
-            $result["data"][$object->get_key()] = $object;
-        }
-        return $result;           
-    }
     
 	/**
 	 * 持久到数据库,返回自己;如果有主键，则更新；没有则插入；
@@ -588,7 +375,227 @@ abstract class YZE_Model extends YZE_Object{
 	    return $this->set($name, $value);
 	}
 	
-
+	/////////////////  Model SQL ////////////////////////////
+	
+	/**
+	 * 调用方式where: ("CHAR_LENGTH(title)=:title and (id>10 or id<20)")
+	 * 
+	 * @var static
+	 */
+	public static function where($where){
+		self::initSql ();
+		self::$sql->nativeWhere($where);
+		return new static;
+	}
+	
+	public static function order_By($column, $sort, $alias=null){
+		self::initSql ();
+		self::$sql->order_by($alias ? $alias : "m", $column, $sort);
+		return new static;
+	}
+	
+	public static function group_By($column, $alias=null){
+		self::initSql ();
+		self::$sql->group_by($alias ? $alias : "m", $column);
+		return new static;
+	}
+	
+	public static function limit($start, $limit){
+		self::initSql ();
+		self::$sql->limit($start, $limit);
+		return new static;
+	}
+	
+	public static function left_join($myAlias, $joinClass, $joinAlias, $join_on){
+		self::initSql ();
+		if ($myAlias){
+			self::$sql->from(static::CLASS_NAME, $myAlias);
+		}
+		
+		self::$sql->left_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
+		return new static;
+	}
+	public static function right_join($myAlias, $joinClass, $joinAlias, $join_on){
+		self::initSql ();
+		if ($myAlias){
+			self::$sql->from(static::CLASS_NAME, $myAlias);
+		}
+	
+		self::$sql->right_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
+		return new static;
+	}
+	public static function join($myAlias, $joinClass, $joinAlias, $join_on){
+		self::initSql ();
+		if ($myAlias){
+			self::$sql->from(static::CLASS_NAME, $myAlias);
+		}
+	
+		self::$sql->join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
+		return new static;
+	}
+	
+	/**
+	 * 该方法需要在最后调用，该方法直接返回查询结果数组
+	 * 
+	 * @param array $params [:field=>value]格式的数组
+	 * @param unknown $alias要选择的对象的别名，如果有联合查询，没有指定alias则返回所有的数据
+	 * @return array
+	 */
+	public static function select(array $params=array(), $alias=null){
+		self::initSql ();
+		if ( ! self::$sql->has_from()){
+			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		}
+		if ($alias){
+			self::$sql->select($alias);
+		}
+		
+		$obj = clone self::$sql;
+		self::$sql->clean();
+		return $obj;
+		
+		$obj = YZE_DBAImpl::getDBA()->select(self::$sql, $params);
+		
+		self::$sql->clean();
+		return $obj;
+	}
+	/**
+	 * 该方法需要在最后调用，该方法直接返回查询结果对象
+	 *
+	 * @param array $params [:field=>value]格式的数组
+	 * @param unknown $alias要选择的对象的别名，如果有联合查询，没有指定alias则返回所有的数据
+	 * @return YZE_Model
+	 */
+	public static function getSingle(array $params=array(), $alias=null){
+		self::initSql ();
+		if ( ! self::$sql->has_from()){
+			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		}
+		if ($alias){
+			self::$sql->select($alias);
+		}
+		self::$sql->limit(1);
+		
+		$obj = clone self::$sql;
+		self::$sql->clean();
+		return $obj;
+		
+		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
+		self::$sql->clean();
+		return $obj;
+	}
+	/**
+	 * 返回count结果
+	 * @param unknown $field count 字段
+	 * @param array $params [:field=>value]格式的数组
+	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->count()中的TestModel
+	 * @return int
+	 */
+	public static function count($field, array $params=array(), $alias=null){
+		if ( ! $alias){
+			$alias = "m";
+		}
+		self::$sql->count($alias , $field, "COUNT_ALIAS");
+		
+		$obj = clone self::$sql;
+		self::$sql->clean();
+		return $obj;
+		
+		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
+		self::$sql->clean();
+		if ( ! $obj)return 0;
+		return is_array($obj) ? $obj[$alias]->Get("COUNT_ALIAS") : $obj->Get("COUNT_ALIAS");
+	}
+	/**
+	 * 返回sum结果
+	 * @param unknown $field count 字段
+	 * @param array $params [:field=>value]格式的数组
+	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->sum()中的TestModel
+	 * @return int
+	 */
+	public static function sum($field, array $params=array(), $alias=null){
+		if ( ! $alias){
+			$alias = "m";
+		}
+		self::$sql->sum($alias, $field, "SUM_ALIAS");
+	
+		$obj = clone self::$sql;
+		self::$sql->clean();
+		return $obj;
+		
+		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
+		self::$sql->clean();
+		if ( ! $obj)return 0;
+		return is_array($obj) ? $obj[$alias]->Get("SUM_ALIAS") : $obj->Get("SUM_ALIAS");
+	}
+	/**
+	 * 返回max结果
+	 * @param unknown $field count 字段
+	 * @param array $params [:field=>value]格式的数组
+	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->sum()中的TestModel
+	 * @return int
+	 */
+	public static function max($field, array $params=array(), $alias=null){
+		if ( ! $alias){
+			$alias = "m";
+		}
+		self::$sql->max($alias, $field, "MAX_ALIAS");
+	
+		$obj = clone self::$sql;
+		self::$sql->clean();
+		return $obj;
+		
+		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
+		self::$sql->clean();
+		if ( ! $obj)return 0;
+		return is_array($obj) ? $obj[$alias]->Get("MAX_ALIAS") : $obj->Get("MAX_ALIAS");
+	}
+	/**
+	 * 返回max结果
+	 * @param unknown $field count 字段
+	 * @param array $params [:field=>value]格式的数组
+	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->sum()中的TestModel
+	 * @return int
+	 */
+	public static function min($field, array $params=array(), $alias=null){
+		if ( ! $alias){
+			$alias = "m";
+		}
+		self::$sql->min($alias, $field, "MIN_ALIAS");
+	
+		$obj = clone self::$sql;
+		self::$sql->clean();
+		return $obj;
+		
+		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
+		self::$sql->clean();
+		if ( ! $obj)return 0;
+		return is_array($obj) ? $obj[$alias]->Get("MIN_ALIAS") : $obj->Get("MIN_ALIAS");
+	}
+	
+	public static function delete($field, array $params=array(), $alias=null){
+		if ( ! $alias){
+			$alias = "m";
+		}
+		self::$sql->delete();
+	
+		$obj = clone self::$sql;
+		self::$sql->clean();
+		return $obj;
+	
+		$obj = YZE_DBAImpl::getDBA()->execute(self::$sql, $params);
+		self::$sql->clean();
+		return $obj;
+	}
+	
+	private static function initSql() {
+		if (self::$sql == null){
+			self::$sql = new YZE_SQL();
+		}
+		return self::$sql;
+	}
+	
+	
 	private function get_object($field_name){
 	    if( @$this->cache[$field_name]) return $this->cache[$field_name];
 	    $info = $this->objects[$field_name];

@@ -82,6 +82,7 @@ class YZE_SQL extends YZE_Object{
 	private $limit_start;
 	private $limit_end;
 	private $has_join = false;
+	private $has_from = false;
 	
 	/**
 	 * array('alias'		=> $table_alias,
@@ -352,14 +353,15 @@ class YZE_SQL extends YZE_Object{
 			'table'=>$entity->get_table(),
 			'join'=>array()
 		);
+		$this->has_from = true;
 		$this->classes[($alias ? $alias : $class_name)] = $class_name;
 		return $this;
 	}
 	/**
 	 * left_join查询段,e.g. left_join('item','item.order_id = o.order_id')
-	 * @param $class_name 对象名
-	 * @param $alias 别名
-	 * @param $join_on
+	 * @param string $class_name 对象名
+	 * @param string $alias 别名
+	 * @param string $join_on
 	 * @return YZE_SQL
 	 */
 	public function left_join($class_name,$alias,$join_on){
@@ -371,6 +373,7 @@ class YZE_SQL extends YZE_Object{
 				'on'=>$join_on
 			)
 		);
+
 		$this->classes[($alias ? $alias : $class_name)] = $class_name;
 		$this->has_join = true;
 		return $this;
@@ -565,6 +568,13 @@ class YZE_SQL extends YZE_Object{
 		return $this->has_join;
 	}
 	/**
+	 * 是否有from
+	 */
+	public function has_from(){
+		return $this->has_from;
+	}
+	
+	/**
 	 * 返回sql中的所有表名.e.g array(alias=>table)
 	 * @return array
 	 */
@@ -632,6 +642,7 @@ class YZE_SQL extends YZE_Object{
 	
 	private function _from(){
 		$no_alias = $this->isinsert() || $this->isdelete();//不要别名
+		$from = array();
 		foreach($this->from as $alias => $from_table){
 			if($from_table['join']){
 				switch(strtoupper($from_table['join']['type'])){
@@ -659,9 +670,11 @@ class YZE_SQL extends YZE_Object{
 						break;
 				}
 			}else{
-				$from[] = $no_alias ? $from_table['table'] : $from_table['table']." AS ".$alias;
+				//先处理from，在按顺序处理其他join
+				array_unshift($from, $no_alias ? $from_table['table'] : $from_table['table']." AS ".$alias);
 			}
 		}
+		
 		return join(" ",$from);
 	}
 	

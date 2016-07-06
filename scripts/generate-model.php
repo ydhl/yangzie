@@ -65,7 +65,7 @@ class Generate_Model_Script extends AbstractScript{
      * {$row['Comment']}
      * @var {$type_info['type']}
      */
-    const ".strtoupper($row['Field'])." = \"{$row['Field']}\";";
+    const F_".strtoupper($row['Field'])." = \"{$row['Field']}\";";
 		}
 		
 		$constantdefine = '';
@@ -93,8 +93,9 @@ class $class extends YZE_Model{
     const VERSION = 'modified_on';
     const MODULE_NAME = \"$package\";
     const KEY_NAME = \"$key\";
+    const CLASS_NAME = 'app\\$package\\$class';
     $properConst
-    protected \$columns = array(
+    public static \$columns = array(
         $fielddefine
     );
     //array('attr'=>array('from'=>'id','to'=>'id','class'=>'','type'=>'one-one||one-many') )

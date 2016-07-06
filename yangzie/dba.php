@@ -115,11 +115,12 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 同select，区别是直接返回一个对象
 	 * @param YZE_SQL $sql
+	 * @param array $params :column类型的字段值
 	 * @return YZE_Model
 	 */
-	public function getSingle(YZE_SQL $sql){
+	public function getSingle(YZE_SQL $sql, $params=array()){
 		$sql->limit(1);
-		$result = $this->select($sql);
+		$result = $this->select($sql, $params);
 		return @$result[0];
 	}
 
@@ -128,16 +129,24 @@ class YZE_DBAImpl extends YZE_Object
 	 * !!!如果是联合查询，没有数据的对象返回null
 	 *
 	 * @param YZE_SQL $sql
-	 * @param $key_field 返回的数组的索引，没有指定则是数字自增，指定指定名，则以该字段的值作为索引
+	 * @param string $key_field 返回的数组的索引，没有指定则是数字自增，指定指定名，则以该字段的值作为索引
+	 * @param array $params :column类型的字段值
 	 * 
 	 * @return array(Model)
 	 */
-	public function select(YZE_SQL $sql, $key_field=null){
+	public function select(YZE_SQL $sql, $params=array(), $key_field=null){
 		$classes = $sql->get_select_classes(true);
-		$statement = $this->conn->query($sql->__toString());
+		
+		if($params){
+			$statement = $this->conn->prepare($sql->__toString());
+			$statement->execute($params);
+		}else{
+			$statement = $this->conn->query($sql->__toString());
+		}
 		if(empty($statement)){
 			throw new YZE_DBAException(join(",", $this->conn->errorInfo()));
 		}
+
 		$raw_result = $statement->fetchAll(PDO::FETCH_ASSOC);
 		$num_rows = $statement->rowCount();
 		$more_entity = count($classes) > 1;
@@ -619,6 +628,11 @@ class YZE_PDOStatementWrapper extends YZE_Object{
 		$this->index +=1;
 		return @$this->result[$this->index];
 	}
+	/**
+	 * 如果提供了alias,则会已{$table_alias}_{$name}为字段名查找
+	 * @param unknown $name
+	 * @param unknown $table_alias
+	 */
 	public function f($name,$table_alias=null){
 		return self::filter_var($this->result[$this->index][$table_alias ? "{$table_alias}_{$name}" : $name]);#数据库取出来编码
 	}

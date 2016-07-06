@@ -1,0 +1,45 @@
+007+ FROM tests AS t tests AS m  LEFT JOIN users AS u ON t.user_id=u.id 
+008+ WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20) LIMIT 1
+009+ 
+010+ SELECT t.id AS t_id,t.title AS t_title,t.user_id AS t_user_id,t.created_on AS t_created_on,t.modified_on AS t_modified_on,u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+011+ FROM tests AS t tests AS m  LEFT JOIN users AS u ON t.user_id=u.id 
+012+ WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20) LIMIT 1
+013+ 
+014+ SELECT t.id AS t_id,t.title AS t_title,t.user_id AS t_user_id,t.created_on AS t_created_on,t.modified_on AS t_modified_on,u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+015+ FROM tests AS t tests AS m  LEFT JOIN users AS u ON t.user_id=u.id 
+016+ WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20) LIMIT 5
+017+ 
+018+ SELECT t.id AS t_id,t.title AS t_title,t.user_id AS t_user_id,t.created_on AS t_created_on,t.modified_on AS t_modified_on,u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+019+ FROM tests AS t tests AS m  LEFT JOIN users AS u ON t.user_id=u.id 
+020+ WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20) GROUP BY t.title LIMIT 5
+021+ 
+022+ SELECT t.id AS t_id,t.title AS t_title,t.user_id AS t_user_id,t.created_on AS t_created_on,t.modified_on AS t_modified_on,u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+023+ FROM tests AS t tests AS m  LEFT JOIN users AS u ON t.user_id=u.id 
+024+ WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20)CHAR_LENGTH(title)=:title and (id>10 or id<20) GROUP BY t.title ORDER BY t.title ASC LIMIT 5
+025+ 
+007- FROM tests AS t  LEFT JOIN users AS u ON t.user_id=u.id 
+008- WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20) LIMIT 1
+010- SELECT u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+027+ Fatal error: Call to undefined method yangzie\TestModel::selectSQL() in /Users/ydhlleeboo/workspace/yangzie/tests/yangzie/model-sql.php on line 102
+011- FROM tests AS t  LEFT JOIN users AS u ON t.user_id=u.id 
+012- WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20) LIMIT 1
+013- 
+014- SELECT u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+015- FROM tests AS t  LEFT JOIN users AS u ON t.user_id=u.id 
+016- WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20) LIMIT 5
+017- 
+018- SELECT u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+019- FROM tests AS t  LEFT JOIN users AS u ON t.user_id=u.id 
+020- WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20) GROUP BY t.title LIMIT 5
+021- 
+022- SELECT u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+023- FROM tests AS t  LEFT JOIN users AS u ON t.user_id=u.id 
+024- WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20) ORDER BY t.title ASC LIMIT 5
+025- 
+026- SELECT u.id AS u_id,u.title AS u_title,u.created_on AS u_created_on,u.modified_on AS u_modified_on 
+027- FROM tests AS t  LEFT JOIN users AS u ON t.user_id=u.id 
+028- WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20) GROUP BY u.title ORDER BY u.title ASC LIMIT 5
+029- 
+030- SELECT o.id AS o_id,o.order_id AS o_order_id,o.user_id AS o_user_id,o.created_on AS o_created_on,o.modified_on AS o_modified_on 
+031- FROM tests AS t  LEFT JOIN users AS u ON t.user_id=u.id  INNER JOIN orders AS o ON o.user_id=u.id 
+032- WHERE CHAR_LENGTH(title)=:title and (id>10 or id<20) GROUP BY u.title ORDER BY u.title ASC LIMIT 5

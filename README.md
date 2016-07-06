@@ -2,6 +2,8 @@
 
 V1.5.4
 1. 增加master view ，让view 重用做到极致
+2. 生成的Model字段加上F前缀, 加上CLASS_NAME常量
+3. $column 修改为静态变量
 
 V1.5.3
 

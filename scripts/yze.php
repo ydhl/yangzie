@@ -2,7 +2,7 @@
 namespace yangzie;
 define("YZE_SCRIPT_LOGO", "
 ================================================================
-		YANGZIE(V1.5.2) Generate Script
+		YANGZIE(V1.5.4) Generate Script
 		易点互联®
 ================================================================");
 global $language, $db;

@@ -156,21 +156,21 @@ abstract class YZE_Model extends YZE_Object{
 		switch ($this->getFieldType($name)) {
 			case "integer":
 				if (strcasecmp("NULL", $value)==0 || is_null($value)) {
-					$value = "null";
+					$value = null;
 				}else{
 					$value =  intval($value);
 				}
 				break;
 			case "float":
 				if (strcasecmp("NULL", $value)==0 || is_null($value)) {
-                    $value = "null";
+                    $value = null;
                 }else{
                     $value =  floatval($value);
                 }
                 break;
             default:
                 if (strcasecmp("NULL", $value)==0 || is_null($value)) {
-                    $value = "null";
+                    $value = null;
                 }
                 break;
 		}
@@ -450,10 +450,6 @@ abstract class YZE_Model extends YZE_Object{
 			self::$sql->select($alias);
 		}
 		
-		$obj = clone self::$sql;
-		self::$sql->clean();
-		return $obj;
-		
 		$obj = YZE_DBAImpl::getDBA()->select(self::$sql, $params);
 		
 		self::$sql->clean();
@@ -468,6 +464,7 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public static function getSingle(array $params=array(), $alias=null){
 		self::initSql ();
+		
 		if ( ! self::$sql->has_from()){
 			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
@@ -475,10 +472,6 @@ abstract class YZE_Model extends YZE_Object{
 			self::$sql->select($alias);
 		}
 		self::$sql->limit(1);
-		
-		$obj = clone self::$sql;
-		self::$sql->clean();
-		return $obj;
 		
 		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
 		self::$sql->clean();
@@ -497,10 +490,6 @@ abstract class YZE_Model extends YZE_Object{
 		}
 		self::$sql->count($alias , $field, "COUNT_ALIAS");
 		
-		$obj = clone self::$sql;
-		self::$sql->clean();
-		return $obj;
-		
 		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
 		self::$sql->clean();
 		if ( ! $obj)return 0;
@@ -518,10 +507,6 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		self::$sql->sum($alias, $field, "SUM_ALIAS");
-	
-		$obj = clone self::$sql;
-		self::$sql->clean();
-		return $obj;
 		
 		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
 		self::$sql->clean();
@@ -540,10 +525,6 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		self::$sql->max($alias, $field, "MAX_ALIAS");
-	
-		$obj = clone self::$sql;
-		self::$sql->clean();
-		return $obj;
 		
 		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
 		self::$sql->clean();
@@ -562,10 +543,6 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		self::$sql->min($alias, $field, "MIN_ALIAS");
-	
-		$obj = clone self::$sql;
-		self::$sql->clean();
-		return $obj;
 		
 		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
 		self::$sql->clean();
@@ -579,13 +556,16 @@ abstract class YZE_Model extends YZE_Object{
 		}
 		self::$sql->delete();
 	
-		$obj = clone self::$sql;
-		self::$sql->clean();
-		return $obj;
-	
 		$obj = YZE_DBAImpl::getDBA()->execute(self::$sql, $params);
 		self::$sql->clean();
 		return $obj;
+	}
+	/**
+	 * 清空表中所有数据，主键重新从1开始
+	 */
+	public static function truncate(){
+		$sql = "TRUNCATE `".YZE_MYSQL_DB."`.`".static::TABLE."`;";
+		YZE_DBAImpl::getDBA()->exec($sql);
 	}
 	
 	private static function initSql() {

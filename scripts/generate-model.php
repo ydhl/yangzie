@@ -35,15 +35,49 @@ class Generate_Model_Script extends AbstractScript{
 	public function create_model_code($class){
 		$table = $this->table_name;
 		$package=$this->module_name;
-		
 		$app_module = new \app\App_Module();
+
 		$db = mysqli_connect(
-			$app_module->get_module_config("db_host"),
-			$app_module->get_module_config("db_user"),
-			$app_module->get_module_config("db_psw")
-		);
+				$app_module->get_module_config("db_host"),
+				$app_module->get_module_config("db_user"),
+				$app_module->get_module_config("db_psw")
+				);
+		
+		$importClass = "";
+		$assocFields = "";
+		$assocFieldFuncs = "";
+		mysqli_select_db($db, "INFORMATION_SCHEMA");
+		$result = mysqli_query($db, "select COLUMN_NAME,CONSTRAINT_NAME,
+		REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME from KEY_COLUMN_USAGE
+		where TABLE_SCHEMA = '".$app_module->get_module_config("db_name")."' and TABLE_NAME = '{$table}'
+		and referenced_column_name is not NULL");
+		while ($row=mysqli_fetch_assoc($result)) {
+			$col = rtrim($row['REFERENCED_TABLE_NAME'], "s");//先假定复数形式
+			$col_class = get_class_of_table($row['REFERENCED_TABLE_NAME']);
+			$importClass .= ""; 
+			$sortClass .= "";
+			$myCol = strtoupper();
+			$assocFields .= "private \${$col};
+";
+			$assocFieldFuncs .= "public function get_{$col}(){
+	if( ! \$this->{$col}){
+		\$this->{$col} = {$sortClass}::find_by_id(\$this->get(self::{$row['COLUMN_NAME']}))
+	}
+	return \$this->{$col};
+}
+	/**
+	 * @return $class
+	 */
+	public function set_{$col}({$sortClass} \$new){
+		\$this->{$col} = \$new
+		return \$this;
+}";
+		}
+		
+		
 		mysqli_select_db($db, $app_module->get_module_config("db_name"));
 		mysqli_query($db, "set names utf8");
+		
 		
 		$unique_key = array();
 		$result = mysqli_query($db, "SHOW INDEX FROM  $table");
@@ -80,7 +114,7 @@ use \yangzie\YZE_Model;
 use \yangzie\YZE_SQL;
 use \yangzie\YZE_DBAException;
 use \yangzie\YZE_DBAImpl;
-
+{$importClass}
 /**
 *
 *
@@ -105,6 +139,9 @@ class $class extends YZE_Model{
      * @see YZE_Model::\$unique_key
      */
     protected \$unique_key = ".var_export($unique_key, true).";
+    		
+    {$assocFields}
+	{$assocFieldFuncs}
 }?>";
 	}
 	

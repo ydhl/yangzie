@@ -1,9 +1,13 @@
 文档在完善中。。。
 
-V1.5.4
+V1.5.4 预发布版本
 1. 增加master view ，让view 重用做到极致
 2. 生成的Model字段加上F前缀, 加上CLASS_NAME常量
 3. $column 修改为静态变量
+4. Model SQL查询改进，移除find_by_attr类方法
+5. 自动为表之间的关系生成get set方法; $objects配置方式不再建议使用
+6. column属性更全面，并且支持CODE to DB Migration： YZE_DBA::migration
+7. mongodb和redis基本支持
 
 V1.5.3
 

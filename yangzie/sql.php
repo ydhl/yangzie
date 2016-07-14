@@ -517,7 +517,8 @@ class YZE_SQL extends YZE_Object{
 		$this->update = array();
 		$this->insert = array();
 		$this->group_by = array();
-		
+		$this->has_join = false;
+		$this->has_from = false;
 		
 		$this->entities = array();
 		$this->classes = array();

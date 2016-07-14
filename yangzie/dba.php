@@ -611,6 +611,57 @@ class YZE_DBAImpl extends YZE_Object
 	
 	    return $fileds;
 	}
+	
+	/**
+	 * CODE TO DB同步，把指定的model同步字段到数据库，如果表没有建立则建立表，建立就同步字段
+	 * 这是初步实现了功能，不稳定，请勿使用在产品环境
+	 * 
+	 * @param unknown $class
+	 */
+	public static function migration($class, $reCreate=false){
+		$columns = $class::$columns;
+		$table = $class::TABLE;
+		$column_segments = array();
+		
+		$uniqueKey = "";
+		
+		foreach ($columns as $column => $defines){
+			switch (strtoupper($defines['type'])){
+				case "INTEGER": $type = "INT";break;
+				case "TIMESTAMP": $type = "TIMESTAMP";break;
+				case "DATE": $type = "date";break;
+				case "FLOAT": $type = "FLOAT";break;
+				case "ENUM": $type = "ENUM";break;
+				case "STRING": 
+				default : $type = "VARCHAR(".(@$defines['length'] ? $defines['length'] : 45).")";break;
+			}
+			
+			$uniqueKey .= $defines["unique"] ? ",UNIQUE INDEX `{$column}_UNIQUE` (`{$column}` ASC)" : "";
+			$nullable = $defines["null"] ? "NULL" : "NOT NULL";
+			$primaryID = $column==$class::KEY_NAME ? "AUTO_INCREMENT" : "";
+			$default  = $defines["default"] != '' ? "DEFAULT ".$defines["default"] : "";
+			
+			$column_segments[] = "`{$column}` {$type} {$nullable} {$primaryID} {$default}";
+		}
+		$primary = "";
+		if ($class::KEY_NAME){
+			$primary = " , PRIMARY KEY (`".$class::KEY_NAME."`)";
+		}
+		if ($reCreate){
+			$drop = "DROP TABLE `".YZE_MYSQL_DB."`.`{$table}`";
+		}
+		
+		
+		$sql = "CREATE TABLE IF NOT EXISTS `".YZE_MYSQL_DB."`.`{$table}` (".join(",", $column_segments)."{$primary}{$uniqueKey})
+		ENGINE = InnoDB;";
+		
+		if ($drop){
+			self::getDBA()->exec($drop);
+		}
+		
+		self::getDBA()->exec($sql);
+	}
+	
 }
 class YZE_PDOStatementWrapper extends YZE_Object{
 	/**

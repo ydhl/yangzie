@@ -1,6 +1,9 @@
 <?php
 namespace  app;
 
+use yangzie\YZE_Exception_Controller;
+use yangzie\YZE_RuntimeException;
+
 /**
  * 1.定义系统目录常量
  * 2.设置文件包含查找路径
@@ -36,18 +39,22 @@ require_once YANGZIE.'/init.php';
 
 spl_autoload_register("\yangzie\yze_autoload");
 
-/**
- * 加载应用：
- * 1. 加载应用配置文件app/__config__.php，根据其中的配置进行系统初始化，比如数据库配置
- * 2. 加载应用中所有的模块配置文件，__module__.php，根据其中的配置加载模块的包含路径，自动包含的文件，url映射等等
- */
-\yangzie\yze_load_app();
 
-
-//启动会话,yze_load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
-\session_start();
-
-
-//加载l10n本地语言翻译处理，根据用户的请求中的指示，决定合适的显示语言
-\yangzie\load_default_textdomain();
+try{
+	/**
+	 * 加载应用：
+	 * 1. 加载应用配置文件app/__config__.php，根据其中的配置进行系统初始化，比如数据库配置
+	 * 2. 加载应用中所有的模块配置文件，__module__.php，根据其中的配置加载模块的包含路径，自动包含的文件，url映射等等
+	 */
+	\yangzie\yze_load_app();
+	
+	//启动会话,yze_load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
+	\session_start();
+	
+	//加载l10n本地语言翻译处理，根据用户的请求中的指示，决定合适的显示语言
+	\yangzie\load_default_textdomain();
+}catch (\Exception $notCatch){
+	$controller = new YZE_Exception_Controller();
+	$controller->do_exception(new YZE_RuntimeException($notCatch->getMessage()))->output();
+}
 ?>

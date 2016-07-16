@@ -1,10 +1,12 @@
 <?php
 namespace  app;
 
+use yangzie\YZE_FatalException;
+
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);//end by /
 define("YZE_MYSQL_USER",  "root");
 define("YZE_MYSQL_HOST_M",  "127.0.0.1");
-define("YZE_MYSQL_DB",  "test");
+define("YZE_MYSQL_DB",  "ydoa");
 define("YZE_MYSQL_PORT",  "3306");
 define("YZE_MYSQL_PASS",  "ydhl");
 define("YZE_MONGODB_USER",  "");
@@ -12,13 +14,13 @@ define("YZE_MONGODB_HOST_M",  "");
 define("YZE_MONGODB_NAME",  "");
 define("YZE_MONGODB_PORT",  "");
 define("YZE_MONGODB_PASS",  "");
-define("SITE_URI", "http://yangzie.local.com/");//网站地址
-define("UPLOAD_SITE_URI", "http://yangzie.local.com/upload/");//上传文件内容访问地址，比如cdn
+define("SITE_URI", "http://YOUR-DOMAIN/");//网站地址
+define("UPLOAD_SITE_URI", "http://YOR-DOMIAN/upload/");//上传文件内容访问地址，比如cdn; 这跟YZE_UPLOAD_PATH是对应的
 
 
 define("YZE_DEVELOP_MODE",  true );
 define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_REWRITE);//开发时一但设置便别在修改
-ini_set('error_reporting', E_ERROR);//错误级别
+ini_set('error_reporting', E_ALL);//错误级别
 date_default_timezone_set('Asia/Chongqing');//时区
 define("APPLICATION_NAME", "Yangzie");//应用名称
 
@@ -39,12 +41,11 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	public $db_psw= YZE_MYSQL_PASS;
 	public $db_charset= 'UTF8';
 	
-	//加载应用时需要检查什么
 	public function check(){
-		//return empty array() if everything is ok
-		//return array  of  error message while has some error
 		$error = array();
-		return $error;
+		if( version_compare(PHP_VERSION,'5.3.0','lt')){
+			throw new YZE_FatalException("要求5.3及以上PHP版本");
+		}
 	}
 
 	protected function _config()

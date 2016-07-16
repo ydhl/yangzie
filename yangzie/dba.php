@@ -310,7 +310,7 @@ class YZE_DBAImpl extends YZE_Object
 		
 		$entity->set($entity->get_key_name(),$insert_id);
 		
-		\yangzie\YZE_Hook::do_hook("db-insert", $entity);
+		\yangzie\YZE_Hook::do_hook(YZE_HOOK_DB_INSERT, $entity);
 		return $insert_id;
 	}
 	

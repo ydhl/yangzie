@@ -263,7 +263,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 		echo $data;
 	}
 	public function view_sections(){
-	    return $this->data['content_of_section'];
+	    return @$this->data['content_of_section'];
 	}
 	public function begin_section(){
 	    ob_start();
@@ -559,7 +559,7 @@ class YZE_Layout extends YZE_View_Adapter{
 			$this->layout = $this->view->layout;
 		}
 
-		if($_SERVER['HTTP_X_PJAX']){//pjax 请求，不返回layout
+		if(@$_SERVER['HTTP_X_PJAX']){//pjax 请求，不返回layout
 			echo "<title>".$this->get_data("yze_page_title")."</title>";//pjax 加载时设置页面标题
 			$this->layout = "";
 		}

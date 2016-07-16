@@ -24,6 +24,8 @@ function yze_autoload($class) {
             $file .= "controllers" . DS . $class_name . ".class.php";
         }else if(preg_match("{_model$}i", $class)){
             $file .= "models" . DS . $class_name . ".class.php";
+        }else if(preg_match("{_define$}i", $class)){
+            $file .= "models" . DS . $class_name . ".trait.php";
         }else if(preg_match("{_module$}i", $class)){
             $file .= "__module__.php";
         }else{
@@ -49,6 +51,7 @@ function yze_load_app() {
     
     
     $app_module = new App_Module ();
+    $app_module->check ();
     $module_include_files = $app_module->module_include_files ( );
     foreach ( ( array ) $module_include_files as $path ) {
         include_once $path;

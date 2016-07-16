@@ -6,6 +6,7 @@ class Generate_Model_Script extends AbstractScript{
 	protected $module_name;
 	protected $table_name;
 	protected $class_name;
+	static $chain_tables = [];
 	
 	public function generate(){
 		$argv = $this->args;
@@ -13,7 +14,7 @@ class Generate_Model_Script extends AbstractScript{
 		$this->module_name 	= $argv['module_name'];
 		$this->table_name 		= $argv['table_name'];
 		$this->class_name 		= $argv['class_name'];
-		
+	
 		if(empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
 			die(__(Generate_Model_Script::USAGE));
 		}
@@ -24,13 +25,14 @@ class Generate_Model_Script extends AbstractScript{
 		//Model 
 		$model_class = YZE_Object::format_class_name($this->class_name,"Model");
 		$handleResult = $this->create_model_code($model_class);
-		echo __("create model :\t\t\t");
+		echo __("create model {$model_class} :");
 		$this->save_class($handleResult, $model_class, $this->module_name);
-		echo __("create model phpt file :\t");
+		echo __("create model {$model_class} phpt file :");
 		$this->save_test($handleResult, $model_class, $this->module_name);
 		
 		echo __("Done!\n");
 	}
+	
 	
 	public function create_model_code($class){
 		$table = $this->table_name;
@@ -53,25 +55,28 @@ class Generate_Model_Script extends AbstractScript{
 		and referenced_column_name is not NULL");
 		while ($row=mysqli_fetch_assoc($result)) {
 			$col = rtrim($row['REFERENCED_TABLE_NAME'], "s");//先假定复数形式
-			$col_class = get_class_of_table($row['REFERENCED_TABLE_NAME']);
-			$importClass .= ""; 
-			$sortClass .= "";
-			$myCol = strtoupper();
-			$assocFields .= "private \${$col};
+			$col_class = $this->get_class_of_table($row['REFERENCED_TABLE_NAME']);
+			$importClass .= "use $col_class;\r\n"; 
+			$sortClass = substr($col_class, strripos($col_class, "\\")+1);
+			$assocFields .= "
+	private \${$col};
 ";
-			$assocFieldFuncs .= "public function get_{$col}(){
-	if( ! \$this->{$col}){
-		\$this->{$col} = {$sortClass}::find_by_id(\$this->get(self::{$row['COLUMN_NAME']}))
+			$assocFieldFuncs .= "
+	public function get_{$col}(){
+		if( ! \$this->{$col}){
+			\$this->{$col} = {$sortClass}::find_by_id(\$this->get(self::F_".strtoupper($row['COLUMN_NAME'])."));
+		}
+		return \$this->{$col};
 	}
-	return \$this->{$col};
-}
+	
 	/**
 	 * @return $class
 	 */
 	public function set_{$col}({$sortClass} \$new){
-		\$this->{$col} = \$new
+		\$this->{$col} = \$new;
 		return \$this;
-}";
+	}
+";
 		}
 		
 		
@@ -233,7 +238,7 @@ class $class extends YZE_Model{
 		$this->create_file($class_file_path, $test_file_content);
 	}
 
-	protected function save_class($handleResult,$class,$package){
+	protected function save_class($handleResult,$class,$package, $format="class"){
 		$class = strtolower($class);
 		$path = dirname(dirname(__FILE__))."/app/modules/".$package."/models";
 		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/".$package);
@@ -241,76 +246,66 @@ class $class extends YZE_Model{
 	
 			
 		$class_file_path = dirname(dirname(__FILE__))
-			."/app/modules/".$package."/models/{$class}.class.php";
+			."/app/modules/".$package."/models/{$class}.{$format}.php";
 		$this->create_file($class_file_path, $handleResult, true);
+	}
+	
+	protected function get_class_of_table($table){
+		global $db;
+		$class_name = YZE_Object::format_class_name(rtrim($table, "s"),"Model");
+		if(class_exists($class_name)){
+			return $class_name;
+		}
+
+		if ( @ self::$chain_tables[$table] ){//之前已经处理过了
+			return self::$chain_tables[$table];
+		}
+		
+		clear_terminal();
+		
+		echo wrap_output(sprintf(__("    ================================================================
+		
+    未能识别关联表%s的Model类，请输入该类所在的module名（默认当前模块）："), $table));
+		$module = get_input();
+		
+		if ( ! $module){
+			$module = $this->module_name;
+		}
+		
+		self::$chain_tables[$table] = $module;
+		
+		if (class_exists("\\app\\{$module}\\{$class_name}")){
+			return "\\app\\{$module}\\{$class_name}";
+		}
+		
+		echo get_colored_text(wrap_output(sprintf(__("    开始生成 %s..."), "\\app\\{$module}\\{$class_name}")), "blue", "white")."\r\n";
+		$object = new \yangzie\Generate_Model_Script(array("cmd" => "model",
+			"base"       => "table",
+			"module_name"=> $module,
+			"class_name" => preg_replace('/_model$/i', "", $class_name),
+			"table_name" => $table));
+		$object->generate();
+		echo "\r\n".get_colored_text(wrap_output(sprintf(__("    生成结束 %s ."), "\\app\\{$module}\\{$class_name}")), "blue", "white")."\r\n";
+		
+		
+		return "\\app\\{$module}\\{$class_name}";
 	}
 }
 
 class Generate_Refreshmodel_Script extends Generate_Model_Script{
-    public function generate(){
-        $argv = $this->args;
-        $cls = $argv['class_name'];
-        
-        $argv['module_name'] = constant("$cls::MODULE_NAME");
-        $argv['table_name']  = constant("$cls::TABLE");
-        $argv['class_name']  = preg_replace("{_model}", "", 
-                preg_replace("{\|?app\|".$argv['module_name']."\|}", "", 
-                        str_replace("\\", "|", $cls)));
-        $this->args = $argv;
-        parent::generate();
-    }
-    
-    public function create_model_code($class){
-        $table = $this->table_name;
-        $package=$this->module_name;
-    
-        $app_module = new \app\App_Module();
-        $db = mysqli_connect(
-                $app_module->get_module_config("db_host"),
-                $app_module->get_module_config("db_user"),
-                $app_module->get_module_config("db_psw")
-        );
-        mysqli_select_db($db, $app_module->get_module_config("db_name"));
-        mysqli_query($db, "set names utf8");
-        $result = mysqli_query($db, "show full columns from $table");
-    
-        if (!$result) {
-            die($table . mysqli_error($db)."\r\n");
-        }
-        $constant = array();
-        while ($row=mysqli_fetch_assoc($result)) {
-            $row['Key']=="PRI" ? $key = $row['Field'] : null;
-            $type_info = $this->get_type_info($row['Type']);
-            $constant = array_merge((array)$constant,(array)$this->getEnumConstant($row['Field'], $row['Type']));
-            	
-            @$fielddefine .= "       ".str_pad("'".$row['Field']."'", 12," ")." => array('type' => '".$type_info['type']."', 'null' => ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",'length' => '".$type_info['length']."','default'	=> '".$row['Default']."',),
-";
-            	
-        }
-    
-        
-        $class_file_path = dirname(dirname(__FILE__))
-        ."/app/modules/".$package."/models/{$class}.class.php";
-        
-        $cls = "\\app\\{$package}\\$class";
-        $content = file_get_contents($class_file_path);
-        
-        $constantdefine = '';
-        foreach($constant as $c=>$v){
-            if( ! constant("{$cls}::$v")){
-                $constantdefine .= "
-                const $v = '$c';";
-            }
-        }
-        
-        $content = preg_replace('{protected\s+\$columns\s+=.+;+?}is', "
-    $constantdefine
-    protected \$columns = array(
-        $fielddefine
-    );", $content);
-        
-        return $content;
-    }
+	public function generate(){
+		$argv = $this->args;
+		$cls = $argv['class_name'];
+	
+		$argv['module_name'] = constant("$cls::MODULE_NAME");
+		$argv['table_name']  = constant("$cls::TABLE");
+		$argv['class_name']  = preg_replace("{_model}", "",
+				preg_replace("{\|?app\|".$argv['module_name']."\|}", "",
+						str_replace("\\", "|", $cls)));
+		$this->args = $argv;
+		parent::generate();
+	}
+	
     
 }
 ?>

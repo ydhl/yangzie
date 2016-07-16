@@ -66,6 +66,12 @@ define ( 'YZE_HOOK_GET_LOGIN_USER', 'YZE_HOOK_GET_LOGIN_USER' );
  * @var unknown
  */
 define ( 'YZE_HOOK_SET_LOGIN_USER', 'YZE_HOOK_SET_LOGIN_USER' );
+define ( 'YZE_HOOK_SET_LOGIN_USER', 'YZE_HOOK_SET_LOGIN_USER' );
+/**
+ * model更新进数据库后调用，hook参数 $entity
+ * @var unknown
+ */
+define ( 'YZE_HOOK_DB_INSERT', 'YZE_HOOK_SET_LOGIN_USER' );
 final class YZE_Hook {
     private static $listeners = array ();
     private static $currModule;

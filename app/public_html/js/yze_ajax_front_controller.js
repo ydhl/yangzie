@@ -2,24 +2,32 @@ function yze_ajax_front_controller(){
 	this.getUrl 				= "";
 	this.submitCallback 		= "";
 	this.loadedCallback 		= "";
+	this.allowCache				= false;
 	this.loadType			= "ajax";//ajax | iframe
 	
 	/**
-	 * ajax load表单到dom中，这种方式不支持文件上传
+	 * ajax load表单到dom中, 提交时通过ajax提交，这种方式不支持文件上传
 	 * 
 	 * url 加载表单的url
 	 * params 加载表单的参数
-	 * loadedCallback 表单加载成功后的回调，在该回调中把form放在页面中，参数是form html
+	 * loadedCallback 表单加载成功后的回调，在该回调中把form放在页面中，参数是form html;如果参数是null，表示需要重新显示
 	 * submitCallback 表单提交成功后的回调，参数是提交成功后的数据
+	 * allowCache 是否可以缓存；默认为true，当没有提交form时，重新打开之前的网址，之前的数据总是在那里;这只是重新显示之前的表单，并没有重新加载
 	 */
-	this.get = function(url, params, loadedCallback, submitCallback) {
+	this.get = function(url, params, loadedCallback, submitCallback, allowCache) {
 		this.getUrl 		= url;
 		this.submitCallback 	= submitCallback;
 		this.loadedCallback 	= loadedCallback;
+		this.allowCache = allowCache;
 		this.loadType = "ajax";
 		var _self = this;
 		params = params || {};
 		params.yze_post_context = "json";
+		
+		if(allowCache && $("#"+url).length>0){
+			loadedCallback(null);
+			return;
+		}
 		
 		$.ajax({
 		        url: url,
@@ -40,23 +48,25 @@ function yze_ajax_front_controller(){
 	 * url 加载表单的url
 	 *  loadedCallback 表单加载成功后的回调，在该回调中把form放在页面中，参数是iframe html
 	 * submitCallback 表单提交成功后的回调，参数是提交成功后的数据
-	 * cancelCallback 关闭的回调
+	 * allowCache 是否可以缓存；默认为true，当没有提交form时，重新打开之前的网址，之前的数据总是在那里;这只是重新显示之前的表单，并没有重新加载
 	 */
-	this.load = function(url, loadedCallback, cancelCallback, submitCallback) {
+	this.load = function(url, loadedCallback, submitCallback, allowCache) {
 		this.loadType = "ifrmae";
+		this.allowCache = allowCache;
 		var _self = this;
 
-		window.yze_iframe_form_cancelCallback = function(){
-			cancelCallback();
-		};
-		
 		window.yze_iframe_form_submitCallback = function(data){
 			submitCallback(data);
 		};
 		
-		loadedCallback("<iframe id='_yze_iframe_form' marginheight='0' frameborder='0'  width='100%'  height='200px'  src='"
+		if(allowCache && $("#"+url).length>0){
+			loadedCallback(null);
+			return;
+		}
+		
+		loadedCallback("<iframe data-submited=0 id='"+url+"' marginheight='0' frameborder='0'  width='100%'  height='200px'  src='"
 				+ydhlib_AddParamsInUrl(url, { yze_post_context : 'iframe'} )+"'></iframe>");
-		$("#_yze_iframe_form").load(function(){
+		$("#"+url).load(function(){
 			var newheight;
 			var newwidth;
 			newheight = this.contentWindow.document.body.scrollHeight;
@@ -72,16 +82,16 @@ function yze_ajax_front_controller(){
 	//              private
 	// ---------------------------------
 	function modifyForm(data){
-		var id = new Date();
-		data = data.replace(/<form\s/ig, "<form data-yze-ajax-form-id='"+id+"' ");
+
+		data = data.replace(/<form\s/ig, "<form data-submited=0 data-yze-ajax-form-id='"+this.getUrl+"' ");
 		//alert(data);
 		this.loadedCallback(data); //该回调调用后，表单就已经加在dom中了，现在修改它的submit事件
 		
 		var getUrl 					= this.getUrl;
 		var submitCallback 	= this.submitCallback;
 		var _self = this;
-		$("form[data-yze-ajax-form-id='"+id+"']").unbind("submit");
-		$("form[data-yze-ajax-form-id='"+id+"']").submit(function(){
+		$("form[data-yze-ajax-form-id='"+this.getUrl+"']").unbind("submit");
+		$("form[data-yze-ajax-form-id='"+this.getUrl+"']").submit(function(){
 			var postData = $(this).serialize();//这里的this指表单
 			var action =  $(this).attr("action") || getUrl; //如果沒有指定action，那麼post仍然提交到getUrl中
 			var method = $(this).attr("method") || "POST";

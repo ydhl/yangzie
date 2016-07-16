@@ -1,13 +1,17 @@
 文档在完善中。。。
 
-V1.5.4 预发布版本
+V1.5.4（内测版本）
+0. pjax支持
 1. 增加master view ，让view 重用做到极致
 2. 生成的Model字段加上F前缀, 加上CLASS_NAME常量
 3. $column 修改为静态变量
-4. Model SQL查询改进，移除find_by_attr类方法
-5. 自动为表之间的关系生成get set方法; $objects配置方式不再建议使用
-6. column属性更全面，并且支持CODE to DB Migration： YZE_DBA::migration
-7. mongodb和redis基本支持
+4. Model SQL查询改进，移除find_by_attr类方法;增加model sql查询
+5. 自动为表之间的关系生成get set方法; 类似 $objects配置方式
+6. 初步支持CODE to DB Migration： YZE_DBA::migration
+7. 初步支持mongodb;配合hook 可以轻松的在mysql之上加上mongodb缓存层
+8. yze\_ajax\_front\_controller load 和get增加了缓存处理，当没有提交form时，重新打开之前的网址，之前的数据总是在那里；这是loadedCallback 回调的参数是null
+9. yze\_ajax\_front\_controller load 去掉cancel回调
+9. 数据库存储时加上了相关策略，可以在外键冲突等情况下进行相应的调整（验证中）
 
 V1.5.3
 

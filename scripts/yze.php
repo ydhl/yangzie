@@ -5,11 +5,18 @@ define("YZE_SCRIPT_LOGO", "
 		YANGZIE(V1.5.4) Generate Script
 		易点互联®
 ================================================================");
+
+define("YZE_METHED_HEADER", "
+================================================================
+		%s
+================================================================");
+
+
 global $language, $db;
 $language = "zh-cn";
 
 if(!preg_match("/cli/i",php_sapi_name())){
-	echo wrap_output(vsprintf(__("请在命令行下运行,进入到%s, 运行php generate.php",dirname(__FILE__))));die();
+	echo wrap_output(sprintf(__("请在命令行下运行,进入到%s, 运行php generate.php",dirname(__FILE__))));die();
 }
 
 function script_locale(){
@@ -26,6 +33,7 @@ include_once '../../scripts/generate-model.php';
 include_once '../../scripts/generate-module.php';
 
 if(true){
+	clear_terminal();
 	while(($cmds = display_home_wizard())){
 		$command = $cmds["cmd"];
 		clear_terminal();
@@ -77,11 +85,11 @@ function display_home_wizard(){
 		case 6:  return _run_test();
 		case 7:  return switch_to_zh();
 		case 8:  return switch_to_en();
-		case 9:  die(wrap_output("
-TODO.
+		case 9:  die(wrap_output("\r\n
+TODO.\r\n
 "));
-		case 0:  die(wrap_output("
-退出.
+		case 0:  die(wrap_output("\r\n
+退出.\r\n
 "));
 		default: return array();
 	}
@@ -89,11 +97,11 @@ TODO.
 
 function _run_test(){
 	clear_terminal();
-	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
+	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
 	
 选择要运行的单元测试，%s返回上一步
 
-"), get_colored_text(" CTRL+B ", "red", "white")));
+"), "运行单元测试", get_colored_text(" 0 ", "red", "white")));
 	
 	$index = 0;
 	$tests = array();
@@ -145,10 +153,10 @@ function switch_to_en(){
 
 function display_phar_wizard(){
 	clear_terminal();
-	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
+	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
 	
 打包phar，%s返回上一步
-1. (1/2)请输入模块名:  ")), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/2)请输入模块名:  ")), "打包Module", get_colored_text(" 0 ", "red", "white"));
 	
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
@@ -168,9 +176,9 @@ function display_phar_wizard(){
 	}
 
 	phar_module($module, $key_path);
-	echo wrap_output(vsprintf(__("phar保持于tmp/%s.phar\r\n"),$module));
+	echo wrap_output(sprintf(__("phar保持于tmp/%s.phar\r\n"),$module));
 	if($key_path){
-		echo wrap_output(vsprintf(__("请把对应的公钥改名为%s.phar.pubkey并跟phar文件放在一起\r\n"),$module));
+		echo wrap_output(sprintf(__("请把对应的公钥改名为%s.phar.pubkey并跟phar文件放在一起\r\n"),$module));
 	}
 	return array();
 }
@@ -191,10 +199,10 @@ function phar_module($module, $key_path){
 
 function display_delete_controller_wizard(){
 	clear_terminal();
-	echo vsprintf(wrap_output(__( YZE_SCRIPT_LOGO."
+	echo sprintf(wrap_output(__( YZE_METHED_HEADER."
 
 删除控制器及其控制器、视图，%s返回上一步
-1. (1/2)所在功能模块: ")), get_colored_text(" CTRL+B ", "red", "white"));
+1. (1/2)所在功能模块: ")), "删除Controller",get_colored_text(" 0 ", "red", "white"));
 
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
@@ -221,9 +229,9 @@ function display_delete_controller_wizard(){
 
 function display_delete_module_wizard(){
 	clear_terminal();
-	echo vsprintf(wrap_output(__( YZE_SCRIPT_LOGO."
+	echo sprintf(wrap_output(__( YZE_METHED_HEADER."
 	
-输入要删除的模块名，%s返回上一步:  ")), get_colored_text(" CTRL+B ", "red", "white"));
+输入要删除的模块名，%s返回上一步:  ")), "删除整个Module", get_colored_text(" 0 ", "red", "white"));
 	
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
@@ -242,10 +250,10 @@ function display_delete_module_wizard(){
 
 function display_mvc_wizard(){
 	clear_terminal();
-	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
+	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
   
 你将生成VC代码结构，请根据提示进操作，%s返回上一步：
-1. (1/8)所在功能模块:  "), get_colored_text(" CTRL+B ", "red", "white")));
+1. (1/8)所在功能模块:  "), "生成代码结构", get_colored_text(" 0 ", "red", "white")));
 	
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t命名遵守PHP变量命名规则，请重输:  ")), "red");
@@ -301,19 +309,18 @@ function is_controller_exists($controller, $module){
 }
 
 function display_model_wizard(){
-    echo wrap_output(__(YZE_SCRIPT_LOGO."
+    echo wrap_output(sprintf(__(YZE_METHED_HEADER."
     
 
 \t1.  生成新Model
 \t2.  刷新Model
     
-CTRL+B 返回
-请选择: "));
+%s 返回
+请选择: "),"DB To Code", get_colored_text(" 0 ", "red", "white")));
     
     while(!in_array(($input = fgets(STDIN)), array(1, 2))){
         echo wrap_output(__("请选择操作对应的序号: "));
     }
-    
     switch ($input){
         case 1:  return display_model_generate_wizard();
         case 2:  return display_model_refresh_wizard();
@@ -323,10 +330,10 @@ CTRL+B 返回
 function display_model_refresh_wizard(){
     global $db;
     clear_terminal();
-    echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
+    echo wrap_output(sprintf(__( YZE_METHED_HEADER."
     
 你将刷新Model代码，请根据提示进操作，%s返回上一步：
-1. (1/2)Model类(全)名: "), get_colored_text(" CTRL+B ", "red", "white")));
+1. (1/2)Model类(全)名: "), "重新生成Model代码结构", get_colored_text(" 0 ", "red", "white")));
     while (true){
         $cls=get_input();
         if( !$cls ){
@@ -337,35 +344,36 @@ function display_model_refresh_wizard(){
             echo get_colored_text(wrap_output(__("$cls 不存在:  ")), "red");
             continue;
         } 
-        break;
+        
+        return array(
+        		"cmd" => "refreshmodel",
+        		"base"=>"table",
+        		"class_name"=>$cls,
+        );
     }
     
-    return array(
-            "cmd" => "refreshmodel",
-            "base"=>"table",
-            "class_name"=>$cls,
-    );
+   
 }
 function display_model_generate_wizard(){
     global $db;
 	clear_terminal();
-	echo wrap_output(vsprintf(__( YZE_SCRIPT_LOGO."
-
-你将生成Model代码结构，请根据提示进操作，%s返回上一步：
-1. (1/4)表名: "), get_colored_text(" CTRL+B ", "red", "white")));
-	while (!is_validate_table(($table=get_input()))){
-		echo get_colored_text(wrap_output(vsprintf(__("\t表不存在(%s)，请重输:  "), mysqli_error($db))), "red");
-	}
-
-	echo wrap_output(__("2. (2/4)Model类名:  "));
-	while (!is_validate_name(($model = get_input()))){
-		echo get_colored_text(wrap_output(__("\t类名遵守PHP变量命名规则,  请重输:  ")), "red");
-	}
 	
-	echo wrap_output(__("3. (3/4)功能模块名,  遵守PHP变量命名规则:  "));
+	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
+
+你将生成Model代码，请根据提示进操作，%s返回上一步：
+1. (1/2)表名: "), "生成Model代码结构", get_colored_text(" 0 ", "red", "white")));
+
+	
+	while (!is_validate_table(($table=get_input()))){
+		echo get_colored_text(wrap_output(sprintf(__("\t表不存在(%s)，请重输:  "), mysqli_error($db))), "red");
+	}
+
+	echo wrap_output(__("2. (2/2)所在module模块名,  遵守PHP变量命名规则:  "));
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\t功能模块名,  请重输:  ")), "red");
 	}
+	
+	$model = rtrim($table,"s");
 	
 	if(class_exists("\\app\\$module\\{$model}_Model")){
 	    echo wrap_output(__("\\app\\$module\\{$model}_Model 已存在，继续操作将覆盖已有文件：  
@@ -462,10 +470,8 @@ function get_input(){
 	return $input;
 }
 
-
-
 function is_back($input){
-	if(ord($input)==2){display_home_wizard();die;}
+	if(strlen($input) >0 && $input=="0"){display_home_wizard();die;}
 }
 
 function is_validate_name($input){

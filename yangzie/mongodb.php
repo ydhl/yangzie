@@ -27,15 +27,15 @@ class YZE_MongoModel{
 	private static function init(){
 		//if(YZE_DB_USER) $this->mongo =  new \MongoClient("mongodb://".YZE_DB_USER.":".YZE_DB_PASS."@".YZE_DB_HOST_M."/".YZE_DB_NAME);
 		try{
-			if(YZE_DB_HOST_M && !static::$mongo) {
-				if(YZE_DB_USER){
-					static::$mongo =  new \MongoClient("mongodb://".YZE_DB_USER.":".YZE_DB_PASS."@".YZE_DB_HOST_M.":".YZE_DB_PORT."/".YZE_DB_NAME);
+			if(YZE_MONGODB_HOST_M && !static::$mongo) {
+				if(YZE_MONGODB_USER){
+					static::$mongo =  new \MongoClient("mongodb://".YZE_MONGODB_USER.":".YZE_MONGODB_PASS."@".YZE_MONGODB_HOST_M.":".YZE_MONGODB_PORT."/".YZE_MONGODB_NAME);
 				}else{
-					static::$mongo =  new \MongoClient("mongodb://".YZE_DB_HOST_M.":".YZE_DB_PORT);
+					static::$mongo =  new \MongoClient("mongodb://".YZE_MONGODB_HOST_M.":".YZE_MONGODB_PORT);
 					
 				}
 			}
-			static::$db = static::$mongo->selectDB(YZE_DB_NAME);
+			static::$db = static::$mongo->selectDB(YZE_MONGODB_NAME);
 		}catch(\Exception $e){
 			throw new YZE_FatalException($e->getMessage());
 		}

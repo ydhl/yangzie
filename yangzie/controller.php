@@ -283,8 +283,9 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         // clean post cache data
         // 成功处理，清除保存的post数据
+        $session->clear_request_token ( $request->the_uri(), $request->get_from_post ( 'yze_request_token' ) );
+
         $session->clear_post_datas ( $request->the_uri() );
-        $session->clear_request_token_ext ( $request->the_uri() );
     }
     /**
      * 出现不可恢复的异常后的处理, 如何处理
@@ -303,26 +304,16 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $post_request_token = $request->get_from_post ( 'yze_request_token' );
         $session = YZE_Session_Context::get_instance ();
        
-        $saved_token = $session->get_request_token ( $request->the_uri() );
+        $saved_tokens = $session->get_request_token ( $request->the_uri() );
 
-        if( ! $saved_token)return;
+        if( ! $saved_tokens)return;
         if( $request->the_referer_uri(true) != $request->the_uri()) return;
-        
-        $filtered_data = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, array (
-                "saved_token" => $saved_token,
-                "post_request_token" => $post_request_token 
-        ) );
-        
-        if( ! $filtered_data)return;
-        
-        $saved_token = @$filtered_data ['saved_token'];
-        $post_request_token = @$filtered_data ['post_request_token'];
         
         if (! $post_request_token) {
             throw new YZE_RuntimeException ( __ ( "MISSING_POST_REQUEST_TOKEN" ) );
         }
         
-        if (strcasecmp ( $saved_token, $post_request_token ) != 0 ) {
+        if ( ! in_array($post_request_token, $saved_tokens )) {
             throw new YZE_RuntimeException ( __ ( "REQUEST_TOKEN_NOT_MATCH" ) );
         }
     }

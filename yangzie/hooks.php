@@ -36,7 +36,6 @@ define ( 'YZE_ACTION_TRANSACTION_COMMIT', 'transaction_commit' );
 define ( 'YZE_ACTION_UNRESUME_EXCEPTION', 'yze_action_unresume_exception' );
 define ( 'YZE_ACTION_BEFORE_DO_EXCEPTION', 'yze_action_before_do_exception' );
 
-define ( 'YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN', 'before_check_request_token' );
 
 /**
  * 框架处理时出现了异常

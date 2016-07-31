@@ -51,14 +51,4 @@ class YZE_Router{
 	}
 }
 
-YZE_Hook::add_hook(YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, function($data){
-	$refer_uri = trim(YZE_Request::get_instance()->the_uri(), "/");
-	
-	if( ! in_array(strtolower($refer_uri), array("yze.rpc"))){
-		return $data;
-	}
-
-	return array("saved_token"=>"anything", "post_request_token"=>"anything");
-})
-
 ?>

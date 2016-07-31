@@ -168,7 +168,7 @@ function ydhlib_AddParamsInUrl(url, params){
     var oldParams = {};
     for(var i=0; i < oldQueryString.length; i++){
         var nameValue = oldQueryString[i].split("=");
-        if( params[nameValue[0]]) continue;
+        if( params[nameValue[0]] != undefined) continue;
         queryString.push(nameValue[0] + "=" + (nameValue.length < 1 ? "" : nameValue[1]));
     }
     

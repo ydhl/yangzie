@@ -441,6 +441,7 @@ class YZE_JSON_View extends YZE_View_Adapter {
 		parent::__construct($data,$controller);
 	}
 	protected function display_self(){
+		header("Content-Type: application/json; charset=utf-8");
 		echo json_encode($this->data);
 	}
 

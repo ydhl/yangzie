@@ -130,18 +130,26 @@ class YZE_Session_Context {
 	public function clear_controller_datas($uri){
 		unset($_SESSION['yze']['controller_data'][$uri]);
 	}
+	/**
+	 * 设置该地址上的token
+	 * @param unknown $uri
+	 * @param unknown $token
+	 */
 	public function set_request_token($uri, $token){
-		$_SESSION['yze']["token"][$uri] = $token;
+		$_SESSION['yze']["token"][$uri][] = $token;
 		return $this;
 	}
+	/**
+	 * 获取该地址上的token数组
+	 * @param unknown $uri
+	 */
 	public function get_request_token($uri){
 		return @$_SESSION['yze']["token"][$uri];
 	}
-	public function clear_request_token(){
-		unset($_SESSION['yze']["token"]);
-	}
-	public function clear_request_token_ext($uri){
-		unset($_SESSION['yze']["token"][$uri]);
+	
+	public function clear_request_token($uri, $token){
+		$index = array_search($token, @ $_SESSION['yze']["token"][$uri]);
+		unset($_SESSION['yze']["token"][$uri][$index]);
 	}
 	
 	public function copy($olduri, $newuri){

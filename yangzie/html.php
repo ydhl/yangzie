@@ -48,7 +48,7 @@ class YZE_Form extends YZE_Object {
 }
 function yze_request_token() {
     $request = YZE_Request::get_instance();
-    return YZE_Session_Context::get_instance ()->get_request_token ($request->the_uri());
+    return end(YZE_Session_Context::get_instance ()->get_request_token ($request->the_uri()));
 }
 
 /**
@@ -177,13 +177,18 @@ function yze_compress_file() {
  * @param unknown $url
  * @param unknown $args
  */
-function yze_merge_query_string($url, $args = array()){
+function yze_merge_query_string($url, $args = array(), $format=null){
     $path   = parse_url($url, PHP_URL_PATH);
     $query  = parse_url($url, PHP_URL_QUERY);
     $get    = array_merge($_GET, $args);
     if($query && parse_str($query, $newArgs)){
         $get    = array_merge($get, $newArgs);
     }
+    
+    if ($format){
+        $url = (strrpos($url, ".")===false ? $url : substr($url, 0, strrpos($url, "."))).".{$format}";
+    }
+    
     return $url."?".http_build_query($get);
 }
 

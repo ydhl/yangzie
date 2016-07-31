@@ -12,6 +12,10 @@ V1.5.4（内测版本）
 8. yze\_ajax\_front\_controller load 和get增加了缓存处理，当没有提交form时，重新打开之前的网址，之前的数据总是在那里；这是loadedCallback 回调的参数是null
 9. yze\_ajax\_front\_controller load 去掉cancel回调
 9. 数据库存储时加上了相关策略，可以在外键冲突等情况下进行相应的调整（验证中）
+10. ajax post也加上了token机制，防止重复无效的提交
+11. 去掉post\_result\_of\_json, 所有的相应格式都通过view format来处理
+12. 删除YZE\_FILTER\_BEFORE\_CHECK\_REQUEST\_TOKEN hook，如果需要绕过token验证，controller重载check_request_token方法
+13. 解决通过一个表单打开两次，然后提交出现REQUEST_TOKEN_NOT_MATCH的问题
 
 V1.5.3
 
@@ -152,7 +156,7 @@ V1.5.2
 <pre>
 <code>
 define("HOOK_NAME","4");
-YZE_Hook::the_hook()->add_hook(YZE_FILTER_BEFORE_CHECK_REQUEST_TOKEN, function($data){
+YZE_Hook::the_hook()->add_hook(HOOK_NAME, function($data){
 	
 });
 </code>

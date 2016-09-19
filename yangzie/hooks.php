@@ -32,6 +32,22 @@ define ( 'YZE_ACTION_BEFORE_POST', 'do_before_post' );
 define ( 'YZE_ACTION_BEFORE_GET', 'do_before_get' );
 define ( 'YZE_ACTION_AFTER_POST', 'do_after_post' );
 define ( 'YZE_ACTION_AFTER_GET', 'do_after_get' );
+
+/**
+ * 参数 即将要保持进数据库的对象；在实际更新数据库之前调用
+ * @var unknown
+ */
+define ( 'YZE_HOOK_MODEL_UPDATE',    'YZE_HOOK_MODEL_UPDATE' );
+/**
+ * 参数 即将要保持进数据库的对象；在实际插入数据库之前调用
+ * @var unknown
+ */
+define ( 'YZE_HOOK_MODEL_INSERT',    'YZE_HOOK_MODEL_INSERT' );
+/**
+ * 参数 即将要删除的对象；在实际删除数据库之前调用
+ * @var unknown
+ */
+define ( 'YZE_HOOK_MODEL_DELETE',    'YZE_HOOK_MODEL_DELETE');
 define ( 'YZE_ACTION_TRANSACTION_COMMIT', 'transaction_commit' );
 define ( 'YZE_ACTION_UNRESUME_EXCEPTION', 'yze_action_unresume_exception' );
 define ( 'YZE_ACTION_BEFORE_DO_EXCEPTION', 'yze_action_before_do_exception' );
@@ -65,12 +81,6 @@ define ( 'YZE_HOOK_GET_LOGIN_USER', 'YZE_HOOK_GET_LOGIN_USER' );
  * @var unknown
  */
 define ( 'YZE_HOOK_SET_LOGIN_USER', 'YZE_HOOK_SET_LOGIN_USER' );
-define ( 'YZE_HOOK_SET_LOGIN_USER', 'YZE_HOOK_SET_LOGIN_USER' );
-/**
- * model更新进数据库后调用，hook参数 $entity
- * @var unknown
- */
-define ( 'YZE_HOOK_DB_INSERT', 'YZE_HOOK_SET_LOGIN_USER' );
 final class YZE_Hook {
     private static $listeners = array ();
     private static $currModule;

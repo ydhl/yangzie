@@ -219,7 +219,7 @@ abstract class YZE_Model extends YZE_Object{
         return true;
 	}
 	public function isEmptyDate($name){
-		return !$this->get($name) || $this->get($name)=="0000-00-00";
+		return !$this->get($name) || $this->get($name)=="0000-00-00" || $this->get($name)=="0000-00-00 00:00:00";;
 	}
 	
 	

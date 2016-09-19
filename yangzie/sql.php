@@ -499,6 +499,9 @@ class YZE_SQL extends YZE_Object{
 	
 	public function clean_where(){
 	    $this->where	= array();
+	    $this->and_where_group = array();
+	    $this->or_where_group = array();
+	    return $this;
 	}
 	
 	/**

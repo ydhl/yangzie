@@ -205,7 +205,7 @@ class YZE_DBAImpl extends YZE_Object
 		if($affected_row){
 			$entity->delete_key();
 		}
-		\yangzie\YZE_Hook::do_hook("db-delete", $entity);
+		\yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_DELETE, $entity);
 		return $entity;
 	}
 	/**
@@ -233,7 +233,7 @@ class YZE_DBAImpl extends YZE_Object
 	
     
 	private function _save_update(YZE_Model $entity){
-	    \yangzie\YZE_Hook::do_hook("db-update", $entity);
+	    \yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_UPDATE, $entity);
 	    $sql = new YZE_SQL();
 	    //自动把version更新
 	    $entity->update_version();
@@ -310,7 +310,7 @@ class YZE_DBAImpl extends YZE_Object
 		
 		$entity->set($entity->get_key_name(),$insert_id);
 		
-		\yangzie\YZE_Hook::do_hook(YZE_HOOK_DB_INSERT, $entity);
+		\yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_INSERT, $entity);
 		return $insert_id;
 	}
 	
@@ -385,7 +385,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @return array
 	 */
 	public function lookup_record($fields, $table, $where="", array $values=array()) {
-	    $sql = "SELECT {$fields} FROM `{$table}`".($where ? " WHERE {$where}" :"");
+	    $sql = "SELECT {$fields} FROM {$table}".($where ? " WHERE {$where}" :"");
 	    $stm = $this->conn->prepare($sql);
 	    if($stm->execute($values)){
 	       return $stm->fetch(PDO::FETCH_ASSOC);

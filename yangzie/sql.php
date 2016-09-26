@@ -130,7 +130,7 @@ class YZE_SQL extends YZE_Object{
 	 */
     const INSERT_NORMAL    = "insert_normal";
     /**
-     * 指定的条件不存在时插入
+     * 指定的条件不存在时插入, <strong>注意,如果数据已经存在了，这种情况下对象没有主键返回</strong>
      * @var unknown
      */
     const INSERT_NOT_EXIST = "insert_not_exist";

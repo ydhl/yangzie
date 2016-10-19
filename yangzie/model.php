@@ -16,6 +16,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @var YZE_SQL
 	 */
 	private static $sql;
+	private static $lastModelClass;
 	protected $records = array();
 	/**
 	 * 映射：array("attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-one"),"attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-many")  )
@@ -594,7 +595,7 @@ abstract class YZE_Model extends YZE_Object{
 	}
 	
 	private static function initSql() {
-		if (self::$sql == null){
+		if (self::$sql == null || (self::$lastModelClass && self::$lastModelClass != static::CLASS_NAME)){
 			self::$sql = new YZE_SQL();
 		}
 		return self::$sql;

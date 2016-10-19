@@ -12,9 +12,8 @@ yze_js_bundle("jquery,bootstrap,yangzie,pjax");
 ?>
 </head>
 <body>
-    <div class="container">
         <?php echo $this->content_of_view();?>
-    </div>
+
 <?php yze_module_js_bundle();?>
 </body>
 </html>

@@ -29,6 +29,10 @@ class YZE_DBAImpl extends YZE_Object
 		$this->conn->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
 		$this->conn->query('SET NAMES '.$app_module->get_module_config('db_charset'));
 	}
+	
+	public function getConn(){
+		return $this->conn;
+	}
 
 	/**
 	 * @return YZE_DBAImpl

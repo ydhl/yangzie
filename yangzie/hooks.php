@@ -110,6 +110,7 @@ final class YZE_Hook {
     }
     
     /**
+     * 如果没有hook注册，返回null
      * 
      * @param unknown hookname
      * @param unknown $data

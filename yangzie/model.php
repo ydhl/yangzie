@@ -15,8 +15,7 @@ abstract class YZE_Model extends YZE_Object{
 	/**
 	 * @var YZE_SQL
 	 */
-	private static $sql;
-	private static $lastModelClass;
+	private $sql;
 	protected $records = array();
 	/**
 	 * 映射：array("attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-one"),"attr"=>array("from"=>"id","to"=>"id","class"=>"","type"=>"one-many")  )
@@ -377,62 +376,66 @@ abstract class YZE_Model extends YZE_Object{
 	}
 	
 	/////////////////  Model SQL ////////////////////////////
-	
+	public static function from(){
+		$obj = new static;
+		$obj->initSql ();
+		return $obj;
+	}
 	/**
 	 * 调用方式where: ("CHAR_LENGTH(title)=:title and (id>10 or id<20)")
 	 * 
 	 * @var static
 	 */
-	public static function where($where){
-		self::initSql ();
-		self::$sql->nativeWhere($where);
-		return new static;
+	public function where($where){
+		$this->initSql();
+		$this->sql->nativeWhere($where);
+		return $this;
 	}
 	
-	public static function order_By($column, $sort, $alias=null){
-		self::initSql ();
-		self::$sql->order_by($alias ? $alias : "m", $column, $sort);
-		return new static;
+	public function order_By($column, $sort, $alias=null){
+		$this->initSql();
+		$this->sql->order_by($alias ? $alias : "m", $column, $sort);
+		return $this;
 	}
 	
-	public static function group_By($column, $alias=null){
-		self::initSql ();
-		self::$sql->group_by($alias ? $alias : "m", $column);
-		return new static;
+	public function group_By($column, $alias=null){
+		$this->initSql();
+		$this->sql->group_by($alias ? $alias : "m", $column);
+		return $this;
 	}
 	
-	public static function limit($start, $limit){
-		self::initSql ();
-		self::$sql->limit($start, $limit);
-		return new static;
+	public function limit($start, $limit){
+		$this->initSql();
+		$this->sql->limit($start, $limit);
+		return $this;
 	}
 	
-	public static function left_join($myAlias, $joinClass, $joinAlias, $join_on){
-		self::initSql ();
+	public function left_join($myAlias, $joinClass, $joinAlias, $join_on){
+		$this->initSql ();
 		if ($myAlias){
-			self::$sql->from(static::CLASS_NAME, $myAlias);
+			$this->sql->from(static::CLASS_NAME, $myAlias);
 		}
 		
-		self::$sql->left_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
-		return new static;
+		$this->sql->left_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
+		return $this;
 	}
-	public static function right_join($myAlias, $joinClass, $joinAlias, $join_on){
-		self::initSql ();
+	public function right_join($myAlias, $joinClass, $joinAlias, $join_on){
+		$this->initSql ();
 		if ($myAlias){
-			self::$sql->from(static::CLASS_NAME, $myAlias);
+			$this->sql->from(static::CLASS_NAME, $myAlias);
 		}
 	
-		self::$sql->right_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
-		return new static;
+		$this->sql->right_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
+		return $this;
 	}
-	public static function join($myAlias, $joinClass, $joinAlias, $join_on){
-		self::initSql ();
+	public function join($myAlias, $joinClass, $joinAlias, $join_on){
+		$this->initSql ();
 		if ($myAlias){
-			self::$sql->from(static::CLASS_NAME, $myAlias);
+			$this->sql->from(static::CLASS_NAME, $myAlias);
 		}
 	
-		self::$sql->join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
-		return new static;
+		$this->sql->join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
+		return $this;
 	}
 	
 	/**
@@ -442,17 +445,17 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param unknown $alias要选择的对象的别名，如果有联合查询，没有指定alias则返回所有的数据
 	 * @return array
 	 */
-	public static function select(array $params=array(), $alias=null){
-		self::initSql ();
-		if ( ! self::$sql->has_from()){
-			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+	public function select(array $params=array(), $alias=null){
+		$this->initSql ();
+		if ( ! $this->sql->has_from()){
+			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
 		if ($alias){
-			self::$sql->select($alias);
+			$this->sql->select($alias);
 		}
-		$obj = YZE_DBAImpl::getDBA()->select(self::$sql, $params);
+		$obj = YZE_DBAImpl::getDBA()->select($this->sql, $params);
 		
-		self::$sql->clean_select();
+		$this->sql->clean_select();
 		return $obj;
 	}
 	/**
@@ -460,21 +463,21 @@ abstract class YZE_Model extends YZE_Object{
 	 *
 	 * @param array $params [:field=>value]格式的数组
 	 * @param unknown $alias要选择的对象的别名，如果有联合查询，没有指定alias则返回所有的数据
-	 * @return YZE_Model
+	 * @return static
 	 */
-	public static function getSingle(array $params=array(), $alias=null){
-		self::initSql ();
+	public function getSingle(array $params=array(), $alias=null){
+		$this->initSql ();
 		
-		if ( ! self::$sql->has_from()){
-			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		if ( ! $this->sql->has_from()){
+			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
 		if ($alias){
-			self::$sql->select($alias);
+			$this->sql->select($alias);
 		}
-		self::$sql->limit(1);
+		$this->sql->limit(1);
 		
-		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
-		self::$sql->clean_select();
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
+		$this->sql->clean_select();
 		return $obj;
 	}
 	/**
@@ -484,18 +487,18 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->count()中的TestModel
 	 * @return int
 	 */
-	public static function count($field, array $params=array(), $alias=null){
-		self::initSql();
+	public function count($field, array $params=array(), $alias=null){
+		$this->initSql();
 		if ( ! $alias){
 			$alias = "m";
 		}
-		if ( ! self::$sql->has_from()){
-			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		if ( ! $this->sql->has_from()){
+			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		self::$sql->count($alias , $field, "COUNT_ALIAS");
+		$this->sql->count($alias , $field, "COUNT_ALIAS");
 
-		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
-		self::$sql->clean_select();
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
+		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		return is_array($obj) ? $obj[$alias]->Get("COUNT_ALIAS") : $obj->Get("COUNT_ALIAS");
 	}
@@ -506,18 +509,18 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->sum()中的TestModel
 	 * @return int
 	 */
-	public static function sum($field, array $params=array(), $alias=null){
-		self::initSql();
+	public function sum($field, array $params=array(), $alias=null){
+		$this->initSql();
 		if ( ! $alias){
 			$alias = "m";
 		}
-		if ( ! self::$sql->has_from()){
-			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		if ( ! $this->sql->has_from()){
+			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		self::$sql->sum($alias, $field, "SUM_ALIAS");
+		$this->sql->sum($alias, $field, "SUM_ALIAS");
 		
-		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
-		self::$sql->clean_select();
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
+		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		return is_array($obj) ? $obj[$alias]->Get("SUM_ALIAS") : $obj->Get("SUM_ALIAS");
 	}
@@ -528,18 +531,18 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->sum()中的TestModel
 	 * @return int
 	 */
-	public static function max($field, array $params=array(), $alias=null){
-		self::initSql();
+	public function max($field, array $params=array(), $alias=null){
+		$this->initSql();
 		if ( ! $alias){
 			$alias = "m";
 		}
-		if ( ! self::$sql->has_from()){
-			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		if ( ! $this->sql->has_from()){
+			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		self::$sql->max($alias, $field, "MAX_ALIAS");
+		$this->sql->max($alias, $field, "MAX_ALIAS");
 		
-		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
-		self::$sql->clean_select();
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
+		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		return is_array($obj) ? $obj[$alias]->Get("MAX_ALIAS") : $obj->Get("MAX_ALIAS");
 	}
@@ -550,41 +553,41 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->sum()中的TestModel
 	 * @return int
 	 */
-	public static function min($field, array $params=array(), $alias=null){
-		self::initSql();
+	public function min($field, array $params=array(), $alias=null){
+		$this->initSql();
 		if ( ! $alias){
 			$alias = "m";
 		}
-		if ( ! self::$sql->has_from()){
-			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		if ( ! $this->sql->has_from()){
+			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		self::$sql->min($alias, $field, "MIN_ALIAS");
+		$this->sql->min($alias, $field, "MIN_ALIAS");
 		
-		$obj = YZE_DBAImpl::getDBA()->getSingle(self::$sql, $params);
-		self::$sql->clean_select();
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
+		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		return is_array($obj) ? $obj[$alias]->Get("MIN_ALIAS") : $obj->Get("MIN_ALIAS");
 	}
 	
-	public static function delete($field, array $params=array(), $alias=null){
-		self::initSql();
+	public function delete($field, array $params=array(), $alias=null){
+		$this->initSql();
 		if ( ! $alias){
 			$alias = "m";
 		}
-		if ( ! self::$sql->has_from()){
-			self::$sql->from(static::CLASS_NAME, $alias ? $alias : "m");
+		if ( ! $this->sql->has_from()){
+			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		self::$sql->delete();
+		$this->sql->delete();
 	
-		$obj = YZE_DBAImpl::getDBA()->execute(self::$sql, $params);
-		self::$sql->clean_select();
+		$obj = YZE_DBAImpl::getDBA()->execute($this->sql, $params);
+		$this->sql->clean_select();
 		return $obj;
 	}
-	public static function clean(){
-		self::$sql->clean();
+	public function clean(){
+		$this->sql->clean();
 	}
-	public static function clean_where(){
-		self::$sql->clean_where();
+	public function clean_where(){
+		$this->sql->clean_where();
 	}
 	/**
 	 * 清空表中所有数据，主键重新从1开始
@@ -594,11 +597,11 @@ abstract class YZE_Model extends YZE_Object{
 		YZE_DBAImpl::getDBA()->exec($sql);
 	}
 	
-	private static function initSql() {
-		if (self::$sql == null || (self::$lastModelClass && self::$lastModelClass != static::CLASS_NAME)){
-			self::$sql = new YZE_SQL();
+	private function initSql() {
+		if ($this->sql == null){
+			$this->sql = new YZE_SQL();
 		}
-		return self::$sql;
+		return $this->sql;
 	}
 	
 	

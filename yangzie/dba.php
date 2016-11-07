@@ -678,7 +678,9 @@ class YZE_PDOStatementWrapper extends YZE_Object{
 		$this->db = $db_mysql;
 		$this->result = $this->db->fetchAll(PDO::FETCH_ASSOC);
 	}
-
+	public function reset(){
+		$this->index = -1;
+	}
 	public function next(){
 		$this->index +=1;
 		return @$this->result[$this->index];

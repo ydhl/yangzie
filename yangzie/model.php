@@ -295,7 +295,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return
 	 */
 	public function refresh(){
-		$new = YZE_Model::find($this->get_key(), get_class($this));
+		$new = YZE_DBAImpl::getDBA()->find($this->get_key(), get_class($this));
 		if($new){
 			foreach ($new->get_records() as $name => $value){
 				$this->set($name, $value);

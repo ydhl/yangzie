@@ -372,7 +372,7 @@ class YZE_DBAImpl extends YZE_Object
 	public function lookup($field, $table, $where, array $values=array()) {
 	    $sql = "SELECT `$field` as f FROM `{$table}` WHERE {$where}";
 	    $stm = $this->conn->prepare($sql);
-	    if($stm->execute($values)){
+	    if(@$stm->execute($values)){
 	        $row = $stm->fetch(PDO::FETCH_ASSOC);
 	        return @$row['f'];
 	    }
@@ -476,20 +476,19 @@ class YZE_DBAImpl extends YZE_Object
 	    $set         = rtrim($set, ",");
 	
 	    $sql = "INSERT INTO {$table} ({$sql_fields}) SELECT {$sql_values} FROM dual WHERE ".($exist?"":"NOT")." EXISTS ({$checkSql})";
-	    
 	    $stm = $this->conn->prepare($sql);
-	    if ( ! $stm->execute($values) ) {
+	    $stm->execute($values);
+	    if ( !  $stm->rowCount()) {
 	        if( ! $update){
 	            return false;
 	        }
 	        $where = preg_replace("/^.+where/", "", $checkSql);
 	        $sql = "UPDATE {$table} SET {$set} WHERE {$where}";
-	         
 	        $stm = $this->conn->prepare($sql);
 	        if (! $stm->execute($values) ){
 	            return false;
 	        }
-	        return $this->lookup($key, $table, $where);
+	        return $this->lookup($key, $table, $where, $values);
 	    }
 	     
 	    return $this->conn->lastInsertId();
@@ -502,7 +501,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成INSET INTO ON DUPLICATE KEY UPDATE 语句，
 	 * 再指定的字段有唯一健冲突时执行更新
 	 * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
-	 * @return boolean|unknown
+	 * @return boolean|unknown 成功返回主键，失败返回false
 	 */
 	public function insert($table, $info, $duplicate_key=array(), $keyname="") {
 	    if ( ! is_array($info) || empty($info) || empty($table))

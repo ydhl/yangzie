@@ -370,7 +370,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @return unknown
 	 */
 	public function lookup($field, $table, $where, array $values=array()) {
-	    $sql = "SELECT `$field` as f FROM `{$table}` WHERE {$where}";
+	    $sql = "SELECT $field as f FROM `{$table}` WHERE {$where}";
 	    $stm = $this->conn->prepare($sql);
 	    if(@$stm->execute($values)){
 	        $row = $stm->fetch(PDO::FETCH_ASSOC);

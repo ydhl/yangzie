@@ -431,7 +431,8 @@ class YZE_DBAImpl extends YZE_Object
 	
 	    $stm = $this->conn->prepare($sql);
 	    if ( ! $stm ) return false;
-	    return $stm->execute($values);
+	    $stm->execute($values);
+	    return $stm->rowCount();
 	}
 	
 	/**

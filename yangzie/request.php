@@ -297,7 +297,7 @@ class YZE_Request extends YZE_Object {
         
         $key   = $this->get_from_post("yze_model_id");
         if( ! $key)return null;
-        return YZE_Model::find($key, $class);
+        return YZE_DBAImpl::getDBA()->find($key, $class);
     }
     
     /**

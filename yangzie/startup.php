@@ -29,7 +29,13 @@ function yze_autoload($class) {
         }else if(preg_match("{_module$}i", $class)){
             $file .= "__module__.php";
         }else if(preg_match("/\\\?app\\\/i", $class)){//other class file
-            $file .= "models" . DS . $class_name . ".class.php";
+
+            $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
+            
+            if ( ! file_exists($file)){
+                $file .= "models" . DS . $class_name . ".class.php";
+            }
+            
             if ( ! file_exists($file)){
                 $file .= "models" . DS . $class_name . ".trait.php";
             }

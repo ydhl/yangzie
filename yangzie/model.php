@@ -376,9 +376,9 @@ abstract class YZE_Model extends YZE_Object{
 	}
 	
 	/////////////////  Model SQL ////////////////////////////
-	public static function from(){
+	public static function from($myAlias=null){
 		$obj = new static;
-		$obj->initSql ();
+		$obj->initSql ($myAlias);
 		return $obj;
 	}
 	/**
@@ -410,29 +410,20 @@ abstract class YZE_Model extends YZE_Object{
 		return $this;
 	}
 	
-	public function left_join($myAlias, $joinClass, $joinAlias, $join_on){
+	public function left_join($joinClass, $joinAlias, $join_on){
 		$this->initSql ();
-		if ($myAlias){
-			$this->sql->from(static::CLASS_NAME, $myAlias);
-		}
 		
 		$this->sql->left_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
 		return $this;
 	}
-	public function right_join($myAlias, $joinClass, $joinAlias, $join_on){
+	public function right_join( $joinClass, $joinAlias, $join_on){
 		$this->initSql ();
-		if ($myAlias){
-			$this->sql->from(static::CLASS_NAME, $myAlias);
-		}
-	
+		
 		$this->sql->right_join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
 		return $this;
 	}
-	public function join($myAlias, $joinClass, $joinAlias, $join_on){
+	public function join($joinClass, $joinAlias, $join_on){
 		$this->initSql ();
-		if ($myAlias){
-			$this->sql->from(static::CLASS_NAME, $myAlias);
-		}
 	
 		$this->sql->join($joinClass, $joinAlias ? $joinAlias : "m", $join_on);
 		return $this;
@@ -597,9 +588,13 @@ abstract class YZE_Model extends YZE_Object{
 		YZE_DBAImpl::getDBA()->exec($sql);
 	}
 	
-	private function initSql() {
+	private function initSql($alias=null) {
 		if ($this->sql == null){
 			$this->sql = new YZE_SQL();
+		}
+
+		if ( ! $this->sql->has_from() && $alias){
+		    $this->sql->from(static::CLASS_NAME, $alias);
 		}
 		return $this->sql;
 	}

@@ -476,7 +476,7 @@ class YZE_DBAImpl extends YZE_Object
 	    $sql_values  = rtrim($sql_values, ",");
 	    $set         = rtrim($set, ",");
 	
-	    $sql = "INSERT INTO {$table} ({$sql_fields}) SELECT {$sql_values} FROM dual WHERE ".($exist?"":"NOT")." EXISTS ({$checkSql})";
+	    $sql = "INSERT INTO `{$table}` ({$sql_fields}) SELECT {$sql_values} FROM dual WHERE ".($exist?"":"NOT")." EXISTS ({$checkSql})";
 	    $stm = $this->conn->prepare($sql);
 	    $stm->execute($values);
 	    if ( !  $stm->rowCount()) {
@@ -484,7 +484,7 @@ class YZE_DBAImpl extends YZE_Object
 	            return false;
 	        }
 	        $where = preg_replace("/^.+where/", "", $checkSql);
-	        $sql = "UPDATE {$table} SET {$set} WHERE {$where}";
+	        $sql = "UPDATE `{$table}` SET {$set} WHERE {$where}";
 	        $stm = $this->conn->prepare($sql);
 	        if (! $stm->execute($values) ){
 	            return false;

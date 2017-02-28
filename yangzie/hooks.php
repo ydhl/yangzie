@@ -60,7 +60,7 @@ define ( 'YZE_ACTION_BEFORE_DO_EXCEPTION', 'yze_action_before_do_exception' );
  */
 define ( 'YZE_FILTER_YZE_EXCEPTION', 'yze_filter_yze_exception' );
 /**
- * 获取aro，回调的参数格式是：'/';
+ * 获取aro，传入用户对象，返回user的aro
  * 
  * @var unknown
  */

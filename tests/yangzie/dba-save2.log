@@ -12,15 +12,11 @@ INSERT_NOT_EXIST_OR_UPDATE true
 INSERT_NOT_EXIST_OR_UPDATE true
 remove true
 ---- ACTUAL OUTPUT
-insert true
-23000, 1062, Duplicate entry '333333' for key 'email_UNIQUE'
-ignore true
-UPDATE true
-UPDATE true
-REPLACE false
-INSERT_EXIST true
-INSERT_NOT_EXIST false
-INSERT_NOT_EXIST_OR_UPDATE true
-INSERT_NOT_EXIST_OR_UPDATE true
-remove false
+Fatal error: Uncaught exception 'PDOException' with message 'SQLSTATE[HY000] [1049] Unknown database 'casedb'' in /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php:28
+Stack trace:
+#0 /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php(28): PDO->__construct('mysql:dbname=ca...', 'root', 'ydhl')
+#1 /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php(43): yangzie\YZE_DBAImpl->__construct()
+#2 /Users/ydhlleeboo/workspace/yangzie/tests/yangzie/dba-save2.php(36): yangzie\YZE_DBAImpl::getDBA()
+#3 {main}
+  thrown in /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php on line 28
 ---- FAILED

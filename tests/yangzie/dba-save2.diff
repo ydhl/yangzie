@@ -1,6 +1,18 @@
-006+ REPLACE false
+001+ Fatal error: Uncaught exception 'PDOException' with message 'SQLSTATE[HY000] [1049] Unknown database 'casedb'' in /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php:28
+002+ Stack trace:
+003+ #0 /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php(28): PDO->__construct('mysql:dbname=ca...', 'root', 'ydhl')
+004+ #1 /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php(43): yangzie\YZE_DBAImpl->__construct()
+005+ #2 /Users/ydhlleeboo/workspace/yangzie/tests/yangzie/dba-save2.php(36): yangzie\YZE_DBAImpl::getDBA()
+006+ #3 {main}
+007+   thrown in /Users/ydhlleeboo/workspace/yangzie/yangzie/dba.php on line 28
+001- insert true
+002- 23000, 1062, Duplicate entry '333333' for key 'email_UNIQUE'
+003- ignore true
+004- UPDATE true
+005- UPDATE true
 006- REPLACE true
-008+ INSERT_NOT_EXIST false
+007- INSERT_EXIST true
 008- INSERT_NOT_EXIST true
-011+ remove false
+009- INSERT_NOT_EXIST_OR_UPDATE true
+010- INSERT_NOT_EXIST_OR_UPDATE true
 011- remove true

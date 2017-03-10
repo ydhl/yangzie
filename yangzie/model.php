@@ -277,6 +277,28 @@ abstract class YZE_Model extends YZE_Object{
 	    YZE_DBAImpl::getDBA()->save($this, $type, $sql);
 		return $this;
 	}
+
+	/**
+	 * 判断传入的字段值，如果这些值已存在，则更新，否则插入
+	 *
+	 * @author liizii
+	 * @param array $fileds
+	 * @return YZE_Model
+	 */
+	public function insertOrUpdate( $checkFields ){
+	    if ( ! $checkFields){
+	        $this->save();
+	        return $this;
+	    }
+	     
+	    $sql = new YZE_SQL();
+	    $sql->from($this::CLASS_NAME, "__mine__");
+	    foreach ($checkFields as $field){
+	        $sql->where("__mine__", $field, YZE_SQL::EQ, $this->get($field));
+	    }
+	    $this->save(YZE_SQL::INSERT_NOT_EXIST_OR_UPDATE, $sql);
+	    return $this;
+	}
 	/**
 	 * 从数据库删除对象数据，
 	 * !!! 但这个对象所包含的数据还存在，只是主键不存在了

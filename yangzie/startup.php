@@ -33,7 +33,7 @@ function yze_autoload($class) {
             $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
             
             if ( ! file_exists($file)){
-                $file .= "models" . DS . $class_name . ".class.php";
+                $file = YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS. "models" . DS . $class_name . ".class.php";
             }
             
             if ( ! file_exists($file)){

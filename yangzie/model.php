@@ -582,7 +582,7 @@ abstract class YZE_Model extends YZE_Object{
 		return is_array($obj) ? $obj[$alias]->Get("MIN_ALIAS") : $obj->Get("MIN_ALIAS");
 	}
 	
-	public function delete($field, array $params=array(), $alias=null){
+	public function delete(array $params=array(), $alias=null){
 		$this->initSql();
 		if ( ! $alias){
 			$alias = "m";

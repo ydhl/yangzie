@@ -581,7 +581,6 @@ abstract class YZE_Model extends YZE_Object{
 		if ( ! $obj)return 0;
 		return is_array($obj) ? $obj[$alias]->Get("MIN_ALIAS") : $obj->Get("MIN_ALIAS");
 	}
-	
 	public function delete(array $params=array(), $alias=null){
 		$this->initSql();
 		if ( ! $alias){
@@ -590,9 +589,10 @@ abstract class YZE_Model extends YZE_Object{
 		if ( ! $this->sql->has_from()){
 			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		$this->sql->delete();
-	
-		$obj = YZE_DBAImpl::getDBA()->execute($this->sql, $params);
+		$statement = YZE_DBAImpl::getDBA()->getConn()->prepare($this->sql->delete()->__toString());
+		if(! $statement->execute($params) ){
+		    throw new YZE_FatalException(join(",", $statement->errorInfo()));
+		}
 		$this->sql->clean_select();
 		return $obj;
 	}

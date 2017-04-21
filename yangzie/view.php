@@ -404,6 +404,25 @@ class YZE_Simple_View extends YZE_View_Adapter {
 	}
 }
 /**
+ * 以class的方式来实现view
+ * @author ydhlleeboo
+ *
+ */
+abstract class YZE_View_Component extends YZE_View_Adapter{
+    /**
+     * 输出组件内容
+     */
+    public abstract function output_component();
+    
+    public function __construct($data, $controller){
+        parent::__construct( $data, $controller);
+    }
+    
+    protected function display_self(){
+        $this->output_component();
+    }
+}
+/**
  * 该response没有模板文件，只输出一些字符串，用于那些没有html模板只返回简单数据的地方如json，xml
  *
  */

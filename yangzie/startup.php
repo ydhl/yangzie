@@ -20,27 +20,43 @@ function yze_autoload($class) {
             $file = "phar://";
         }
         $file .= YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS ;
+        
+//         if(preg_match("{_controller$}i", $class)){
+//             $file .= "controllers" . DS . $class_name . ".class.php";
+//         }else if(preg_match("{_model$}i", $class)){
+//             $file .= "models" . DS . $class_name . ".class.php";
+//         }else if(preg_match("{_define$}i", $class)){//model meta define
+//             $file .= "models" . DS . $class_name . ".trait.php";
+//         }else if(preg_match("{_module$}i", $class)){
+//             $file .= "__module__.php";
+//         }else if(preg_match("/\\\?app\\\/i", $class)){//other class file
+//             $file .= "models" . DS . $class_name . ".class.php";
+//             if ( ! file_exists($file)){
+//                 $file .= "models" . DS . $class_name . ".trait.php";
+//             }
+//         }else{
+//             $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
+//         }
         if(preg_match("{_controller$}i", $class)){
-            $file .= "controllers" . DS . $class_name . ".class.php";
+        	$file .= "controllers" . DS . $class_name . ".class.php";
         }else if(preg_match("{_model$}i", $class)){
-            $file .= "models" . DS . $class_name . ".class.php";
+        	$file .= "models" . DS . $class_name . ".class.php";
         }else if(preg_match("{_define$}i", $class)){//model meta define
-            $file .= "models" . DS . $class_name . ".trait.php";
+        	$file .= "models" . DS . $class_name . ".trait.php";
         }else if(preg_match("{_module$}i", $class)){
-            $file .= "__module__.php";
+        	$file .= "__module__.php";
+        }else if(preg_match("{_view$}i", $class)){
+            $file .= "views" . DS . preg_replace("{_view$}i", "", $class_name) . ".view.php";
         }else if(preg_match("/\\\?app\\\/i", $class)){//other class file
-
-            $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
-            
-            if ( ! file_exists($file)){
-                $file = YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS. "models" . DS . $class_name . ".class.php";
-            }
-            
-            if ( ! file_exists($file)){
-                $file .= "models" . DS . $class_name . ".trait.php";
-            }
+        	$file .= "models" . DS . $class_name . ".class.php";
+        	if ( ! file_exists($file)){
+        		$file = YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS. "models" . DS . $class_name . ".trait.php";
+        	}
+        	if ( ! file_exists($file)){
+        		$file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
+        	}
         }else{
-            $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
+        	$file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
         }
         
         if(@$file && file_exists($file)){

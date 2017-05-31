@@ -431,8 +431,7 @@ class YZE_DBAImpl extends YZE_Object
 	
 	    $stm = $this->conn->prepare($sql);
 	    if ( ! $stm ) return false;
-	    $stm->execute($values);
-	    return $stm->rowCount();
+	    return $stm->execute($values);
 	}
 	
 	/**
@@ -458,7 +457,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param array $checkInfo array(":field"=>"value");检查表的条件子
 	 * @param boolean $exist true，表示存在是插入；false，表示不存在时插入
 	 * @param boolean $update 是否在存在是更新
-	 * @param string $key table 主键自动名称
+	 * @param string $key table 主键名称
 	 * @return boolean|unknown
 	 */
 	public function checkAndInsert($table, $info, $checkSql, $checkInfo, $exist=false, $update=false,$key="id") {

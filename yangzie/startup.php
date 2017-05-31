@@ -47,6 +47,9 @@ function yze_autoload($class) {
         	$file .= "__module__.php";
         }else if(preg_match("{_view$}i", $class)){
             $file .= "views" . DS . preg_replace("{_view$}i", "", $class_name) . ".view.php";
+            if ( ! file_exists($file)){
+            	$file = YZE_INSTALL_PATH . preg_replace("{_view$}i", "",strtr(strtolower($class), array("\\"=>"/"))) . ".view.php";
+            }
         }else if(preg_match("/\\\?app\\\/i", $class)){//other class file
         	$file .= "models" . DS . $class_name . ".class.php";
         	if ( ! file_exists($file)){
@@ -179,13 +182,18 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
             $session->copy ( $old_uri, $request->the_uri() );
         }
         
-        $action = "YZE_ACTION_BEFORE_" .  ( $request->is_get() ? "GET" : "POST");
-        \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
-
         $request->auth ();
         $dba->beginTransaction();
 		
+        
+        $action = "YZE_ACTION_BEFORE_" .  ( $request->is_get() ? "GET" : "POST");
+        \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
+        
         $response = $request->dispatch();
+        
+        $action = "YZE_ACTION_AFTER_" .  ( $request->is_get() ? "GET" : "POST");
+        \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
+        
         $dba->commit();
         
 

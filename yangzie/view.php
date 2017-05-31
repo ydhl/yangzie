@@ -244,8 +244,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 		}
 	}
 	
-	public final function output($return=false){
-
+	public final function output($return=false){\
 		ob_start();
 		if($this->cache_ctl){
 			$this->cache_ctl->output();
@@ -412,7 +411,7 @@ abstract class YZE_View_Component extends YZE_View_Adapter{
     /**
      * 输出组件内容
      */
-    public abstract function output_component();
+    protected abstract function output_component();
     
     public function __construct($data, $controller){
         parent::__construct( $data, $controller);

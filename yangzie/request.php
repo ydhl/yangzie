@@ -455,6 +455,13 @@ class YZE_Request extends YZE_Object {
         $vars = $this->vars;
         return @array_key_exists ( $key, $vars ) ? $vars [$key] : $default;
     }
+    /**
+     * 当前的请求是否需要认证
+     * @return bool true for need auth
+     */
+    public function needAuth(){
+        return $this->need_auth($this->the_method());
+    }
     private function need_auth($req_method) {
         $need_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "need" );
         $no_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "noneed" );

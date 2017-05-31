@@ -12,7 +12,7 @@ namespace yangzie;
 
 class YZE_RuntimeException extends \Exception {
     public function __construct($message = null, $code=500) {
-        parent::__construct ( $message, $code );
+        parent::__construct ( $message, intval($code),null );
     }
 }
 /**
@@ -23,26 +23,26 @@ class YZE_RuntimeException extends \Exception {
  */
 class YZE_FatalException extends YZE_RuntimeException {
 public function __construct($message = null, $code=500) {
-        parent::__construct ( $message, $code );
+    parent::__construct ( $message, intval($code));
     }
 }
 
 
 class YZE_Suspend_Exception extends YZE_FatalException{
 public function __construct($message = null, $code=500) {
-        parent::__construct ( $message, $code );
+    parent::__construct ( $message, intval($code));
     }
 }
 
 class YZE_Need_Signin_Exception extends YZE_Suspend_Exception {
 public function __construct($message = null, $code=500) {
-        parent::__construct ( $message, $code );
+    parent::__construct ( $message, intval($code));
     }
 }
 
 class YZE_Permission_Deny_Exception extends YZE_Suspend_Exception {
 public function __construct($message = null, $code=500) {
-        parent::__construct ( $message, $code );
+    parent::__construct ( $message, intval($code));
     }
 }
 
@@ -56,12 +56,12 @@ public function __construct($message = null, $code=500) {
  */
 class YZE_Resource_Not_Found_Exception extends YZE_RuntimeException {
     public function __construct($message = null, $code=404) {
-        parent::__construct ( $message, $code );
+        parent::__construct ( $message, intval($code));
     }
 }
 class YZE_DBAException extends YZE_RuntimeException {
 	public function __construct($message = null, $code=404) {
-        parent::__construct ( $message, $code );
+	    parent::__construct ( $message, intval($code));
     }
 }
 /**
@@ -72,12 +72,12 @@ class YZE_DBAException extends YZE_RuntimeException {
  */
 class YZE_Not_Modified_Exception extends YZE_RuntimeException {
     public function __construct($message = null, $code=302) {
-        parent::__construct ( $message, $code );
+        parent::__construct ( $message, intval($code));
     }
 }
 class YZE_Model_Update_Conflict_Exception extends YZE_RuntimeException {
     public function __construct($message = null,$code=500) {
-        parent::__construct ( $message, $code );
+        parent::__construct ( $message, intval($code));
     }
 }
 ?>

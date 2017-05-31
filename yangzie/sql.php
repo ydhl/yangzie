@@ -665,29 +665,29 @@ class YZE_SQL extends YZE_Object{
 					case 'LEFT':
 						$from[] = " LEFT JOIN ".(
 							$no_alias ? 
-							"`".$from_table['table']."`": 
-							"`".$from_table['table']."` AS ".$alias)
+							$from_table['table'] : 
+							$from_table['table']." AS ".$alias)
 							." ON ".$from_table['join']['on'];
 						break;
 					case 'RIGHT':
 						$from[] = " RIGHT JOIN ".(
 							$no_alias ? 
-							"`".$from_table['table']."`": 
-							"`".$from_table['table']."` AS ".$alias)
+							$from_table['table'] : 
+							$from_table['table']." AS ".$alias)
 							." ON ".$from_table['join']['on'];
 						break;
 					default:
 					case 'INNER':
 						$from[] = " INNER JOIN ".(
 							$no_alias ? 
-							"`".$from_table['table']."`": 
-							"`".$from_table['table']."` AS ".$alias)
+							$from_table['table'] : 
+							$from_table['table']." AS ".$alias)
 							." ON ".$from_table['join']['on'];
 						break;
 				}
 			}else{
 				//先处理from，在按顺序处理其他join
-				array_unshift($from, $no_alias ? "`".$from_table['table']."`" : "`".$from_table['table']."` AS ".$alias);
+				array_unshift($from, $no_alias ? $from_table['table'] : $from_table['table']." AS ".$alias);
 			}
 		}
 		
@@ -707,7 +707,7 @@ class YZE_SQL extends YZE_Object{
 				foreach((array)$columns as $column){
 					if($column=="*"){
 						//查询指定表的所有
-						$cls = $this->classes[$alias];
+					    $cls = $this->classes[$alias];
 						$entities = new $cls;
 						foreach($entities->get_columns() as $column => $define){
 							$select[] = "{$alias}.{$column} AS {$alias}_{$column}";

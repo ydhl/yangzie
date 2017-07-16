@@ -17,6 +17,9 @@ function yze_ajax_front_controller(){
 	this.get = function(url, params, loadedCallback, submitCallback, allowCache) {
 		this.getUrl 		= url;
 		this.submitCallback 	= submitCallback;
+		window.yze_dialog_submitCallback = function(data){
+            submitCallback(data);
+        };
 		this.loadedCallback 	= loadedCallback;
 		this.allowCache = allowCache;
 		this.loadType = "ajax";
@@ -54,19 +57,20 @@ function yze_ajax_front_controller(){
 		this.loadType = "ifrmae";
 		this.allowCache = allowCache;
 		var _self = this;
+		var _id = url.replace(/[\.#\/\\\?=]/g,"-");
 
 		window.yze_iframe_form_submitCallback = function(data){
 			submitCallback(data);
 		};
 		
-		if(allowCache && $("#"+url).length>0){
+		if(allowCache && $("#"+_id).length>0){
 			loadedCallback(null);
 			return;
 		}
 		
-		loadedCallback("<iframe data-submited=0 id='"+url+"' marginheight='0' frameborder='0'  width='100%'  height='200px'  src='"
+		loadedCallback("<iframe data-submited=0 id='"+_id+"' marginheight='0' frameborder='0'  width='100%'  height='200px'  src='"
 				+ydhlib_AddParamsInUrl(url, { yze_post_context : 'iframe'} )+"'></iframe>");
-		$("#"+url).load(function(){
+		$("#"+_id).load(function(){
 			var newheight;
 			var newwidth;
 			newheight = this.contentWindow.document.body.scrollHeight;

@@ -39,6 +39,11 @@ class YZE_Request extends YZE_Object {
     public function the_get_datas() {
         return $this->get;
     }
+    
+    public function set_post($name, $value) {
+        $this->post [$name] = $value;
+        return $this;
+    }
     public function get_from_post($name, $default = null) {
         if (array_key_exists ( $name, $this->post )) {
             return @$this->post [$name];

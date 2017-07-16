@@ -186,6 +186,22 @@ abstract class YZE_Model extends YZE_Object{
 	public static function find_by_id($id){
 		return YZE_DBAImpl::getDBA()->find($id,get_called_class());
 	}
+	
+	/**
+	 * 查找对象并以id作为键返回数组
+	 * @param string|array $ids
+	 */
+	public static function find_by_ids($ids){
+	    $arr = [];
+	    if (is_string($ids)){
+	        $ids = explode(",", $ids);
+	    }
+	    $ids = array_filter($ids);
+	    foreach (YZE_DBAImpl::getDBA()->find_by($ids, get_called_class()) as $obj){
+	        $arr[ $obj->id ] = $obj;
+	    }
+	    return $arr;
+	}
 	/**
 	 * 删除数据库中的一条记录
 	 * 
@@ -251,8 +267,8 @@ abstract class YZE_Model extends YZE_Object{
 		} else {
 		    $sql->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
 		}
-		YZE_DBAImpl::getDBA()->execute($sql);
 		
+		YZE_DBAImpl::getDBA()->execute($sql);
 		return true;
 	}
 	
@@ -467,6 +483,7 @@ abstract class YZE_Model extends YZE_Object{
 		if ($alias){
 			$this->sql->select($alias);
 		}
+		
 		$obj = YZE_DBAImpl::getDBA()->select($this->sql, $params);
 		
 		$this->sql->clean_select();

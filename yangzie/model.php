@@ -197,6 +197,7 @@ abstract class YZE_Model extends YZE_Object{
 	        $ids = explode(",", $ids);
 	    }
 	    $ids = array_filter($ids);
+	    if( ! $ids)return $arr;
 	    foreach (YZE_DBAImpl::getDBA()->find_by($ids, get_called_class()) as $obj){
 	        $arr[ $obj->id ] = $obj;
 	    }

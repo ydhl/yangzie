@@ -57,7 +57,7 @@ function yze_ajax_front_controller(){
 		this.loadType = "ifrmae";
 		this.allowCache = allowCache;
 		var _self = this;
-		var _id = url.replace(/[\.#\/\\\?=]/g,"-");
+		var _id = url.replace(/[\.#\/\\\?=&]/g,"-");
 
 		window.yze_iframe_form_submitCallback = function(data){
 			submitCallback(data);
@@ -151,6 +151,7 @@ function ydhlib_AddParamsInUrl(url, params){
     var queryString = [];
     if(typeof(params)=="object"){
         for(name in params){
+            if(!name)continue;
             queryString.push( name+"="+params[name] );
         }
     }else{
@@ -172,6 +173,7 @@ function ydhlib_AddParamsInUrl(url, params){
     var oldParams = {};
     for(var i=0; i < oldQueryString.length; i++){
         var nameValue = oldQueryString[i].split("=");
+        if( ! nameValue[0])continue;
         if( params[nameValue[0]] != undefined) continue;
         queryString.push(nameValue[0] + "=" + (nameValue.length < 1 ? "" : nameValue[1]));
     }

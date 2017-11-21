@@ -672,23 +672,32 @@ class YZE_Request extends YZE_Object {
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
     public function addCSSBundle($files, $module=null){
-    	$session = YZE_Session_Context::get_instance();
-    	if( ! $module){
-    		$module = $this->module();
-    	}
-    	$session->set($module."-css-bundle", (array)$files);
+        $session = YZE_Session_Context::get_instance();
+        if( ! $module){
+            $module = $this->module();
+        }
+        $exists = self::cssBundle($module);
+        if($exists){
+            $files = array_merge($exists, (array)$files);
+        }
+        $session->set($module."-css-bundle", (array)$files);
     }
     /**
      * 
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
     public function addJSBundle($files, $module=null){
-    	$session = YZE_Session_Context::get_instance();
-    	if( ! $module){
-    		$module = $this->module();
-    	}
-    	$session->set($module."-js-bundle", (array)$files);
+        $session = YZE_Session_Context::get_instance();
+        if( ! $module){
+            $module = $this->module();
+        }
+        $exists = self::jsBundle($module);
+        if($exists){
+            $files = array_merge($exists, (array)$files);
+        }
+        $session->set($module."-js-bundle", (array)$files);
     }
+
 
     /**
      * 返回 module指定的js bundle

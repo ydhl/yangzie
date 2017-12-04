@@ -6,7 +6,7 @@ use yangzie\YZE_FatalException;
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);//end by /
 define("YZE_MYSQL_USER",  "root");
 define("YZE_MYSQL_HOST_M",  "127.0.0.1");
-define("YZE_MYSQL_DB",  "casedb");
+define("YZE_MYSQL_DB",  "");
 define("YZE_MYSQL_PORT",  "3306");
 define("YZE_MYSQL_PASS",  "ydhl");
 define("YZE_MONGODB_USER",  "");

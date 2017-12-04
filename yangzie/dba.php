@@ -109,10 +109,11 @@ class YZE_DBAImpl extends YZE_Object
 	public function nativeQuery(YZE_SQL $sql){
 		return $this->nativeQuery2($sql->__toString());
 	}
+	
 	public function nativeQuery2($sql){
 	    $pdo = $this->conn->query($sql);
 	    if( ! $pdo){
-	        throw new YZE_DBAException("sql error ".$sql);
+	        throw new YZE_DBAException("sql error " . $sql . ":" . join(",",$this->conn->errorInfo()));
 	    }
 		return new YZE_PDOStatementWrapper($pdo);
 	}

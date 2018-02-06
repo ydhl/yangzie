@@ -517,9 +517,10 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param unknown $field count 字段
 	 * @param array $params [:field=>value]格式的数组
 	 * @param unknown $alias alias要选择的对象的别名，如果有联合查询；没有指定alias，则默认是直接类，也就是第一个调用的静态类，如TestModel::where()->Left_jion()->count()中的TestModel
+	 * @param bool $distinct
 	 * @return int
 	 */
-	public function count($field, array $params=array(), $alias=null){
+	public function count($field, array $params=array(), $alias=null,$distinct=false){
 		$this->initSql();
 		if ( ! $alias){
 			$alias = "m";
@@ -527,7 +528,7 @@ abstract class YZE_Model extends YZE_Object{
 		if ( ! $this->sql->has_from()){
 			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		$this->sql->count($alias , $field, "COUNT_ALIAS");
+		$this->sql->count($alias , $field, "COUNT_ALIAS", $distinct);
 
 		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();

@@ -156,31 +156,34 @@ class YZE_DBAImpl extends YZE_Object
 		$num_rows = $statement->rowCount();
 		$more_entity = count($classes) > 1;
 		$entity_objects = array();
+
+		//多表查询, 对每一行数据中的每一个entity, 构建好entity
 		for($i=0;$i<$num_rows;$i++){#所有的对象
-			foreach($classes as $cls){
+			foreach($classes as $alias => $cls){
 				if($more_entity){
 					$e = new $cls();
-					$entity_objects[$i][$sql->get_alias($e->get_table())] = $e;
+					$entity_objects[$i][ $alias ] = $e;
 				}else{
 					$entity_objects[$i] = new $cls();
 				}
 			}
 		}
 		$select_tables = $sql->get_select_table();
-		$entities = array();
+
 		$row=0;
 		while ($raw_result){
 			$raw_row_data = array_shift($raw_result);#每行
 			if($more_entity){
-				foreach($entity_objects[$row] as &$entity){
+				foreach($entity_objects[$row] as $alias => &$entity){
 					$this->_build_entity($entity,
 							$raw_row_data,
-							$select_tables);
+							$alias);
 				}
 			}else{
 				$this->_build_entity($entity_objects[$row],
 						$raw_row_data,
-						$select_tables);
+						array_search($entity_objects[$row]->get_table(), $select_tables));
+
 			}
 			$row++;
 		}
@@ -345,14 +348,14 @@ class YZE_DBAImpl extends YZE_Object
 		}catch(\Exception $e){}
 	}
 
-	private function _build_entity(YZE_Model $entity,$raw_datas,$select_tables){
+	private function _build_entity(YZE_Model $entity,$raw_datas,$table_alias){
 		foreach ($raw_datas as $field_name => $field_value) {
 			//如果从数据库中取出来的值为null，则不用对相应的对象属性赋值，因为默认他们就是null。
 			//而赋值后再同步到数据库的时候，这些null值会被处理成''，0，如果字段是外键就会出错误，看_quoteValue
 			if (is_null($field_value)) {
 				continue ;
 			}
-			$alias = array_search($entity->get_table(), $select_tables)."_";
+			$alias = $table_alias."_";
 			if (substr($field_name, 0, strlen($alias)) !== $alias) {
 				continue;//当前字段不属于$entity
 			}

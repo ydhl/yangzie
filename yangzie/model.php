@@ -533,7 +533,8 @@ abstract class YZE_Model extends YZE_Object{
 		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
-		return is_array($obj) ? $obj[$alias]->Get("COUNT_ALIAS") : $obj->Get("COUNT_ALIAS");
+		$obj = is_array($obj) ? $obj[$alias] : $obj;
+		return $obj ? $obj->Get("COUNT_ALIAS") : 0;
 	}
 	/**
 	 * 返回sum结果, 该方法调用后sql中where部分会保留
@@ -555,7 +556,8 @@ abstract class YZE_Model extends YZE_Object{
 		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
-		return is_array($obj) ? $obj[$alias]->Get("SUM_ALIAS") : $obj->Get("SUM_ALIAS");
+		$obj = is_array($obj) ? $obj[$alias] : $obj;
+		return $obj ? $obj->Get("SUM_ALIAS") : 0;
 	}
 	/**
 	 * 返回max结果, 该方法调用后sql中where部分会保留
@@ -577,7 +579,8 @@ abstract class YZE_Model extends YZE_Object{
 		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
-		return is_array($obj) ? $obj[$alias]->Get("MAX_ALIAS") : $obj->Get("MAX_ALIAS");
+		$obj = is_array($obj) ? $obj[$alias] : $obj;
+		return $obj ? $obj->Get("MAX_ALIAS") : 0;
 	}
 	/**
 	 * 返回max结果, 该方法调用后sql中where部分会保留
@@ -599,7 +602,9 @@ abstract class YZE_Model extends YZE_Object{
 		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
-		return is_array($obj) ? $obj[$alias]->Get("MIN_ALIAS") : $obj->Get("MIN_ALIAS");
+		$obj = is_array($obj) ? $obj[$alias] : $obj;
+		return $obj ? $obj->Get("MIN_ALIAS") : 0;
+                
 	}
 	
 	public function delete(array $params=array(), $alias=null){

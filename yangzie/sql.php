@@ -420,6 +420,9 @@ class YZE_SQL extends YZE_Object{
 	}
 	/**
 	 * 返回给定的表在构建的查询中的别名,如果没有找到返回false
+	 * 
+     * <strong>如果同一个table在sql中出现了两次,得到的alias则是第一个</strong>
+     * 
 	 * @param string $table_name
 	 * @return string
 	 */
@@ -497,12 +500,72 @@ class YZE_SQL extends YZE_Object{
 		return new YZE_SQL();
 	}
 	
-	public function clean_where(){
-	    $this->where	= array();
-	    $this->and_where_group = array();
-	    $this->or_where_group = array();
-	    return $this;
-	}
+	/**
+     * 清空where条件
+     * 
+     * 1) 如果指定了alias和column则只清空指定的字段条件
+     * 2) 如果指定了alias和没有指定column则清空指定表的所有字段条件
+     * 3) 如果没有指定任何参数,则删除所有的where条件
+     * 
+     * @param type $alias 要删除的表别名
+     * @param type $column 要删除的字段
+     * @return $this
+     */
+    public function clean_where($alias = null, $column = null) {
+        if (!$alias && !$column) {
+            $this->where = array();
+            $this->and_where_group = array();
+            $this->or_where_group = array();
+        }
+        if ($alias && ! $column) {//remove all table where
+            $willDeleteItem = [];
+            foreach ($this->where as $index => $item) {
+                if ($item['alias'] == $alias)
+                    $willDeleteItem[] = $index;
+            }
+
+            foreach ($this->and_where_group as $index => $item) {
+                if ($item->get_Alias() == $alias)
+                    $willDeleteItem[] = $index;
+            }
+
+            foreach ($this->or_where_group as $index => $item) {
+                if ($item->get_Alias() == $alias)
+                    $willDeleteItem[] = $index;
+            }
+
+            foreach ($willDeleteItem as $index) {
+                unset($this->where[$index]);
+                unset($this->and_where_group[$index]);
+                unset($this->or_where_group[$index]);
+            }
+            
+        }
+        if ($alias && $column) {//remove specify column
+            $willDeleteItem = [];
+            foreach ($this->where as $index => $item) {
+                if ($item['alias'] == $alias && $item['field']==$column)
+                    $willDeleteItem[] = $index;
+            }
+
+            foreach ($this->and_where_group as $index => $item) {
+                if ($item->get_Alias() == $alias && $item->get_Field()==$column)
+                    $willDeleteItem[] = $index;
+            }
+
+            foreach ($this->or_where_group as $index => $item) {
+                if ($item->get_Alias() == $alias && $item->get_Field()==$column)
+                    $willDeleteItem[] = $index;
+            }
+
+            foreach ($willDeleteItem as $index) {
+                unset($this->where[$index]);
+                unset($this->and_where_group[$index]);
+                unset($this->or_where_group[$index]);
+            }
+        }
+        return $this;
+    }
 	
 	/**
 	 * 清除之前构造的查询

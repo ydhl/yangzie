@@ -487,7 +487,7 @@ function is_validate_table($table){
 			$app_module->get_module_config("db_psw")
 	);
 	mysqli_select_db($db, $app_module->get_module_config("db_name"));
-	return mysqli_query($db, "show full columns from $table");
+	return mysqli_query($db, "show full columns from `$table`");
 }
 
 

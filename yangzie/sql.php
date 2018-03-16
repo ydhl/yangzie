@@ -930,78 +930,77 @@ class YZE_SQL extends YZE_Object{
 	 * @param unknown_type $value
 	 */
 	private function _quoteValue($value){
-		//mysql_escape_string 把\转换成\\
-		//处理null
-		$_ = function ($v, $defilter_var) {
-			if(strcasecmp("NULL", $v)==0 || is_null($v)){
-				return "null";
-			}
-			if (is_string($v)){
-				return "'".@mysql_escape_string($defilter_var)."'";
-			}
-			
-			if (is_numeric($v)){
-				return $v;
-			}
-
-			return "'".@mysql_escape_string($defilter_var)."'";#数据库中的操作要特殊字符解码
-		};
-		
-		if(is_array($value)){
-			foreach($value as $index => $v){
-				$return[$index] = $_($v, self::defilter_var($v)); 
-			}
-			return @$return;
-		}else{
-			return $_($value, self::defilter_var($value));
-		}
+	    ///mysql_escape_string 把\转换成\\
+	    //处理null
+	    $_ = function ($v, $defilter_var) {
+	        if(strcasecmp("NULL", $v)==0 || is_null($v)){
+	            return "null";
+	        }
+	        if (is_string($v)){
+	            return YZE_DBAImpl::getDBA()->quote($defilter_var);
+	        }
+	        
+	        if (is_numeric($v)){
+	            return $v;
+	        }
+	        
+	        return  YZE_DBAImpl::getDBA()->quote($defilter_var) ;#数据库中的操作要特殊字符解码
+	    };
+	    
+	    if(is_array($value)){
+	        foreach($value as $index => $v){
+	            $return[$index] = $_($v, self::defilter_var($v));
+	        }
+	        return @$return;
+	    }else{
+	        return $_($value, self::defilter_var($value));
+	    }
 	}
 	
 	private function _buildWhere($wheres){
-	
-		if($this->isinsert() || $this->isdelete()){
-			$column = "`".$wheres['field']."`";
-		}else{
-			$column = $wheres['alias'].".".$wheres['field'];
-			if(@$wheres['field_func']){
-				$column = $wheres['field_func']."( ".$column." )";
-			}
-		}
-		
-		#处理where中有子查询的情况
-		if(is_a($wheres['value'],'\yangzie\YZE_SQL')){
-			switch($wheres['op']){
-				case self::NOTIN:	
-					$cond = " NOT IN (".$wheres['value']->__toString().")";break;
-				case self::IN:		
-					$cond = " IN (".$wheres['value']->__toString().")";break;
-				case self::EQ:
-				    $cond = " = (".$wheres['value']->__toString().")";break;
-				case self::BETWEEN:
-				default:				$cond = " IS NOT NULL";break;
-			}
-			return $column.$cond;
-		}
-		$quoted_value = $wheres['is_column'] ? "`".$wheres['value']."`" : $this->_quoteValue($wheres['value']);
-		switch($wheres['op']){
-			case self::LIKE:		$cond = " LIKE '%".@mysql_escape_string(self::defilter_var($wheres['value']))."%'";break;
-			case self::BEFORE_LIKE:	$cond = " LIKE '%".@mysql_escape_string(self::defilter_var($wheres['value']))."'";break;
-			case self::END_LIKE:	$cond = " LIKE '".@mysql_escape_string(self::defilter_var($wheres['value']))."%'";break;
-			case self::FIND_IN_SET: return $cond = " FIND_IN_SET (".$quoted_value.", $column)";
-			case self::EQ:			$cond = " = ".$quoted_value;break;
-			case self::NOTIN:		$cond = " NOT IN (".($quoted_value ? join(",",(array)$quoted_value) : 'NULL').")";break;
-			case self::IN:			$cond = " IN (".($quoted_value ? join(",",(array)$quoted_value) : 'NULL').")";break;
-			case self::BETWEEN:		$cond = " BETWEEN ".array_shift($quoted_value)." AND ".array_shift($quoted_value);break;
-			case self::NE:			$cond = " != ".$quoted_value;break;
-			case self::GT:			$cond = " > ".$quoted_value;break;
-			case self::LT:			$cond = " < ".$quoted_value;break;
-			case self::GEQ:			$cond = " >= ".$quoted_value;break;
-			case self::LEQ:			$cond = " <= ".$quoted_value;break;
-			case self::ISNULL:		$cond = " IS NULL";break;
-			case self::ISNOTNULL:	
-			default:				$cond = " IS NOT NULL";break;
-		}
-		return $column.$cond;
+	    if($this->isinsert() || $this->isdelete()){
+	        $column = "`".$wheres['field']."`";
+	    }else{
+	        $column = $wheres['alias'].".".$wheres['field'];
+	        if(@$wheres['field_func']){
+	            $column = $wheres['field_func']."( ".$column." )";
+	        }
+	    }
+	    
+	    #处理where中有子查询的情况
+	    if(is_a($wheres['value'],'\yangzie\YZE_SQL')){
+	        switch($wheres['op']){
+	            case self::NOTIN:
+	                $cond = " NOT IN (".$wheres['value']->__toString().")";break;
+	            case self::IN:
+	                $cond = " IN (".$wheres['value']->__toString().")";break;
+	            case self::EQ:
+	                $cond = " = (".$wheres['value']->__toString().")";break;
+	            case self::BETWEEN:
+	            default:				$cond = " IS NOT NULL";break;
+	        }
+	        return $column.$cond;
+	    }
+	    $quoted_value = $wheres['is_column'] ? "`".$wheres['value']."`" : $this->_quoteValue($wheres['value']);
+	    switch($wheres['op']){
+	        case self::LIKE:		$cond = " LIKE ".YZE_DBAImpl::getDBA()->quote("%".self::defilter_var($wheres['value'])."%");break;
+	        case self::BEFORE_LIKE:	$cond = " LIKE ".YZE_DBAImpl::getDBA()->quote("%".self::defilter_var($wheres['value']));break;
+	        case self::END_LIKE:	$cond = " LIKE ".YZE_DBAImpl::getDBA()->quote(self::defilter_var($wheres['value'])."%");break;
+	        case self::FIND_IN_SET: return $cond = " FIND_IN_SET (".$quoted_value.", $column)";
+	        case self::EQ:			$cond = " = ".$quoted_value;break;
+	        case self::NOTIN:		$cond = " NOT IN (".($quoted_value ? join(",",(array)$quoted_value) : 'NULL').")";break;
+	        case self::IN:			$cond = " IN (".($quoted_value ? join(",",(array)$quoted_value) : 'NULL').")";break;
+	        case self::BETWEEN:		$cond = " BETWEEN ".array_shift($quoted_value)." AND ".array_shift($quoted_value);break;
+	        case self::NE:			$cond = " != ".$quoted_value;break;
+	        case self::GT:			$cond = " > ".$quoted_value;break;
+	        case self::LT:			$cond = " < ".$quoted_value;break;
+	        case self::GEQ:			$cond = " >= ".$quoted_value;break;
+	        case self::LEQ:			$cond = " <= ".$quoted_value;break;
+	        case self::ISNULL:		$cond = " IS NULL";break;
+	        case self::ISNOTNULL:
+	        default:				$cond = " IS NOT NULL";break;
+	    }
+	    return $column.$cond;
 	}
 }
 /**

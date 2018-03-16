@@ -114,12 +114,38 @@ class YZE_ACL extends YZE_Object{
 		}
 
 		if(function_exists("get_permissions")){
-			$perm = get_permissions($aroname);
-		}else{
-			$perm = @$this->acos_aros[$aconame];
+                    $perm = get_permissions($aroname);
+                        
+                    if (is_array(@$perm["deny"])){//配置了拒绝项
+                            $denys = $this->_in_array($aconame, $perm["deny"]);//拒绝当前ARO
+                            if ($denys){//拒绝当前ACO的所有action
+                                    return false;
+                            }
+                    }
+
+                    if (is_array(@$perm["allow"])){//允许当前ACO
+                            $allow = $this->_in_array($aconame, $perm["allow"]);//允许当前ARO
+                            if ($allow){//允许当前ACO的所有action
+                                    return true;
+                            }
+                    }
+
+                    if(@$perm["deny"]=="*")return false;//拒绝优先
+
+                    if (@$perm["allow"]=="*")return true;//允许所有
+
+                    if($aconame=="/") return false;//都没找到
+
+                    $aconames = explode("/", $aconame);
+                    array_pop($aconames);
+                    $aconame= count($aconames)==1 ? "/" : join("/", $aconames);
+                    return $this->_check_role_permission($aroname, $aconame);
 		}
+                
+                
+                $perm = @$this->acos_aros[$aconame];
 		
-		
+                
 		if (is_array(@$perm["deny"])){//配置了拒绝项
 			$denys = $this->_in_array($aroname, $perm["deny"]);//拒绝当前ARO
 			if ($denys){//拒绝当前ACO的所有action
@@ -143,7 +169,7 @@ class YZE_ACL extends YZE_Object{
 		$aronames = explode("/", $aroname);
 		array_pop($aronames);
 		$aroname = count($aronames)==1 ? "/" : join("/", $aronames);
-		return $this->_check_role_permission($aroname, $aconame, $matched_aco);
+		return $this->_check_role_permission($aroname, $aconame);
 	}
 
 	private function _need_controll($aconame){

@@ -218,7 +218,7 @@ function yze_css_bundle($bundle, $version=""){
 /**
  * 输出module指定的js bundle，通常在controller中通过request->addJSBundle()加入的
  */
-function yze_module_js_bundle(){
+function yze_module_js_bundle($version=""){
 	$request = YZE_Request::get_instance();
 	?>
 <script type="text/javascript" src="/load.php?t=js&v=<?php echo $version?>&m=<?php echo $request->module()?>"></script>
@@ -227,7 +227,7 @@ function yze_module_js_bundle(){
 /**
  * 输出module指定的css bundle，通常在controller中通过request->addCSSBundle()加入的
  */
-function yze_module_css_bundle(){
+function yze_module_css_bundle($version=""){
 	$request = YZE_Request::get_instance();
 ?>
 <link rel="stylesheet" type="text/css" href="/load.php?t=css&v=<?php echo $version?>&m=<?php echo $request->module()?>" />

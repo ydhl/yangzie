@@ -723,6 +723,11 @@ class YZE_SQL extends YZE_Object{
 		$no_alias = $this->isinsert() || $this->isdelete();//不要别名
 		$from = array();
 		foreach($this->from as $alias => $from_table){
+			array_walk($from_table,function(&$item, $key){
+				if($key == "table"){
+					$item = "`{$item}`";
+				}
+			});
 			if($from_table['join']){
 				switch(strtoupper($from_table['join']['type'])){
 					case 'LEFT':

@@ -85,13 +85,13 @@ class Generate_Model_Script extends AbstractScript{
 		
 		
 		$unique_key = array();
-		$result = mysqli_query($db, "SHOW INDEX FROM  $table");
+		$result = mysqli_query($db, "SHOW INDEX FROM  `$table`");
 		while ($row=mysqli_fetch_assoc($result)) {
 		    $unique_key[$row['Column_name']] = $row['Key_name'];
 		}
 		$constant   = array();
 		
-		$result = mysqli_query($db, "show full columns from $table");
+		$result = mysqli_query($db, "show full columns from `$table`");
 		while ($row=mysqli_fetch_assoc($result)) {
 			$row['Key']=="PRI" ? $key = $row['Field'] : null;
 			$type_info = $this->get_type_info($row['Type']);

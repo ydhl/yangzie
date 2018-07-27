@@ -152,6 +152,10 @@ class YZE_DBAImpl extends YZE_Object
 			throw new YZE_DBAException(join(",", $this->conn->errorInfo()));
 		}
 
+		if($statement->errorCode()!='00000'){
+			throw new YZE_DBAException(join(",", $statement->errorInfo()));
+		}
+
 		$raw_result = $statement->fetchAll(PDO::FETCH_ASSOC);
 		$num_rows = $statement->rowCount();
 		$more_entity = count($classes) > 1;

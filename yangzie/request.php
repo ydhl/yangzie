@@ -207,7 +207,7 @@ class YZE_Request extends YZE_Object {
                     $this->uri = parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
             }
             $this->full_uri = $_SERVER ['REQUEST_URI'];
-            $this->queryString = $_SERVER ['QUERY_STRING'];
+            $this->queryString = @$_SERVER ['QUERY_STRING'];
         } else {
             $this->uri = parse_url ( $newUri, PHP_URL_PATH );
             $this->full_uri = $newUri;

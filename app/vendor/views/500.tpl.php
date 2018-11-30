@@ -1,6 +1,7 @@
 <?php 
 namespace yangzie;
 $e = new \Exception();
+    $this->layout = "tpl";
 ?>
 <h4 class="page-header">服务器出现500错误</h4>
 <?php 

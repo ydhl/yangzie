@@ -369,245 +369,300 @@ class YZE_DBAImpl extends YZE_Object
 			}
 		}
 	}
-	/**
-	 * 查字段
-	 * @param string $field 字段名
-	 * @param string $table 表
-	 * @param string $where "a=:b and c=:d"
-	 * @param array $values array(":b"=>"",":d"=>)
-	 * @return unknown
-	 */
-	public function lookup($field, $table, $where, array $values=array()) {
-	    $sql = "SELECT $field as f FROM `{$table}` WHERE {$where}";
-	    $stm = $this->conn->prepare($sql);
-	    if(@$stm->execute($values)){
-	        $row = $stm->fetch(PDO::FETCH_ASSOC);
-	        return @$row['f'];
-	    }
-	    return null;
-	}
-	
-	/**
-	 * 查询结果集，返回满足条件的一条结果数组
-	 * 
-	 * @param string $fields
-	 * @param string $table
-	 * @param string $where
-	 * @param array $values
-	 * @return array
-	 */
-	public function lookup_record($fields, $table, $where="", array $values=array()) {
-	    $sql = "SELECT {$fields} FROM {$table}".($where ? " WHERE {$where}" :"");
-	    $stm = $this->conn->prepare($sql);
-	    if($stm->execute($values)){
-	       return $stm->fetch(PDO::FETCH_ASSOC);
-	    }
-	    
-	    return array();
-	}
-	
-	/**
-	 * 查询结果集，返回所有结果数组
-	 * 
-	 * @param string $fields
-	 * @param string $table
-	 * @param string $where
-	 * @param array $values
-	 * @return array
-	 */
-	public function lookup_records($fields, $table, $where="", array $values=array()) {
-	    $sql = "SELECT $fields FROM $table";
-	    if ($where) $sql .= " WHERE $where";
-	    $stm = $this->conn->prepare($sql);
-	    if($stm->execute($values)){
-	       return $stm->fetchAll(PDO::FETCH_ASSOC);
-	    }
-	    return array();
-	}
-	
-	/**
-	 * 更新记录，返回受影响的行数
-	 * @param string $table
-	 * @param string $fields
-	 * @param string $where
-	 * @param array $values
-	 * @return boolean|Ambigous <boolean, NULL, string>
-	 */
-	public function update($table, $fields, $where, array $values=array()) {
-	    $sql = "UPDATE $table SET $fields";
-	    if ($where) $sql .= " WHERE $where";
-	
-	    $stm = $this->conn->prepare($sql);
-	    if ( ! $stm ) return false;
-	    return $stm->execute($values);
-	}
-	
-	/**
-	 * 删除记录返回受影响的行数
-	 * @param string $table
-	 * @param string $where
-	 * @param array $values
-	 * @return boolean
-	 */
-	public function deletefrom($table, $where, array $value=array()) {
-	    $sql = "DELETE FROM $table";
-	    if ($where) $sql .= " WHERE $where";
-	    $stm = $this->conn->prepare($sql);
-	    if ( ! $stm ) return false;
-	    return $stm->execute($values);
-	}
-	/**
-	 * 插入记录; 成功返回新记录的主键
-	 *
-	 * @param string $table
-	 * @param array $info array("field"=>"value");
-	 * @param string $checkSql 检查的表
-	 * @param array $checkInfo array(":field"=>"value");检查表的条件子
-	 * @param boolean $exist true，表示存在是插入；false，表示不存在时插入
-	 * @param boolean $update 是否在存在是更新
-	 * @param string $key table 主键名称
-	 * @return boolean|unknown
-	 */
-	public function checkAndInsert($table, $info, $checkSql, $checkInfo, $exist=false, $update=false,$key="id") {
-	    $sql_fields     = "";
-	    $sql_values     = "";
-	    $set            = "";
-	    $values         = $checkInfo;
-	    foreach ($info as $f => $v) {
-	        $sql_fields  .= "`" . $f . "`,";
-	        $sql_values  .= ":" . $f . ",";
-	        $set  .= "`{$f}`=:{$f},";
-	        $values[":" . $f] = $v;
-	    }
-	    $sql_fields  = rtrim($sql_fields, ",");
-	    $sql_values  = rtrim($sql_values, ",");
-	    $set         = rtrim($set, ",");
-	
-	    $sql = "INSERT INTO `{$table}` ({$sql_fields}) SELECT {$sql_values} FROM dual WHERE ".($exist?"":"NOT")." EXISTS ({$checkSql})";
-	    $stm = $this->conn->prepare($sql);
-	    $stm->execute($values);
-	    if ( !  $stm->rowCount()) {
-	        if( ! $update){
-	            return false;
-	        }
-	        $where = preg_replace("/^.+where/", "", $checkSql);
-	        $sql = "UPDATE `{$table}` SET {$set} WHERE {$where}";
-	        $stm = $this->conn->prepare($sql);
-	        if (! $stm->execute($values) ){
-	            return false;
-	        }
-	        return $this->lookup($key, $table, $where, $values);
-	    }
-	     
-	    return $this->conn->lastInsertId();
-	}
-	/**
-	 * 插入记录; 成功返回新记录的主键
-	 * 
-	 * @param string $table
-	 * @param array $info array("field"=>"value");
-	 * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成INSET INTO ON DUPLICATE KEY UPDATE 语句，
-	 * 再指定的字段有唯一健冲突时执行更新
-	 * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
-	 * @return boolean|unknown 成功返回主键，失败返回false
-	 */
-	public function insert($table, $info, $duplicate_key=array(), $keyname="") {
-	    if ( ! is_array($info) || empty($info) || empty($table))
-	        return false;
-	
-	
-	    $sql_fields     = "";
-	    $sql_values     = "";
-	    $values         = array();
-	    $update         = array();
-	    foreach ($info as $f => $v) {
-	        $sql_fields  .= "`" . $f . "`,";
-	        $sql_values  .= ":" . $f . ",";
-
-	        $values[":" . $f] = $v;
-	        if(array_search($f, $duplicate_key) === false){
-	            $update[] = "`{$f}`=VALUES(`{$f}`)";
-	        }
-	    }
-	    $sql_fields  = rtrim($sql_fields, ",");
-	    $sql_values  = rtrim($sql_values, ",");
-	
-	    $sql = "INSERT INTO {$table} ({$sql_fields}) VALUES ({$sql_values})";
-	    if($duplicate_key){
-	        $sql .= " ON DUPLICATE KEY UPDATE {$keyname} = LAST_INSERT_ID({$keyname}), 
-	        ".join(",", $update);
-	    }
-	
-	    $stm = $this->conn->prepare($sql);
-	    if ( ! $stm->execute($values) ) {
-	        return false;
-	    }
-	    
-	    return $this->conn->lastInsertId();
-	}
-	/**
-	 * 插入记录, 在有为一件冲突是忽略插入，成功返回新记录的主键
-	 *
-	 * @param string $table
-	 * @param array $info array("field"=>"value");
-	 * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成INSET INTO ON DUPLICATE KEY UPDATE 语句，
-	 * 再指定的字段有唯一健冲突时执行更新
-	 * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
-	 * @return boolean|unknown
-	 */
-	public function insertOrIgnore($table, $info) {
-	    $sql_fields     = "";
-	    $sql_values     = "";
-	    $values         = array();
-	    $update         = array();
-	    foreach ($info as $f => $v) {
-	        $sql_fields  .= "`" . $f . "`,";
-	        $sql_values  .= ":" . $f . ",";
-	
-	        $values[":" . $f] = $v;
-	    }
-	    $sql_fields  = rtrim($sql_fields, ",");
-	    $sql_values  = rtrim($sql_values, ",");
-	
-	    $sql = "INSERT IGNORE INTO {$table} ({$sql_fields}) VALUES ({$sql_values})";
-	
-	    $stm = $this->conn->prepare($sql);
-	    if ( ! $stm->execute($values) ) {
-	    return false;
-	    }
-	     
-	    return $this->conn->lastInsertId();
-	}
-	
-	/**
-	 * 插入记录, 在有为一件冲突是忽略插入替换，成功返回新记录的主键
-	 *
-	 * @param string $table
-	 * @param array $info array("field"=>"value");
-	 * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成INSET INTO ON DUPLICATE KEY UPDATE 语句，
-	 * 再指定的字段有唯一健冲突时执行更新
-	 * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
-	 * @return boolean|unknown
-	 */
-	public function replace($table, $info) {
-	    $sql_fields     = array();
-	    $values         = array();
-	    foreach ($info as $f => $v) {
-	        $sql_fields[] = "`{$f}`=:{$f}";
-	
-	        $values[":" . $f] = $v;
-	    }
-	    $sql_fields  = join(",", $sql_fields);
-	
-	    $sql = "REPLACE INTO {$table} SET {$sql_fields}";
-	
-	    $stm = $this->conn->prepare($sql);
-	    if ( ! $stm->execute($values) ) {
-	        return false;
-	    }
-	
-	    return $this->conn->lastInsertId();
-	}
+    /**
+     * 查字段
+     * @param string $field 字段名
+     * @param string $table 表
+     * @param string $where "a=:b and c=:d"
+     * @param array $values array(":b"=>"",":d"=>)
+     * @return unknown
+     */
+    public function lookup($field, $table, $where, array $values=array()) {
+        $sql = "SELECT $field as f FROM `{$table}` WHERE {$where}";
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if($stm->execute($values)){
+            $row = $stm->fetch(PDO::FETCH_ASSOC);
+            return @$row['f'];
+        }
+        throw new YZE_DBAException(join(",", $stm->errorInfo()));
+    }
+    
+    /**
+     * 查询结果集，返回满足条件的一条结果数组
+     *
+     * @param string $fields
+     * @param string $table
+     * @param string $where
+     * @param array $values
+     * @return array
+     */
+    public function lookup_record($fields, $table, $where="", array $values=array()) {
+        $sql = "SELECT {$fields} FROM {$table}".($where ? " WHERE {$where}" :"");
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if($stm->execute($values)){
+            return $stm->fetch(PDO::FETCH_ASSOC);
+        }
+        
+        throw new YZE_DBAException(join(",", $stm->errorInfo()));
+    }
+    
+    /**
+     * 查询结果集，返回所有结果数组
+     *
+     * @param string $fields
+     * @param string $table
+     * @param string $where
+     * @param array $values
+     * @return array
+     */
+    public function lookup_records($fields, $table, $where="", array $values=array()) {
+        $sql = "SELECT $fields FROM $table";
+        if ($where) $sql .= " WHERE $where";
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if($stm->execute($values)){
+            return $stm->fetchAll(PDO::FETCH_ASSOC);
+        }
+        throw new YZE_DBAException(join(",", $stm->errorInfo()));
+    }
+    
+    /**
+     * 更新记录，返回受影响的行数
+     * @param string $table
+     * @param string $fields
+     * @param string $where
+     * @param array $values
+     * @return boolean|Ambigous <boolean, NULL, string>
+     */
+    public function update($table, $fields, $where, array $values=array()) {
+        $sql = "UPDATE $table SET $fields";
+        if ($where) $sql .= " WHERE $where";
+        
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if( $stm->execute($values) ===false){
+            throw new YZE_DBAException(join(",", $stm->errorInfo()));
+        }
+        return true;
+    }
+    
+    /**
+     * 删除记录返回受影响的行数
+     * @param string $table
+     * @param string $where
+     * @param array $values
+     * @return boolean
+     */
+    public function deletefrom($table, $where, array $values=array()) {
+        $sql = "DELETE FROM $table";
+        if ($where) $sql .= " WHERE $where";
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if( $stm->execute($values) ===false){
+            throw new YZE_DBAException(join(",", $stm->errorInfo()));
+        }
+        return true;
+    }
+    /**
+     * 插入记录; 成功返回新记录的主键
+     *
+     * @param string $table
+     * @param array $info array("field"=>"value");
+     * @param string $checkSql 检查的表
+     * @param array $checkInfo array(":field"=>"value");检查表的条件子
+     * @param boolean $exist true，表示存在是插入；false，表示不存在时插入
+     * @param boolean $update 是否在存在是更新
+     * @param string $key table 主键名称
+     * @return boolean|unknown
+     * @throw
+     */
+    public function checkAndInsert($table, $info, $checkSql, $checkInfo, $exist=false, $update=false,$key="id") {
+        $sql_fields     = "";
+        $sql_values     = "";
+        $set            = "";
+        $values         = $checkInfo;
+        foreach ($info as $f => $v) {
+            $sql_fields  .= "`" . $f . "`,";
+            $sql_values  .= ":" . $f . ",";
+            $set  .= "`{$f}`=:{$f},";
+            $values[":" . $f] = $v;
+        }
+        $sql_fields  = rtrim($sql_fields, ",");
+        $sql_values  = rtrim($sql_values, ",");
+        $set         = rtrim($set, ",");
+        
+        $sql = "INSERT INTO `{$table}` ({$sql_fields}) SELECT {$sql_values} FROM dual WHERE ".($exist?"":"NOT")." EXISTS ({$checkSql})";
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if($stm->execute($values)===false){
+            throw new YZE_DBAException(join(",", $stm->errorInfo()));
+        }
+        if ( !  $stm->rowCount()) {
+            if( ! $update){
+                throw new YZE_DBAException("not insert");
+            }
+            $where = preg_replace("/^.+where/", "", $checkSql);
+            $sql = "UPDATE `{$table}` SET {$set} WHERE {$where}";
+            $stm = $this->conn->prepare($sql);
+            
+            if( ! $stm){
+                throw new YZE_DBAException("can not prepare sql");
+            }
+            if (! $stm->execute($values) ){
+                throw new YZE_DBAException(join(",", $stm->errorInfo()));
+            }
+            
+            preg_match_all("/(?P<words>:[^\s]+)/", $where, $matchWheres);
+            $lookupValues = [];
+            foreach($matchWheres['words'] as $word){
+                $lookupValues[$word] = $values[$word];
+            }
+            
+        
+            return $this->lookup($key, $table, $where, $lookupValues);
+        }
+        
+        return $this->conn->lastInsertId();
+    }
+    /**
+     * 插入记录; 成功返回新记录的主键
+     *
+     * @param string $table
+     * @param array $info array("field"=>"value");
+     * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成INSET INTO ON DUPLICATE KEY UPDATE 语句，
+     * 再指定的字段有唯一健冲突时执行更新
+     * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
+     * @return boolean|unknown 成功返回主键，失败返回false
+     */
+    public function insert($table, $info, $duplicate_key=array(), $keyname="") {
+        if ( ! is_array($info) || empty($info) || empty($table))
+            return false;
+        
+        
+        $sql_fields     = "";
+        $sql_values     = "";
+        $values         = array();
+        $update         = array();
+        foreach ($info as $f => $v) {
+            $sql_fields  .= "`" . $f . "`,";
+            $sql_values  .= ":" . $f . ",";
+            
+            $values[":" . $f] = $v;
+            if(array_search($f, $duplicate_key) === false){
+                $update[] = "`{$f}`=VALUES(`{$f}`)";
+            }
+        }
+        $sql_fields  = rtrim($sql_fields, ",");
+        $sql_values  = rtrim($sql_values, ",");
+        
+        $sql = "INSERT INTO {$table} ({$sql_fields}) VALUES ({$sql_values})";
+        if($duplicate_key){
+            $sql .= " ON DUPLICATE KEY UPDATE {$keyname} = LAST_INSERT_ID({$keyname}),
+            ".join(",", $update);
+        }
+        
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if ( ! $stm->execute($values) ) {
+            throw new YZE_DBAException(join(",", $stm->errorInfo()));
+        }
+        
+        return $this->conn->lastInsertId();
+    }
+    /**
+     * 插入记录, 在有唯一键冲突是忽略插入，成功返回新记录的主键
+     *
+     * @param string $table
+     * @param array $info array("field"=>"value");
+     * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成INSET INTO ON DUPLICATE KEY UPDATE 语句，
+     * 再指定的字段有唯一健冲突时执行更新
+     * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
+     * @return boolean|unknown
+     */
+    public function insertOrIgnore($table, $info) {
+        $sql_fields     = "";
+        $sql_values     = "";
+        $values         = array();
+        $update         = array();
+        foreach ($info as $f => $v) {
+            $sql_fields  .= "`" . $f . "`,";
+            $sql_values  .= ":" . $f . ",";
+            
+            $values[":" . $f] = $v;
+        }
+        $sql_fields  = rtrim($sql_fields, ",");
+        $sql_values  = rtrim($sql_values, ",");
+        
+        $sql = "INSERT IGNORE INTO {$table} ({$sql_fields}) VALUES ({$sql_values})";
+        
+        $stm = $this->conn->prepare($sql);
+        
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if ( ! $stm->execute($values) ) {
+            throw new YZE_DBAException(join(",", $stm->errorInfo()));
+        }
+        
+        return $this->conn->lastInsertId();
+    }
+    
+    /**
+     * 插入记录, 在有唯一键冲突是忽略插入替换，成功返回新记录的主键
+     *
+     * @param string $table
+     * @param array $info array("field"=>"value");
+     * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成INSET INTO ON DUPLICATE KEY UPDATE 语句，
+     * 再指定的字段有唯一健冲突时执行更新
+     * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
+     * @return boolean|unknown
+     */
+    public function replace($table, $info) {
+        $sql_fields     = array();
+        $values         = array();
+        foreach ($info as $f => $v) {
+            $sql_fields[] = "`{$f}`=:{$f}";
+            
+            $values[":" . $f] = $v;
+        }
+        $sql_fields  = join(",", $sql_fields);
+        
+        $sql = "REPLACE INTO {$table} SET {$sql_fields}";
+        
+        $stm = $this->conn->prepare($sql);
+        if( ! $stm){
+            throw new YZE_DBAException("can not prepare sql");
+        }
+        if ( ! $stm->execute($values) ) {
+            throw new YZE_DBAException(join(",", $stm->errorInfo()));
+        }
+        
+        return $this->conn->lastInsertId();
+    }
+    
 	
 	public function table_fields($table) {
 	    $sql="show columns from $table";

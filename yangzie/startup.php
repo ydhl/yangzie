@@ -144,7 +144,7 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
         }
     
         echo $output;
-        exit();
+        flush();
     };
     
     $output_header = function($request, $controller, $response, $return){
@@ -157,7 +157,7 @@ function yze_go($uri = null, $method = null, $return = null, $request_method=nul
         $controller->cleanup();
         $request->remove();
         if ($output)header("Location: {$output}");
-        exit();
+        flush();
     };
     
     try {

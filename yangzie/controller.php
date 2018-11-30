@@ -192,12 +192,13 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         
         if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
             $this->layout = "";
-            return $this->post_result_of_json;
+            return $this->post_result_of_json?:$response;
         }
         
         if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
             $this->layout = "";
-            return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json->get_datas() ) . ");</script>", $this );
+            $res = $this->post_result_of_json?:$response;
+            return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $res->get_datas() ) . ");</script>", $this );
         }
         
         // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri

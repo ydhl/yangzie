@@ -31,7 +31,7 @@ YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function  ( $data ) {
 
 YZE_Hook::add_hook ( YZE_FILTER_GET_USER_ARO_NAME, function  ( $data ) {
 	if ( !@$_SESSION [ 'admin' ] )return "/";
-	
+	return "TODO your ARO NAME";
 } );
 
 

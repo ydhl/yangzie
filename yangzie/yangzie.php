@@ -49,6 +49,20 @@ class YZE_Object{
 	 * @return unknown
 	 */
 	public static function filter_special_chars(array $array=array(),$type){
+        if(php_sapi_name()=="cli"){
+            switch($type){
+                case INPUT_GET: return self::filter_vars($_GET);
+                case INPUT_POST: return self::filter_vars($_POST);
+                case INPUT_COOKIE: return self::filter_vars($_COOKIE);
+                case INPUT_SERVER: return self::filter_vars($_SERVER);
+                case INPUT_SESSION: return self::filter_vars($_SESSION);
+                case INPUT_REQUEST: return self::filter_vars($_REQUEST);
+                case INPUT_ENV: return self::filter_vars($_ENV);
+            }
+            return $array;
+        }
+        
+        //非cli模式下才有$_POST这些全局变量
 		$definition = array();
 		foreach($array as $name=>$value){
 			$definition[$name]['filter'] 	= FILTER_CALLBACK;

@@ -464,10 +464,10 @@ class YZE_JSON_View extends YZE_View_Adapter {
 	}
 
 
-	public static function error($controller, $message =null, $code =null) {
+	public static function error($controller, $message =null, $code =null, $data=null) {
 	    return new YZE_JSON_View($controller,  array (
 	            'success' => false,
-	            "data" => null,
+	            "data" => $data,
 	            "code" => $code,
 	            "msg" => $message
 	    ) );

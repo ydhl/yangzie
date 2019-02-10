@@ -360,6 +360,12 @@ abstract class YZE_Model extends YZE_Object{
 		unset($this->records[$this->get_key_name()]);
 		return $this;
 	}
+    
+    
+    public function delete_field($key){
+        unset($this->records[$key]);
+        return $this;
+    }
 	
 	/**
 	 * 持久到数据库,返回自己;如果有主键，则更新；没有则插入；

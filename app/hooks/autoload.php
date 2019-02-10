@@ -18,6 +18,6 @@ use \yangzie\YZE_Need_Signin_Exception;
 use \yangzie\YZE_Session_Context;
 
 YZE_Hook::add_hook(YZE_HOOK_AUTO_LOAD_CLASS, function ( $class ) {
-    echo $class;
+    //echo $class;
 });
 ?>

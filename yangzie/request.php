@@ -667,6 +667,7 @@ class YZE_Request extends YZE_Object {
             return YZE_APP_PATH . "modules/" . $this->module () . "/views";
         }
     }
+    
     /**
      * 
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
@@ -678,7 +679,11 @@ class YZE_Request extends YZE_Object {
         }
         $exists = self::cssBundle($module);
         if($exists){
-            $files = array_merge($exists, (array)$files);
+            foreach ($exists as $exist){
+                if ( array_search($exist, $files) === FALSE){
+                    $files[] = $exist;
+                }
+            }
         }
         $session->set($module."-css-bundle", (array)$files);
     }
@@ -693,7 +698,11 @@ class YZE_Request extends YZE_Object {
         }
         $exists = self::jsBundle($module);
         if($exists){
-            $files = array_merge($exists, (array)$files);
+            foreach ($exists as $exist){
+                if ( array_search($exist, $files) === false){
+                    $files[] = $exist;
+                }
+            }
         }
         $session->set($module."-js-bundle", (array)$files);
     }

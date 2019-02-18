@@ -8,7 +8,7 @@
  */
 class MO extends Gettext_Translations {
 
-	private $_nplurals = 2;
+	public $_nplurals = 2;
 
 	/**
 	 * Fills up with the entries from MO file $filename
@@ -164,7 +164,7 @@ class MO extends Gettext_Translations {
 		}
 		// plural translations are also separated by \0
 		$args['translations'] = explode(chr(0), $translation);
-		$entry = & new Translation_Entry($args);
+		$entry =  new Translation_Entry($args);
 		return $entry;
 	}
 

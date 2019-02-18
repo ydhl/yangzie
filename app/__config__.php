@@ -6,7 +6,7 @@ use yangzie\YZE_FatalException;
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);//end by /
 define("YZE_MYSQL_USER",  "root");
 define("YZE_MYSQL_HOST_M",  "127.0.0.1");
-define("YZE_MYSQL_DB",  "");
+define("YZE_MYSQL_DB",  "yangai");
 define("YZE_MYSQL_PORT",  "3306");
 define("YZE_MYSQL_PASS",  "ydhl");
 define("YZE_MONGODB_USER",  "");
@@ -59,8 +59,13 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	public function module_include_files() {
         $files = array(
-			"app/vendor/pomo/translation_entry.class.php",
-			"app/vendor/pomo/translations.class.php"
+           "app/vendor/pomo/translation_entry.class.php",
+           "app/vendor/pomo/pomo_stringreader.class.php",
+           "app/vendor/pomo/pomo_cachedfilereader.class.php",
+           "app/vendor/pomo/pomo_cachedIntfilereader.class.php",
+           "app/vendor/pomo/translations.class.php",
+           "app/vendor/pomo/gettext_translations.class.php",
+           "app/vendor/pomo/mo.class.php",
 		);
         
         return $files;

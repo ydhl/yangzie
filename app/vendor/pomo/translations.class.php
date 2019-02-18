@@ -8,8 +8,8 @@
  */
 
 class Translations {
-	var $entries = array();
-	var $headers = array();
+	protected $entries = array();
+	protected $headers = array();
 
 	/**
 	 * Add entry to the PO structure

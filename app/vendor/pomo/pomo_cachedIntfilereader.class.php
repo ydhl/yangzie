@@ -13,9 +13,9 @@ class POMO_CachedIntFileReader extends POMO_CachedFileReader {
 	 * @param $endian string endianness of the words in the file, allowed
 	 * 	values are 'little' or 'big'. Default value is 'little'
 	 */
-	function POMO_CachedIntFileReader($filename, $endian = 'little') {
+	public function __construct($filename, $endian = 'little') {
 		$this->endian = $endian;
-		parent::POMO_CachedFileReader($filename);
+		parent::__construct($filename);
 	}
 
 	/**

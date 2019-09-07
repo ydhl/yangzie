@@ -96,7 +96,7 @@ class YZE_Session_Context {
      * @since 2009-12-10
      */
     public function clear_post_datas($uri) {
-        if(array_key_exists($uri, @$_SESSION ['yze'] ['post_cache']));
+        if( @array_key_exists($uri,$_SESSION ['yze'] ['post_cache']));
             unset($_SESSION ['yze'] ['post_cache'] [$uri]);
             
         return $this;
@@ -148,7 +148,7 @@ class YZE_Session_Context {
 	}
 	
 	public function clear_request_token($uri, $token){
-		$index = array_search($token, @ $_SESSION['yze']["token"][$uri]);
+		$index = @ array_search($token, $_SESSION['yze']["token"][$uri]);
 		unset($_SESSION['yze']["token"][$uri][$index]);
 	}
 	

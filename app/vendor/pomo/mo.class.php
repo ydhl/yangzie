@@ -137,7 +137,7 @@ class MO extends Gettext_Translations {
 			$reader->seekto($translations_lenghts[$offset($i)]);
 			$translation = $reader->read($translations_lenghts[$length($i)]);
 			if ('' == $original) {
-				$this->set_headers($this->make_headers($translation));
+				@$this->set_headers($this->make_headers($translation));
 			} else {
 				$this->add_entry($this->make_entry($original, $translation));
 			}

@@ -674,18 +674,16 @@ class YZE_SQL extends YZE_Object{
 	private function _where_group($groupWhere, $group_and_or="and"){
 		#分组查询
 		$where='';
-		$last_group_and_or = $group_and_or;
 		foreach((array)$groupWhere as $w){
 			if(is_array($w)){
-				$where .= " ".$last_group_and_or." (".$this->_where_group($w).") ";
+				$where .= " ".$group_and_or." (".$this->_where_group($w).") ";
 			}else{
 				if(@$not_first){#第一个where前不需要and or
-					$where .= " ".$last_group_and_or." ".$this->_buildWhere($w->get_where_array());
+					$where .= " ".$w->get_AndOr()." ".$this->_buildWhere($w->get_where_array());
 				}else{
 					$where .= " ".$this->_buildWhere($w->get_where_array());
 					$not_first = true;
 				}
-				$last_group_and_or = $w->get_AndOr();
 			}
 		}
 		return @$where;
@@ -694,19 +692,17 @@ class YZE_SQL extends YZE_Object{
 	
 	private function _where(){
 		$where = "";
-		$last_and_or = null;
 		foreach((array)$this->where as $wheres){
 			if( @$wheres['native']){
 				$where .= $wheres['native'];		
 				continue;	
 			}
 			if(@$not_first){#第一个where前不需要and or
-				$where .= " ".$last_and_or." ".$this->_buildWhere($wheres);
+				$where .= " ".$wheres['andor']." ".$this->_buildWhere($wheres);
 			}else{
 				@$where .= $this->_buildWhere($wheres);
 				$not_first = true;
 			}
-			$last_and_or = $wheres['andor'];
 		}
 		foreach (($this->and_where_group) as $and_where) {
 			$groupWhere = $this->_where_group($and_where, "and");

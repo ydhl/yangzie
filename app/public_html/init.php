@@ -56,5 +56,6 @@ try{
 }catch (\Exception $notCatch){
 	$controller = new YZE_Exception_Controller();
 	$controller->do_exception(new YZE_RuntimeException($notCatch->getMessage()))->output();
+    die();
 }
 ?>

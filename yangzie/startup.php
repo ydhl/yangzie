@@ -75,36 +75,42 @@
         
         YZE_Hook::include_hooks("app", YZE_APP_INC.'hooks');
         
-        foreach ( glob ( YZE_APP_MODULES_INC . "*" ) as $module ) {
-            $phar_wrap = "";
-            if (is_file ( $module )) { // phar
-                $phar_wrap = "phar://";
-            }
-            
-            $module_name = strtolower ( basename ( $module ) );
-            if ($phar_wrap) {
-                $module_name = ucfirst ( preg_replace ( '/\.phar$/', "", $module_name ) );
-            }
-            
-            if (@file_exists ( "{$phar_wrap}{$module}/__module__.php" )) {
-                require_once "{$phar_wrap}{$module}/__module__.php";
-                
-                
-                $class = "\\app\\{$module_name}\\" . ucfirst ( $module_name ) . "_Module";
-                $object = new $class ();
-                $object->check ();
-                
-                $mappings = $object->get_module_config('routers');
-                if($mappings){
-                    YZE_Router::get_Instance()->set_Routers($module_name,$mappings);
-                }
-                
-                \yangzie\YZE_Object::set_loaded_modules ( $module_name, array (
-                                                                               "is_phar" => $phar_wrap ? true : false
-                                                                               ) );
-            }
-            YZE_Hook::include_hooks($module_name, "{$phar_wrap}{$module}/hooks");
-        }
+        
+	    $hook_dirs = [];
+	    foreach (glob(YZE_APP_MODULES_INC . "*") as $module) {
+	        $phar_wrap = "";
+	        if (is_file($module)) { // phar
+	            $phar_wrap = "phar://";
+	        }
+
+	        $module_name = strtolower(basename($module));
+	        if ($phar_wrap) {
+	            $module_name = ucfirst(preg_replace('/\.phar$/', "", $module_name));
+	        }
+
+	        if (@file_exists("{$phar_wrap}{$module}/__module__.php")) {
+	            require_once "{$phar_wrap}{$module}/__module__.php";
+
+
+	            $class = "\\app\\{$module_name}\\" . ucfirst($module_name) . "_Module";
+	            $object = new $class ();
+	            $object->check();
+
+	            $mappings = $object->get_module_config('routers');
+	            if ($mappings) {
+	                YZE_Router::get_Instance()->set_Routers($module_name, $mappings);
+	            }
+
+	            \yangzie\YZE_Object::set_loaded_modules($module_name, array(
+	                "is_phar" => $phar_wrap ? true : false
+	            ));
+	        }
+	        $hook_dirs[] = "{$phar_wrap}{$module}/hooks";
+	    }
+
+	    foreach($hook_dirs as $hook_dir){
+	        YZE_Hook::include_hooks($module_name, $hook_dir);
+	    }
     }
     
     /**

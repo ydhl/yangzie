@@ -692,5 +692,13 @@ abstract class YZE_Model extends YZE_Object{
 	    $columns = $this->get_columns();
 	    return @$columns[$field_name]['type'];
 	}
+
+	
+    public static function uuid() {
+        $sql = "select uuid() as uuid";
+        $rst = YZE_DBAImpl::getDBA()->nativeQuery2($sql);
+        $rst->next();
+        return $rst->f("uuid");
+    }
 }
 ?>

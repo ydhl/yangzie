@@ -626,7 +626,7 @@ abstract class YZE_Model extends YZE_Object{
 		    throw new YZE_FatalException(join(",", $statement->errorInfo()));
 		}
 		$this->sql->clean_select();
-		return $obj;
+		return $this;
 	}
 	public function clean(){
 		$this->sql->clean();

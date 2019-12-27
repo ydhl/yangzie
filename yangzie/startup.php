@@ -105,10 +105,10 @@
 	                "is_phar" => $phar_wrap ? true : false
 	            ));
 	        }
-	        $hook_dirs[] = "{$phar_wrap}{$module}/hooks";
+	        $hook_dirs[$module_name] = "{$phar_wrap}{$module}/hooks";
 	    }
 
-	    foreach($hook_dirs as $hook_dir){
+	    foreach($hook_dirs as $module_name=>$hook_dir){
 	        YZE_Hook::include_hooks($module_name, $hook_dir);
 	    }
     }

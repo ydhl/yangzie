@@ -20,14 +20,14 @@ define("UPLOAD_SITE_URI", "http://YOR-DOMIAN/upload/");//上传文件内容访�
 
 define("YZE_DEVELOP_MODE",  true );
 define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_REWRITE);//开发时一但设置便别在修改
-ini_set('error_reporting', E_ALL & ~E_STRICT);//错误级别
+ini_set('error_reporting', E_ALL & ~E_STRICT & ~E_DEPRECATED);//错误级别
 date_default_timezone_set('Asia/Chongqing');//时区
 define("APPLICATION_NAME", "Yangzie");//应用名称
 
 
 /**
  * app模块配置
- * 
+ *
  * @author leeboo
  *
  */
@@ -40,7 +40,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	public $db_port = YZE_MYSQL_PORT;
 	public $db_psw= YZE_MYSQL_PASS;
 	public $db_charset= 'UTF8';
-	
+
 	public function check(){
 		$error = array();
 		if( version_compare(PHP_VERSION,'5.3.0','lt')){
@@ -53,7 +53,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		//动态返回配置
 		return array();
 	}
-	
+
 	/**
 	 * 应用启动时需要加载的文件
 	 */
@@ -67,10 +67,10 @@ class App_Module extends \yangzie\YZE_Base_Module{
            "app/vendor/pomo/gettext_translations.class.php",
            "app/vendor/pomo/mo.class.php",
 		);
-        
+
         return $files;
 	}
-	
+
 	/**
 	 * js资源分组，在加载时方便直接通过分组名加载; 这里是静态指定，如果模块中需要动态指定，可通过Request->addJSBundle制定
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
@@ -82,16 +82,16 @@ class App_Module extends \yangzie\YZE_Base_Module{
 						"/bootstrap3/js/bootstrap.min.js"
 				),
 				"jquery" => array (
-						"/js/jquery-1.11.2.min.js" 
+						"/js/jquery-1.11.2.min.js"
 				),
 				"pjax" => array (
-						"/js/jquery.pjax.js" 
+						"/js/jquery.pjax.js"
 				),
 				"yangzie" => array (
 						"/js/json.js",
 						"/js/yze_ajax_front_controller.js",
 						"/js/outerHTML-2.1.0-min.js"
-				) 
+				)
 		);
 		return $config[$bundle];
 	}
@@ -106,7 +106,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 						"/css/bsfix.css",
 						"/bootstrap3/css/bootstrap.min.css",
 						"/bootstrap3/css/bootstrap-theme.min.css",
-						
+
 				)
 		);
 		return $config[$bundle];

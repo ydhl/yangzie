@@ -1,0 +1,411 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: yangzie\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-08 14:38+0800\n"
+"PO-Revision-Date: \n"
+"Last-Translator: leeboo <leeboo@yidianhulian.com>\n"
+"Language-Team: liizii\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: /Users/apple/workspace/yangzie\n"
+"X-Generator: Poedit 1.6.3\n"
+"X-Poedit-SearchPath-0: app\n"
+"X-Poedit-SearchPath-1: yangzie\n"
+"X-Poedit-SearchPath-2: scripts\n"
+
+#: yangzie/controller.php:186
+msgid "您要修改的内容不存在"
+msgstr ""
+
+#: yangzie/controller.php:190
+#, php-format
+msgid "数据已经在%s被更新了, 你编辑的数据是旧的，请刷新后重试"
+msgstr ""
+
+#: yangzie/controller.php:359
+msgid ""
+"请求验证失败，出现该提示的原因可能是您点击过快，或者长时间没有操作，请重试"
+"(MISSING_POST_REQUEST_TOKEN)。"
+msgstr ""
+
+#: yangzie/controller.php:364
+msgid ""
+"请求验证失败，出现该提示的原因可能是您点击过快，或者长时间没有操作，请重试"
+"(REQUEST_TOKEN_NOT_MATCH)。"
+msgstr ""
+
+#: yangzie/controller.php:370
+msgid "Yangzie 简单的PHP开发框架"
+msgstr ""
+
+#: yangzie/request.php:307
+#, php-format
+msgid "没有访问资源 <strong>%s</strong> 的权限"
+msgstr ""
+
+#: yangzie/startup.php:11
+msgid "app/__config__.php not found"
+msgstr ""
+
+#: yangzie/startup.php:63
+msgid "yangzie需要php 5.3+以上版本"
+msgstr ""
+
+#: yangzie/startup.php:66
+msgid "iconv扩展未开启"
+msgstr ""
+
+#: scripts/generate-controller.php:33
+msgid "update __module__ file :\t"
+msgstr "更新 __module__ file :\t"
+
+#: scripts/generate-controller.php:35
+msgid "Ok."
+msgstr ""
+
+#: scripts/generate-controller.php:92
+msgid "create controller phpt file:\t"
+msgstr ""
+
+#: scripts/generate-controller.php:191
+msgid "create controller:\t\t"
+msgstr ""
+
+#: scripts/generate-controller.php:327
+msgid "create validate :\t\t"
+msgstr ""
+
+#: scripts/generate-controller.php:349
+msgid "create validate test :\t\t"
+msgstr ""
+
+#: scripts/generate-model.php:27
+msgid "create model :\t\t\t"
+msgstr ""
+
+#: scripts/generate-model.php:29
+msgid "create model phpt file :\t"
+msgstr ""
+
+#: scripts/generate-model.php:32
+msgid "Done!\n"
+msgstr ""
+
+#: scripts/generate-module.php:11
+msgid "module at 'app/modules/"
+msgstr ""
+
+#: scripts/generate-module.php:55
+msgid "create __module__.php:\t\t"
+msgstr ""
+
+#: scripts/generate.php:8
+#, php-format
+msgid "请在命令行下运行,进入到%s, 运行php generate.php"
+msgstr ""
+
+#: scripts/generate.php:28
+msgid "开始生成..."
+msgstr ""
+
+#: scripts/generate.php:32
+msgid "生成结束."
+msgstr ""
+
+#: scripts/generate.php:41
+msgid ""
+"\n"
+"================================================================\r\n"
+"\t\tYANGZIE Generate Script\r\n"
+"\t\t易点互联®\r\n"
+"================================================================\r\n"
+"  \r\n"
+"伙计，你想要生成什么？\r\n"
+"\t\r\n"
+"\t1.  生成代码：\t\tcontroller，view，validate文件\r\n"
+"\t2.  生成Model：\t\t根据表生成Model文件\n"
+"\t\t\t\n"
+"\t3.  删除module：\t\t删除模块\n"
+"\t4.  删除控制器：\t\t删除控制器及对应的验证器、视图\n"
+"\t\t\t\n"
+"\t5.  把module打包成phar\n"
+"\t\t\t\n"
+"\t6.  中文\n"
+"\t7.  English\r\n"
+"\t8.  goodbye\r\n"
+"\t\r\n"
+"请选择: "
+msgstr ""
+
+#: scripts/generate.php:64
+msgid "请选择操作对应的序号: "
+msgstr ""
+
+#: scripts/generate.php:98
+#, php-format
+msgid ""
+"\n"
+"================================================================\n"
+"\t\tYANGZIE Generate Script\n"
+"\t\t易点互联®\n"
+"================================================================\n"
+"\t\n"
+"打包phar，%s返回上一步\n"
+"1. (1/2)请输入模块名:  "
+msgstr ""
+
+#: scripts/generate.php:108 scripts/generate.php:157 scripts/generate.php:162
+#: scripts/generate.php:192 scripts/generate.php:218 scripts/generate.php:223
+msgid "\t命名遵守PHP变量命名规则，请重输:  "
+msgstr ""
+
+#: scripts/generate.php:115
+msgid ""
+"2. (2/2)phar 签名私钥路径，回车表示不签名 \n"
+"  ［ 采用私钥进行签名后，只有使用对应的公钥才能正确使用phar包，\n"
+"    生成私钥：openssl genrsa -out mykey.pem 1024\n"
+"    生成公钥：openssl rsa -in mykey.pem -pubout -out mykey.pub］:"
+msgstr ""
+
+#: scripts/generate.php:121
+msgid "\t文件不存在，请输入绝对路径:  "
+msgstr ""
+
+#: scripts/generate.php:125
+#, php-format
+msgid "phar保持于tmp/%s.phar\r\n"
+msgstr ""
+
+#: scripts/generate.php:127
+#, php-format
+msgid "请把对应的公钥改名为%s.phar.pubkey并跟phar文件放在一起\r\n"
+msgstr ""
+
+#: scripts/generate.php:148
+#, php-format
+msgid ""
+"\r\n"
+"================================================================\r\n"
+"\t\tYANGZIE Generate Script\r\n"
+"\t\t易点互联®\r\n"
+"================================================================\r\n"
+"删除控制器及其控制器、视图，%s返回上一步\n"
+"1. (1/2)所在功能模块: "
+msgstr ""
+
+#: scripts/generate.php:160
+msgid "2. (2/2)控制器的名字:  "
+msgstr ""
+
+#: scripts/generate.php:166
+msgid "控制器不存在"
+msgstr ""
+
+#: scripts/generate.php:175
+msgid "控制器及视图、验证器、单元测试文件删除成功"
+msgstr ""
+
+#: scripts/generate.php:183
+#, php-format
+msgid ""
+"\r\n"
+"================================================================\r\n"
+"\t\tYANGZIE Generate Script\r\n"
+"\t\t易点互联®\r\n"
+"================================================================\r\n"
+"\t\r\n"
+"输入要删除的模块名，%s返回上一步:  "
+msgstr ""
+
+#: scripts/generate.php:196
+msgid "模块不存在"
+msgstr ""
+
+#: scripts/generate.php:200
+msgid "模块删除成功"
+msgstr ""
+
+#: scripts/generate.php:208
+#, php-format
+msgid ""
+"\r\n"
+"================================================================\r\n"
+"\t\tYANGZIE Generate Script\r\n"
+"\t\t易点互联®\r\n"
+"================================================================\r\n"
+"  \r\n"
+"你将生成VC代码结构，请根据提示进操作，%s返回上一步：\r\n"
+"1. (1/8)所在功能模块:  "
+msgstr ""
+
+#: scripts/generate.php:221
+msgid "2. (2/8)控制器的名字:  "
+msgstr ""
+
+#: scripts/generate.php:227
+msgid ""
+"3. (3/8)控制器已存在，映射URI的是:\n"
+"\n"
+msgstr ""
+
+#: scripts/generate.php:231
+msgid ""
+"\n"
+"\t选择一个或者输入新的, 回车表示不映射:"
+msgstr ""
+
+#: scripts/generate.php:244
+msgid ""
+"4. (4/8)视图格式(如tpl, xml, json)，多个用空格分隔，为空表示不生成视图:  "
+msgstr ""
+
+#: scripts/generate.php:247
+msgid "5. (5/8)是否生成验证器(yn),默认为y:  "
+msgstr ""
+
+#: scripts/generate.php:253
+msgid "6. (6/8)验证器、视图使用的Model:  "
+msgstr ""
+
+#: scripts/generate.php:255
+msgid "6. (6/8)视图使用的Model:  "
+msgstr ""
+
+#: scripts/generate.php:257
+msgid "6. (5/8)验证器使用的Model:  "
+msgstr ""
+
+#: scripts/generate.php:263
+msgid "7. (7/8)视图样板组件名:  "
+msgstr ""
+
+#: scripts/generate.php:292
+#, php-format
+msgid ""
+"\n"
+"================================================================\n"
+"\t\tYANGZIE Generate Script\n"
+"\t\t易点互联®\n"
+"================================================================\n"
+"\n"
+"你将生成Model代码结构，请根据提示进操作，%s返回上一步：\n"
+"1. (1/4)表名: "
+msgstr ""
+
+#: scripts/generate.php:301
+#, php-format
+msgid "\t表不存在(%s)，请重输:  "
+msgstr ""
+
+#: scripts/generate.php:304
+msgid "2. (2/4)Model类名:  "
+msgstr ""
+
+#: scripts/generate.php:306
+msgid "\t类名遵守PHP变量命名规则,  请重输:  "
+msgstr ""
+
+#: scripts/generate.php:308
+msgid "3. (3/4)功能模块名,  遵守PHP变量命名规则:  "
+msgstr ""
+
+#: scripts/generate.php:310
+msgid "\t功能模块名,  请重输:  "
+msgstr ""
+
+#: scripts/generate.php:314
+msgid "4. (4/4)同步方向(model: 基于model ;  table: 基于table), 默认table:  "
+msgstr ""
+
+#: scripts/generate.php:316
+msgid "\t请输入model 或 table:  "
+msgstr ""
+
+#~ msgid "hate"
+#~ msgstr "讨厌"
+
+#~ msgid "interest"
+#~ msgstr "兴趣"
+
+#~ msgid "speciality"
+#~ msgstr "在行"
+
+#~ msgid "want"
+#~ msgstr "想"
+
+#~ msgid "dream"
+#~ msgstr "梦"
+
+#~ msgid "attention"
+#~ msgstr "关注"
+
+#~ msgid "question"
+#~ msgstr "问题"
+
+#~ msgid "discussion"
+#~ msgstr "讨论"
+
+#~ msgid "activitie"
+#~ msgstr "活动"
+
+#~ msgid "blog"
+#~ msgstr "文章"
+
+#~ msgid "wiki"
+#~ msgstr "知识"
+
+#~ msgid "talk"
+#~ msgstr "对话"
+
+#~ msgid "link"
+#~ msgstr "链接"
+
+#~ msgid "miniarticle"
+#~ msgstr "言论"
+
+#~ msgid "HATE"
+#~ msgstr "讨厌"
+
+#~ msgid "INTEREST"
+#~ msgstr "兴趣"
+
+#~ msgid "SPECIALITY"
+#~ msgstr "在行"
+
+#~ msgid "WANT"
+#~ msgstr "想"
+
+#~ msgid "DREAM"
+#~ msgstr "梦"
+
+#~ msgid "ATTENTION"
+#~ msgstr "关注"
+
+#~ msgid "QUESTION"
+#~ msgstr "问题"
+
+#~ msgid "DISCUSSION"
+#~ msgstr "讨论"
+
+#~ msgid "ACTIVITIE"
+#~ msgstr "活动"
+
+#~ msgid "BLOG"
+#~ msgstr "文章"
+
+#~ msgid "WIKI"
+#~ msgstr "知识"
+
+#~ msgid "TALK"
+#~ msgstr "对话"
+
+#~ msgid "LINK"
+#~ msgstr "链接"
+
+#~ msgid "MINIARTICLE"
+#~ msgstr "言论"

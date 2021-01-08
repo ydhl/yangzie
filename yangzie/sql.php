@@ -2,7 +2,7 @@
 namespace yangzie;
 /**
  * 构建查询语句类。
- * 
+ *
  * @author liizii
  * @since 20100620
  */
@@ -33,7 +33,7 @@ class YZE_SQL extends YZE_Object{
 	private $or_where_group = array();
 	/**
 	 * like:array('alias1'=>array('select column'))
-	 * 
+	 *
 	 * @var array
 	 */
 	private $select = array();
@@ -64,13 +64,13 @@ class YZE_SQL extends YZE_Object{
 	private $max = array();
 	/**
 	 * like:array('alias1'=>array('column name'=>'column value'))
-	 * 
+	 *
 	 * @var array
 	 */
 	private $update = array();
 	/**
 	 * like:array('alias1'=>array('column name'=>'column value'))
-	 * 
+	 *
 	 * @var array
 	 */
 	private $insert = array();
@@ -83,7 +83,7 @@ class YZE_SQL extends YZE_Object{
 	private $limit_end;
 	private $has_join = false;
 	private $has_from = false;
-	
+
 	/**
 	 * array('alias'		=> $table_alias,
 	 * 'order_by'	=> $order_by,
@@ -92,7 +92,7 @@ class YZE_SQL extends YZE_Object{
 	 */
 	private $order_by = array();
 	/**
-	 * 
+	 *
 	 * array('alias'		=> $table_alias,
 	 * 'group_by'	=> $order_by)
 	 * @var unknown_type
@@ -238,7 +238,7 @@ class YZE_SQL extends YZE_Object{
 		return $this;
 	}
 	/**
-	 * 
+	 *
 	 * 查询时distinct那个字段.e.g distinct('item','qo_item_id')
 	 * @param string $alias 表别名
 	 * @param string $field 查询时要distinct的字段名
@@ -250,12 +250,12 @@ class YZE_SQL extends YZE_Object{
 	}
 	/**
 	 * 查询count($alias.$field)，e.g. count('item','*')
-	 * 
+	 *
 	 * @param string $table_alias 查询的表别名
 	 * @param string $field要count的字段
 	 * @param string $count_alias要count的字段取值别名
 	 * @param boolean $distinct要count的字段
-	 * 
+	 *
 	 * @return YZE_SQL
 	 */
 	public function count($table_alias, $field, $count_alias, $distinct=false){
@@ -420,9 +420,9 @@ class YZE_SQL extends YZE_Object{
 	}
 	/**
 	 * 返回给定的表在构建的查询中的别名,如果没有找到返回false
-	 * 
+	 *
      * <strong>如果同一个table在sql中出现了两次,得到的alias则是第一个</strong>
-     * 
+     *
 	 * @param string $table_name
 	 * @return string
 	 */
@@ -445,15 +445,15 @@ class YZE_SQL extends YZE_Object{
 		$this->limit_end = $end;
 		return $this;
 	}
-	
+
 	/**
 	 * 构建查询的order_by。e.g. order_by('item','order_id','desc')
-	 * 
+	 *
 	 * @param unknown_type $table_alias
 	 * @param unknown_type $order_by
 	 * @param unknown_type $sort
 	 * @param bool $use_alias true 拼的sql是order by {$table_alias}_$order_by. false拼的sql是order by {$table_alias}.{$order_by}
-	 * 
+	 *
 	 * @return YZE_SQL
 	 */
 	public function order_by($table_alias,$order_by,$sort, $use_alias=false){
@@ -487,26 +487,26 @@ class YZE_SQL extends YZE_Object{
 	    );
 	    return $this;
 	}
-	
+
 	/**
 	 *
-	 * 
+	 *
 	 * @author leeboo
-	 * 
-	 * 
+	 *
+	 *
 	 * @return YZE_SQL
 	 */
 	public static function new_SQL(){
 		return new YZE_SQL();
 	}
-	
+
 	/**
      * 清空where条件
-     * 
+     *
      * 1) 如果指定了alias和column则只清空指定的字段条件
      * 2) 如果指定了alias和没有指定column则清空指定表的所有字段条件
      * 3) 如果没有指定任何参数,则删除所有的where条件
-     * 
+     *
      * @param type $alias 要删除的表别名
      * @param type $column 要删除的字段
      * @return $this
@@ -539,7 +539,7 @@ class YZE_SQL extends YZE_Object{
                 unset($this->and_where_group[$index]);
                 unset($this->or_where_group[$index]);
             }
-            
+
         }
         if ($alias && $column) {//remove specify column
             $willDeleteItem = [];
@@ -566,13 +566,13 @@ class YZE_SQL extends YZE_Object{
         }
         return $this;
     }
-	
+
 	/**
 	 * 清除之前构造的查询
 	 */
 	public function clean(){
 		$this->where	= array();
-		
+
 		$this->from 	= array();
 		$this->limit_end= null;
 		$this->limit_start= null;
@@ -585,25 +585,25 @@ class YZE_SQL extends YZE_Object{
 		$this->group_by = array();
 		$this->has_join = false;
 		$this->has_from = false;
-		
+
 		$this->entities = array();
 		$this->classes = array();
 		$this->clean_select();
-		
+
 		return $this;
 	}
-	
+
 	public function clean_groupby(){
 		$this->group_by = array();
 		return $this;
 	}
-	
+
 	public function clean_limit(){
 		$this->limit_end= null;
 		$this->limit_start= null;
 		return $this;
 	}
-	
+
 	public function clean_select(){
 		$this->select     = array();
 		$this->distinct = null;
@@ -652,7 +652,7 @@ class YZE_SQL extends YZE_Object{
 	public function has_from(){
 		return $this->has_from;
 	}
-	
+
 	/**
 	 * 返回sql中的所有表名.e.g array(alias=>table)
 	 * @return array
@@ -663,14 +663,14 @@ class YZE_SQL extends YZE_Object{
 		}
 		return $from;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
 	private function _where_group($groupWhere, $group_and_or="and"){
 		#分组查询
 		$where='';
@@ -689,13 +689,13 @@ class YZE_SQL extends YZE_Object{
 		return @$where;
 	}
 
-	
+
 	private function _where(){
 		$where = "";
 		foreach((array)$this->where as $wheres){
 			if( @$wheres['native']){
-				$where .= $wheres['native'];		
-				continue;	
+				$where .= $wheres['native'];
+				continue;
 			}
 			if(@$not_first){#第一个where前不需要and or
 				$where .= " ".$wheres['andor']." ".$this->_buildWhere($wheres);
@@ -714,7 +714,7 @@ class YZE_SQL extends YZE_Object{
 		}
 		return @$where;
 	}
-	
+
 	private function _from(){
 		$no_alias = $this->isinsert() || $this->isdelete();//不要别名
 		$from = array();
@@ -728,23 +728,23 @@ class YZE_SQL extends YZE_Object{
 				switch(strtoupper($from_table['join']['type'])){
 					case 'LEFT':
 						$from[] = " LEFT JOIN ".(
-							$no_alias ? 
-							$from_table['table'] : 
+							$no_alias ?
+							$from_table['table'] :
 							$from_table['table']." AS ".$alias)
 							." ON ".$from_table['join']['on'];
 						break;
 					case 'RIGHT':
 						$from[] = " RIGHT JOIN ".(
-							$no_alias ? 
-							$from_table['table'] : 
+							$no_alias ?
+							$from_table['table'] :
 							$from_table['table']." AS ".$alias)
 							." ON ".$from_table['join']['on'];
 						break;
 					default:
 					case 'INNER':
 						$from[] = " INNER JOIN ".(
-							$no_alias ? 
-							$from_table['table'] : 
+							$no_alias ?
+							$from_table['table'] :
 							$from_table['table']." AS ".$alias)
 							." ON ".$from_table['join']['on'];
 						break;
@@ -754,10 +754,10 @@ class YZE_SQL extends YZE_Object{
 				array_unshift($from, $no_alias ? $from_table['table'] : $from_table['table']." AS ".$alias);
 			}
 		}
-		
+
 		return join(" ",$from);
 	}
-	
+
 	private function _select(){
 		#处理distinct查询字段
 		if($this->distinct){
@@ -765,7 +765,7 @@ class YZE_SQL extends YZE_Object{
 			$column = $this->distinct['field'];
 			$select[] = "distinct {$alias}.{$column} AS {$alias}_{$column}";
 		}
-		
+
 		if($this->select){#指定了要查询什么
 			foreach($this->select as $alias => $columns){
 				foreach((array)$columns as $column){
@@ -800,8 +800,8 @@ class YZE_SQL extends YZE_Object{
 		#处理count，sum，max，min这些函数查询
 		foreach($this->count as $counts){
 			foreach($counts as $alias => $count){
-				$select[] = $count['field']=="*" 
-					? "count(".($count['distinct'] ? "distinct" : "")." *) AS {$alias}_".$count['alias'] 
+				$select[] = $count['field']=="*"
+					? "count(".($count['distinct'] ? "distinct" : "")." *) AS {$alias}_".$count['alias']
 					: "count(".($count['distinct'] ? "distinct" : "")." {$alias}.".$count['field'].") AS {$alias}_".$count['alias'];
 			}
 		}
@@ -820,7 +820,7 @@ class YZE_SQL extends YZE_Object{
 				$select[] = "sum({$alias}.".$sum['field'].") AS {$alias}_".$sum['alias'];
 			}
 		}
-		
+
 		$where = $this->_where();
 		return "SELECT "
 				.($select ? join(",",$select) : "*")." \r\nFROM ".$this->_from()
@@ -856,29 +856,29 @@ class YZE_SQL extends YZE_Object{
 		    case self::INSERT_EXIST:
 		        $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$class::KEY_NAME." FROM ".$this->_from()." WHERE ".$this->_where();
 		        return "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") SELECT ".join(",",$insert_value)." FROM dual WHERE EXISTS ({$where})";
-		        
+
 	        case self::INSERT_NOT_EXIST:
             case self::INSERT_NOT_EXIST_OR_UPDATE:
                 $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$class::KEY_NAME." FROM ".$this->_from()." WHERE ".$this->_where();
 	            return "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") SELECT ".join(",",$insert_value)." FROM dual WHERE NOT EXISTS ({$where})";
-	            
+
 		    case self::INSERT_ON_DUPLICATE_KEY_IGNORE:
 		        return  "INSERT IGNORE INTO ".$this->_from()." (".join(",",$insert_column).") VALUES(".join(",",$insert_value).")";
-		        
+
 		    case self::INSERT_ON_DUPLICATE_KEY_UPDATE:
-		       
+
 		        return  "INSERT INTO ".$this->_from()
 		        ." (".join(",",$insert_column).") VALUES("
 		                .join(",",$insert_value).")  ON DUPLICATE KEY UPDATE ".$class::KEY_NAME." = LAST_INSERT_ID(".$class::KEY_NAME."), ".join(",", $update);
-		                
+
 		    case self::INSERT_ON_DUPLICATE_KEY_REPLACE:
 		        return  "REPLACE INTO ".$this->_from()." SET ".join(",", $update);
-		        
+
 	        case self::INSERT_NORMAL:
 	        default :
 		        return  "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") VALUES(".join(",",$insert_value).")";
 		}
-		
+
 	}
 	private function _update(){
 		foreach($this->update as $alias => $updateDatas){
@@ -891,7 +891,7 @@ class YZE_SQL extends YZE_Object{
 				.join(",",$update)
 				.($where  ? " \r\nWHERE ".$where : "");
 	}
-	
+
 	private function _group_by(){
 		foreach ($this->group_by as $group_by){
 		    if(@$group_by['function']){
@@ -919,7 +919,7 @@ class YZE_SQL extends YZE_Object{
 			return "";
 		}
 	}
-	
+
 	public function isinsert(){
 		return strcasecmp($this->action,"insert")==0;
 	}
@@ -934,7 +934,7 @@ class YZE_SQL extends YZE_Object{
 	    ///mysql_escape_string 把\转换成\\
 	    //处理null
 	    $_ = function ($v, $defilter_var) {
-	        if(strcasecmp("NULL", $v)==0 || is_null($v)){
+	        if(is_null($v)){
 	            return "null";
 	        }
 	        if (is_string($v)){
@@ -944,10 +944,10 @@ class YZE_SQL extends YZE_Object{
 	        if (is_numeric($v)){
 	            return $v;
 	        }
-	        
+
 	        return  YZE_DBAImpl::getDBA()->quote($defilter_var) ;#数据库中的操作要特殊字符解码
 	    };
-	    
+
 	    if(is_array($value)){
 	        foreach($value as $index => $v){
 	            $return[$index] = $_($v, self::defilter_var($v));
@@ -957,7 +957,7 @@ class YZE_SQL extends YZE_Object{
 	        return $_($value, self::defilter_var($value));
 	    }
 	}
-	
+
 	private function _buildWhere($wheres){
 	    if($this->isinsert() || $this->isdelete()){
 	        $column = "`".$wheres['field']."`";
@@ -967,7 +967,7 @@ class YZE_SQL extends YZE_Object{
 	            $column = $wheres['field_func']."( ".$column." )";
 	        }
 	    }
-	    
+
 	    #处理where中有子查询的情况
 	    if(is_a($wheres['value'],'\yangzie\YZE_SQL')){
 	        switch($wheres['op']){
@@ -1017,9 +1017,9 @@ class YZE_Where extends YZE_Object{
 	private $andor;
 	private $field_func;
 	private $value_func;
-	
+
 	/**
-	 * 
+	 *
 	 * @param unknown_type $alias 表别名
 	 * @param unknown_type $field 表字段
 	 * @param unknown_type $op 操作符

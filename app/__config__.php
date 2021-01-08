@@ -66,6 +66,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
            "app/vendor/pomo/translations.class.php",
            "app/vendor/pomo/gettext_translations.class.php",
            "app/vendor/pomo/mo.class.php",
+		   "vendor/autoload.php",
 		);
 
         return $files;

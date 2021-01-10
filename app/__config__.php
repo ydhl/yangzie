@@ -6,9 +6,9 @@ use yangzie\YZE_FatalException;
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);//end by /
 define("YZE_MYSQL_USER",  "root");
 define("YZE_MYSQL_HOST_M",  "127.0.0.1");
-define("YZE_MYSQL_DB",  "yangai");
+define("YZE_MYSQL_DB",  "");
 define("YZE_MYSQL_PORT",  "3306");
-define("YZE_MYSQL_PASS",  "ydhl");
+define("YZE_MYSQL_PASS",  "");
 define("YZE_MONGODB_USER",  "");
 define("YZE_MONGODB_HOST_M",  "");
 define("YZE_MONGODB_NAME",  "");
@@ -79,15 +79,6 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	public function js_bundle($bundle){
 		$config = array (
-				"bootstrap" => array (
-						"/bootstrap3/js/bootstrap.min.js"
-				),
-				"jquery" => array (
-						"/js/jquery-1.11.2.min.js"
-				),
-				"pjax" => array (
-						"/js/jquery.pjax.js"
-				),
 				"yangzie" => array (
 						"/js/json.js",
 						"/js/yze_ajax_front_controller.js",
@@ -103,12 +94,6 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	public function css_bundle($bundle){
 		$config = array (
-				"bootstrap" => array (
-						"/css/bsfix.css",
-						"/bootstrap3/css/bootstrap.min.css",
-						"/bootstrap3/css/bootstrap-theme.min.css",
-
-				)
 		);
 		return $config[$bundle];
 	}

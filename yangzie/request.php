@@ -39,7 +39,7 @@ class YZE_Request extends YZE_Object {
     public function the_get_datas() {
         return $this->get;
     }
-    
+
     public function set_post($name, $value) {
         $this->post [$name] = $value;
         return $this;
@@ -77,7 +77,7 @@ class YZE_Request extends YZE_Object {
         }
         return $default;
     }
-    
+
     /**
      * 请求的资源的URI，每次请求，URI是唯一且在一次请求内是不变的
      * 返回的只是uri中的路径部分，query部分不包含，如/people-1/question-2/answers?p=3
@@ -93,7 +93,7 @@ class YZE_Request extends YZE_Object {
     public function the_uri() {
         return $this->uri;
     }
-    
+
     /**
      * 请求的路径及query strin
      * 返回的url没有urldecode
@@ -106,7 +106,7 @@ class YZE_Request extends YZE_Object {
     public function the_query() {
         return $this->queryString;
     }
-    
+
     /**
      * 每个人每次请求的token都是唯一的
      */
@@ -123,7 +123,7 @@ class YZE_Request extends YZE_Object {
         }
         return $scheme;
     }
-    
+
     /**
      * 通用缓存，hash map
      *
@@ -160,16 +160,16 @@ class YZE_Request extends YZE_Object {
     public function remove() {
         array_pop ( self::$instances );
     }
-    
+
     /**
      *
      * @return YZE_Request
      */
     public static function get_instance() {
         $size = count ( self::$instances );
-        
+
         $c = __CLASS__;
-        
+
         $request = null;
         if ($size) {
             // 取得栈定的请求，也就是当前请求
@@ -216,12 +216,12 @@ class YZE_Request extends YZE_Object {
         $uri = \yangzie\YZE_Hook::do_hook ( YZE_HOOK_FILTER_URI, urldecode ( $this->uri ) );
         $this->uri = is_array ( $uri ) ? "/" . implode ( "/", $uri ) : $uri;
     }
-    
+
     /**
      * 初始化请求
      * 解析请求的uri，如果没有传入url，默认解析当前请求的uri
      *
-     * @param string $uri            
+     * @param string $uri
      * @param string $method
      *            该请求的方法
      * @param string $format
@@ -231,16 +231,16 @@ class YZE_Request extends YZE_Object {
     public function init($newUri = null, $action = null, $format = null, $request_method=null) {
         if (count ( self::$instances ) == 0)
             $this->is_top_request = true;
-        
+
         self::$instances [] = $this;
         $this->_init ( $newUri );
-        
+
         if($request_method){
             $this->request_method = $request_method;
         }else{
             $this->request_method = $_SERVER['REQUEST_METHOD'];
         }
-        
+
         $uri = $this->the_uri ();
         if ($newUri) {
             parse_str ( parse_url ( $newUri, PHP_URL_QUERY ), $args );
@@ -248,7 +248,7 @@ class YZE_Request extends YZE_Object {
                 $this->get = array_merge ( $this->get, $args );
             }
         }
-        
+
         $routers = YZE_Router::get_instance ()->get_routers ();
 
         $config_args = self::parse_url ( $routers, $uri ); // 地址映射及返回格式
@@ -256,55 +256,60 @@ class YZE_Request extends YZE_Object {
         if ($format && ! $this->get_var ( "__yze_resp_format__" )) {
             $this->set_var ( "__yze_resp_format__", $format );
         }
-        
+
+        $curr_module = null;
         if ($config_args) {
             $controller_name = @$config_args ['controller_name'];
             $curr_module = @$config_args ['module'];
         }
-        
+
         $action = self::the_val($action ? $action : $this->get_var("action"), "index");
         $method = ($this->is_get() ? "" : "post_") . str_replace("-", "_", $action);
         $this->set_method ( $method );
-        
-        if (@$curr_module && $controller_name) {
+
+        if(strcmp($curr_module, 'graphql')===0) {
+            $this->controller_name = "graphql";
+            $this->controller_class = "Graphql_Controller";
+            $this->controller = new Graphql_Controller( $this );
+        }else if (@$curr_module && $controller_name) {
             $this->set_module ( $curr_module )->set_controller_name ( $controller_name );
-        } else/*if( !$this->controller_name() )*/{
+        } else{
             $this->controller_name = "yze_default";
             $this->controller_class = "Yze_Default_Controller";
             $this->controller = new Yze_Default_Controller ( $this );
         }
-        
+
         $controller_cls = $this->controller_class ();
-        
-        
+
+
         if (! ($controller = $this->controller ())) {
             throw new YZE_Resource_Not_Found_Exception ( "Controller $controller_cls Not Found" );
         }
-        
+
         if (! method_exists ( $controller, $method )) {
             throw new YZE_Resource_Not_Found_Exception ( $controller_cls . "::" . $method . " not found" );
         }
-        
+
         if (! $this->is_get () and $this->the_post_datas ()) {
             $model = $this->get_modify_model();
-            
-            YZE_Session_Context::get_instance ()->save_post_datas ( 
+
+            YZE_Session_Context::get_instance ()->save_post_datas (
                 $this->the_uri(),
                 $this->the_post_datas ());
         }
-        
+
         return $this;
     }
-    
+
     public function get_modify_model(){
         $class = $this->get_from_post("yze_model_name");
         if( ! class_exists($class))return null;
-        
+
         $key   = $this->get_from_post("yze_model_id");
         if( ! $key)return null;
         return YZE_DBAImpl::getDBA()->find($key, $class);
     }
-    
+
     /**
      * 请求的方法：get,post,put,delete
      */
@@ -317,10 +322,10 @@ class YZE_Request extends YZE_Object {
     public function is_get() {
         return strcasecmp ( $this->request_method, "get" ) === 0;
     }
-    
+
     /**
      *
-     * @param $just_path 如果为true只显示uri的path部分            
+     * @param $just_path 如果为true只显示uri的path部分
      */
     public function the_referer_uri($just_path = false) {
         $referer = @$_SERVER ['HTTP_REFERER'];
@@ -333,26 +338,26 @@ class YZE_Request extends YZE_Object {
         $req_method = $this->the_method ();
         if ($this->need_auth ( $req_method )) { // 需要验证
             $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
-            
+
             if ( ! $loginuser ) throw new YZE_Need_Signin_Exception ("请登录");
-            
+
             $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME);
-            
+
             // 验证请求的方法是否有权限调用
             $acl = YZE_ACL::get_instance ();
             $aco_name = "/" . $this->module () . "/" . $this->controller_name ( true ) . "/" . $req_method;
 
             if (! $acl->check_byname ( $aro, $aco_name )) {
-              
+
                 throw new YZE_Permission_Deny_Exception ( vsprintf ( __ ( "没有访问该页面的权限({$aco_name}:{$aro})" ), array (
-                        \app\yze_get_aco_desc ( $aco_name ) 
+                        \app\yze_get_aco_desc ( $aco_name )
                 ) ) );
             }
 
         }
         return $this;
     }
-    
+
     public function check_request(YZE_HttpCache $cache) {
         if (! $cache)
             return;
@@ -367,14 +372,14 @@ class YZE_Request extends YZE_Object {
             }
         }
     }
-    
+
     /**
      *
      * 取得请求指定的输出格式
      *
      * @author leeboo
-     *        
-     *        
+     *
+     *
      * @return
      *
      */
@@ -401,40 +406,40 @@ class YZE_Request extends YZE_Object {
     }
     public static function build_query($data) {
         $ret = array ();
-        
+
         foreach ( ( array ) $data as $k => $v ) {
             $k = urlencode ( $k );
             if ($v === NULL)
                 continue;
             elseif ($v === FALSE)
                 $v = '0';
-            
+
             if (is_array ( $v ) || is_object ( $v ))
                 array_push ( $ret, YZE_Request::build_query ( $v ) );
             else
                 array_push ( $ret, $k . '=' . urlencode ( $v ) );
         }
-        
+
         $sep = ini_get ( 'arg_separator.output' );
-        
+
         return implode ( $sep, $ret );
     }
-    
+
     /**
      * 在当前的地址中增加一个参数并返回地址
      *
-     * @param array $args            
+     * @param array $args
      */
     public function add_args_into_current_uri(array $args) {
         $uri = YZE_Request::get_instance ()->the_uri ();
         $query_string = $this->add_args_to_query_string ( $args );
         return $uri . "?" . $query_string;
     }
-    
+
     /**
      * 在当前的查询字符串中增加参数, 并返回查询字符串
      *
-     * @param array $args            
+     * @param array $args
      */
     public function add_args_to_query_string(array $args) {
         $gets = $this->get_datas ();
@@ -484,7 +489,7 @@ class YZE_Request extends YZE_Object {
             $auth_methods = @$this->module_obj ()->auths [$controller_name];
             if ($auth_methods)
                 return $auth_methods;
-            
+
             $auth_methods = @$this->module_obj ()->auths ["*"];
             if ($auth_methods)
                 return $auth_methods;
@@ -492,19 +497,19 @@ class YZE_Request extends YZE_Object {
             $auth_methods = @$this->module_obj ()->no_auths [$controller_name];
             if ($auth_methods)
                 return $auth_methods;
-            
+
             $auth_methods = @$this->module_obj ()->no_auths ["*"];
             if ($auth_methods)
                 return $auth_methods;
         }
         return null;
     }
-    
+
     /**
      * 根据路由配置解析当前url，如果路由中没有配置，则根据默认的地址格式解析：/module/controller/vars.format
      *
-     * @param unknown_type $routers            
-     * @param unknown_type $uri            
+     * @param unknown_type $routers
+     * @param unknown_type $uri
      *
      * @return Array('controller_name'=>, 'module'=>, 'args'=>)
      */
@@ -520,22 +525,22 @@ class YZE_Request extends YZE_Object {
                         $config_args [$name] = $value;
                     }
                     $_ ['args'] = @$config_args;
-                    
+
                     return $_;
                 }
             }
         }
-        
+
         // 默认按照 /module/controller/action/var/ 解析
         $str = trim ( $uri, "/" );
         $format_pos = strripos ( $str, "." );
-        
+
         if ($format_pos === false) {
             $uri_split = explode ( "/", $str );
         } else {
             $uri_split = explode ( "/", substr ( $str, 0, $format_pos ) );
         }
-        
+
         // 把controller-name 转换成controller_name
         if (@$uri_split [1]) {
             $path = self::the_val ( str_replace ( "-", "_", $uri_split [1] ), "index" );
@@ -545,9 +550,9 @@ class YZE_Request extends YZE_Object {
             $_ ['module'] = pathinfo ( $uri_split [0], PATHINFO_FILENAME );
             $_ ['controller_name'] = "index";
         }
-        
-        
-        
+
+
+
         if (count ( $uri_split ) > 3) {
             $_ ['args'] = array_slice ( $uri_split, 3 );
         }
@@ -557,7 +562,7 @@ class YZE_Request extends YZE_Object {
         	}else{
         		$_ ['args'][] = $uri_split[2];
         	}
-            
+
         }
         if (preg_match ( "#\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches )) {
             $_ ['args'] ["__yze_resp_format__"] = $matches ['__yze_resp_format__'];
@@ -584,13 +589,13 @@ class YZE_Request extends YZE_Object {
             $this->controller = new $this->controller_class ( $this );
             return $this;
         }
-        
+
         $class = "\\app\\" . $this->module () . "\\" . $this->controller_class;
-        
+
         if (class_exists ( $class )) {
             $this->controller = new $class ( $this );
         }
-        
+
         return $this;
     }
     /**
@@ -603,10 +608,10 @@ class YZE_Request extends YZE_Object {
             return "";
         return $is_sort ? $this->controller_name : "\\app\\" . $this->module () . "\\" . $this->controller_name;
     }
-    
+
     /**
      * 控制器类名,如\app\module_name\controller_name
-     * 
+     *
      * @return string
      */
     public function controller_class($is_sort = false) {
@@ -618,7 +623,7 @@ class YZE_Request extends YZE_Object {
      * 控制器对象
      *
      * @author leeboo
-     *        
+     *
      * @return YZE_Resource_Controller
      */
     public function controller() {
@@ -627,14 +632,14 @@ class YZE_Request extends YZE_Object {
     public function set_module($module) {
         $this->module = $module;
         $this->module_class = YZE_Object::format_class_name ( $module, "Module" );
-        
+
         if (class_exists ( $this->module_class )) {
             $this->module_obj = new $this->module_class ();
             return $this;
         }
-        
+
         $class = "\\app\\" . $module . "\\" . $this->module_class;
-        
+
         if (class_exists ( $class )) {
             $this->module_obj = new $class ();
         }
@@ -667,9 +672,9 @@ class YZE_Request extends YZE_Object {
             return YZE_APP_PATH . "modules/" . $this->module () . "/views";
         }
     }
-    
+
     /**
-     * 
+     *
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
     public function addCSSBundle($files, $module=null){
@@ -688,7 +693,7 @@ class YZE_Request extends YZE_Object {
         $session->set($module."-css-bundle", (array)$files);
     }
     /**
-     * 
+     *
      * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
      */
     public function addJSBundle($files, $module=null){
@@ -726,7 +731,7 @@ class YZE_Request extends YZE_Object {
     	$session = YZE_Session_Context::get_instance();
     	return $session->get($module."-css-bundle");
     }
-    
+
     public function getException(){
     	return $this->exception;
     }

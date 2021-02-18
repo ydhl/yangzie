@@ -80,9 +80,6 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	public function js_bundle($bundle){
 		$config = array (
 				"yangzie" => array (
-						"/js/json.js",
-						"/js/yze_ajax_front_controller.js",
-						"/js/outerHTML-2.1.0-min.js"
 				)
 		);
 		return $config[$bundle];

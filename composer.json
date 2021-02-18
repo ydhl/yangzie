@@ -1,8 +1,8 @@
 {
     "name": "ydhl/yangzie",
     "type": "library",
-    "description": "Yangzie Framework",
-    "keywords": ["framework"],
+    "description": "Yangzie Rapid & Simple PHP Framework",
+    "keywords": ["framework","ydhl"],
     "homepage": "https://github.com/ydhl/yangzie",
     "license": "PHP-3.01",
     "authors": [

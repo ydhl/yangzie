@@ -130,8 +130,6 @@ class YZE_Request extends YZE_Object {
      * @var array
      */
     private $cache = array ();
-    private $is_top_request = false;
-    private static $instances = array ();
     private function __construct() {
         // 预处理请求数据，把get，post，cookie等数据进行urldecode后编码
         $this->post = $_POST ? self::filter_special_chars ( $_POST, INPUT_POST ) : array ();
@@ -141,47 +139,27 @@ class YZE_Request extends YZE_Object {
         $this->server = $_SERVER ? self::filter_special_chars ( $_SERVER, INPUT_SERVER ) : array ();
         $this->uuid = uniqid ();
     }
-    public function has_request() {
-        return count ( self::$instances ) > 0;
-    }
+
     public function uuid() {
         return $this->uuid;
     }
-    /**
-     * 该请求是不是第一个请求
-     */
-    public function is_top_request() {
-        return $this->is_top_request;
-    }
+
     public function copy() {
         $request = clone $this;
         return $request;
     }
-    public function remove() {
-        array_pop ( self::$instances );
-    }
+
 
     /**
      *
      * @return YZE_Request
      */
     public static function get_instance() {
-        $size = count ( self::$instances );
-
         $c = __CLASS__;
-
-        $request = null;
-        if ($size) {
-            // 取得栈定的请求，也就是当前请求
-            $request = self::$instances [$size - 1];
-        } else {
-            // 创建top request，后面的request，根据他copy
-            $request = new $c ();
-        }
+        $request = new $c ();
         return $request;
     }
     public function __clone() {
-        $this->is_top_request = false;
         $this->method = null;
         $this->cache = null;
         $this->vars = array ();
@@ -199,13 +177,7 @@ class YZE_Request extends YZE_Object {
     }
     private function _init($newUri) {
         if (! $newUri) {
-            switch (YZE_REWRITE_MODE) {
-                case YZE_REWRITE_MODE_PATH_INFO :
-                    $this->uri = $_SERVER ['PATH_INFO'];
-                    break;
-                default :
-                    $this->uri = parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
-            }
+            $this->uri = parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
             $this->full_uri = $_SERVER ['REQUEST_URI'];
             $this->queryString = @$_SERVER ['QUERY_STRING'];
         } else {
@@ -229,10 +201,6 @@ class YZE_Request extends YZE_Object {
      * @return YZE_Request
      */
     public function init($newUri = null, $action = null, $format = null, $request_method=null) {
-        if (count ( self::$instances ) == 0)
-            $this->is_top_request = true;
-
-        self::$instances [] = $this;
         $this->_init ( $newUri );
 
         if($request_method){

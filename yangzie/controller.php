@@ -3,9 +3,9 @@
 namespace yangzie;
 
 /**
- * 资源控制器抽象基类，提供控制器的处理机制，子类控制器映射到具体的uri，具体处理请求的
+ * 资源控制器抽象基类，提供控制器的处理机制，子类控制器映射到具体的uri，具体处理请求
  * action在子类中定义，该类为post，get，put，delete的请求做预处理，然后调用到对应的action
- * 子类的action如果没有返回YZE_IResponse则这里默认返回对应的Simple_View
+ * 子类的action如果没有返回YZE_IResponse则这里默认返回对应的Simple_View，对于POST请求，如果没有指定response，则默认然后redirect，刷新当前uri
  * 为view提供设置view中要使用的数据的方法。
  * 负责对post请求进行验证处理：多人同时修改，重复提交表单
  * 提供get，post，put，delete的hook
@@ -22,11 +22,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     protected $view_data = array ();
     protected $layout = 'tpl';
     protected $view = "";
-    /**
-     * @var YZE_JSON_View
-     */
-    protected $post_result_of_json;
-    
+
     /**
      *
      * @var YZE_HttpCache
@@ -40,7 +36,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     protected $request;
     /**
      * 所在模块
-     * 
+     *
      * @var YZE_Base_Module
      */
     protected $module;
@@ -70,7 +66,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $datas = $this->get_datas ();
         return @$datas [$name];
     }
-    
+
     /**
      *
      * 取得缓存的数据与设置的视图数据
@@ -92,7 +88,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         }
         return null;
     }
-    
+
     /**
      * 如果该控制器的输出需要缓存（生成静态文件），该方法返回生成的换成的文件名，该文件名需要唯一，并且是根据所请求
      * 的信息来生成，保证在形同的请求信息下生成的文件名要一样
@@ -104,14 +100,14 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     public function get_response_guid() {
         // pass
     }
-    
+
     /**
      *
      * @author leeboo
-     *        
+     *
      * @param string $view_tpl
      *            模板的路径
-     * @param string $format            
+     * @param string $format
      * @return \yangzie\YZE_Simple_View
      *
      * @return
@@ -123,9 +119,9 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         if($request->is_post()){
         	$method = substr($method, 5);
         }
-         
+
         $view_data  = $this->get_datas ();
-        
+
         $class_name = strtolower ( get_class ( $this ) );
         $ref  = new \ReflectionObject ( $this );
         if($this->view){
@@ -133,15 +129,15 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         }else{
         	$tpl  = substr ( str_replace ( $ref->getNamespaceName () . "\\", "", $class_name ), 0, - 11 ) . "-" . $method;
         }
-        
+
         $view = $view_tpl ? $view_tpl : $request->view_path () . "/" . $tpl;
-        
+
         if (! $format) {
             $format = $request->get_output_format ();
         }
         return new YZE_Simple_View ( $view, $view_data, $this, $format );
     }
-    
+
     /**
      * 处理get方法.get方法用于显示界面,给出响应，如果该url有异常，则进入exception处理
      *
@@ -153,10 +149,10 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
         $method = $request->the_method ();
-        
-        YZE_Session_Context::get_instance ()->set_request_token ( 
+
+        YZE_Session_Context::get_instance ()->set_request_token (
             $request->the_uri(), $request->the_request_token () );
-        
+
         return $this->wrapResponse ( $this->$method () );
     }
     protected function wrapResponse($response) {
@@ -164,13 +160,13 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         if (! $response) {
             $response = $this->getResponse ();
         }
-        
+
         if (is_a ( $response, "YZE_Cacheable" )) {
             $response->set_cache_config ( $this->cache_config ); // 内容协商的缓存控制
         }
         return $response;
     }
-    
+
     /**
      * post方法.用于处理用户数据提交,提交成功后重定向
      *
@@ -180,38 +176,37 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      */
     public final function do_Post() {
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_POST, $this );
-        
-        $session = YZE_Session_Context::get_instance ();
         $request = $this->request;
-        
         $method = $request->the_method ();
         // 防止表单重复提交
         $this->check_request_token ();
+        $redirect = new YZE_Redirect ( $request->the_full_uri (), $this, $this->get_datas () );
+
         $response = $this->$method ();
-        
-        
-        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
+        $format = $request->get_output_format();
+
+        if (strcasecmp ( $format, "json" ) == 0) {
             $this->layout = "";
-            return $this->post_result_of_json?:$response;
+            return $response ?: $redirect;
         }
-        
-        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
+
+        if (strcasecmp ( $format, "iframe" ) == 0) {
             $this->layout = "";
-            $res = $this->post_result_of_json?:$response;
+            $res = $response ?: $redirect;
             return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $res->get_datas() ) . ");</script>", $this );
         }
-        
+
         // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
         if (! $response && !$this->view) {
-            $response = new YZE_Redirect ( $request->the_full_uri (), $this, $this->get_datas () );
+            $response = $redirect;
         }else if($this->view){
         	$response = $this->getResponse();
         }
-        
+
         return $response;
     }
-    
-    
+
+
     /**
      * 更新数据时检查数据是否是最新的
      *
@@ -223,65 +218,64 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_PUT, $this );
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
-        
+
         $yze_model_id = $request->get_from_post ( "yze_model_id" );
         $yze_modify_version = $request->get_from_post ( "yze_modify_version" );
         $yze_model_name = $request->get_from_post ( "yze_model_name" );
         $yze_module_name = $request->get_from_post ( "yze_module_name" );
-        
+
         $model = $yze_model_name::find_by_id ( $yze_model_id );
-        
+
         if (! $model) {
             throw new YZE_Resource_Not_Found_Exception ( __ ( "您要修改的内容不存在" ) );
         }
-        
+
         if ($yze_modify_version != $model->get_version_value ()) {
             throw new YZE_Model_Update_Conflict_Exception ( vsprintf ( __ ( "数据已经在%s被更新了, 你编辑的数据是旧的，请刷新后重试" ), array (
-                    $model->get_version_value () 
+                    $model->get_version_value ()
             ) ) );
         }
     }
-    
+
     public final function do_exception(YZE_RuntimeException $e) {
         $request = $this->request;
         $request->setException($e);
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
-        
-        $session = YZE_Session_Context::get_instance ();
-        
+        $format = $request->get_output_format();
         $response = $this->exception ( $e );
-        
+
         if($request->is_post()){
-        	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
+        	if (! $response && strcasecmp ( $format, "json" ) == 0) {
         		$this->layout = "";
-        		return $this->post_result_of_json;
+        		return YZE_JSON_View::error($this, $e->getMessage());
         	}
-        	
-        	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
+
+        	if (! $response && strcasecmp ( $format, "iframe" ) == 0) {
         		$this->layout = "";
-        		return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json->get_datas() ) . ");</script>", $this );
+        		$response = YZE_JSON_View::error($this, $e->getMessage());
+        		return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $response->get_datas() ) . ");</script>", $this );
         	}
         }else if (! $response) {
             $this->set_View_Data ( "exception", $e );
             $response = $this->getResponse ( YZE_APP_VIEWS_INC . "500" );
         }
-        
+
         return $response;
     }
-    
+
     /**
      * 根据控制器的处理逻辑，清空控制器在会话上下文中保存的数据
      */
     public function cleanup() {
         $request = $this->request;
         $session = YZE_Session_Context::get_instance ();
-        
+
         // clean get cache data
         if ($request->is_get ()) {
             $session->clear_controller_datas ( $request->the_uri() );
             return;
         }
-        
+
         // clean post cache data
         // 成功处理，清除保存的post数据
         $session->clear_request_token ( $request->the_uri(), $request->get_from_post ( 'yze_request_token' ) );
@@ -292,28 +286,28 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      * 出现不可恢复的异常后的处理, 如何处理
      *
      * @author leeboo
-     *        
-     * @param Exception $e            
+     *
+     * @param Exception $e
      *
      * @return YZE_IResponse
      */
     public function exception(YZE_RuntimeException $e) {
     }
-    
+
     protected function check_request_token() {
         $request = $this->request;
         $post_request_token = $request->get_from_post ( 'yze_request_token' );
         $session = YZE_Session_Context::get_instance ();
-       
+
         $saved_tokens = $session->get_request_token ( $request->the_uri() );
 
         if( ! $saved_tokens)return;
         if( $request->the_referer_uri(true) != $request->the_uri()) return;
-        
+
         if (! $post_request_token) {
             throw new YZE_RuntimeException ( __ ( "MISSING_POST_REQUEST_TOKEN" ) );
         }
-        
+
         if ( ! in_array($post_request_token, $saved_tokens )) {
             throw new YZE_RuntimeException ( __ ( "REQUEST_TOKEN_NOT_MATCH" ) );
         }
@@ -327,26 +321,26 @@ class Yze_Default_Controller extends YZE_Resource_Controller {
 }
 class YZE_Exception_Controller extends YZE_Resource_Controller {
     private $exception;
-    
+
     public function index() {
         $this->layout = "error";
         $this->output_status_code ( $this->exception ? $this->exception->getCode () : 0 );
 
         if (! $this->exception) {
             return new YZE_Simple_View ( YZE_APP_VIEWS_INC . "500", array (
-                    "exception" => $this->exception 
+                    "exception" => $this->exception
             ), $this );
         }
-        
+
         return new YZE_Simple_View ( YZE_APP_VIEWS_INC . $this->exception->getCode (), array (
-                "exception" => $this->exception 
+                "exception" => $this->exception
         ), $this );
     }
     public function exception(YZE_RuntimeException $e) {
         $this->exception = $e;
         return $this->index ();
     }
-    
+
     private function output_status_code($error_number) {
         switch ($error_number) {
             case 404 :

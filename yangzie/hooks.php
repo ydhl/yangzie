@@ -1,7 +1,7 @@
 <?php
-    
+
     namespace yangzie;
-    
+
     /**
      * 该文件为系统提供hook机制，hook主要用于下面的地方：
      * 1.数据输入,输出处理
@@ -18,7 +18,7 @@
      * @author liizii
      * @since 2009-9-1
      */
-    
+
     // 定义架构使用的hook常量
     /**
      * 在处理post前调用, 这发生在已经做了基本处理，初始花了request和controller，但还没有进入流程前，参数YZE_Request
@@ -32,7 +32,7 @@
     define ( 'YZE_ACTION_BEFORE_GET', 'do_before_get' );
     define ( 'YZE_ACTION_AFTER_POST', 'do_after_post' );
     define ( 'YZE_ACTION_AFTER_GET', 'do_after_get' );
-    
+
     /**
      * 参数 即将要保持进数据库的对象；在实际更新数据库之前调用
      * @var unknown
@@ -51,11 +51,12 @@
     define ( 'YZE_ACTION_TRANSACTION_COMMIT', 'transaction_commit' );
     define ( 'YZE_ACTION_UNRESUME_EXCEPTION', 'yze_action_unresume_exception' );
     define ( 'YZE_ACTION_BEFORE_DO_EXCEPTION', 'yze_action_before_do_exception' );
-    
-    
+
+
     /**
-     * 框架处理时出现了异常
-     *
+     * 框架处理时出现了异常的filter，传入
+     * ["exception"=>$e, "controller"=>$controller, "response"=>$response]
+     * filter处理函数可修改response自定义响应
      * @var unknown
      */
     define ( 'YZE_FILTER_YZE_EXCEPTION', 'yze_filter_yze_exception' );
@@ -65,7 +66,7 @@
      * @var unknown
      */
     define ( 'YZE_FILTER_GET_USER_ARO_NAME', 'yze_filter_get_user_aro_name' );
-    
+
     /**
      * 解析地址得到请求url，如module/controller/var
      * uri过滤，传入uri分离后的数据或者就是uri字符串本身
@@ -99,7 +100,7 @@
                                                                       );
         }
         private static function _call_user_func($listeners, $data, $is_filter){
-            
+
             foreach ( $listeners as $listener ) {
                 if (is_object ( $listener ['object'] )) {
                     $filter_data = call_user_func ( array($listener ['object'], $listener ['function']), $data);
@@ -112,7 +113,7 @@
             }
             return $is_filter ? $filter_data : $data;
         }
-        
+
         /**
          * 如果没有hook注册，返回null
          *
@@ -126,13 +127,13 @@
          */
         public static function do_hook($filter_name, $data=array(), $module=null, $is_filter=true) {
             $listeners = self::has_hook ( $filter_name, $module );
-            
+
             if (! $listeners) return $data;
-            
+
             $data = self::_call_user_func($listeners, $data, $is_filter);
             return $data;
         }
-        
+
         public static function has_hook($filter_name, $module=null) {
             if($module){
                 $modules = explode(",", $module);
@@ -144,7 +145,7 @@
                 }
                 return $funcs;
             }
-            
+
             $funcs = array();
             foreach ((array)@self::$listeners [$filter_name] as $m=>$_funcs){
                 foreach ((array)$_funcs as $func){
@@ -153,7 +154,7 @@
             }
             return $funcs;
         }
-        
+
         public static function include_hooks($module, $dir){
             if( ! file_exists($dir) )return;
             self::$currModule = $module;

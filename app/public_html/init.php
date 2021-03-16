@@ -30,8 +30,6 @@ define("YZE_APP_MODULES_INC",   YZE_APP_PATH."modules/");//应用代码目录名
 define("YZE_APP_VENDOR",        YZE_APP_PATH."vendor/");
 define("YZE_APP_LAYOUTS_INC",   YZE_APP_PATH."vendor/layouts/");
 define("YZE_APP_VIEWS_INC",     YZE_APP_PATH."vendor/views/");
-define('YZE_REWRITE_MODE_PATH_INFO', 'yze_rewrite_mode_path_info');
-define('YZE_REWRITE_MODE_REWRITE', 'yze_rewrite_mode_rewrite');
 
 
 ini_set('include_path', get_include_path().PS.dirname(dirname(dirname(__FILE__))));
@@ -47,10 +45,9 @@ try{
 	 * 2. 加载应用中所有的模块配置文件，__module__.php，根据其中的配置加载模块的包含路径，自动包含的文件，url映射等等
 	 */
 	\yangzie\yze_load_app();
-	
-	//启动会话,yze_load_app中把保存在会话中的对象类都include进来了，这样不会出现 incomplete object
-	\session_start();
-	
+
+	if(!SESSIONLESS) \session_start();
+
 	//加载l10n本地语言翻译处理，根据用户的请求中的指示，决定合适的显示语言
 	\yangzie\load_default_textdomain();
 }catch (\Exception $notCatch){

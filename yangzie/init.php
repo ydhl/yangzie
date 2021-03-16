@@ -19,6 +19,4 @@ require_once 'error.php';
 require_once 'daemon/daemon-functions.php';
 require_once 'html.php';
 require_once 'i18n.php';
-require_once 'redis.php';
-require_once 'mongodb.php';
 require_once 'graphql.php';

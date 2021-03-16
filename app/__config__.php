@@ -2,27 +2,65 @@
 namespace  app;
 
 use yangzie\YZE_FatalException;
+use function yangzie\yze_js_bundle;
 
-define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);//end by /
+/**
+ * 指定上传目录
+ */
+define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);
+/**
+ * MYSQL数据库用户名
+ */
 define("YZE_MYSQL_USER",  "root");
+/**
+ * MYSQL数据库主地址
+ */
 define("YZE_MYSQL_HOST_M",  "127.0.0.1");
+/**
+ * MYSQL数据库从地址，没有则不填写
+ */
+define("YZE_MYSQL_HOST_S",  "");
+/**
+ * MYSQL数据库名
+ */
 define("YZE_MYSQL_DB",  "");
+/**
+ * MYSQL端口
+ */
 define("YZE_MYSQL_PORT",  "3306");
+/**
+ * MYSQL密码
+ */
 define("YZE_MYSQL_PASS",  "");
-define("YZE_MONGODB_USER",  "");
-define("YZE_MONGODB_HOST_M",  "");
-define("YZE_MONGODB_NAME",  "");
-define("YZE_MONGODB_PORT",  "");
-define("YZE_MONGODB_PASS",  "");
-define("SITE_URI", "http://YOUR-DOMAIN/");//网站地址
-define("UPLOAD_SITE_URI", "http://YOR-DOMIAN/upload/");//上传文件内容访问地址，比如cdn; 这跟YZE_UPLOAD_PATH是对应的
+/**
+ * 网站地址
+ */
+define("SITE_URI", "http://YOUR-DOMAIN/");
+/**
+ * 上传内容的访问地址，如果有cdn，填写cdn地址
+ */
+define("UPLOAD_SITE_URI", "http://YOR-DOMIAN/upload/");
 
-
+/**
+ * 开发环境true还是生产环境（false）
+ */
 define("YZE_DEVELOP_MODE",  true );
-define('YZE_REWRITE_MODE', YZE_REWRITE_MODE_REWRITE);//开发时一但设置便别在修改
-ini_set('error_reporting', E_ALL & ~E_STRICT & ~E_DEPRECATED);//错误级别
-date_default_timezone_set('Asia/Chongqing');//时区
-define("APPLICATION_NAME", "Yangzie");//应用名称
+/**
+ * 错误报告级别
+ */
+ini_set('error_reporting', E_ALL & ~E_STRICT & ~E_DEPRECATED);
+/**
+ * 时区
+ */
+date_default_timezone_set('Asia/Chongqing');
+/**
+ * 应用名
+ */
+define("APPLICATION_NAME", "Yangzie");
+/**
+ * 是否是session less应用，session less将不开启session功能
+ */
+define("SESSIONLESS", true);
 
 
 /**
@@ -41,11 +79,15 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	public $db_psw= YZE_MYSQL_PASS;
 	public $db_charset= 'UTF8';
 
+	/**
+	 * App 访问时做一些检查，比如php的版本
+	 * @return bool|void
+	 * @throws YZE_FatalException
+	 */
 	public function check(){
-		$error = array();
-		if( version_compare(PHP_VERSION,'5.3.0','lt')){
-			throw new YZE_FatalException("要求5.3及以上PHP版本");
-		}
+//		if( version_compare(PHP_VERSION,'5.3.0','lt')){
+//			throw new YZE_FatalException("要求5.3及以上PHP版本");
+//		}
 	}
 
 	protected function _config()
@@ -75,6 +117,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	/**
 	 * js资源分组，在加载时方便直接通过分组名加载; 这里是静态指定，如果模块中需要动态指定，可通过Request->addJSBundle制定
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
+	 * 在layouts中通过接口yze_js_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)
 	 */
 	public function js_bundle($bundle){
@@ -87,6 +130,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	/**
 	 * css资源分组，在加载时方便直接通过分组名加载; 这里是静态指定，如果模块中需要动态指定，可通过Request->addCSSBundle制定
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
+	 * 在layouts中通过接口yze_css_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)
 	 */
 	public function css_bundle($bundle){

@@ -14,7 +14,7 @@ namespace yangzie;
 class Graphql_Controller extends YZE_Resource_Controller {
     private $operationType = 'query';
     private $operationName;
-    private $fetchActRegx = "/\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
+    private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
     public function post_index() {
         return $this->index();
     }
@@ -55,6 +55,8 @@ class Graphql_Controller extends YZE_Resource_Controller {
         preg_match_all($this->fetchActRegx, $query, $matches);
         //处理query 或者 mutation name
         $acts = $matches[0];
+//        print_r($vars);
+//        print_r($acts);
         if (!strcasecmp('query', $acts[0]) || !strcasecmp('mutation', $acts[0])){
             $this->operationType = $acts[0];
             if ($acts[1]!="{"){
@@ -66,11 +68,42 @@ class Graphql_Controller extends YZE_Resource_Controller {
 
         return $this->fetchNode(array_slice($acts, 1));
     }
+
+    /**
+     * 提取指定的fragment
+     * @param $acts
+     */
+    private function fetchFragment($acts, $fragmentName) {
+        $fragmentIndex = -1;
+        foreach ($acts as $index => $act) {
+            if (!strcasecmp('fragment', $acts[$index]) && !strcasecmp($acts[$index+1], $fragmentName)){
+                $fragmentIndex = $index;
+                break;
+            }
+        }
+        if ($fragmentIndex==-1) return [];
+
+        while (true) {
+            if (!strcasecmp('{', $acts[$fragmentIndex])){
+                break;
+            }
+            $fragmentIndex++;
+        }
+        return $this->fetchNode(array_slice($acts, $fragmentIndex + 1));
+    }
+
+    /**
+     * 遍历提取的关键字，然后解析出节点，传入的数据中不需要头的{
+     * @param $acts
+     * @param int $fetchedLength
+     * @return array
+     */
     private function fetchNode ($acts, &$fetchedLength=0) {
         $nodes = [];
         $currNode = [];
         $index = 0;
         while (true){
+            // 解析完了
             if ($index==count($acts)-1) {
                 $fetchedLength = $index;
                 if ($currNode) $nodes[] = $currNode;
@@ -78,12 +111,14 @@ class Graphql_Controller extends YZE_Resource_Controller {
             }
             $act = $acts[$index++];
 
+            // 遇到}表示当前节点节点解析完了
             if ($act=="}") {
                 $fetchedLength = $index;
                 if ($currNode) $nodes[] = $currNode;
                 return $nodes;
             }
 
+            // 开始解析新节点
             if ($act == "{"){
                 $subLength = 0;
                 @$currNode['sub'] = $this->fetchNode(array_slice($acts, $index), $subLength);
@@ -92,11 +127,23 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $currNode = [];
                 continue;
             }
-            if ($act[0] == "("){ //参数处理
+            //参数处理
+            if ($act[0] == "("){
                 @$currNode['args'] = $this->fetchArgs($act);
                 continue;
             }
-
+            // ：别名处理,:后面是别名，index往后移动一位
+            if ($act == ":"){
+                @$currNode['alias'] = $acts[$index++];
+                continue;
+            }
+            // fragment 处理，后面是fragment，index移动一位
+            if ($act == "..."){
+                $nodes = array_merge($nodes, $this->fetchFragment($acts, $acts[$index++]));
+                $currNode = [];
+                continue;
+            }
+            // 正常节点名称
             if (@$currNode['name']){
                 $nodes[] = $currNode;
                 $currNode = [];

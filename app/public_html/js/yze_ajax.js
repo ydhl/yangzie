@@ -1,25 +1,3 @@
-/*!
- * OuterHTML v2.1.0
- *
- * http://www.darlesson.com/
- *
- * Copyright 2012, Darlesson Oliveira
- * Dual licensed under the MIT and GPL licenses:
- * http://www.opensource.org/licenses/mit-license.php
- * http://www.gnu.org/licenses/gpl.html
- *
- * @requires jQuery v1.4.0 or above
- *
- * Reporting bugs, comments or suggestions: http://darlesson.com/contact/
- * Documentation and other jQuery plug-ins: http://darlesson.com/jquery/
- * Donations are welcome: http://darlesson.com/donate/
- */
-
-// Examples and documentation at: http://darlesson.com/jquery/outerhtml/
-
-// jQuery outerHTML
-(function(a){a.fn.extend({outerHTML:function(b){if(!this.length)return null;else if(b===undefined){var c=this.length?this[0]:this,d;if(c.outerHTML)d=c.outerHTML;else d=a(document.createElement("div")).append(a(c).clone()).html();if(typeof d==="string")d=a.trim(d);return d}else if(a.isFunction(b)){this.each(function(c){var d=a(this);d.outerHTML(b.call(this,c,d.outerHTML()))})}else{var e=a(this),f=[],g=a(b),h;for(var i=0;i<e.length;i++){h=g.clone(true);e.eq(i).replaceWith(h);for(var j=0;j<h.length;j++)f.push(h[j])}return f.length?a(f):null}}})})(jQuery)
-
 /*
  * JavaScript MD5
  * https://github.com/blueimp/JavaScript-MD5
@@ -767,55 +745,45 @@ if (!this.JSON) {
 }());
 
 /**
- * YZE AJAX Lib
+ * YZE AJAX Lib, 依赖jQuery
  */
 function yze_ajax(){
 	this.getUrl 				= "";
 	this.submittedCallback 		= "";
 	this.loadedCallback 		= "";
-	this.loadErrorCallback 		= "";
-	this.allowCache				= false;
+	this.errorCallback 		= "";
 
 	/**
-	 * ajax load表单到dom中, 提交时通过ajax提交
+	 * ajax load html(比如form)到dom中, 并在loadedCallback中决定html如何展示，比如展示位对话框还是
+	 * 在页面上的某个位置输出，
 	 *
-	 * url 加载表单的url
-	 * params 加载表单的参数
-	 * loadedCallback 表单加载成功后的回调，在该回调中把form放在页面中
-	 * submittedCallback 表单提交成功后的回调，参数是提交成功后的数据
-	 * allowCache 是否可以缓存；默认为true，当没有提交form时，重新调用get打开之前的网址，之前的数据总是在那里;这只是重新显示之前的表单，并没有重新加载
+	 * 如果加载的内容是一个form(只支持一个form)，那么yze_ajax会重写form的提交逻辑，表单的submit事件会调用submittedCallback
+	 *
+	 * url 加载的url
+	 * loadedCallback 加载成功后的回调，在该回调中把form放在页面中, 参数是加载下来的html
+	 * submittedCallback 提交成功后的回调，参数是提交成功后的数据
+	 * errorCallback 出错的回调，参数是错误消息
 	 */
-	this.loadForm = function(url, params, loadedCallback, loadErrorCallback, submittedCallback, allowCache) {
+	this.get = function(url, loadedCallback, errorCallback, submittedCallback) {
 		this.getUrl 		= url;
 		this.submittedCallback 	= submittedCallback;
-		this.loadErrorCallback 	= loadErrorCallback;
-		window.yze_load_form_submitCallback = function(data){
-			submittedCallback(data);
-        };
+		this.errorCallback 	= errorCallback;
 		this.loadedCallback 	= loadedCallback;
-		this.allowCache = allowCache;
 		var _self = this;
-		params = params || {};
-
-		var form = $("form[data-yze-ajax-form-id='"+md5(url)+']')
-		if(allowCache && form.length>0){
-			loadedCallback(form.outerHTML());
-			return;
-		}
 
 		$.ajax({
 		        url: url,
 		        type: "GET",
-		        data: params,
+		        data: {},
 		        error: function(jqXHR, textStatus, errorThrown) {
-		        	if (loadErrorCallback) {
-						loadErrorCallback(errorThrown)
+		        	if (errorCallback) {
+						errorCallback(errorThrown)
 					}else{
-		        		alert(errorThrown);
+		        		console.log(errorThrown);
 					}
 		        },
 		        success: function(data, textStatus, jqXHR) {
-		        	modifyForm.call(_self, data);
+		        	modifyForm.call(_self, data, false);
 		        },
 		        dataType: "html"
 		});
@@ -823,31 +791,24 @@ function yze_ajax(){
 
 	/**
 	 *
-	 * 构建一个iframe，并在其中加载表单
+	 * 构建一个iframe，并在其中加载指定的url内容，如果iframe中包含有表单(只支持一个form)，则yze_ajax会重写表单的submit事件，调用submittedCallback
 	 *
-	 * url 加载表单的url
-	 *  loadedCallback 表单加载成功后的回调，在该回调中把form放在页面中，参数是iframe html
+	 * url 加载的url
+	 * loadedCallback 加载成功后的回调，该回调负责把iframe放在页面中
 	 * submittedCallback 表单提交成功后的回调，参数是提交成功后的数据
-	 * allowCache 是否可以缓存；默认为true，当没有提交form时，重新打开之前的网址，之前的数据总是在那里;这只是重新显示之前的表单，并没有重新加载
-	 *
-	 * 在iframe中加载的页面可通过parent.yze_load_iframe_submitCallback来调用
+	 * errorCallback 出错的回调，参数是错误消息
 	 */
-	this.loadIframe = function(url, loadedCallback, loadErrorCallback, submittedCallback, allowCache) {
-		this.allowCache = allowCache;
-		var _self = this;
+	this.getIframe = function(url, loadedCallback, errorCallback, submittedCallback) {
+		this.getUrl 		= url;
+		this.submittedCallback 	= submittedCallback;
+		this.loadedCallback 	= loadedCallback;
+		this.errorCallback 	= errorCallback;
 		var _id = md5(url);
+		var _self = this;
 
-		window.yze_load_iframe_submitCallback = function(data){
-			submittedCallback(data);
-		};
+		loadedCallback("<iframe id='"+_id+"' marginheight='0' frameborder='0'  width='100%'  height='200px'  src='" + url + "'></iframe>");
 
 		var iframe = $("#"+_id)
-		if(allowCache && iframe.length>0){
-			loadedCallback(null);
-			return;
-		}
-
-		loadedCallback("<iframe data-submitted=0 id='"+_id+"' marginheight='0' frameborder='0'  width='100%'  height='200px'  src='" + url + "'></iframe>");
 		iframe.load(function(){
 			var newheight;
 			var newwidth;
@@ -856,62 +817,74 @@ function yze_ajax(){
 
 			this.height = (newheight) + "px";
 			this.width = (newwidth) + "px";
+
+			modifyForm.call(_self, this.contentWindow.document.body, true);
 		});
 	}
 
 
-	function modifyForm(data){
+	function modifyForm(data, isInIframe){
 		var formid = md5(this.getUrl)
-		data = data.replace(/<form\s/ig, "<form data-submitted=0 data-yze-ajax-form-id='"+formid+"' ");
-		//alert(data);
-		this.loadedCallback(data); //该回调调用后，表单就已经加在dom中了，现在修改它的submit事件
+		if (!isInIframe) {
+			data = data.replace(/<form\s/ig, "<form data-yze-ajax-form-id='"+formid+"' ");
+			//alert(data);
+			//该回调调用后，表单就已经加在dom中了，现在修改它的submit事件
+			this.loadedCallback(data);
+		}else{
+			$(data).find('form').attr('data-yze-ajax-form-id',formid)
+		}
+
 		var getUrl 				= this.getUrl;
 		var submittedCallback 	= this.submittedCallback;
-		var loadErrorCallback   = this.loadErrorCallback
+		var errorCallback   = this.errorCallback
 		var _self = this;
-		var form = $("form[data-yze-ajax-form-id='"+formid+"']");
+		var form = null;
+		if (isInIframe){
+			form = $("form[data-yze-ajax-form-id='"+formid+"']", data);
+		}else{
+			form = $("form[data-yze-ajax-form-id='"+formid+"']");
+		}
 		form.unbind("submit");
 		form.submit(function(){
-			var postData = $(this).serialize();//这里的this指表单
 			var action =  $(this).attr("action") || getUrl; //如果沒有指定action，那麼post仍然提交到getUrl中
 			var method = $(this).attr("method") || "POST";
 
-			// 处理上传文件
-			// var uploadFiles = $("form[data-yze-ajax-form-id='"+formid+"']").find("input[type='file']");
-			// var formDatas = [];
-			// if (uploadFiles.length > 0){
-			// 	for (var i = 0; i<uploadFiles.length; i++) {
-			//
-			// 	}
-			// }
 			var formData = new FormData(form.get(0));
+
+			// 处理上传文件
+			var uploadFiles = $("form[data-yze-ajax-form-id='"+formid+"']").find("input[type='file']");
+			if (uploadFiles.length > 0){
+				for (var i = 0; i<uploadFiles.length; i++) {
+					formData.append($(uploadFiles[i]).attr('name'), $(uploadFiles[i])[0].files[0])
+				}
+			}
 			$.ajax({
 				url: 	action,
 				type: 	method,
 				processData: false,
 				contentType: false,
 				data: 	formData,
-			        error: function(jqXHR, textStatus, errorThrown) {
-						if (loadErrorCallback){
-							loadErrorCallback(errorThrown)
-						}else{
-			        		alert(errorThrown);
-						}
-			        },
-			        success: function(data, textStatus, jqXHR) {
-						var json = null;
-			        	try{
-			        		json = JSON.parse(data);
-			        	}catch(e){}
-		        		if(json){
-							submittedCallback(json);
-		        		}else{
-		        			modifyForm.call(_self, data);
-		        		}
-			        },
-			        dataType: "html"
-			    });
-				return false;
+				error: function(jqXHR, textStatus, errorThrown) {
+					if (errorCallback){
+						errorCallback(errorThrown)
+					}else{
+						console.log(errorThrown);
+					}
+				},
+				success: function(data, textStatus, jqXHR) {
+					var json = null;
+					try{
+						json = JSON.parse(data);
+					}catch(e){}
+					if(json){
+						submittedCallback(json);
+					}else{
+						modifyForm.call(_self, data, isInIframe);
+					}
+				},
+				dataType: "html"
+			});
+			return false;
 		});
 	}
 }

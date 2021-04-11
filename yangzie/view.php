@@ -98,7 +98,7 @@ class YZE_Redirect implements YZE_IResponse {
  * html，xml，json，yaml等，
  * 由于包含的message-body，视图响应是可缓存的
  */
-abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_Cacheable{
+abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	/**
 	 * 响应视图上要显示的数据，具体是什么内容由响应视图自己决定
 	 * @var array
@@ -129,12 +129,6 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	 * @var unknown
 	 */
 	protected $master_view_path;
-
-	/**
-	 * 视图响应的缓存控制
-	 * @var YZE_HttpCache
-	 */
-	private $cache_ctl;
 
 	/**
 	 *
@@ -193,9 +187,6 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 
 	public final function output($return=false){\
 		ob_start();
-		if($this->cache_ctl){
-			$this->cache_ctl->output();
-		}
 
 		$this->display_self();
 		$data = ob_get_clean();
@@ -243,9 +234,6 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse,YZE_
 	public function set_datas(array $datas){
 	    $this->data = $datas;
 	    return $this;
-	}
-	public function set_cache_config(YZE_HttpCache $cache=null){
-		$this->cache_ctl = $cache;
 	}
 
 	/**

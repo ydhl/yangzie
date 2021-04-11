@@ -120,7 +120,6 @@ function yze_go() {
         }
         $output = $response->output(true);
         if ($output)header("Location: {$output}");
-        $controller->cleanup();
     };
 
     try {

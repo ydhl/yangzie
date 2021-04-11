@@ -23,7 +23,6 @@ define("PS", PATH_SEPARATOR);
 define("YZE_INSTALL_PATH", dirname(dirname(dirname(__FILE__))).DS);//安装的目录路径
 define("YZE_APP_PATH", YZE_INSTALL_PATH."app".DS);//应用代码路径
 define("YZE_PUBLIC_HTML", YZE_INSTALL_PATH."app".DS."public_html".DS);//应用代码路径
-define("YZE_APP_CACHES_PATH", YZE_INSTALL_PATH."app".DS."public_html".DS."caches".DS);//缓存存放路径
 
 define("YZE_APP_INC",           YZE_APP_PATH);//应用代码目录名称
 define("YZE_APP_MODULES_INC",   YZE_APP_PATH."modules/");//应用代码目录名称

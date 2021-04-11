@@ -130,14 +130,12 @@ class $class extends YZE_Resource_Controller {
     public function exception(YZE_RuntimeException \$e){
         \$request = \$this->request;
         \$this->layout = 'error';
-        //处理中出现了异常，如何处理，没有任何处理将显示500页面
-        //如果想显示get的返回内容可调用 :
-        if (\$request->is_post()){
+        //Post 请求或者返回json接口时，出错返回json错误结果
+        \$format = \$request->get_output_format();
+        if (\$request->is_post() || strcasecmp ( \$format, \"json\" )==0){
         	\$this->layout = '';
         	return YZE_JSON_View::error(\$this, \$e->getMessage());
         }
-        //通过request->the_method()判断是那个方法出现的异常
-        //return \$this->wrapResponse(\$this->yourmethod())
     }
 }
 ?>";

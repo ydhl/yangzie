@@ -455,15 +455,10 @@ class YZE_Request extends YZE_Object {
     }
     public function dispatch() {
         $controller = $this->controller;
-        // 如果控制器配置了缓存，则判断是否有缓存，有则直接输出缓存
-        if (($cache_html = $controller->has_response_cache ())) {
-            return new YZE_Notpl_View ( $cache_html, $controller );
-        } else {
-            if ($this->is_get()){
-                return $controller->do_Get();
-            }else{
-                return $controller->do_Post();
-            }
+        if ($this->is_get()){
+            return $controller->do_Get();
+        }else{
+            return $controller->do_Post();
         }
     }
     private function set_controller_name($controller) {

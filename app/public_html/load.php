@@ -5,7 +5,11 @@ require 'init.php';
 
 $type = strtolower($_GET["t"]);
 if( ! in_array($type, array("js","css")))return;
-
+if( "css" == $type){
+    header("Content-Type: text/css");
+}else{
+    header('Content-type: text/javascript');
+}
 $bundle = @$_GET["b"];//load static bundle
 $module = @$_GET["m"];//load module bundle
 if ( ! $bundle && ! $module ) return;
@@ -15,7 +19,7 @@ $bundle_files = array();
 
 if($module){
 	$temp = $type=="js" ? YZE_Request::jsBundle($module) : YZE_Request::cssBundle($module);
-	
+
 	if($temp){
 		foreach($temp as $file){
 			$bundle_files[] = "/module-assets/{$module}/".ltrim($file,"/");
@@ -27,7 +31,7 @@ if($module){
 		if (empty($bundle)) continue;
 		$temp = $type=="js" ? $app->js_bundle($bundle) : $app->css_bundle($bundle);
 		if( ! $temp)continue;
-		
+
 		$bundle_files = array_merge($bundle_files, $temp);
 	}
 }
@@ -36,15 +40,15 @@ $current_dir        = dirname(__FILE__);
 $last_modified_time = 0; //找出当前文件最后一次更新时间
 $files              = array();
 
-foreach ($bundle_files as $bundle_file) {  
+foreach ($bundle_files as $bundle_file) {
     if (empty($bundle_file)) continue;
-    
+
     $file = $current_dir . $bundle_file;
 
     if ( ! file_exists($file) ) continue;
-    
+
     $files[]    = $file;
-    
+
     $modified_time  = filemtime($file);
     if ($last_modified_time == 0 || $modified_time > $last_modified_time) {
         $last_modified_time = $modified_time;
@@ -53,11 +57,7 @@ foreach ($bundle_files as $bundle_file) {
 
 $key  = md5($bundle.$module);
 $eTag = $key . $last_modified_time;
-if( "css" == $type){
-	header("Content-Type: text/css");
-}else{
-	header('Content-type: text/javascript');
-}
+
 header("Cache-Control:max-age=1800");
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $last_modified_time).' GMT');
 header('Etag:' . $eTag);

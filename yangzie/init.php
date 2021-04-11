@@ -5,7 +5,6 @@ require_once 'yangzie.php';
 require_once 'file.php';
 require_once 'session.php';
 require_once 'request.php';
-require_once 'cache.php';
 require_once 'view.php';//framework resource处理,处理资源与控制器的影射程序
 require_once 'controller.php';
 require_once 'dba.php';//Database advisor

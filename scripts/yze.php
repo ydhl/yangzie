@@ -55,13 +55,11 @@ function display_home_wizard(){
 \t1.  Generate module, controller, view Scaffolding file
 \t2.  Generae model (database to code)	
 \t3.  Delete module
-\t4.  Delete controller and view file
-			
+\t4.  Delete controller and view file	
 \t5.  Phar a module
-			
 \t6.  Run unit
-
 \t0.  Quit
+
 please input number to select: "));
 
 	while(!in_array(($input = fgets(STDIN)), array(0,1, 2, 3, 4, 5, 6))){
@@ -271,52 +269,6 @@ function is_controller_exists($controller, $module){
 }
 
 function display_model_wizard(){
-    echo wrap_output(sprintf(__(YZE_METHED_HEADER."
-    
-
-\t1.  generate new model
-\t2.  update model
-    
-%s back
-please type number to choose: "),"DB To Code", get_colored_text(" 0 ", "red", "white")));
-
-    while(!in_array(($input = fgets(STDIN)), array(1, 2))){
-        echo wrap_output(__("please type number to choose: "));
-    }
-    switch ($input){
-        case 1:  return display_model_generate_wizard();
-        case 2:  return display_model_refresh_wizard();
-        default: return array();
-    }
-}
-function display_model_refresh_wizard(){
-    global $db;
-    clear_terminal();
-    echo wrap_output(sprintf(__( YZE_METHED_HEADER."
-    
-update model, %s back:
-1. (1/2)model class full name: "), "update model", get_colored_text(" 0 ", "red", "white")));
-    while (true){
-        $cls=get_input();
-        if( !$cls ){
-            echo get_colored_text(wrap_output(__("model full name:  ")), "red");
-            continue;
-        }
-        if( ! class_exists($cls)){
-            echo get_colored_text(wrap_output(__("$cls not exist:  ")), "red");
-            continue;
-        }
-
-        return array(
-        		"cmd" => "refreshmodel",
-        		"base"=>"table",
-        		"class_name"=>$cls,
-        );
-    }
-
-
-}
-function display_model_generate_wizard(){
     global $db;
 	clear_terminal();
 
@@ -337,36 +289,13 @@ generate model，%s back:
 
 	$model = rtrim($table,"s");
 
-	if(class_exists("\\app\\$module\\{$model}_Model")){
-	    echo wrap_output(__("\\app\\$module\\{$model}_Model exist:  
-\t1.  merge
-\t2.  back
-"));
-
-	    while(!in_array(($input = fgets(STDIN)), array(1, 2))){
-	        echo wrap_output(__("please type number to choose: "));
-	    }
-
-	    switch ($input){
-	        case 1:  return array(
-			"cmd" => "model",
-			"base"=>"table",
-			"module_name"=>$module,
-			"class_name"=>$model,
-			"table_name"=>$table,
-	);
-	        case 2:  display_home_wizard();return;
-	        default: return array();
-	    }
-	}
 	return array(
-	        "cmd" => "model",
-	        "base"=>"table",
-	        "module_name"=>$module,
-	        "class_name"=>$model,
-	        "table_name"=>$table,
+		"cmd" => "model",
+		"base"=>"table",
+		"module_name"=>$module,
+		"class_name"=>$model,
+		"table_name"=>$table,
 	);
-
 }
 
 function get_colored_text($text, $fgcolor=null, $bgcolor=null){
@@ -476,11 +405,11 @@ function rrmdir($dir) {
 }
 
 function wrap_output($msg){
-	if(PHP_OS=="WINNT"){
-		return iconv("UTF-8", "GB2312//IGNORE", $msg);
-	}else{
+//	if(PHP_OS=="WINNT"){
+//		return iconv("UTF-8", "GB2312//IGNORE", $msg);
+//	}else{
 		return $msg;
-	}
+//	}
 }
 
 abstract class AbstractScript{

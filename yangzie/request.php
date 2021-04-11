@@ -33,6 +33,12 @@ class YZE_Request extends YZE_Object {
     private $queryString;
     private $uuid;
     private $exception;
+    /**
+     * 通用缓存，hash map
+     *
+     * @var array
+     */
+    private $cache = array ();
     public function the_post_datas() {
         return $this->post;
     }
@@ -108,13 +114,6 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
-     * 每个人每次请求的token都是唯一的
-     */
-    public function the_request_token() {
-        return session_id() . '_' . uniqid();
-//         return session_id() . '_' . $_SERVER['REQUEST_TIME'];
-    }
-    /**
      */
     public function getScheme() {
         $scheme = 'http';
@@ -124,12 +123,6 @@ class YZE_Request extends YZE_Object {
         return $scheme;
     }
 
-    /**
-     * 通用缓存，hash map
-     *
-     * @var array
-     */
-    private $cache = array ();
     private function __construct() {
         // 预处理请求数据，把get，post，cookie等数据进行urldecode后编码
         $this->post = $_POST ? self::filter_special_chars ( $_POST, INPUT_POST ) : array ();
@@ -144,12 +137,6 @@ class YZE_Request extends YZE_Object {
         return $this->uuid;
     }
 
-    public function copy() {
-        $request = clone $this;
-        return $request;
-    }
-
-
     /**
      *
      * @return YZE_Request
@@ -158,22 +145,6 @@ class YZE_Request extends YZE_Object {
         $c = __CLASS__;
         $request = new $c ();
         return $request;
-    }
-    public function __clone() {
-        $this->method = null;
-        $this->cache = null;
-        $this->vars = array ();
-        $this->controller_name = null;
-        $this->controller_class = null;
-        $this->controller = null;
-        $this->module_class = null;
-        $this->module_obj = null;
-        $this->module = null;
-        $this->view_path = null;
-        $this->queryString = null;
-        $this->full_uri = null;
-        $this->uri = null;
-        $this->uuid = uniqid ();
     }
     private function _init($newUri) {
         if (! $newUri) {
@@ -258,24 +229,7 @@ class YZE_Request extends YZE_Object {
             throw new YZE_Resource_Not_Found_Exception ( $controller_cls . "::" . $method . " not found" );
         }
 
-        if (! $this->is_get () and $this->the_post_datas ()) {
-            $model = $this->get_modify_model();
-
-            YZE_Session_Context::get_instance ()->save_post_datas (
-                $this->the_uri(),
-                $this->the_post_datas ());
-        }
-
         return $this;
-    }
-
-    public function get_modify_model(){
-        $class = $this->get_from_post("yze_model_name");
-        if( ! class_exists($class))return null;
-
-        $key   = $this->get_from_post("yze_model_id");
-        if( ! $key)return null;
-        return YZE_DBAImpl::getDBA()->find($key, $class);
     }
 
     /**
@@ -324,21 +278,6 @@ class YZE_Request extends YZE_Object {
 
         }
         return $this;
-    }
-
-    public function check_request(YZE_HttpCache $cache) {
-        if (! $cache)
-            return;
-        if ($cache->last_modified () && @$this->get_from_server ( 'HTTP_IF_MODIFIED_SINCE' )) {
-            if (strtotime ( $cache->last_modified () ) == strtotime ( $this->get_from_server ( 'HTTP_IF_MODIFIED_SINCE' ) )) {
-                throw new YZE_Not_Modified_Exception ();
-            }
-        }
-        if ($cache->etag () && @$this->get_from_server ( 'HTTP_IF_NONE_MATCH' )) {
-            if (strcasecmp ( $cache->etag (), $this->get_from_server ( 'HTTP_IF_NONE_MATCH' ) ) == 0) {
-                throw new YZE_Not_Modified_Exception ();
-            }
-        }
     }
 
     /**
@@ -393,29 +332,6 @@ class YZE_Request extends YZE_Object {
         return implode ( $sep, $ret );
     }
 
-    /**
-     * 在当前的地址中增加一个参数并返回地址
-     *
-     * @param array $args
-     */
-    public function add_args_into_current_uri(array $args) {
-        $uri = YZE_Request::get_instance ()->the_uri ();
-        $query_string = $this->add_args_to_query_string ( $args );
-        return $uri . "?" . $query_string;
-    }
-
-    /**
-     * 在当前的查询字符串中增加参数, 并返回查询字符串
-     *
-     * @param array $args
-     */
-    public function add_args_to_query_string(array $args) {
-        $gets = $this->get_datas ();
-        foreach ( $args as $name => $value ) {
-            $gets [$name] = $value;
-        }
-        return self::build_query ( $gets );
-    }
     public static function format_gmdate($date_str) {
         return gmdate ( 'D, d M Y H:i:s', strtotime ( $date_str ) ) . " GMT";
     }

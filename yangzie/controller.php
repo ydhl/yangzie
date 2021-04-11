@@ -42,7 +42,6 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     protected $module;
     public function __construct($request = null) {
         $this->request = $request ? $request : YZE_Request::get_instance ();
-        $this->session = YZE_Session_Context::get_instance ();
         $this->module = $this->request->module_obj ();
         // init layout
         if ($this->request->get_output_format ()) {
@@ -75,11 +74,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      */
     public function get_datas() {
         $request = $this->request;
-        $cache = YZE_Session_Context::get_instance ()->get_controller_datas ( $request->the_uri() );
-        if (! $cache) {
-            return $this->view_data;
-        }
-        return array_merge ( $cache, $this->view_data );
+        return $this->view_data;
     }
     public final function has_response_cache() {
         $cahce_file = YZE_APP_CACHES_PATH . $this->get_response_guid ();
@@ -147,11 +142,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      */
     public final function do_Get() {
         $request = $this->request;
-        $session = YZE_Session_Context::get_instance ();
         $method = $request->the_method ();
-
-        YZE_Session_Context::get_instance ()->set_request_token (
-            $request->the_uri(), $request->the_request_token () );
 
         return $this->wrapResponse ( $this->$method () );
     }
@@ -178,8 +169,6 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_POST, $this );
         $request = $this->request;
         $method = $request->the_method ();
-        // 防止表单重复提交
-        $this->check_request_token ();
         $redirect = new YZE_Redirect ( $request->the_full_uri (), $this, $this->get_datas () );
 
         $response = $this->$method ();
@@ -217,7 +206,6 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     public final function check_model() {
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_PUT, $this );
         $request = $this->request;
-        $session = YZE_Session_Context::get_instance ();
 
         $yze_model_id = $request->get_from_post ( "yze_model_id" );
         $yze_modify_version = $request->get_from_post ( "yze_modify_version" );
@@ -268,19 +256,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      */
     public function cleanup() {
         $request = $this->request;
-        $session = YZE_Session_Context::get_instance ();
 
-        // clean get cache data
-        if ($request->is_get ()) {
-            $session->clear_controller_datas ( $request->the_uri() );
-            return;
-        }
-
-        // clean post cache data
-        // 成功处理，清除保存的post数据
-        $session->clear_request_token ( $request->the_uri(), $request->get_from_post ( 'yze_request_token' ) );
-
-        $session->clear_post_datas ( $request->the_uri() );
     }
     /**
      * 出现不可恢复的异常后的处理, 如何处理
@@ -292,25 +268,6 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      * @return YZE_IResponse
      */
     public function exception(YZE_RuntimeException $e) {
-    }
-
-    protected function check_request_token() {
-        $request = $this->request;
-        $post_request_token = $request->get_from_post ( 'yze_request_token' );
-        $session = YZE_Session_Context::get_instance ();
-
-        $saved_tokens = $session->get_request_token ( $request->the_uri() );
-
-        if( ! $saved_tokens)return;
-        if( $request->the_referer_uri(true) != $request->the_uri()) return;
-
-        if (! $post_request_token) {
-            throw new YZE_RuntimeException ( __ ( "MISSING_POST_REQUEST_TOKEN" ) );
-        }
-
-        if ( ! in_array($post_request_token, $saved_tokens )) {
-            throw new YZE_RuntimeException ( __ ( "REQUEST_TOKEN_NOT_MATCH" ) );
-        }
     }
 }
 class Yze_Default_Controller extends YZE_Resource_Controller {

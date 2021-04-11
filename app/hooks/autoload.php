@@ -6,7 +6,7 @@
  * YZE_FILTER_YZE_EXCEPTION: 扬子鳄处理过程中出现的异常回调
  *
  * @author leeboo
- *        
+ *
  */
 
 namespace app;
@@ -15,7 +15,6 @@ use yangzie\YZE_Redirect;
 use \yangzie\YZE_Request;
 use \yangzie\YZE_Hook;
 use \yangzie\YZE_Need_Signin_Exception;
-use \yangzie\YZE_Session_Context;
 
 YZE_Hook::add_hook(YZE_HOOK_AUTO_LOAD_CLASS, function ( $class ) {
     //echo $class;

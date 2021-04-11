@@ -836,6 +836,8 @@ class YZE_SQL extends YZE_Object{
 	}
 	private function _insert(){
 	    $update = array();
+		$insert_column = [];
+		$insert_value = [];
 		foreach($this->insert as $alias => $insertDatas){
 			foreach((array)$insertDatas as $field => $value){
 			    $val = $this->_quoteValue($value);
@@ -940,7 +942,7 @@ class YZE_SQL extends YZE_Object{
 	        if (is_string($v)){
 	            return YZE_DBAImpl::getDBA()->quote($defilter_var);
 	        }
-	        
+
 	        if (is_numeric($v)){
 	            return $v;
 	        }

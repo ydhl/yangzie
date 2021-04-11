@@ -4,53 +4,48 @@ namespace yangzie;
 
 use \app\App_Module;
 
-//自动加载处理
+/**
+ * 自动加载处理
+ */
 function yze_autoload($class) {
     $_ = preg_split("{\\\\}", strtolower($class));
 
-    if($_[0]=="app"){
+    // 不以app开头的class交给hook处理
+    if($_[0]!="app"){
+        YZE_Hook::do_hook("YZE_HOOK_AUTO_LOAD_CLASS", $class);
+        return;
+    }
 
-        $module_name = $_[1];
-        $class_name = $_[2];
-        $loaded_module_info = \yangzie\YZE_Object::loaded_module($module_name);
+    $module_name = $_[1];
+    $class_name = $_[2];
+    $loaded_module_info = \yangzie\YZE_Object::loaded_module($module_name);
 
-        $file = "";
-        if($loaded_module_info['is_phar']){
-            $module_name .= ".phar";
-            $file = "phar://";
-        }
-        $file .= YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS ;
+    $file = "";
+    if($loaded_module_info['is_phar']){
+        $module_name .= ".phar";
+        $file = "phar://";
+    }
+    $file .= YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS ;
 
-        if(preg_match("{_controller$}i", $class)){
-            $file .= "controllers" . DS . $class_name . ".class.php";
-        }else if(preg_match("{_model$}i", $class)){
-            $file .= "models" . DS . $class_name . ".class.php";
-        }else if(preg_match("{_define$}i", $class)){//model meta define
-            $file .= "models" . DS . $class_name . ".trait.php";
-        }else if(preg_match("{_module$}i", $class)){
-            $file .= "__module__.php";
-        }else if(preg_match("{_view$}i", $class)){
-            $file .= "views" . DS . preg_replace("{_view$}i", "", $class_name) . ".view.php";
-            if ( ! file_exists($file)){
-                $file = YZE_INSTALL_PATH . preg_replace("{_view$}i", "",strtr(strtolower($class), array("\\"=>"/"))) . ".view.php";
-            }
-        }else if(preg_match("/\\\\?app\\\\/i", $class)){//other class file
-            $file .= "models" . DS . $class_name . ".class.php";
-            if ( ! file_exists($file)){
-                $file = YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS. "models" . DS . $class_name . ".trait.php";
-            }
-            if ( ! file_exists($file)){
-                $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
-            }
-        }else{
-            $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
-        }
-
-        if(@$file && file_exists($file)){
-            include $file;
+    if(preg_match("{_controller$}i", $class)){
+        $file .= "controllers" . DS . $class_name . ".class.php";
+    }else if(preg_match("{_model$}i", $class)){
+        $file .= "models" . DS . $class_name . ".class.php";
+    }else if(preg_match("{_method$}i", $class)){//model meta define
+        $file .= "models" . DS . $class_name . ".trait.php";
+    }else if(preg_match("{_module$}i", $class)){
+        $file .= "__module__.php";
+    }else if(preg_match("{_view$}i", $class)){
+        $file .= "views" . DS . preg_replace("{_view$}i", "", $class_name) . ".view.php";
+        if ( ! file_exists($file)){
+            $file = YZE_INSTALL_PATH . preg_replace("{_view$}i", "",strtr(strtolower($class), array("\\"=>"/"))) . ".view.php";
         }
     }else{
-        YZE_Hook::do_hook("YZE_HOOK_AUTO_LOAD_CLASS", $class);
+        $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
+    }
+
+    if(@$file && file_exists($file)){
+        include $file;
     }
 }
 

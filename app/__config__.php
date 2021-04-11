@@ -17,13 +17,9 @@ define("YZE_MYSQL_USER",  "root");
  */
 define("YZE_MYSQL_HOST_M",  "127.0.0.1");
 /**
- * MYSQL数据库从地址，没有则不填写
- */
-define("YZE_MYSQL_HOST_S",  "");
-/**
  * MYSQL数据库名
  */
-define("YZE_MYSQL_DB",  "");
+define("YZE_MYSQL_DB",  "yangai");
 /**
  * MYSQL端口
  */
@@ -31,7 +27,7 @@ define("YZE_MYSQL_PORT",  "3306");
 /**
  * MYSQL密码
  */
-define("YZE_MYSQL_PASS",  "");
+define("YZE_MYSQL_PASS",  "ydhl");
 /**
  * 网站地址
  */
@@ -121,10 +117,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * @return array(资源路径1，资源路径2)
 	 */
 	public function js_bundle($bundle){
-		$config = array (
-				"yangzie" => array (
-				)
-		);
+		$config = ["yangzie" => ['/js/yze_ajax.js']];
 		return $config[$bundle];
 	}
 	/**

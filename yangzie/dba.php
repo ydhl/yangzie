@@ -29,7 +29,7 @@ class YZE_DBAImpl extends YZE_Object
 		$this->conn->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
 		$this->conn->query('SET NAMES '.$app_module->get_module_config('db_charset'));
 	}
-	
+
 	public function getConn(){
 		return $this->conn;
 	}
@@ -44,7 +44,7 @@ class YZE_DBAImpl extends YZE_Object
 		}
 		return self::$me;
 	}
-	
+
 	public function quote($value){
 	    return $this->conn->quote($value);
 	}
@@ -109,7 +109,7 @@ class YZE_DBAImpl extends YZE_Object
 	public function nativeQuery(YZE_SQL $sql){
 		return $this->nativeQuery2($sql->__toString());
 	}
-	
+
 	public function nativeQuery2($sql){
 	    $pdo = $this->conn->query($sql);
 	    if( ! $pdo){
@@ -136,12 +136,12 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param YZE_SQL $sql
 	 * @param string $key_field 返回的数组的索引，没有指定则是数字自增，指定指定名，则以该字段的值作为索引
 	 * @param array $params :column类型的字段值
-	 * 
+	 *
 	 * @return array(Model)
 	 */
 	public function select(YZE_SQL $sql, $params=array(), $key_field=null){
 		$classes = $sql->get_select_classes(true);
-		
+
 		if($params){
 			$statement = $this->conn->prepare($sql->__toString());
 			$statement->execute($params);
@@ -242,8 +242,8 @@ class YZE_DBAImpl extends YZE_Object
 		}
 		return $affected;
 	}
-	
-    
+
+
 	private function _save_update(YZE_Model $entity){
 	    \yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_UPDATE, $entity);
 	    $sql = new YZE_SQL();
@@ -255,7 +255,40 @@ class YZE_DBAImpl extends YZE_Object
 	    $this->execute($sql);
 	    return $entity->get_key();
 	}
-	
+
+	/**
+	 * 按照数据库的映射做基本的验证
+	 * @param YZE_Model $entity
+	 */
+	private function valid_entity(YZE_Model  $entity) {
+		$records = $entity->get_records();
+		foreach ($entity->get_columns() as $column => $columnInfo) {
+			if ($entity->get_key_name() == $column) continue;
+			// null的情况
+			if (!$columnInfo['null']){
+				// 不为null有默认值
+				if (key_exists($column, $records) && is_null($records[$column])) {
+					throw new YZE_DBAException("Field '{$column}' cannot be null");
+				}
+				// 不为null并且没有默认值时验证是否设置了指
+				if (mb_strlen($columnInfo['default'], 'utf8') == 0  && !key_exists($column, $records)) {
+					throw new YZE_DBAException("Field '{$column}' doesn't have a default value");
+				}
+			}
+			if (!key_exists($column, $records)) continue;
+
+			// 长度验证
+			if ($columnInfo['length'] && mb_strlen($records[$column], 'utf8') > $columnInfo['length'])
+				throw new YZE_DBAException("Field '{$column}' length exceeds limit {$columnInfo['length']}");
+			// 枚举类型验证
+			if ($columnInfo['type'] == 'enum' && !in_array($records[$column], call_user_func_array([$entity, "get_{$column}"], [])))
+				throw new YZE_DBAException("Field '{$column}' value {$records[$column]} is not in the accepted enum list");
+			// date类型验证
+			if ($columnInfo['type'] == 'date' && !strtotime($records[$column]))
+				throw new YZE_DBAException("Field '{$column}' value {$records[$column]} is not the date value");
+		}
+	}
+
 	/**
 	 * 保存(update,insert)记录；如果有主键，则更新；没有则插入；
 	 * 插入情况，根据$type进行不同的插入策略
@@ -276,7 +309,7 @@ class YZE_DBAImpl extends YZE_Object
 		if(empty($entity)){
 			throw new YZE_DBAException("save YZE_Model is empty");
 		}
-		
+		$this->valid_entity($entity);
 		if($entity->get_key()){//update
 			return $this->_save_update($entity);
 		}
@@ -285,10 +318,10 @@ class YZE_DBAImpl extends YZE_Object
 		//insert
 		$sql->insert('t',$entity->get_records(), $type, $extra_info)
 		->from(get_class($entity),"t");
-		
+
 		$rowCount = $this->execute($sql);
 		$insert_id = $this->conn->lastInsertId();
-		
+
 		if($type == YZE_SQL::INSERT_EXIST || $type == YZE_SQL::INSERT_NOT_EXIST){
 		    if( $rowCount ){
 		      //这种情况下last insert id 得不到?
@@ -319,13 +352,13 @@ class YZE_DBAImpl extends YZE_Object
 		}else if($type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_IGNORE){
 		    $insert_id = 0;
 		}
-		
+
 		$entity->set($entity->get_key_name(),$insert_id);
-		
+
 		\yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_INSERT, $entity);
 		return $insert_id;
 	}
-	
+
 	/**
 	 * 是否开启自动提交
 	 * @param unknown $boolean
@@ -380,7 +413,7 @@ class YZE_DBAImpl extends YZE_Object
     public function lookup($field, $table, $where, array $values=array()) {
         $sql = "SELECT $field as f FROM `{$table}` WHERE {$where}";
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
@@ -390,7 +423,7 @@ class YZE_DBAImpl extends YZE_Object
         }
         throw new YZE_DBAException(join(",", $stm->errorInfo()));
     }
-    
+
     /**
      * 查询结果集，返回满足条件的一条结果数组
      *
@@ -403,17 +436,17 @@ class YZE_DBAImpl extends YZE_Object
     public function lookup_record($fields, $table, $where="", array $values=array()) {
         $sql = "SELECT {$fields} FROM {$table}".($where ? " WHERE {$where}" :"");
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
         if($stm->execute($values)){
             return $stm->fetch(PDO::FETCH_ASSOC);
         }
-        
+
         throw new YZE_DBAException(join(",", $stm->errorInfo()));
     }
-    
+
     /**
      * 查询结果集，返回所有结果数组
      *
@@ -427,7 +460,7 @@ class YZE_DBAImpl extends YZE_Object
         $sql = "SELECT $fields FROM $table";
         if ($where) $sql .= " WHERE $where";
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
@@ -436,7 +469,7 @@ class YZE_DBAImpl extends YZE_Object
         }
         throw new YZE_DBAException(join(",", $stm->errorInfo()));
     }
-    
+
     /**
      * 更新记录，返回受影响的行数
      * @param string $table
@@ -448,9 +481,9 @@ class YZE_DBAImpl extends YZE_Object
     public function update($table, $fields, $where, array $values=array()) {
         $sql = "UPDATE $table SET $fields";
         if ($where) $sql .= " WHERE $where";
-        
+
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
@@ -459,7 +492,7 @@ class YZE_DBAImpl extends YZE_Object
         }
         return true;
     }
-    
+
     /**
      * 删除记录返回受影响的行数
      * @param string $table
@@ -471,7 +504,7 @@ class YZE_DBAImpl extends YZE_Object
         $sql = "DELETE FROM $table";
         if ($where) $sql .= " WHERE $where";
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
@@ -507,10 +540,10 @@ class YZE_DBAImpl extends YZE_Object
         $sql_fields  = rtrim($sql_fields, ",");
         $sql_values  = rtrim($sql_values, ",");
         $set         = rtrim($set, ",");
-        
+
         $sql = "INSERT INTO `{$table}` ({$sql_fields}) SELECT {$sql_values} FROM dual WHERE ".($exist?"":"NOT")." EXISTS ({$checkSql})";
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
@@ -524,24 +557,24 @@ class YZE_DBAImpl extends YZE_Object
             $where = preg_replace("/^.+where/", "", $checkSql);
             $sql = "UPDATE `{$table}` SET {$set} WHERE {$where}";
             $stm = $this->conn->prepare($sql);
-            
+
             if( ! $stm){
                 throw new YZE_DBAException("can not prepare sql");
             }
             if (! $stm->execute($values) ){
                 throw new YZE_DBAException(join(",", $stm->errorInfo()));
             }
-            
+
             preg_match_all("/(?P<words>:[^\s]+)/", $where, $matchWheres);
             $lookupValues = [];
             foreach($matchWheres['words'] as $word){
                 $lookupValues[$word] = $values[$word];
             }
-            
-        
+
+
             return $this->lookup($key, $table, $where, $lookupValues);
         }
-        
+
         return $this->conn->lastInsertId();
     }
     /**
@@ -557,8 +590,8 @@ class YZE_DBAImpl extends YZE_Object
     public function insert($table, $info, $duplicate_key=array(), $keyname="") {
         if ( ! is_array($info) || empty($info) || empty($table))
             return false;
-        
-        
+
+
         $sql_fields     = "";
         $sql_values     = "";
         $values         = array();
@@ -566,7 +599,7 @@ class YZE_DBAImpl extends YZE_Object
         foreach ($info as $f => $v) {
             $sql_fields  .= "`" . $f . "`,";
             $sql_values  .= ":" . $f . ",";
-            
+
             $values[":" . $f] = $v;
             if(array_search($f, $duplicate_key) === false){
                 $update[] = "`{$f}`=VALUES(`{$f}`)";
@@ -574,22 +607,22 @@ class YZE_DBAImpl extends YZE_Object
         }
         $sql_fields  = rtrim($sql_fields, ",");
         $sql_values  = rtrim($sql_values, ",");
-        
+
         $sql = "INSERT INTO {$table} ({$sql_fields}) VALUES ({$sql_values})";
         if($duplicate_key){
             $sql .= " ON DUPLICATE KEY UPDATE {$keyname} = LAST_INSERT_ID({$keyname}),
             ".join(",", $update);
         }
-        
+
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
         if ( ! $stm->execute($values) ) {
             throw new YZE_DBAException(join(",", $stm->errorInfo()));
         }
-        
+
         return $this->conn->lastInsertId();
     }
     /**
@@ -610,26 +643,26 @@ class YZE_DBAImpl extends YZE_Object
         foreach ($info as $f => $v) {
             $sql_fields  .= "`" . $f . "`,";
             $sql_values  .= ":" . $f . ",";
-            
+
             $values[":" . $f] = $v;
         }
         $sql_fields  = rtrim($sql_fields, ",");
         $sql_values  = rtrim($sql_values, ",");
-        
+
         $sql = "INSERT IGNORE INTO {$table} ({$sql_fields}) VALUES ({$sql_values})";
-        
+
         $stm = $this->conn->prepare($sql);
-        
+
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
         if ( ! $stm->execute($values) ) {
             throw new YZE_DBAException(join(",", $stm->errorInfo()));
         }
-        
+
         return $this->conn->lastInsertId();
     }
-    
+
     /**
      * 插入记录, 在有唯一键冲突是忽略插入替换，成功返回新记录的主键
      *
@@ -645,13 +678,13 @@ class YZE_DBAImpl extends YZE_Object
         $values         = array();
         foreach ($info as $f => $v) {
             $sql_fields[] = "`{$f}`=:{$f}";
-            
+
             $values[":" . $f] = $v;
         }
         $sql_fields  = join(",", $sql_fields);
-        
+
         $sql = "REPLACE INTO {$table} SET {$sql_fields}";
-        
+
         $stm = $this->conn->prepare($sql);
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
@@ -659,38 +692,38 @@ class YZE_DBAImpl extends YZE_Object
         if ( ! $stm->execute($values) ) {
             throw new YZE_DBAException(join(",", $stm->errorInfo()));
         }
-        
+
         return $this->conn->lastInsertId();
     }
-    
-	
+
+
 	public function table_fields($table) {
 	    $sql="show columns from $table";
 	    $stm=$this->conn->query($sql);
-	
+
 	    $fileds = array();
 	    if($stm){
 	        while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 	            $fileds[] = $row['Field'];
 	        }
 	    }
-	
+
 	    return $fileds;
 	}
-	
+
 	/**
 	 * CODE TO DB同步，把指定的model同步字段到数据库，如果表没有建立则建立表，建立就同步字段
 	 * 这是初步实现了功能，不稳定，请勿使用在产品环境
-	 * 
+	 *
 	 * @param unknown $class
 	 */
 	public static function migration($class, $reCreate=false){
 		$columns = $class::$columns;
 		$table = $class::TABLE;
 		$column_segments = array();
-		
+
 		$uniqueKey = "";
-		
+
 		foreach ($columns as $column => $defines){
 			switch (strtoupper($defines['type'])){
 				case "INTEGER": $type = "INT";break;
@@ -698,15 +731,15 @@ class YZE_DBAImpl extends YZE_Object
 				case "DATE": $type = "date";break;
 				case "FLOAT": $type = "FLOAT";break;
 				case "ENUM": $type = "ENUM";break;
-				case "STRING": 
+				case "STRING":
 				default : $type = "VARCHAR(".(@$defines['length'] ? $defines['length'] : 45).")";break;
 			}
-			
+
 			$uniqueKey .= $defines["unique"] ? ",UNIQUE INDEX `{$column}_UNIQUE` (`{$column}` ASC)" : "";
 			$nullable = $defines["null"] ? "NULL" : "NOT NULL";
 			$primaryID = $column==$class::KEY_NAME ? "AUTO_INCREMENT" : "";
 			$default  = $defines["default"] != '' ? "DEFAULT ".$defines["default"] : "";
-			
+
 			$column_segments[] = "`{$column}` {$type} {$nullable} {$primaryID} {$default}";
 		}
 		$primary = "";
@@ -716,18 +749,18 @@ class YZE_DBAImpl extends YZE_Object
 		if ($reCreate){
 			$drop = "DROP TABLE `".YZE_MYSQL_DB."`.`{$table}`";
 		}
-		
-		
+
+
 		$sql = "CREATE TABLE IF NOT EXISTS `".YZE_MYSQL_DB."`.`{$table}` (".join(",", $column_segments)."{$primary}{$uniqueKey})
 		ENGINE = InnoDB;";
-		
+
 		if ($drop){
 			self::getDBA()->exec($drop);
 		}
-		
+
 		self::getDBA()->exec($sql);
 	}
-	
+
 }
 class YZE_PDOStatementWrapper extends YZE_Object{
 	/**
@@ -755,7 +788,7 @@ class YZE_PDOStatementWrapper extends YZE_Object{
 	public function f($name,$table_alias=null){
 		return self::filter_var($this->result[$this->index][$table_alias ? "{$table_alias}_{$name}" : $name]);#数据库取出来编码
 	}
-	
+
 
 	public function getEntity(YZE_Model $entity, $alias=""){
 	   foreach (array_keys($entity->get_columns()) as $field_name) {

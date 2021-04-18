@@ -49,7 +49,6 @@
      */
     define ( 'YZE_HOOK_MODEL_DELETE',    'YZE_HOOK_MODEL_DELETE');
     define ( 'YZE_ACTION_TRANSACTION_COMMIT', 'transaction_commit' );
-    define ( 'YZE_ACTION_UNRESUME_EXCEPTION', 'yze_action_unresume_exception' );
     define ( 'YZE_ACTION_BEFORE_DO_EXCEPTION', 'yze_action_before_do_exception' );
 
 

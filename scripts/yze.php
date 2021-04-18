@@ -122,7 +122,7 @@ function display_phar_wizard(){
 	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
 	
 phar a module，%s back
-1. (1/2)please int module name:  ")), "phar module", get_colored_text(" 0 ", "red", "white"));
+1. (1/2)please input module name:  "), "phar module", get_colored_text(" 0 ", "red", "white")));
 
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\tname is invalid, pleae input again:  ")), "red");
@@ -132,25 +132,39 @@ phar a module，%s back
 		echo wrap_output("module not exist");
 	}
 
-	echo wrap_output(__("2. (2/2)phar sign key path, if not need sign please press enter 
-  ［ private key：openssl genrsa -out mykey.pem 1024
-    pub key：openssl rsa -in mykey.pem -pubout -out mykey.pub］:"));
-	while (!file_exists(($key_path = get_input()))){
+	echo wrap_output(__("2. (2/2)phar signature key name (pem, in the tmp folder) , if not need signature please press enter 
+  ［ 
+  	1.cd tmp
+  	2.openssl genrsa -out mykey.pem 1024
+    3.openssl rsa -in mykey.pem -pubout -out mykey.pub
+   ］:"));
+
+	while (!file_exists(($key_path = YZE_INSTALL_PATH."tmp/".get_input()))){
 		if(!$key_path)break;//回车
-		echo get_colored_text(wrap_output(__("\tfile not exist, please input absolute path:  ")), "red");
+		echo get_colored_text(wrap_output(vsprintf(__("\t%s file not exist:  "), $key_path)), "red");
 	}
 
 	phar_module($module, $key_path);
-	echo wrap_output(sprintf(__("phar save at tmp/%s.phar\r\n"),$module));
+	@unlink(YZE_APP_PATH."modules/{$module}.phar");
+	yze_move_file(YZE_INSTALL_PATH."tmp/{$module}.phar", YZE_APP_PATH."modules");
+	echo wrap_output(sprintf(__("phar saved at modules/%s.phar\r\n"),$module));
 	if($key_path){
-		echo wrap_output(sprintf(__("please rename the pub key file: %s.phar.pubkey, and save in the same dir as phar file\r\n"),$module));
+		$key_name = pathinfo(basename($key_path), PATHINFO_FILENAME);
+		copy(YZE_INSTALL_PATH."tmp/{$key_name}.pub", YZE_APP_PATH."modules/{$module}.phar.pubkey");
+		echo wrap_output(sprintf(__("%s.phar.pubkey saved at modules/%s.phar.pubkey\r\n"),$module,$module), 'green');
 	}
 	return array();
 }
 
 function phar_module($module, $key_path){
 	@mkdir(dirname(dirname(__FILE__))."/tmp/");
-	$phar = new \Phar(dirname(dirname(__FILE__))."/tmp/".$module.'.phar', 0, $module.'.phar');
+	try{
+		echo ini_get('phar.readonly');
+		$phar = new \Phar(dirname(dirname(__FILE__))."/tmp/".$module.'.phar', 0, $module.'.phar');
+	}catch (\Exception $e){
+		echo wrap_output($e->getMessage());
+		die();
+	}
 	$phar->buildFromDirectory(dirname(dirname(__FILE__))."/app/modules/".$module);
 	//$phar->setStub($phar->createDefaultStub('__module__.php'));
 	$phar->compressFiles(\Phar::GZ);

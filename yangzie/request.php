@@ -619,7 +619,7 @@ class YZE_Request extends YZE_Object {
     	$this->exception = $exception;
     }
     public function get_Accept_Language(){
-        preg_match("/(?P<lang>[^,]+),/",$_SERVER['HTTP_ACCEPT_LANGUAGE'], $matchs);
+        preg_match("/(?P<lang>[^,]+),/",@$_SERVER['HTTP_ACCEPT_LANGUAGE'], $matchs);
         return $matchs ? strtolower($matchs['lang']) : '';
     }
 }

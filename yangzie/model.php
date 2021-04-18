@@ -700,5 +700,15 @@ abstract class YZE_Model extends YZE_Object{
         $rst->next();
         return $rst->f("uuid");
     }
+
+	/**
+	 * 返回每个字段的具体的面向用户可读的含义，比如login_name表示登录名，
+	 * 由子类实现
+	 * @param $column
+	 * @return mixed
+	 */
+    public function get_column_mean($column){
+		return $column;
+	}
 }
 ?>

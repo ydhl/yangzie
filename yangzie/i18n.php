@@ -4,11 +4,36 @@ namespace yangzie;
 use MO;
 use Translations;
 use const YZE_APP_INC;
+class YZE_I18N extends YZE_Object{
+	private $i18n = [];
+	private static $me;
+	private function __construct() {
+	}
+
+	/**
+	 *
+	 * @return YZE_I18N
+	 */
+	public static function get_instance() {
+		if(!isset(self::$me)){
+			$c = __CLASS__;
+			self::$me = new $c;
+		}
+		return self::$me;
+	}
+
+	public function getLoadedI18N(){
+		return $this->i18n;
+	}
+	public function setLoadedI18N($domain, &$mo){
+		$this->i18n[$domain] = &$mo;
+	}
+}
 
 function translate( $text, $domain = 'default' ) {
 	if(!class_exists("Translations"))return $text;
-	
-	$l10n = get_i18n_cache();
+
+	$l10n = YZE_I18N::get_instance()->getLoadedI18N();
 	$empty = new Translations();
 	if ( isset($l10n[$domain]) )
 		$translations = $l10n[$domain];
@@ -26,39 +51,25 @@ function _e( $text, $domain = 'default' ) {
 }
 
 function load_textdomain($domain, $mofile) {
-	$l10n = get_i18n_cache();
-
 	if ( !is_readable( $mofile ) ) return false;
 	$mo = new MO();
 	if ( !$mo->import_from_file( $mofile ) ) return false;
-
-//    if ( isset( $l10n[$domain] ) )
-//        $mo->merge_with( $l10n[$domain] );
-
-	$l10n[$domain] = &$mo;
-	set_i18n_cache($l10n);
+	YZE_I18N::get_instance()->setLoadedI18N($domain, $mo);
 	return true;
 }
 
+/**
+ * 获取语言文件，比如zh-cn,en
+ * @return array|mixed|string|unknown
+ */
+function get_accept_language() {
+	$locale = YZE_Hook::do_hook(YZE_HOOK_GET_LOCALE);
+	return $locale ?: YZE_Request::get_instance()->get_Accept_Language();
+}
+
 function load_default_textdomain() {
-	$local = YZE_Hook::do_hook("get_locale", "zh-cn");
-	if(!function_exists("\yangzie\script_locale") && !$local){
-		return;
-	}
-	if(function_exists("\yangzie\script_locale")){// for script tool
-		$locale = script_locale();
-	}else{
-		$locale = $local;
-	}
-
-	$mofile =  YZE_APP_INC."vendor/i18n/$locale.mo";
+	$locale = get_accept_language();
+	$mofile =  YZE_INSTALL_PATH."i18n/$locale.mo";
 	return load_textdomain('default', $mofile);
-}
-
-function get_i18n_cache(){
-	return YZE_Session_Context::get_instance()->get('i18n');
-}
-function set_i18n_cache($i18n){
-	return YZE_Session_Context::get_instance()->set('i18n', $i18n);
 }
 ?>

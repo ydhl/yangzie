@@ -19,12 +19,6 @@ if(!preg_match("/cli/i",php_sapi_name())){
 	echo wrap_output(sprintf(__("please run in command mode: php scrips/yze.php",dirname(__FILE__))));die();
 }
 
-function script_locale(){
-	global $language;
-// 	echo $language;
-	return $language;
-}
-
 
 chdir("./app/public_html");
 include_once 'init.php';

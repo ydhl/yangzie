@@ -115,6 +115,7 @@ trait $class{
 		    $unique_key[$row['Column_name']] = $row['Key_name'];
 		}
 		$constant   = array();
+		$column_mean= [];
 
 		$result = mysqli_query($db, "show full columns from `$table`");
 		while ($row=mysqli_fetch_assoc($result)) {
@@ -138,6 +139,7 @@ trait $class{
      * @var {$type_info['type']}
      */
     const F_".strtoupper($row['Field'])." = \"{$row['Field']}\";";
+			$column_mean[] = "case self::F_".strtoupper($row['Field']).": return \"".($row['Comment']?:$row['Field'])."\";";
 		}
 
 		$constantdefine = '';
@@ -182,6 +184,18 @@ class $class extends YZE_Model{
     {$assocFields}
 	{$assocFieldFuncs}
 	{$enumFunction}
+	/**
+	 * 返回每个字段的具体的面向用户可读的含义，比如login_name表示登录名
+	 * @param \$column
+	 * @return mixed
+	 */
+    public function get_column_mean(\$column){
+    	switch (\$column){
+    	".join("\r\n\t\t",$column_mean)."
+    	default: return \$column;
+    	}
+		return \$column;
+	}
 }?>";
 	}
 

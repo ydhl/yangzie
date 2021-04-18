@@ -1,7 +1,7 @@
 <?php
 /**
  * 该文件是系统的入口
- * 
+ *
  * @category Framework
  * @package  Yangzie
  * @author   liizii <libol007@gmail.com>
@@ -18,5 +18,5 @@ if(strtolower($_SERVER['REQUEST_METHOD'])=='options')
 require 'init.php';
 
 //开始处理请求
-\yangzie\yze_go();
+\yangzie\yze_handle_request();
 ?>

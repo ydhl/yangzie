@@ -33,6 +33,7 @@ class YZE_Request extends YZE_Object {
     private $queryString;
     private $uuid;
     private $exception;
+    private static $me;
     /**
      * 通用缓存，hash map
      *
@@ -142,9 +143,11 @@ class YZE_Request extends YZE_Object {
      * @return YZE_Request
      */
     public static function get_instance() {
-        $c = __CLASS__;
-        $request = new $c ();
-        return $request;
+        if(!isset(self::$me)){
+            $c = __CLASS__;
+            self::$me = new $c;
+        }
+        return self::$me;
     }
     private function _init($newUri) {
         if (! $newUri) {
@@ -261,7 +264,7 @@ class YZE_Request extends YZE_Object {
         if ($this->need_auth ( $req_method )) { // 需要验证
             $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
 
-            if ( ! $loginuser ) throw new YZE_Need_Signin_Exception ("请登录");
+            if ( ! $loginuser ) throw new YZE_Need_Signin_Exception (__ ( "Please signin" ));
 
             $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME);
 
@@ -271,9 +274,7 @@ class YZE_Request extends YZE_Object {
 
             if (! $acl->check_byname ( $aro, $aco_name )) {
 
-                throw new YZE_Permission_Deny_Exception ( vsprintf ( __ ( "没有访问该页面的权限({$aco_name}:{$aro})" ), array (
-                        \app\yze_get_aco_desc ( $aco_name )
-                ) ) );
+                throw new YZE_Permission_Deny_Exception ( vsprintf ( __ ( "You do not have permission(%s:%s)" ), \app\yze_get_aco_desc ( $aco_name ), $aro) );
             }
 
         }
@@ -611,11 +612,15 @@ class YZE_Request extends YZE_Object {
     	return $session->get($module."-css-bundle");
     }
 
-    public function getException(){
+    public function get_exception(){
     	return $this->exception;
     }
-    public function setException(\Exception $exception){
+    public function set_Exception(\Exception $exception){
     	$this->exception = $exception;
+    }
+    public function get_Accept_Language(){
+        preg_match("/(?P<lang>[^,]+),/",$_SERVER['HTTP_ACCEPT_LANGUAGE'], $matchs);
+        return $matchs ? strtolower($matchs['lang']) : '';
     }
 }
 ?>

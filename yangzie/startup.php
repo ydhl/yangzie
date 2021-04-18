@@ -111,7 +111,7 @@ function yze_load_app() {
  * 开始处理请求，如果没有指定uri，默认处理当前的uri请求,
  * @return string
  */
-function yze_go() {
+function yze_handle_request() {
     $output = function($request, $controller, $response) {
         if(is_a($response,"\\yangzie\\YZE_View_Adapter")){
             $layout = new YZE_Layout($controller->get_layout(), $response, $controller);

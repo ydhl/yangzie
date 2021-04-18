@@ -86,6 +86,10 @@
      * 当自动加载类无法找到时触发该hook,交给开发者自己处理如何include相关文件, 传入的参数是类名
      */
     define ( 'YZE_HOOK_AUTO_LOAD_CLASS', 'YZE_HOOK_AUTO_LOAD_CLASS' );
+    /**
+     * 获取当前的语言设置，默认获取request中的accept_language, get_accept_language()取得
+     */
+    define('YZE_HOOK_GET_LOCALE', 'YZE_HOOK_GET_LOCALE');
     final class YZE_Hook {
         private static $listeners = array ();
         private static $currModule;

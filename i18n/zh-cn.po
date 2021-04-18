@@ -1,0 +1,147 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: yangzie\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-04-18 18:25+0800\n"
+"PO-Revision-Date: \n"
+"Last-Translator: leeboo <leeboo@yidianhulian.com>\n"
+"Language-Team: liizii\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: ..\n"
+"X-Generator: Poedit 2.2.1\n"
+"X-Poedit-SearchPath-0: app\n"
+"X-Poedit-SearchPath-1: yangzie\n"
+
+#: yangzie/controller.php:190
+msgid "Yangzie Framework"
+msgstr ""
+
+#: yangzie/dba.php:271
+#, php-format
+msgid "Field '%s' cannot be null"
+msgstr "字段 ‘%s’ 未设置"
+
+#: yangzie/dba.php:275
+#, php-format
+msgid "Field '%s' doesn't have a default value"
+msgstr "字段 ‘%s’ 不能为空"
+
+#: yangzie/dba.php:282
+#, php-format
+msgid "Field '%s' length exceeds limit %s"
+msgstr "字段 ‘%s’ 内容长度超过了 %s "
+
+#: yangzie/dba.php:285
+#, php-format
+msgid "Field '%s' value %s is not in the accepted enum list"
+msgstr "字段 ‘%s’ 的值 %s 不在允许的范围内"
+
+#: yangzie/dba.php:288
+#, php-format
+msgid "Field '%s' value %s is not the date value"
+msgstr "字段 ‘%s’ 的值 %s 不是有效的日期类型"
+
+#: yangzie/request.php:264
+msgid "Please signin"
+msgstr "请登录"
+
+#: yangzie/request.php:274
+#, php-format
+msgid "You do not have permission(%s:%s)"
+msgstr "无权访问(%s:%s)"
+
+#: yangzie/startup.php:58
+msgid "app/__config__.php not found"
+msgstr "文件app/__config__.php 丢失"
+
+#~ msgid "update __module__ file :\t"
+#~ msgstr "更新 __module__ file :\t"
+
+#~ msgid "hate"
+#~ msgstr "讨厌"
+
+#~ msgid "interest"
+#~ msgstr "兴趣"
+
+#~ msgid "speciality"
+#~ msgstr "在行"
+
+#~ msgid "want"
+#~ msgstr "想"
+
+#~ msgid "dream"
+#~ msgstr "梦"
+
+#~ msgid "attention"
+#~ msgstr "关注"
+
+#~ msgid "question"
+#~ msgstr "问题"
+
+#~ msgid "discussion"
+#~ msgstr "讨论"
+
+#~ msgid "activitie"
+#~ msgstr "活动"
+
+#~ msgid "blog"
+#~ msgstr "文章"
+
+#~ msgid "wiki"
+#~ msgstr "知识"
+
+#~ msgid "talk"
+#~ msgstr "对话"
+
+#~ msgid "link"
+#~ msgstr "链接"
+
+#~ msgid "miniarticle"
+#~ msgstr "言论"
+
+#~ msgid "HATE"
+#~ msgstr "讨厌"
+
+#~ msgid "INTEREST"
+#~ msgstr "兴趣"
+
+#~ msgid "SPECIALITY"
+#~ msgstr "在行"
+
+#~ msgid "WANT"
+#~ msgstr "想"
+
+#~ msgid "DREAM"
+#~ msgstr "梦"
+
+#~ msgid "ATTENTION"
+#~ msgstr "关注"
+
+#~ msgid "QUESTION"
+#~ msgstr "问题"
+
+#~ msgid "DISCUSSION"
+#~ msgstr "讨论"
+
+#~ msgid "ACTIVITIE"
+#~ msgstr "活动"
+
+#~ msgid "BLOG"
+#~ msgstr "文章"
+
+#~ msgid "WIKI"
+#~ msgstr "知识"
+
+#~ msgid "TALK"
+#~ msgstr "对话"
+
+#~ msgid "LINK"
+#~ msgstr "链接"
+
+#~ msgid "MINIARTICLE"
+#~ msgstr "言论"

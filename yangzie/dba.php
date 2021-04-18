@@ -268,24 +268,24 @@ class YZE_DBAImpl extends YZE_Object
 			if (!$columnInfo['null']){
 				// 不为null有默认值
 				if (key_exists($column, $records) && is_null($records[$column])) {
-					throw new YZE_DBAException("Field '{$column}' cannot be null");
+					throw new YZE_DBAException(sprintf(__("Field '%s' cannot be null"), $entity->get_column_mean($column)));
 				}
 				// 不为null并且没有默认值时验证是否设置了指
 				if (mb_strlen($columnInfo['default'], 'utf8') == 0  && !key_exists($column, $records)) {
-					throw new YZE_DBAException("Field '{$column}' doesn't have a default value");
+					throw new YZE_DBAException(sprintf(__("Field '%s' doesn't have a default value"), $entity->get_column_mean($column)));
 				}
 			}
 			if (!key_exists($column, $records)) continue;
 
 			// 长度验证
 			if ($columnInfo['length'] && mb_strlen($records[$column], 'utf8') > $columnInfo['length'])
-				throw new YZE_DBAException("Field '{$column}' length exceeds limit {$columnInfo['length']}");
+				throw new YZE_DBAException(sprintf(__("Field '%s' length exceeds limit %s"), $entity->get_column_mean($column), $columnInfo['length']));
 			// 枚举类型验证
 			if ($columnInfo['type'] == 'enum' && !in_array($records[$column], call_user_func_array([$entity, "get_{$column}"], [])))
-				throw new YZE_DBAException("Field '{$column}' value {$records[$column]} is not in the accepted enum list");
+				throw new YZE_DBAException(sprintf(__("Field '%s' value %s is not in the accepted enum list"), $entity->get_column_mean($column), $records[$column]));
 			// date类型验证
 			if ($columnInfo['type'] == 'date' && !strtotime($records[$column]))
-				throw new YZE_DBAException("Field '{$column}' value {$records[$column]} is not the date value");
+				throw new YZE_DBAException(sprintf(__("Field '%s' value %s is not the date value"), $entity->get_column_mean($column), $records[$column]));
 		}
 	}
 

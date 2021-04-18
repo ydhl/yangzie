@@ -157,7 +157,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
 
     public final function do_exception(YZE_RuntimeException $e) {
         $request = $this->request;
-        $request->setException($e);
+        $request->set_Exception($e);
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
         $format = $request->get_output_format();
         $response = $this->exception ( $e );
@@ -187,7 +187,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
 }
 class Yze_Default_Controller extends YZE_Resource_Controller {
     public function index() {
-        $this->set_View_Data ( "yze_page_title", __ ( "Yangzie 简单的PHP开发框架" ) );
+        $this->set_View_Data ( "yze_page_title", __ ( "Yangzie Framework" ) );
         return new YZE_Simple_View ( YANGZIE . "/welcome", $this->view_data, $this );
     }
 }

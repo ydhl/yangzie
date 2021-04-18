@@ -27,7 +27,7 @@ function yze_die(YZE_View_Adapter $view, YZE_Resource_Controller $controller) {
  *
  */
 function yze_controller_error($begin_tag = null, $end_tag = null) {
-    if (($exception = YZE_Request::get_instance ()->getException (  ))) {
+    if (($exception = YZE_Request::get_instance ()->get_exception (  ))) {
         return $begin_tag . $exception->getMessage() . $end_tag;
     }
 }

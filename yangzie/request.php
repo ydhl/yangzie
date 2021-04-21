@@ -34,12 +34,17 @@ class YZE_Request extends YZE_Object {
     private $uuid;
     private $exception;
     private static $me;
-    /**
-     * 通用缓存，hash map
-     *
-     * @var array
-     */
-    private $cache = array ();
+    private $context;
+
+
+    public function set($name, $value){
+        $this->context[$name] = $value;
+        return $this;
+    }
+    public function get($name)
+    {
+        return @$this->context[$name];
+    }
     public function the_post_datas() {
         return $this->post;
     }
@@ -84,7 +89,9 @@ class YZE_Request extends YZE_Object {
         }
         return $default;
     }
-
+    public function get_request_method() {
+        return $this->request_method;
+    }
     /**
      * 请求的资源的URI，每次请求，URI是唯一且在一次请求内是不变的
      * 返回的只是uri中的路径部分，query部分不包含，如/people-1/question-2/answers?p=3
@@ -242,12 +249,11 @@ class YZE_Request extends YZE_Object {
         return $this->method;
     }
     public function is_post() {
-        return ! $this->is_get();
+        return strcasecmp ( $this->request_method, "post" ) === 0;
     }
     public function is_get() {
         return strcasecmp ( $this->request_method, "get" ) === 0;
     }
-
     /**
      *
      * @param $just_path 如果为true只显示uri的path部分

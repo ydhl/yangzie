@@ -32,6 +32,8 @@
     define ( 'YZE_ACTION_BEFORE_GET', 'do_before_get' );
     define ( 'YZE_ACTION_AFTER_POST', 'do_after_post' );
     define ( 'YZE_ACTION_AFTER_GET', 'do_after_get' );
+    define ( 'YZE_ACTION_BEFORE_DISPATCH', 'YZE_ACTION_BEFORE_DISPATCH' );
+    define ( 'YZE_ACTION_AFTER_DISPATCH', 'YZE_ACTION_AFTER_DISPATCH' );
 
     /**
      * 参数 即将要保持进数据库的对象；在实际更新数据库之前调用

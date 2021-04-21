@@ -133,9 +133,9 @@ function yze_handle_request() {
 
         $action = "YZE_ACTION_BEFORE_" .  ( $request->is_get() ? "GET" : "POST");
         \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
-
+        \yangzie\YZE_Hook::do_hook(YZE_ACTION_BEFORE_DISPATCH, $controller);
         $response = $request->dispatch();
-
+        \yangzie\YZE_Hook::do_hook(YZE_ACTION_AFTER_DISPATCH, $controller);
         $action = "YZE_ACTION_AFTER_" .  ( $request->is_get() ? "GET" : "POST");
         \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
 

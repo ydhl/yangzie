@@ -184,6 +184,34 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      */
     public function exception(YZE_RuntimeException $e) {
     }
+
+    /**
+     * 获取action上指定注解的值
+     * @param $action
+     */
+    public function getAnnotatiaon($action, $annotation){
+        $ref  = new \ReflectionObject ( $this );
+        $methodRef = $ref->getMethod($action);
+        if (!$methodRef) return $action;
+
+        $comment = $methodRef->getDocComment();
+        preg_match("/@{$annotation}\s(?P<name>.+)/i", $comment, $matches);
+        return $matches['name'] ?: $action;
+    }
+
+    /**
+     * 判断action上是否有指定注解
+     * @param $action
+     */
+    public function hasAnnotatiaon($action, $annotation){
+        $ref  = new \ReflectionObject ( $this );
+        $methodRef = $ref->getMethod($action);
+        if (!$methodRef) return $action;
+
+        $comment = $methodRef->getDocComment();
+        return preg_match("/@{$annotation}/i", $comment, $matches);
+    }
+
 }
 class Yze_Default_Controller extends YZE_Resource_Controller {
     public function index() {
@@ -212,6 +240,7 @@ class YZE_Exception_Controller extends YZE_Resource_Controller {
         $this->exception = $e;
         return $this->index ();
     }
+
 
     private function output_status_code($error_number) {
         switch ($error_number) {

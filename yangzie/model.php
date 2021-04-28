@@ -696,7 +696,7 @@ abstract class YZE_Model extends YZE_Object{
 
     public static function uuid() {
         $sql = "select uuid() as uuid";
-        $rst = YZE_DBAImpl::getDBA()->nativeQuery2($sql);
+        $rst = YZE_DBAImpl::getDBA()->nativeQuery($sql);
         $rst->next();
         return $rst->f("uuid");
     }

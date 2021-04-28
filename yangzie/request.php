@@ -213,7 +213,7 @@ class YZE_Request extends YZE_Object {
         }
 
         $action = self::the_val($action ? $action : $this->get_var("action"), "index");
-        $method = ($this->is_get() ? "" : "post_") . str_replace("-", "_", $action);
+        $method = ($this->is_get() ? "" : $this->request_method."_") . str_replace("-", "_", $action);
         $this->set_method ( $method );
 
         if(strcmp($curr_module, 'graphql')===0) {
@@ -234,11 +234,6 @@ class YZE_Request extends YZE_Object {
         if (! ($controller = $this->controller ())) {
             throw new YZE_Resource_Not_Found_Exception ( "Controller $controller_cls Not Found" );
         }
-
-        if (! method_exists ( $controller, $method )) {
-            throw new YZE_Resource_Not_Found_Exception ( $controller_cls . "::" . $method . " not found" );
-        }
-
         return $this;
     }
 
@@ -462,11 +457,17 @@ class YZE_Request extends YZE_Object {
     }
     public function dispatch() {
         $controller = $this->controller;
-        if ($this->is_get()){
-            return $controller->do_Get();
-        }else{
-            return $controller->do_Post();
+
+        foreach($controller->response_headers() as $header){
+            header($header);
         }
+
+        $method = $this->the_method();
+        if (! method_exists ( $controller, $method )) {
+            throw new YZE_Resource_Not_Found_Exception ( $this->controller_class . "::" . $method . " not found" );
+        }
+
+        return $controller->handle_request();
     }
     private function set_controller_name($controller) {
         $this->controller_class = self::format_class_name ( $controller, "Controller" );

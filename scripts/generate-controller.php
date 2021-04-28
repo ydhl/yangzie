@@ -132,7 +132,7 @@ class $class extends YZE_Resource_Controller {
         \$this->layout = 'error';
         //Post 请求或者返回json接口时，出错返回json错误结果
         \$format = \$request->get_output_format();
-        if (\$request->is_post() || strcasecmp ( \$format, \"json\" )==0){
+        if (!\$request->is_get() || strcasecmp ( \$format, \"json\" )==0){
         	\$this->layout = '';
         	return YZE_JSON_View::error(\$this, \$e->getMessage());
         }

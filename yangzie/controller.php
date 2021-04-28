@@ -3,13 +3,22 @@
 namespace yangzie;
 
 /**
- * 资源控制器抽象基类，提供控制器的处理机制，子类控制器映射到具体的uri，具体处理请求
- * action在子类中定义，该类为post，get，put，delete的请求做预处理，然后调用到对应的action
- * 子类的action如果没有返回YZE_IResponse则这里默认返回对应的Simple_View，对于POST请求，如果没有指定response，则默认然后redirect，刷新当前uri
- * 为view提供设置view中要使用的数据的方法。
- * 负责对post请求进行验证处理：多人同时修改，重复提交表单
- * 提供get，post，put，delete的hook
- * 定义视图的layout
+ * 资源控制器抽象基类，提供控制器的处理机制，子类控制器的action映射到具体的uri，具体处理请求<br/>
+ * 同一个url的request method映射到不同的action，<br/>
+ * 比如GET /user 映射到User_Controller:index<br/>
+ * 比如POST /user 映射到User_Controller:post_index<br/>
+ * 比如DELETE /user 映射到User_Controller:delete_index<br/>
+ * 也就是非get请求，则在action前面加上REQUEST_METHOD_<br/>
+ * <br/><br/>
+ * 对于OPTIONS请求，由于OPTIONS不是请求具体的业务逻辑只是对服务器的询问，只需要返回对应的header，任何实际输出内容都会被忽略，
+ * 所以不需要有对应的options_action方法，只需要在request_headers中根据options询问的情况进行应答即可<br/>
+ * 比如Access-Control-Request-Headers: content-type,x-product,<br/>
+ * Access-Control-Request-Method: POST<br/>
+ * 那么只需要返回对应的允许的header即可：Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect, x-product
+ * <br/><br/>
+ * 可通过request->get_from_server()来获取http的头部，但是有所区别，
+ * 比如如果request的headers是Access-Control-Request-Headers: content-type,x-product
+ * 那么则这样取：$request->get_from_server('HTTP_ACCESS_CONTROL_REQUEST_HEADERS')
  *
  * @category Framework
  * @package Yangzie
@@ -34,7 +43,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      */
     protected $module;
     public function __construct($request = null) {
-        $this->request = $request ? $request : YZE_Request::get_instance ();
+        $this->request = $request ?: YZE_Request::get_instance ();
         $this->module = $this->request->module_obj ();
         // init layout
         if ($this->request->get_output_format ()) {
@@ -70,11 +79,11 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      * @return
      *
      */
-    protected function getResponse($view_tpl = null, $format = null) {
+    private function getResponse($view_tpl = null, $format = null) {
         $request = $this->request;
         $method  = $request->the_method();
-        if($request->is_post()){
-        	$method = substr($method, 5);
+        if(!$request->is_get()){
+        	$method = preg_replace("/[^_]+?_/", "", $method, 1);
         }
 
         $view_data  = $this->view_data;
@@ -99,17 +108,28 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         return new YZE_Simple_View ( $view, $view_data, $this, $format );
     }
 
+    /**
+     * 子类重载设置响应头，可根据当前请求的action等信息做出区别对待
+     * 任何http头数组，比如
+     * [
+     * "Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect",
+     * "Access-Control-Allow-Methods: GET, POST, PUT,DELETE,OPTIONS,PATCH",
+     * "Access-Control-Allow-Origin: *"
+     * ]
+     */
+    public function response_headers(){
+        return [];
+    }
 
     /**
-     * 处理get方法.get方法用于显示界面,给出响应，如果该url有异常，则进入exception处理
-     *
-     * @access public
-     * @author liizii, <libol007@gmail.com>
-     * @return YZE_IResponse
+     * 调用映射的action并返回响应
+     * @return YZE_Redirect|YZE_Simple_View
      */
-    public final function do_Get() {
+    public final function handle_request(){
         $request = $this->request;
         $method = $request->the_method ();
+        $redirect = new YZE_Redirect ( $request->the_full_uri (), $this, $this->view_data );
+
         $response = $this->$method ();
         if (! $response) {
             $response = $this->getResponse ();
@@ -119,42 +139,9 @@ abstract class YZE_Resource_Controller extends YZE_Object {
 
         if (strcasecmp ( $format, "json" ) == 0) {
             $this->layout = "";
-            return $response;
         }
-
-        return $response;
+        return $response?:$redirect;
     }
-
-    /**
-     * post方法.用于处理用户数据提交,提交成功后重定向
-     *
-     * @access public
-     * @author liizii, <libol007@gmail.com>
-     * @return YZE_IResponse
-     */
-    public final function do_Post() {
-        $request = $this->request;
-        $method = $request->the_method ();
-        $redirect = new YZE_Redirect ( $request->the_full_uri (), $this, $this->view_data );
-
-        $response = $this->$method ();
-        $format = $request->get_output_format();
-
-        if (strcasecmp ( $format, "json" ) == 0) {
-            $this->layout = "";
-            return $response ?: $redirect;
-        }
-
-        // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
-        if (! $response && !$this->view) {
-            $response = $redirect;
-        }else if($this->view){
-        	$response = $this->getResponse();
-        }
-
-        return $response;
-    }
-
     public final function do_exception(YZE_RuntimeException $e) {
         $request = $this->request;
         $request->set_Exception($e);

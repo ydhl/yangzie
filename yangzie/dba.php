@@ -106,11 +106,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param YZE_SQL $class
 	 * @return ResultWrapper
 	 */
-	public function nativeQuery(YZE_SQL $sql){
-		return $this->nativeQuery2($sql->__toString());
-	}
-
-	public function nativeQuery2($sql){
+	public function nativeQuery($sql){
 	    $pdo = $this->conn->query($sql);
 	    if( ! $pdo){
 	        throw new YZE_DBAException("sql error " . $sql . ":" . join(",",$this->conn->errorInfo()));
@@ -134,12 +130,12 @@ class YZE_DBAImpl extends YZE_Object
 	 * !!!如果是联合查询，没有数据的对象返回null
 	 *
 	 * @param YZE_SQL $sql
-	 * @param string $key_field 返回的数组的索引，没有指定则是数字自增，指定指定名，则以该字段的值作为索引
+	 * @param string $index_field 返回的数组的索引，没有指定则是数字自增，指定指定名，则以该字段的值作为索引
 	 * @param array $params :column类型的字段值
 	 *
 	 * @return array(Model)
 	 */
-	public function select(YZE_SQL $sql, $params=array(), $key_field=null){
+	public function select(YZE_SQL $sql, $params=array(), $index_field=null){
 		$classes = $sql->get_select_classes(true);
 
 		if($params){
@@ -196,10 +192,12 @@ class YZE_DBAImpl extends YZE_Object
 		foreach ($entity_objects as $index => $o) {
 			if (is_array($o)) {
 				foreach ($o as $n => $v) {
-					$objects[$index][$n] = $v && $v->get_records() ? $v : null;
+					$key = $index_field ? $v->get($index_field) : $index;
+					$objects[$key][$n] = $v && $v->get_records() ? $v : null;
 				}
 			}else{
-				$objects[$index] = $o && $o->get_records() ? $o : null;
+				$key = $index_field ? $o->get($index_field) : $index;
+				$objects[$key] = $o && $o->get_records() ? $o : null;
 			}
 		}
 		return $objects;

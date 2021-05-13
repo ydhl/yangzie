@@ -59,8 +59,8 @@ msgstr "无权访问(%s:%s)"
 msgid "app/__config__.php not found"
 msgstr "文件app/__config__.php 丢失"
 
-#~ msgid "update __module__ file :\t"
-#~ msgstr "更新 __module__ file :\t"
+#~ msgid "update __config__ file :\t"
+#~ msgstr "更新 __config__ file :\t"
 
 #~ msgid "hate"
 #~ msgstr "讨厌"

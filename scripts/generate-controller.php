@@ -22,7 +22,7 @@ class Generate_Controller_Script extends AbstractScript{
 		$this->save_class();
 		$this->save_test();
 
-		echo __("update __module__ file :\t");
+		echo __("update __config__ file :\t");
 		$this->update_module();
 		echo get_colored_text(__("Ok."), "blue","white")."\r\nDone.";
 	}
@@ -31,7 +31,7 @@ class Generate_Controller_Script extends AbstractScript{
 		$module = $this->module_name;
 		$path = dirname(dirname(__FILE__))."/app/modules/".$module;
 
-		$module_file = "$path/__module__.php";
+		$module_file = "$path/__config__.php";
 		include_once $module_file;
 		$module_cls = "\\app\\".$this->module_name."\\".$module."_Module";
 		$module = new $module_cls;

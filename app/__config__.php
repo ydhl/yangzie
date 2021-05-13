@@ -81,9 +81,9 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * @throws YZE_FatalException
 	 */
 	public function check(){
-//		if( version_compare(PHP_VERSION,'5.3.0','lt')){
-//			throw new YZE_FatalException("要求5.3及以上PHP版本");
-//		}
+		if( version_compare(PHP_VERSION,'5.3.0','lt')){
+			throw new YZE_FatalException("要求5.3及以上PHP版本");
+		}
 	}
 
 	protected function _config()
@@ -111,7 +111,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	}
 
 	/**
-	 * js资源分组，在加载时方便直接通过分组名加载; 这里是静态指定，如果模块中需要动态指定，可通过Request->addJSBundle制定
+	 * js资源分组，在加载时方便直接通过分组名加载;
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
 	 * 在layouts中通过接口yze_js_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)
@@ -121,7 +121,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		return $config[$bundle];
 	}
 	/**
-	 * css资源分组，在加载时方便直接通过分组名加载; 这里是静态指定，如果模块中需要动态指定，可通过Request->addCSSBundle制定
+	 * css资源分组，在加载时方便直接通过分组名加载;
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
 	 * 在layouts中通过接口yze_css_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)

@@ -1,7 +1,4 @@
 <?php
-/**
- * 该文件是YZE BD的核心文件，命令行下分别包含
- */
 chdir(dirname(dirname(dirname(__FILE__)))."/app/public_html");
 include_once 'init.php';
 include_once 'load.php';

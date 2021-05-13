@@ -11,7 +11,7 @@ class YZE_Router{
         	))*/);
 	private function __construct(){}
 	/**
-	 * 
+	 *
 	 *
 	 * @return Router
 	 */
@@ -30,12 +30,12 @@ class YZE_Router{
 	}
 
 	public static function load_routers(){
-		
+
 		foreach(glob(YZE_APP_MODULES_INC."*") as $module){
 			$phar_wrap = is_file($module) ? "phar://" :"";
-			
-			if(@file_exists("{$phar_wrap}{$module}/__module__.php")){
-				include_once "{$phar_wrap}{$module}/__module__.php";
+
+			if(@file_exists("{$phar_wrap}{$module}/__config__.php")){
+				include_once "{$phar_wrap}{$module}/__config__.php";
 				$module_name = strtolower(basename($module));
 				if($phar_wrap) {
 					$module_name = ucfirst(preg_replace('/\.phar$/',"", $module_name));

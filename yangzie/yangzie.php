@@ -2,6 +2,7 @@
 namespace yangzie;
 
 class YZE_Object{
+	const VERSION = '1.5.3';
 	private static $loaded_modules = array();
 	
 	public static function set_loaded_modules($module_name, $module_info){

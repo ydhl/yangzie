@@ -210,9 +210,10 @@ class YZE_Request extends YZE_Object {
         if ($config_args) {
             $controller_name = @$config_args ['controller_name'];
             $curr_module = @$config_args ['module'];
+            $curr_action = @$config_args ['action'];
         }
 
-        $action = self::the_val($action ? $action : $this->get_var("action"), "index");
+        $action = self::the_val($action ?: $curr_action, "index");
         $method = ($this->is_get() ? "" : $this->request_method."_") . str_replace("-", "_", $action);
         $this->set_method ( $method );
 
@@ -403,8 +404,10 @@ class YZE_Request extends YZE_Object {
         $_ = array ();
         foreach ( $routers as $module => $router_info ) {
             foreach ( $router_info as $router => $acontroller ) {
+                $router = ltrim($router, '/');
                 $_ ['controller_name'] = strtolower ( $acontroller ['controller'] );
                 $_ ['module'] = $module;
+                $_ ['action'] = @$acontroller ['action'];
                 if (preg_match ( "#^/{$router}\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches ) || preg_match ( "#^/{$router}/?$#i", $uri, $matches )) {
                     $config_args = $matches;
                     foreach ( ( array ) $acontroller ['args'] as $name => $value ) {
@@ -444,7 +447,7 @@ class YZE_Request extends YZE_Object {
         }
         if (count ( $uri_split ) > 2) {
         	if(! is_numeric($uri_split[2])){
-        		$_ ['args']['action'] = $uri_split[2];
+        		$_ ['action'] = $uri_split[2];
         	}else{
         		$_ ['args'][] = $uri_split[2];
         	}
@@ -558,65 +561,6 @@ class YZE_Request extends YZE_Object {
         } else {
             return YZE_APP_PATH . "modules/" . $this->module () . "/views";
         }
-    }
-
-    /**
-     *
-     * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
-     */
-    public function addCSSBundle($files, $module=null){
-        $session = YZE_Session_Context::get_instance();
-        if( ! $module){
-            $module = $this->module();
-        }
-        $exists = self::cssBundle($module);
-        if($exists){
-            foreach ($exists as $exist){
-                if ( array_search($exist, $files) === FALSE){
-                    $files[] = $exist;
-                }
-            }
-        }
-        $session->set($module."-css-bundle", (array)$files);
-    }
-    /**
-     *
-     * @param unknown $files, 文件或文件数组，资源路径是web路径，以/开始，/指的上public_html/modules/模块名目录
-     */
-    public function addJSBundle($files, $module=null){
-        $session = YZE_Session_Context::get_instance();
-        if( ! $module){
-            $module = $this->module();
-        }
-        $exists = self::jsBundle($module);
-        if($exists){
-            foreach ($exists as $exist){
-                if ( array_search($exist, $files) === false){
-                    $files[] = $exist;
-                }
-            }
-        }
-        $session->set($module."-js-bundle", (array)$files);
-    }
-
-
-    /**
-     * 返回 module指定的js bundle
-     * @param unknown $module
-     * @return array
-     */
-    public static function jsBundle($module){
-    	$session = YZE_Session_Context::get_instance();
-    	return $session->get($module."-js-bundle");
-    }
-    /**
-     * 返回 module指定的css bundle
-     * @param unknown $module
-     * @return array
-     */
-    public static function cssBundle($module){
-    	$session = YZE_Session_Context::get_instance();
-    	return $session->get($module."-css-bundle");
     }
 
     public function get_exception(){

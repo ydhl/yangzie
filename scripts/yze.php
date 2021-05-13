@@ -166,7 +166,7 @@ function phar_module($module, $key_path){
 		die();
 	}
 	$phar->buildFromDirectory(dirname(dirname(__FILE__))."/app/modules/".$module);
-	//$phar->setStub($phar->createDefaultStub('__module__.php'));
+	//$phar->setStub($phar->createDefaultStub('__config__.php'));
 	$phar->compressFiles(\Phar::GZ);
 	if($key_path){
 		$private = openssl_get_privatekey(file_get_contents($key_path));
@@ -266,8 +266,8 @@ generate controller and view，%s back:
 }
 
 function is_controller_exists($controller, $module){
-	if(file_exists(YZE_APP_MODULES_INC.$module."/__module__.php")){
-		include_once YZE_APP_MODULES_INC.$module."/__module__.php";
+	if(file_exists(YZE_APP_MODULES_INC.$module."/__config__.php")){
+		include_once YZE_APP_MODULES_INC.$module."/__config__.php";
 		$class = "\\app\\".$module."\\".ucfirst(strtolower($module))."_Module";
 		$object = new $class();
 		return $object->get_uris_of_controller($controller);

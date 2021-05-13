@@ -34,7 +34,7 @@ function yze_autoload($class) {
     }else if(preg_match("{_method$}i", $class)){//model meta define
         $file .= "models" . DS . $class_name . ".trait.php";
     }else if(preg_match("{_module$}i", $class)){
-        $file .= "__module__.php";
+        $file .= "__config__.php";
     }else if(preg_match("{_view$}i", $class)){
         $file .= "views" . DS . preg_replace("{_view$}i", "", $class_name) . ".view.php";
         if ( ! file_exists($file)){
@@ -82,8 +82,8 @@ function yze_load_app() {
             $module_name = ucfirst(preg_replace('/\.phar$/', "", $module_name));
         }
 
-        if (@file_exists("{$phar_wrap}{$module}/__module__.php")) {
-            require_once "{$phar_wrap}{$module}/__module__.php";
+        if (@file_exists("{$phar_wrap}{$module}/__config__.php")) {
+            require_once "{$phar_wrap}{$module}/__config__.php";
 
             $class = "\\app\\{$module_name}\\" . ucfirst($module_name) . "_Module";
             $object = new $class ();
@@ -132,12 +132,12 @@ function yze_handle_request() {
         $dba->beginTransaction();
 
         $action = "YZE_ACTION_BEFORE_" .  strtoupper($request->the_method());
-        \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
+        \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
         \yangzie\YZE_Hook::do_hook(YZE_ACTION_BEFORE_DISPATCH, $controller);
         $response = $request->dispatch();
         \yangzie\YZE_Hook::do_hook(YZE_ACTION_AFTER_DISPATCH, $controller);
         $action = "YZE_ACTION_AFTER_" .  strtoupper($request->the_method());
-        \yangzie\YZE_Hook::do_hook ( constant ( $action ), $controller );
+        \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
 
         $dba->commit();
 

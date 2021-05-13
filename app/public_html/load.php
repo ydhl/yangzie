@@ -1,67 +1,123 @@
 <?php
+/**
+ * 该文件是独立于框架外直接访问的，所以部分框架的功能不能使用，比如YZE_Request, YZE_Controller等
+ * 该文件的作用<br/><br/
+ * 1. 对系统的js,css bundle打包下载，参数t=css|js, b=要加载的bundle，在__config__.php中进行定义<br/>
+ * 2. 对某个模块的bundle进行打包下载，参数t=css|js, m=模块名，在模块的__config__.php中进行定义<br/>
+ * 3. 访问某个模块下面的静态资源, 参数t=asset, m=模块名，src=要加载的资源路径，位于模块下面的public_html<br/><br/>
+ * 通过yze_css_bundle,通过yze_js_bundle,yze_module_js_bundle,yze_module_css_bundle接口生产访问本文件的html脚本
+ */
 use app\App_Module;
-use yangzie\YZE_Request;
-require 'init.php';
+use yangzie\YZE_Base_Module as YZE_Base_Module;
+use yangzie\YZE_Object;
 
-$type = strtolower($_GET["t"]);
-if( ! in_array($type, array("js","css")))return;
-if( "css" == $type){
-    header("Content-Type: text/css");
-}else{
-    header('Content-type: text/javascript');
+require 'init.php';
+date_default_timezone_set('Asia/Chongqing');
+set_time_limit(0);
+
+function get_download_mime_type($ext) {
+	if (!\yangzie\yze_isimage($ext)) return "application/octet-stream";
+	$ext = strtolower($ext);
+	switch ($ext) {
+		case "png": return "image/png";
+		case "svg": return "image/svg+xml";
+		case "gif": return "image/gif";
+		case "bmp": return "image/bmp";
+		case "ico": return "image/x-icon";
+		case "jpeg":
+		case "jpg":
+		default :return "image/jpeg";
+	}
 }
+/**
+ * @param $module
+ * @return YZE_Base_Module|null
+ */
+function create_module($module){
+	$module_class = YZE_Object::format_class_name ( $module, "Module" );
+
+	$class = "\\app\\" . $module . "\\" . $module_class;
+	if (class_exists ( $class )) {
+		return new $class ();
+	}
+	return null;
+}
+
+$bundle_files = array();
+$type = strtolower($_GET["t"]);
 $bundle = @$_GET["b"];//load static bundle
 $module = @$_GET["m"];//load module bundle
-if ( ! $bundle && ! $module ) return;
+$asset  = @$_GET["src"];//load asset
+$eTag = '';
+$asset_file_ext = '';
+$asset_file_path = '';
 
-date_default_timezone_set('Asia/Chongqing');
-$bundle_files = array();
+if( ! in_array($type, array("js","css",'asset')))return;
+if ( ! $bundle && ! $module && !$asset ) return;
 
-if($module){
-	$temp = $type=="js" ? YZE_Request::jsBundle($module) : YZE_Request::cssBundle($module);
 
-	if($temp){
-		foreach($temp as $file){
-			$bundle_files[] = "/module-assets/{$module}/".ltrim($file,"/");
-		}
-	}
+if( "css" == $type){
+    header("Content-Type: text/css");
+}else if("js" == $type){
+    header('Content-type: text/javascript');
 }else{
-	$app = new App_Module();
-	foreach (explode(",", $bundle) as $bundle) {
-		if (empty($bundle)) continue;
-		$temp = $type=="js" ? $app->js_bundle($bundle) : $app->css_bundle($bundle);
+	if (!$asset || !$module) return;
+	$asset_file_ext = pathinfo($asset, PATHINFO_EXTENSION);
+	header("Content-type: " . get_download_mime_type($asset_file_ext));
+	$asset_file_path = \yangzie\yze_get_realpath(YZE_APP_MODULES_INC.$module.'/public_html'.ltrim($asset));
+	$bundle_files[] = $asset_file_path;
+//	echo $asset_file_path;die;
+	$eTag = md5($asset_file_path);
+}
+
+if ($type != 'asset'){
+	$base_dir = '';
+	if($module){
+		$moduleConfig = create_module($module);
+		$eTag = md5($module.$bundle);
+		$base_dir        = YZE_APP_MODULES_INC.$module.'/public_html';
+	}else if ($bundle){
+		$eTag = md5($bundle);
+		$moduleConfig = new App_Module();
+		$base_dir        = dirname(__FILE__);
+	}
+	if (!$moduleConfig) return;
+	foreach (explode(",", $bundle) as $_bundle) {
+		$temp = $type=="js" ? $moduleConfig->js_bundle($_bundle) : $moduleConfig->css_bundle($_bundle);
 		if( ! $temp)continue;
 
 		$bundle_files = array_merge($bundle_files, $temp);
 	}
+
+	$bundle_files = array_map(function($item) use ($base_dir){
+		return \yangzie\yze_get_realpath($item, $base_dir);
+	}, $bundle_files);
 }
 
-$current_dir        = dirname(__FILE__);
-$last_modified_time = 0; //找出当前文件最后一次更新时间
-$files              = array();
+if (!$bundle_files)return;
+
+$last_modified_time = 0;
+$files = array();
 
 foreach ($bundle_files as $bundle_file) {
     if (empty($bundle_file)) continue;
+    if ( ! file_exists($bundle_file) ) continue;
+	$path_info = pathinfo($bundle_file);
+	if( strcasecmp( $path_info['extension'], $type) != 0) continue;
 
-    $file = $current_dir . $bundle_file;
+	$files[]    = $bundle_file;
 
-    if ( ! file_exists($file) ) continue;
-
-    $files[]    = $file;
-
-    $modified_time  = filemtime($file);
+    $modified_time  = filemtime($bundle_file);
     if ($last_modified_time == 0 || $modified_time > $last_modified_time) {
         $last_modified_time = $modified_time;
     }
 }
+$eTag .= $last_modified_time;
 
-$key  = md5($bundle.$module);
-$eTag = $key . $last_modified_time;
-
-header("Cache-Control:max-age=1800");
+header("Cache-Control: max-age=86400");
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $last_modified_time).' GMT');
 header('Etag:' . $eTag);
-header('Expires:' . gmdate('D, d M Y H:i:s', time()+1800).' GMT');//30分钟内客户端不用在做请求
+header('Expires:' . gmdate('D, d M Y H:i:s', time()+86400).' GMT');
 
 if (@$_SERVER['HTTP_IF_NONE_MATCH'] == $eTag) {
     header("HTTP/1.0 304 Not Modified");
@@ -76,11 +132,37 @@ if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
     }
 }
 
-foreach ($files as $file) {
-	$path = realpath($file);
-	if(!file_exists($path))continue;
-	if($current_dir != substr($path, 0, strlen($current_dir))) continue;//只允许读取app目录下的
-	$path_info = pathinfo($path);
-	if( strcasecmp( $path_info['extension'], $type) === 0) echo file_get_contents($file);
+if ($type=="asset"){
+	if(!file_exists($asset_file_path)) return;
+
+	ob_clean();
+	$file_name = basename($asset_file_ext);
+	$filesize = filesize($asset_file_path);
+
+	header("Content-type: " . get_download_mime_type($asset_file_path));
+	header("Accept-Ranges: bytes");
+	header("Accept-Length: " . $filesize);
+
+	if (!\yangzie\yze_isimage($asset_file_path)) {
+		header("Content-Disposition: attachment; filename=" . $file_name);
+	}
+
+	$read_buffer = 4096;
+	$handle = fopen($asset_file_path, 'rb');
+	$sum_buffer = 0;
+
+	while (!feof($handle) && $sum_buffer < $filesize) {
+		echo fread($handle, $read_buffer);
+		$sum_buffer += $read_buffer;
+	}
+	ob_flush();
+	flush();
+	exit(0);
+}else{
+	foreach ($files as $file) {
+		$path = realpath($file);
+		if(!file_exists($path))continue;
+		echo file_get_contents($file);
+	}
 }
 ?>

@@ -54,8 +54,8 @@ function yze_merge_query_string($url, $args = array(), $format=null){
 }
 
 /**
- * 输出css加载html, 工作路径是load文件
- * 所在的目录，这在css文件中会访问相对路径下的font，img时需要注意, yze会对../和./的路径修改成正确的路径
+ * 输出js加载script代码, 工作路径是网站工作目录（public_html），
+ * 所以js中如果有资源地址访问，请注意要调成相对于网站工作目录
  * @param string $bundle, 多个bundle用,号分隔
  * @param string version 版本
  */
@@ -66,8 +66,8 @@ function yze_js_bundle($bundle, $version=""){
 }
 
 /**
- * 输出css加载html, 工作路径是load文件
- * 所在的目录，这在css文件中会访问相对路径下的font，img时需要注意, yze会对../和./的路径修改成正确的路径
+ * 输出css加载link代码, 工作路径是网站工作目录（public_html），
+ * 所以css中如果有资源地址访问，请注意要调成相对于网站工作目录
  * @param string $bundle, 多个bundle用,号分隔
  * @param string version 版本
  */
@@ -77,21 +77,30 @@ function yze_css_bundle($bundle, $version=""){
 <?php
 }
 /**
- * 输出module指定的js bundle，通常在controller中通过request->addJSBundle()加入的
+ * 输出module指定的js bundle，bundle在__config__中配置
  */
-function yze_module_js_bundle($version=""){
+function yze_module_js_bundle($bundle="", $version=""){
 	$request = YZE_Request::get_instance();
 	?>
-<script type="text/javascript" src="/load.php?t=js&v=<?php echo $version?>&m=<?php echo $request->module()?>"></script>
+<script type="text/javascript" src="/load.php?t=js&v=<?php echo $version?>&m=<?php echo $request->module()?>&b=<?php echo $bundle?>"></script>
 <?php
 }
 /**
- * 输出module指定的css bundle，通常在controller中通过request->addCSSBundle()加入的
+ * 输出module指定的css bundle，bundle在__config__中配置
  */
-function yze_module_css_bundle($version=""){
+function yze_module_css_bundle($bundle="", $version=""){
 	$request = YZE_Request::get_instance();
 ?>
-<link rel="stylesheet" type="text/css" href="/load.php?t=css&v=<?php echo $version?>&m=<?php echo $request->module()?>" />
+<link rel="stylesheet" type="text/css" href="/load.php?t=css&v=<?php echo $version?>&m=<?php echo $request->module()?>&b=<?php echo $bundle?>" />
 <?php
+}
+
+/**
+ * 返回当前访问模块下html模块里面src的访问地址
+ * @param $src
+ */
+function yze_module_asset_url($src, $version='') {
+    $request = YZE_Request::get_instance();
+    return "/load.php?t=asset&m=".$request->module()."&v={$version}&src=".urlencode($src);
 }
 ?>

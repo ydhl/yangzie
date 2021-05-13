@@ -2,6 +2,19 @@
 
 namespace yangzie;
 
+class GraphqlResult extends YZE_JSON_View{
+    public static function error($controller, $message =null, $code =null, $data=null) {
+        return new GraphqlResult($controller,  array (
+            'errors' => [$message],
+            "data" => $data
+        ) );
+    }
+    public static function success($controller, $data = null) {
+        return new GraphqlResult($controller,  array (
+            "data" => $data
+        ) );
+    }
+}
 /**
  * Graphql处理控制器
  *
@@ -15,6 +28,13 @@ class Graphql_Controller extends YZE_Resource_Controller {
     private $operationType = 'query';
     private $operationName;
     private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
+    public function response_headers(){
+        return [
+            "Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect",
+            "Access-Control-Allow-Methods: GET, POST, PUT,DELETE,OPTIONS,PATCH",
+            "Access-Control-Allow-Origin: *"
+            ];
+    }
     public function post_index() {
         return $this->index();
     }
@@ -23,9 +43,9 @@ class Graphql_Controller extends YZE_Resource_Controller {
         try{
             $nodes = $this->parse();
             $datas = $this->query($nodes);
-            return YZE_JSON_View::success($this, $datas);
+            return GraphqlResult::success($this, $datas);
         }catch (\Exception $e){
-            return YZE_JSON_View::error($this, $e->getMessage());
+            return GraphqlResult::error($this, $e->getMessage());
         }
     }
 
@@ -55,8 +75,9 @@ class Graphql_Controller extends YZE_Resource_Controller {
         preg_match_all($this->fetchActRegx, $query, $matches);
         //处理query 或者 mutation name
         $acts = $matches[0];
-//        print_r($vars);
-//        print_r($acts);
+        if (!$acts){
+            throw new YZE_FatalException('query is missing');
+        }
         if (!strcasecmp('query', $acts[0]) || !strcasecmp('mutation', $acts[0])){
             $this->operationType = $acts[0];
             if ($acts[1]!="{"){
@@ -102,6 +123,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
         $nodes = [];
         $currNode = [];
         $index = 0;
+        if (!$acts) return $nodes;
         while (true){
             // 解析完了
             if ($index==count($acts)-1) {

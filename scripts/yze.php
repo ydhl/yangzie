@@ -132,16 +132,21 @@ phar a module，%s back
 		echo wrap_output("module not exist");
 	}
 
-	echo wrap_output(__("2. (2/2)phar signature key name (pem, in the tmp folder) , if not need signature please press enter 
-  ［ 
-  	1.cd tmp
-  	2.openssl genrsa -out mykey.pem 1024
-    3.openssl rsa -in mykey.pem -pubout -out mykey.pub
-   ］:"));
+	echo wrap_output(__("2. (2/2)phar signature key file name (pem file in the tmp folder) 
+	
+if you need create pem file, do such as:
+1.cd tmp
+2.openssl genrsa -out mykey.pem 1024
+3.openssl rsa -in mykey.pem -pubout -out mykey.pub
 
-	while (!file_exists(($key_path = YZE_INSTALL_PATH."tmp/".get_input()))){
-		if(!$key_path)break;//回车
-		echo get_colored_text(wrap_output(vsprintf(__("\t%s file not exist:  "), $key_path)), "red");
+if not need signature please press enter 
+
+:"));
+	$key_path = trim(get_input());
+	if ($key_path){
+		while (!file_exists(($key_path = YZE_INSTALL_PATH."tmp/".$key_path))){
+			echo get_colored_text(wrap_output(vsprintf(__("\t%s file not exist:  "), $key_path)), "red");
+		}
 	}
 
 	phar_module($module, $key_path);

@@ -55,7 +55,9 @@ $asset_file_path = '';
 if( ! in_array($type, array("js","css",'asset')))return;
 if ( ! $bundle && ! $module && !$asset ) return;
 
-
+/**
+ * 1.output content type
+ */
 if( "css" == $type){
     header("Content-Type: text/css");
 }else if("js" == $type){
@@ -64,22 +66,28 @@ if( "css" == $type){
 	if (!$asset || !$module) return;
 	$asset_file_ext = pathinfo($asset, PATHINFO_EXTENSION);
 	header("Content-type: " . get_download_mime_type($asset_file_ext));
-	$asset_file_path = \yangzie\yze_get_realpath(YZE_APP_MODULES_INC.$module.'/public_html'.ltrim($asset));
+	$is_phar      = is_file(YZE_APP_MODULES_INC.$module.".phar");
+	$asset_file_path = ($is_phar?'phar://':'').\yangzie\yze_get_abs_path(YZE_APP_MODULES_INC.$module. ($is_phar ? '.phar' : '') .'/public_html'.ltrim($asset));
 	$bundle_files[] = $asset_file_path;
-//	echo $asset_file_path;die;
 	$eTag = md5($asset_file_path);
 }
 
+/**
+ * 2.read file
+ */
 if ($type != 'asset'){
-	$base_dir = '';
+	$base_dir     = '';
+	$moduleConfig = null;
+	$is_phar      = null;
 	if($module){
 		$moduleConfig = create_module($module);
-		$eTag = md5($module.$bundle);
-		$base_dir        = YZE_APP_MODULES_INC.$module.'/public_html';
+		$eTag         = md5($module.$bundle);
+		$is_phar      = is_file(YZE_APP_MODULES_INC.$module.".phar");
+		$base_dir     = YZE_APP_MODULES_INC.$module . ($is_phar ? '.phar' : '') . '/public_html';
 	}else if ($bundle){
-		$eTag = md5($bundle);
+		$eTag         = md5($bundle);
 		$moduleConfig = new App_Module();
-		$base_dir        = dirname(__FILE__);
+		$base_dir     = dirname(__FILE__);
 	}
 	if (!$moduleConfig) return;
 	foreach (explode(",", $bundle) as $_bundle) {
@@ -89,8 +97,8 @@ if ($type != 'asset'){
 		$bundle_files = array_merge($bundle_files, $temp);
 	}
 
-	$bundle_files = array_map(function($item) use ($base_dir){
-		return \yangzie\yze_get_realpath($item, $base_dir);
+	$bundle_files = array_map(function($item) use ($base_dir, $is_phar){
+		return ($is_phar?'phar://':'').\yangzie\yze_get_abs_path($item, $base_dir);
 	}, $bundle_files);
 }
 
@@ -101,6 +109,7 @@ $files = array();
 
 foreach ($bundle_files as $bundle_file) {
     if (empty($bundle_file)) continue;
+
     if ( ! file_exists($bundle_file) ) continue;
 	$path_info = pathinfo($bundle_file);
 	if( strcasecmp( $path_info['extension'], $type) != 0) continue;
@@ -114,6 +123,9 @@ foreach ($bundle_files as $bundle_file) {
 }
 $eTag .= $last_modified_time;
 
+/**
+ * 3. cache control
+ */
 header("Cache-Control: max-age=86400");
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $last_modified_time).' GMT');
 header('Etag:' . $eTag);
@@ -132,6 +144,9 @@ if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
     }
 }
 
+/**
+ * 4. output
+ */
 if ($type=="asset"){
 	if(!file_exists($asset_file_path)) return;
 
@@ -160,8 +175,6 @@ if ($type=="asset"){
 	exit(0);
 }else{
 	foreach ($files as $file) {
-		$path = realpath($file);
-		if(!file_exists($path))continue;
 		echo file_get_contents($file);
 	}
 }

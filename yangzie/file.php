@@ -6,8 +6,26 @@ function yze_isimage($file){
 	return in_array(strtolower(pathinfo($file,PATHINFO_EXTENSION) ?: $file), $type);
 }
 
-function yze_get_realpath($path, $in=''){
-	return realpath($in."/".ltrim($path, "/"));
+/**
+ * this/is/../a/./test/.///is, 格式化成this/a/test/is，但要注意不能有stream wrapper，比如http:// phar://等
+ * //会被处理掉
+ * @param $path
+ * @param string $in
+ * @return string
+ */
+function yze_get_abs_path($path, $in=''){
+    $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $in."/".ltrim($path, "/"));
+    $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
+    $absolutes = array();
+    foreach ($parts as $part) {
+        if ('.' == $part) continue;
+        if ('..' == $part) {
+            array_pop($absolutes);
+        } else {
+            $absolutes[] = $part;
+        }
+    }
+    return DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $absolutes);
 }
 
 function yze_remove_abs_path($path, $in){

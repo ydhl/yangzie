@@ -514,11 +514,11 @@ function rrmdir($dir) {
 }
 
 function wrap_output($msg){
-	if(PHP_OS=="WINNT"){
-		return iconv("UTF-8", "GB2312//IGNORE", $msg);
-	}else{
+	//if(PHP_OS=="WINNT"){
+	//	return iconv("UTF-8", "GB2312//IGNORE", $msg);
+	//}else{
 		return $msg;
-	}
+	//}
 }
 
 abstract class AbstractScript{

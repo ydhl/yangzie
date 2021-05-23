@@ -2,24 +2,24 @@
 namespace yangzie;
 
 class YZE_Object{
-	const VERSION = '1.5.3';
+	const VERSION = '2.0.0';
 	private static $loaded_modules = array();
-	
+
 	public static function set_loaded_modules($module_name, $module_info){
 		self::$loaded_modules[strtolower($module_name)] = $module_info;
 	}
-	
+
 	public static function loaded_module($module_name){
 		return @self::$loaded_modules[strtolower($module_name)];
 	}
-	
+
 	//subclass impl this.
 	public function output(){
 
 	}
 
-	
-	
+
+
 	/**
 	 * 取得一个变量的值，该方法主要是增加了默认值处理，如果变量为假值，返回默认值
 	 *
@@ -62,7 +62,7 @@ class YZE_Object{
             }
             return $array;
         }
-        
+
         //非cli模式下才有$_POST这些全局变量
 		$definition = array();
 		foreach($array as $name=>$value){
@@ -76,15 +76,16 @@ class YZE_Object{
 		$definition = array();
 		foreach($array as $name=>$value){
 			$definition[$name]['filter'] 	= FILTER_CALLBACK;
-			$definition[$name]['options']	= 'htmlspecialchars';
+			$definition[$name]['options']	= 'htmlentities';
 		}
 		return filter_var_array($array, $definition);
 	}
+
 	public static function filter_var($var){
-		return filter_var($var, FILTER_CALLBACK,array('options' => 'htmlspecialchars'));
+		return filter_var($var, FILTER_CALLBACK,array('options' => 'htmlentities')) ?: $var;
 	}
 	public static function defilter_var($var){
-		return filter_var($var, FILTER_CALLBACK,array('options' => 'htmlspecialchars_decode'));
+		return filter_var($var, FILTER_CALLBACK,array('options' => 'html_entity_decode')) ?: $var;
 	}
 	public static function unescape($str,$charcode="UTF-8"){
 		$text = preg_replace_callback("/[%|\\\\]u(?P<c>[0-9A-Za-z]{4})/",function($matches){

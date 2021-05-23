@@ -35,6 +35,23 @@ class YZE_DBAImpl extends YZE_Object
 	}
 
 	/**
+	 * 通过指定的秘钥解密
+	 */
+	public function decrypt($hexString, $key){
+		$rst = $this->nativeQuery("select AES_DECRYPT(".$this->quote(hex2bin($hexString)).",".$this->quote($key).") as var");
+		$rst->next();
+		return $rst->f('var');
+	}
+	/**
+	 * 通过指定的秘钥加密, 返回hex格式的字符串
+	 */
+	public function encrypt($value, $key){
+		$rst = $this->nativeQuery("select AES_ENCRYPT(".$this->quote($value).",".$this->quote($key).") as var");
+		$rst->next();
+		$value = $rst->f('var');;
+		return $value ? bin2hex($value) : $value;
+	}
+	/**
 	 * @return YZE_DBAImpl
 	 */
 	public static function getDBA(){
@@ -200,6 +217,8 @@ class YZE_DBAImpl extends YZE_Object
 				$objects[$key] = $o && $o->get_records() ? $o : null;
 			}
 		}
+
+		\yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_SELECT, $objects);
 		return $objects;
 	}
 	/**
@@ -247,7 +266,7 @@ class YZE_DBAImpl extends YZE_Object
 	    $sql = new YZE_SQL();
 	    //自动把version更新
 	    $entity->update_version();
-	    $sql->update('t',$entity->get_records())
+	    $sql->update('t', $this->get_entity_record($entity))
 	    ->from(get_class($entity),"t");
 	    $sql->where("t",$entity->get_key_name(),YZE_SQL::EQ,$entity->get_key());
 	    $this->execute($sql);
@@ -314,7 +333,7 @@ class YZE_DBAImpl extends YZE_Object
 		$sql = new YZE_SQL();
 		$extra_info = $type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_UPDATE ? array_keys($entity->get_unique_key()) : $checkSql;
 		//insert
-		$sql->insert('t',$entity->get_records(), $type, $extra_info)
+		$sql->insert('t',$this->get_entity_record($entity), $type, $extra_info)
 		->from(get_class($entity),"t");
 
 		$rowCount = $this->execute($sql);
@@ -328,7 +347,7 @@ class YZE_DBAImpl extends YZE_Object
 		}elseif($type == YZE_SQL::INSERT_NOT_EXIST_OR_UPDATE){
 		    if( ! $rowCount ){
 		        $alias = $checkSql->get_alias($entity->get_table());
-		        $checkSql->update($alias, $entity->get_records());
+		        $checkSql->update($alias, $this->get_entity_record($entity));
 		        $this->execute($checkSql);
 		        $checkSql->select($alias, array($entity->get_key_name()));
 		        $obj = $this->getSingle($checkSql);
@@ -395,8 +414,12 @@ class YZE_DBAImpl extends YZE_Object
 				continue;//当前字段不属于$entity
 			}
 			$field_name = substr($field_name, strlen($alias));
-			if (/*$entity->has_column($field_name) && */!$entity->has_set_value($field_name)) {
-				$entity->set( $field_name , self::filter_var($field_value));#数据库取出来编码
+			if (!$entity->has_set_value($field_name)) {
+				$value = self::filter_var($field_value);
+				if (in_array($field_name, $entity->encrypt_columns)){
+					$value = YZE_DBAImpl::getDBA()->decrypt($value, YZE_DB_CRYPT_KEY);
+				}
+				$entity->set( $field_name , $value);#数据库取出来编码
 			}
 		}
 	}
@@ -633,7 +656,7 @@ class YZE_DBAImpl extends YZE_Object
      * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
      * @return boolean|unknown
      */
-    public function insertOrIgnore($table, $info) {
+    public function insertOrIgnore($table, $info, $duplicate_key=array(), $keyname="") {
         $sql_fields     = "";
         $sql_values     = "";
         $values         = array();
@@ -671,7 +694,7 @@ class YZE_DBAImpl extends YZE_Object
      * @param $keyname 表主键名称 指定了$duplicate_key一定要设置
      * @return boolean|unknown
      */
-    public function replace($table, $info) {
+    public function replace($table, $info, $duplicate_key=array(), $keyname="") {
         $sql_fields     = array();
         $values         = array();
         foreach ($info as $f => $v) {
@@ -745,11 +768,11 @@ class YZE_DBAImpl extends YZE_Object
 			$primary = " , PRIMARY KEY (`".$class::KEY_NAME."`)";
 		}
 		if ($reCreate){
-			$drop = "DROP TABLE `".YZE_MYSQL_DB."`.`{$table}`";
+			$drop = "DROP TABLE `".YZE_DB_DATABASE."`.`{$table}`";
 		}
 
 
-		$sql = "CREATE TABLE IF NOT EXISTS `".YZE_MYSQL_DB."`.`{$table}` (".join(",", $column_segments)."{$primary}{$uniqueKey})
+		$sql = "CREATE TABLE IF NOT EXISTS `".YZE_DB_DATABASE."`.`{$table}` (".join(",", $column_segments)."{$primary}{$uniqueKey})
 		ENGINE = InnoDB;";
 
 		if ($drop){
@@ -758,7 +781,15 @@ class YZE_DBAImpl extends YZE_Object
 
 		self::getDBA()->exec($sql);
 	}
-
+	private function get_entity_record(YZE_Model $entity){
+		$records = $entity->get_records();
+		foreach ($records as $name => &$value) {
+			if (in_array($name, $entity->encrypt_columns)){
+				$value = YZE_DBAImpl::getDBA()->encrypt($value, YZE_DB_CRYPT_KEY);
+			}
+		}
+		return $records;
+	}
 }
 class YZE_PDOStatementWrapper extends YZE_Object{
 	/**

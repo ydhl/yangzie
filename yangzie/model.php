@@ -23,6 +23,19 @@ abstract class YZE_Model extends YZE_Object{
 	 * 获取：$this->attr;
 	 */
 	protected $objects = array();
+	/**
+	 * 需要进行加密的字段名，
+	 * 加密是对称的，对于这类指定的加密字段，通过yangzie Api进行读取和写入时（get,set）是自动进行加密解密的，对开发者是无感的
+	 * 如果不配置，开发者也可通过YZE_DBAImpl->encrypt,YZE_DBAImpl->decrypt加解密设置，
+	 * 通过yangzie接口对数据进行读写的都支持加解密处理, 但如果是开发者自己写原生sql，则由开发者自行处理
+	 * <br/>
+	 * 加解密不同的数据库实现会不同，Mysql是通过AES_ENCRYPT、AES_DECRYPT实现的；加解密的秘钥在__config__.php中YZE_DB_CRYPT_KEY
+	 * 但要注意加密的内容是二进制格式（blob），或者自行通过bin2hex等转换成字符串存储，所以需要设置合适的字段类型
+	 *
+	 *
+	 * @var array
+	 */
+	public $encrypt_columns = array();
 	private $cache = array();
 	/**
 	 * 如果在INSERT插入行后会导致在一个UNIQUE索引或PRIMARY KEY中出现重复值，
@@ -133,15 +146,16 @@ abstract class YZE_Model extends YZE_Object{
 		}
 		return date($format,strtotime($this->get($name)));
 	}
+
+	public function get_records(){
+		return $this->records;
+	}
 	/**
+	 *
 	 * @param unknown_type $name
 	 */
 	public function get($name){
 		return @$this->records[$name];
-	}
-
-	public function get_records(){
-		return $this->records;
 	}
 	/**
 	 * 设值的时候会根据字段的类型对值进行相应的处理：
@@ -155,18 +169,10 @@ abstract class YZE_Model extends YZE_Object{
 		//数字的“null”字符串与null值都处理成null
 		switch ($this->getFieldType($name)) {
 			case "integer":
-				if (is_null($value)) {
-					$value = null;
-				}else{
-					$value =  intval($value);
-				}
+				$value = is_null($value) ? null : intval($value);
 				break;
 			case "float":
-				if (is_null($value)) {
-                    $value = null;
-                }else{
-                    $value =  floatval($value);
-                }
+				$value = is_null($value) ? null : floatval($value);
                 break;
             default:
                 if (is_null($value)) {
@@ -408,16 +414,17 @@ abstract class YZE_Model extends YZE_Object{
 
 
 	public function __get($name){
-	    if(array_key_exists($name, $this->objects)){
-	        return $this->get_object($name);
-	    }
-	    return $this->get($name);
+	    $value = $this->get($name);
+	    if (in_array($name, $this->encrypt_columns)){
+	    	$value = YZE_DBAImpl::getDBA()->decrypt($value, YZE_DB_CRYPT_KEY);
+		}
+	    return $value;
 	}
 
 	public function __set($name, $value){
-	    if(array_key_exists($name, $this->objects)){
-	        return $this->set_object($name, $value);
-	    }
+		if (in_array($name, $this->encrypt_columns)){
+			$value = YZE_DBAImpl::getDBA()->encrypt($value, YZE_DB_CRYPT_KEY);
+		}
 	    return $this->set($name, $value);
 	}
 
@@ -638,7 +645,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * 清空表中所有数据，主键重新从1开始
 	 */
 	public static function truncate(){
-		$sql = "TRUNCATE `".YZE_MYSQL_DB."`.`".static::TABLE."`;";
+		$sql = "TRUNCATE `".YZE_DB_DATABASE."`.`".static::TABLE."`;";
 		YZE_DBAImpl::getDBA()->exec($sql);
 	}
 
@@ -651,41 +658,6 @@ abstract class YZE_Model extends YZE_Object{
 		    $this->sql->from(static::CLASS_NAME, $alias);
 		}
 		return $this->sql;
-	}
-
-
-	private function get_object($field_name){
-	    if( @$this->cache[$field_name]) return $this->cache[$field_name];
-	    $info = $this->objects[$field_name];
-	    if(@$info['method']){
-	        $method = $info['method'];
-	        $this->cache[$field_name] = $this->$method();
-	        return $this->cache[$field_name];
-	    }
-	    $objs = $info['class']::find_by_attrs(array($info['to'] => $this->get($info['from'])));
-
-	    if( !count($objs) )return null;
-
-	    if($info['type'] == "one-one"){
-            $this->cache[$field_name] = reset($objs);
-	    }else{
-            $this->cache[$field_name] = $objs;
-	    }
-	    return @$this->cache[$field_name];
-	}
-
-
-	private function set_object($field_name, YZE_Model $value){
-
-	    $info = $this->objects[$field_name];
-
-	    if($info['type'] == "one-one"){
-            $this->cache[$field_name] = $value;
-	    }else{
-            $this->cache[$field_name][$value->get_key()] = $value;
-	    }
-
-	    return $this;
 	}
 
 	private function getFieldType($field_name){

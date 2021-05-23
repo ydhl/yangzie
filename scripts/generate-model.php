@@ -53,7 +53,7 @@ use \yangzie\YZE_DBAImpl;
  * @package $package
  */
 trait $class{
-    // TODO 
+    // 这里实现model的业务方法 
 }?>";
     }
 
@@ -169,13 +169,14 @@ class $class extends YZE_Model{
     const MODULE_NAME = \"$package\";
     const KEY_NAME = \"$key\";
     const CLASS_NAME = 'app\\$package\\$class';
+    /**
+     * @see YZE_Model::\$encrypt_columns 
+     */
+    public \$encrypt_columns = array();
     $properConst
     public static \$columns = [
     ".trim($fielddefine)."
     ];
-    //array('attr'=>array('from'=>'id','to'=>'id','class'=>'','type'=>'one-one||one-many') )
-    //\$this->attr
-    protected \$objects = array();
     /**
      * @see YZE_Model::\$unique_key
      */

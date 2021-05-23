@@ -65,7 +65,16 @@ function yze_load_app() {
 
     $module_include_files = $app_module->module_include_files ( );
     foreach ( ( array ) $module_include_files as $path ) {
-        include_once $path;
+        $path = YZE_INSTALL_PATH.ltrim($path, DS);
+        if(is_dir($path)){
+            print_r(glob(rtrim($path, DS) . "/*"));
+            foreach (glob(rtrim($path, DS) . "/*") as $file) {
+                echo $file;
+                include_once $file;
+            }
+        }else {
+            include_once $path;
+        }
     }
 
     YZE_Hook::include_hooks("app", YZE_APP_INC.'hooks');

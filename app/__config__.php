@@ -9,25 +9,33 @@ use function yangzie\yze_js_bundle;
  */
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);
 /**
+ * 数据库类型
+ */
+define("YZE_DB_TYPE",  "MYSQL");
+/**
  * MYSQL数据库用户名
  */
-define("YZE_MYSQL_USER",  "root");
+define("YZE_DB_USER",  "root");
 /**
  * MYSQL数据库主地址
  */
-define("YZE_MYSQL_HOST_M",  "127.0.0.1");
+define("YZE_DB_HOST_M",  "127.0.0.1");
 /**
  * MYSQL数据库名
  */
-define("YZE_MYSQL_DB",  "yangai");
+define("YZE_DB_DATABASE",  "test");
 /**
  * MYSQL端口
  */
-define("YZE_MYSQL_PORT",  "3306");
+define("YZE_DB_PORT",  "3306");
 /**
  * MYSQL密码
  */
-define("YZE_MYSQL_PASS",  "ydhl");
+define("YZE_DB_PASS",  "ydhl");
+/**
+ * MYSQL加解密的秘钥
+ */
+define("YZE_DB_CRYPT_KEY",  "ydhl");
 /**
  * 网站地址
  */
@@ -56,7 +64,7 @@ define("APPLICATION_NAME", "Yangzie");
 /**
  * 是否是session less应用，session less将不开启session功能
  */
-define("SESSIONLESS", true);
+define("SESSIONLESS", false);
 
 
 /**
@@ -68,11 +76,11 @@ define("SESSIONLESS", true);
 class App_Module extends \yangzie\YZE_Base_Module{
 
 	//数据库配置
-	public $db_user = YZE_MYSQL_USER;
-	public $db_host= YZE_MYSQL_HOST_M;
-	public $db_name= YZE_MYSQL_DB;
-	public $db_port = YZE_MYSQL_PORT;
-	public $db_psw= YZE_MYSQL_PASS;
+	public $db_user = YZE_DB_USER;
+	public $db_host= YZE_DB_HOST_M;
+	public $db_name= YZE_DB_DATABASE;
+	public $db_port = YZE_DB_PORT;
+	public $db_psw= YZE_DB_PASS;
 	public $db_charset= 'UTF8';
 
 	/**
@@ -93,19 +101,20 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	}
 
 	/**
-	 * 应用启动时需要加载的文件
+	 * 应用启动时需要加载的文件，如果指定目录，则自动包含里面的所有文件,
+	 * 但要注意是按文件名排序顺序包含的，如果被包含的文件之间有依赖关系，这会导致代码错误，这种情况请手动添加包含的文件
 	 */
 	public function module_include_files() {
-        $files = array(
-           "app/vendor/pomo/translation_entry.class.php",
-           "app/vendor/pomo/pomo_stringreader.class.php",
-           "app/vendor/pomo/pomo_cachedfilereader.class.php",
-           "app/vendor/pomo/pomo_cachedIntfilereader.class.php",
-           "app/vendor/pomo/translations.class.php",
-           "app/vendor/pomo/gettext_translations.class.php",
-           "app/vendor/pomo/mo.class.php",
-		   "vendor/autoload.php",
-		);
+        $files = [
+			"app/vendor/pomo/translation_entry.class.php",
+			"app/vendor/pomo/pomo_stringreader.class.php",
+			"app/vendor/pomo/pomo_cachedfilereader.class.php",
+			"app/vendor/pomo/pomo_cachedIntfilereader.class.php",
+			"app/vendor/pomo/translations.class.php",
+			"app/vendor/pomo/gettext_translations.class.php",
+			"app/vendor/pomo/mo.class.php",
+			"vendor/autoload.php",
+		];
 
         return $files;
 	}

@@ -111,16 +111,19 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	public $layout;
 
 	/**
-	 * 指定视图的容器视图，当前视图的内容将在mater view的$this->content_of_view();中输出，
-	 * master view的内容可以嵌套，最顶级的master view的内容将在layout的$this->content_of_view();输出
-	 * master也支持content_of_section
-	 *
-	 * master view的默认查找路径是YZE_APP_VIEWS_INC、模块对应的views下面；你也可以指定决定路径
-	 *
-	 * 设置方式：$this->master_view = "master" 或者 $this->master_view = "mymaster/master"
-	 *
-	 * master view的格式使用请求环境的请求格式
-	 * @var unknown
+	 * 指定视图的容器视图，当前视图的内容将在mater view的$this->content_of_view();中输出，<br/>
+	 * master view的内容可以嵌套，最顶级的master view的内容将在layout的$this->content_of_view();输出<br/>
+	 * master也支持content_of_section<br/>
+	 * <br/>
+	 * master view的默认查找路径是YZE_APP_VIEWS_INC、模块对应的views下面；你也可以指定决定路径<br/>
+	 * <br/>
+	 * 设置方式：$this->master_view = "master" 或者 $this->master_view = "mymaster/master"<br/>
+	 * <br/>
+	 * master view的格式使用请求环境的请求格式<br/>
+	 * <br/>
+	 * 如果指定的是master_view的路径，则是master模板文件，框架内部会通过yze_simple_view进行封装助理<br/>
+	 * 如果指定的是YZE_View_Component对象，则直接调用其output进行输出
+	 * @var string | YZE_View_Component
 	 */
 	public $master_view;
 
@@ -171,7 +174,11 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	protected function output_master($data, $return=false){
 		$datas = $this->get_datas();
 
-		$master = new YZE_Simple_View($this->master_view_path, array(), $this->controller);
+		if (is_a($this->master_view, YZE_View_Component::class)){
+			$master = $this->master_view;
+		}else{
+			$master = new YZE_Simple_View($this->master_view_path, array(), $this->controller);
+		}
 
 		$datas['content_of_section'] = $this->view_sections();
 		$datas['content_of_view']    = $data;
@@ -191,7 +198,6 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 		$this->display_self();
 		$data = ob_get_clean();
 
-		//display_self 中包含来view才能得到view中设置的master view数据
 		if($this->check_master()){
 			return $this->output_master($data, $return);
 		}
@@ -287,6 +293,10 @@ class YZE_Simple_View extends YZE_View_Adapter {
 	protected function check_master(){
 		if( ! $this->master_view ) return false;
 
+		if (is_a($this->master_view, YZE_View_Component::class)){
+			return;
+		}
+
 		$request = YZE_Request::get_instance();
 		$module_view_path = $request->view_path();
 
@@ -338,7 +348,7 @@ class YZE_Simple_View extends YZE_View_Adapter {
 	}
 }
 /**
- * 以class的方式来实现view
+ * 以class的方式来实现view， 如果需要使用master view则重载check_master并返回master的YZE_View_Component对象
  * @author ydhlleeboo
  *
  */
@@ -351,7 +361,6 @@ abstract class YZE_View_Component extends YZE_View_Adapter{
     public function __construct($data, $controller){
         parent::__construct( $data, $controller);
     }
-
     protected function display_self(){
         $this->output_component();
     }

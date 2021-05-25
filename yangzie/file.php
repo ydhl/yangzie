@@ -14,6 +14,7 @@ function yze_isimage($file){
  * @return string
  */
 function yze_get_abs_path($path, $in=''){
+    $leftHasSperator = substr($path, 0, 1) == '/' || substr($path, 0) == '\\';
     $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $in."/".ltrim($path, "/"));
     $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
     $absolutes = array();
@@ -25,13 +26,13 @@ function yze_get_abs_path($path, $in=''){
             $absolutes[] = $part;
         }
     }
-    return DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $absolutes);
+    return ($leftHasSperator ? DIRECTORY_SEPARATOR : '').implode(DIRECTORY_SEPARATOR, $absolutes);
 }
 
 function yze_remove_abs_path($path, $in){
 	$path = strtr($path, array(DS=>"/"));
 	$in =  strtr($in, array(DS=>"/"));
-	return "/".ltrim(strtr($path, array($in=>'')),"/");
+	return strtr($path, array($in=>''));
 }
 
 /**

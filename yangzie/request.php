@@ -410,7 +410,7 @@ class YZE_Request extends YZE_Object {
                     $_ ['module'] = $module;
                     $_ ['action'] = @$acontroller ['action'];
                     $config_args = $matches;
-                    foreach ( ( array ) $acontroller ['args'] as $name => $value ) {
+                    foreach ( ( array ) @$acontroller ['args'] as $name => $value ) {
                         $config_args [$name] = $value;
                     }
                     $_ ['args'] = @$config_args;

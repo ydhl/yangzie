@@ -405,10 +405,10 @@ class YZE_Request extends YZE_Object {
         foreach ( $routers as $module => $router_info ) {
             foreach ( $router_info as $router => $acontroller ) {
                 $router = ltrim($router, '/');
-                $_ ['controller_name'] = strtolower ( $acontroller ['controller'] );
-                $_ ['module'] = $module;
-                $_ ['action'] = @$acontroller ['action'];
                 if (preg_match ( "#^/{$router}\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches ) || preg_match ( "#^/{$router}/?$#i", $uri, $matches )) {
+                    $_ ['controller_name'] = strtolower ( $acontroller ['controller'] );
+                    $_ ['module'] = $module;
+                    $_ ['action'] = @$acontroller ['action'];
                     $config_args = $matches;
                     foreach ( ( array ) $acontroller ['args'] as $name => $value ) {
                         $config_args [$name] = $value;

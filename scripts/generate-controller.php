@@ -127,7 +127,7 @@ class $class extends YZE_Resource_Controller {
         \$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
     }
 
-    public function exception(YZE_RuntimeException \$e){
+    public function exception(\Exception \$e){
         \$request = \$this->request;
         \$this->layout = 'error';
         //Post 请求或者返回json接口时，出错返回json错误结果

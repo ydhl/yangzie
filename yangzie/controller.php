@@ -142,7 +142,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         }
         return $response?:$redirect;
     }
-    public final function do_exception(YZE_RuntimeException $e) {
+    public final function do_exception(\Exception $e) {
         $request = $this->request;
         $request->set_Exception($e);
         \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
@@ -169,34 +169,41 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      *
      * @return YZE_IResponse
      */
-    public function exception(YZE_RuntimeException $e) {
+    public function exception(\Exception $e) {
     }
-
     /**
      * 获取action上指定注解的值
      * @param $action
      */
-    public function getAnnotatiaon($action, $annotation){
-        $ref  = new \ReflectionObject ( $this );
-        $methodRef = $ref->getMethod($action);
-        if (!$methodRef) return $action;
+    public function getAnnotation($action, $annotation){
+        try{
+            $ref = new \ReflectionObject ($this);
+            $methodRef = $ref->getMethod($action);
+            if (!$methodRef) return $action;
 
-        $comment = $methodRef->getDocComment();
-        preg_match("/@{$annotation}\s(?P<name>.+)/i", $comment, $matches);
-        return $matches['name'] ?: $action;
+            $comment = $methodRef->getDocComment();
+            preg_match("/@{$annotation}\s(?P<name>.+)/i", $comment, $matches);
+            return @$matches['name'] ?: $action;
+        }catch (\Exception $e){
+            return $action;
+        }
     }
 
     /**
      * 判断action上是否有指定注解
      * @param $action
      */
-    public function hasAnnotatiaon($action, $annotation){
-        $ref  = new \ReflectionObject ( $this );
-        $methodRef = $ref->getMethod($action);
-        if (!$methodRef) return $action;
+    public function hasAnnotation($action, $annotation){
+        try{
+            $ref  = new \ReflectionObject ( $this );
+            $methodRef = $ref->getMethod($action);
+            if (!$methodRef) return $action;
 
-        $comment = $methodRef->getDocComment();
-        return preg_match("/@{$annotation}/i", $comment, $matches);
+            $comment = $methodRef->getDocComment();
+            return preg_match("/@{$annotation}/i", $comment, $matches);
+        }catch (\Exception $e) {
+            return $action;
+        }
     }
 
 }
@@ -223,7 +230,7 @@ class YZE_Exception_Controller extends YZE_Resource_Controller {
                 "exception" => $this->exception
         ), $this );
     }
-    public function exception(YZE_RuntimeException $e) {
+    public function exception(\Exception $e) {
         $this->exception = $e;
         return $this->index ();
     }

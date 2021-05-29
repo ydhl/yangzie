@@ -301,8 +301,10 @@ class YZE_DBAImpl extends YZE_Object
 			if ($columnInfo['type'] == 'enum' && !in_array($records[$column], call_user_func_array([$entity, "get_{$column}"], [])))
 				throw new YZE_DBAException(sprintf(__("Field '%s' value %s is not in the accepted enum list"), $entity->get_column_mean($column), $records[$column]));
 			// date类型验证
-			if ($columnInfo['type'] == 'date' && !strtotime($records[$column]))
+			if ($columnInfo['type'] == 'date' && !strtotime($records[$column])) {
+				if (is_null($records[$column]) && $columnInfo['null']) continue;
 				throw new YZE_DBAException(sprintf(__("Field '%s' value %s is not the date value"), $entity->get_column_mean($column), $records[$column]));
+			}
 		}
 	}
 

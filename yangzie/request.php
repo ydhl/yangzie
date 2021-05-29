@@ -362,11 +362,12 @@ class YZE_Request extends YZE_Object {
     private function need_auth($req_method) {
         $need_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "need" );
         $no_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "noneed" );
+
         // 不需要验证
-        if ($no_auth_methods && ($no_auth_methods == "*" || preg_match ( "/$no_auth_methods/", $req_method ))) {
+        if ($no_auth_methods && ($no_auth_methods == "*" || preg_match ( "/$no_auth_methods/i", $req_method ))) {
             return false;
         }
-        if ($need_auth_methods && ($need_auth_methods == "*" || preg_match ( "/$need_auth_methods/", $req_method ))) { // 需要验证
+        if ($need_auth_methods && ($need_auth_methods == "*" || preg_match ( "/$need_auth_methods/i", $req_method ))) { // 需要验证
             return true;
         }
         return false;
@@ -374,20 +375,14 @@ class YZE_Request extends YZE_Object {
     private function get_auth_methods($controller_name, $type) {
         if ($type == "need") {
             $auth_methods = @$this->module_obj ()->auths [$controller_name];
-            if ($auth_methods)
-                return $auth_methods;
+            if ($auth_methods) return $auth_methods;
 
-            $auth_methods = @$this->module_obj ()->auths ["*"];
-            if ($auth_methods)
-                return $auth_methods;
+            if ($this->module_obj ()->auths=="*" || in_array('*', $this->module_obj ()->auths)) return '*';
         } elseif ($type == "noneed") {
             $auth_methods = @$this->module_obj ()->no_auths [$controller_name];
-            if ($auth_methods)
-                return $auth_methods;
+            if ($auth_methods) return $auth_methods;
 
-            $auth_methods = @$this->module_obj ()->no_auths ["*"];
-            if ($auth_methods)
-                return $auth_methods;
+            if ($this->module_obj ()->no_auths=="*" || in_array('*', $this->module_obj ()->no_auths)) return '*';
         }
         return null;
     }

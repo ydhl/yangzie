@@ -137,6 +137,11 @@ function yze_handle_request() {
 
         $request->init ();
         $controller = $request->controller ();
+        
+        foreach($controller->response_headers() as $header){
+            header($header);
+        }
+
         $request->auth ();
         $dba->beginTransaction();
 

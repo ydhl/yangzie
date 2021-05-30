@@ -262,6 +262,10 @@ class YZE_Request extends YZE_Object {
         return parse_url ( $referer, PHP_URL_PATH );
     }
     public function auth() {
+        // Options请求不做验证
+        if (!strcasecmp($this->request_method, 'options')){
+            return $this;
+        }
         $req_method = $this->the_method ();
         if ($this->need_auth ( $req_method )) { // 需要验证
             $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
@@ -455,10 +459,6 @@ class YZE_Request extends YZE_Object {
     }
     public function dispatch() {
         $controller = $this->controller;
-
-        foreach($controller->response_headers() as $header){
-            header($header);
-        }
 
         $method = $this->the_method();
         if (! method_exists ( $controller, $method )) {

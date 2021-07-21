@@ -280,7 +280,7 @@ class YZE_Request extends YZE_Object {
 
             if (! $acl->check_byname ( $aro, $aco_name )) {
 
-                throw new YZE_Permission_Deny_Exception ( vsprintf ( __ ( "You do not have permission(%s:%s)" ), \app\yze_get_aco_desc ( $aco_name ), $aro) );
+                throw new YZE_Permission_Deny_Exception ( printf ( __ ( "You do not have permission(%s:%s)" ), \app\yze_get_aco_desc ( $aco_name ), $aro) );
             }
 
         }
@@ -377,16 +377,17 @@ class YZE_Request extends YZE_Object {
         return false;
     }
     private function get_auth_methods($controller_name, $type) {
+        if (!$this->module_obj ()) return null;
         if ($type == "need") {
             $auth_methods = @$this->module_obj ()->auths [$controller_name];
             if ($auth_methods) return $auth_methods;
 
-            if ($this->module_obj ()->auths=="*" || in_array('*', $this->module_obj ()->auths)) return '*';
+            if ($this->module_obj ()->auths=="*" || $this->module_obj ()->auths == ['*']) return '*';
         } elseif ($type == "noneed") {
             $auth_methods = @$this->module_obj ()->no_auths [$controller_name];
             if ($auth_methods) return $auth_methods;
 
-            if ($this->module_obj ()->no_auths=="*" || in_array('*', $this->module_obj ()->no_auths)) return '*';
+            if ($this->module_obj ()->no_auths=="*" || $this->module_obj ()->no_auths == ['*']) return '*';
         }
         return null;
     }

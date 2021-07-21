@@ -151,10 +151,10 @@ if ($type=="asset"){
 	if(!file_exists($asset_file_path)) return;
 
 	ob_clean();
-	$file_name = basename($asset_file_ext);
+	$file_name = basename($asset_file_path);
 	$filesize = filesize($asset_file_path);
 
-	header("Content-type: " . get_download_mime_type($asset_file_path));
+	header("Content-type: " . get_download_mime_type($asset_file_ext));
 	header("Accept-Ranges: bytes");
 	header("Accept-Length: " . $filesize);
 

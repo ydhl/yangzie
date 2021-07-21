@@ -15,7 +15,6 @@ require_once 'module.php';
 require_once 'router.php';
 require_once 'startup.php';
 require_once 'error.php';
-require_once 'daemon/daemon-functions.php';
 require_once 'html.php';
 require_once 'i18n.php';
 require_once 'graphql.php';

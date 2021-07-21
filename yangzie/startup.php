@@ -67,9 +67,9 @@ function yze_load_app() {
     foreach ( ( array ) $module_include_files as $path ) {
         $path = YZE_INSTALL_PATH.ltrim($path, DS);
         if(is_dir($path)){
-            print_r(glob(rtrim($path, DS) . "/*"));
+            // print_r(glob(rtrim($path, DS) . "/*"));
             foreach (glob(rtrim($path, DS) . "/*") as $file) {
-                echo $file;
+                // echo $file;
                 include_once $file;
             }
         }else {

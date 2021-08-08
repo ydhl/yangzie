@@ -192,7 +192,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 		}
 	}
 
-	public final function output($return=false){\
+	public final function output($return=false){
 		ob_start();
 
 		$this->display_self();

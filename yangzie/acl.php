@@ -194,7 +194,7 @@ class YZE_ACL extends YZE_Object{
 	private function _in_array($check, array $arrays){
 		foreach ($arrays as $k) {
 			if ($k==$check) return true;
-		    if($k{-1} != "*"){
+		    if(substr($k, -1) != "*"){
 		        $k .= "/*";
 		    }
 			$k = strtr($k, array("*"=>".*"));

@@ -21,7 +21,7 @@ class Gettext_Translations extends Translations {
 	 * plural forms header
 	 */
 	public function _make_gettext_select_plural_form($plural_header) {
-		$res = create_function('$count', 'return 1 == $count? 0 : 1;');
+		$res = function($count) { return 1 == $count? 0 : 1;};
 		if ($plural_header && (preg_match('/^\s*nplurals\s*=\s*(\d+)\s*;\s+plural\s*=\s*(.+)$/', $plural_header, $matches))) {
 			$nplurals = (int)$matches[1];
 			$this->_nplurals = $nplurals;
@@ -30,7 +30,7 @@ class Gettext_Translations extends Translations {
 			$func_body = "
 				\$index = (int)($plural_expr);
 				return (\$index < $nplurals)? \$index : $nplurals - 1;";
-			$res = create_function('$n', $func_body);
+			$res = function($n) use($func_body) { return $func_body; };
 		}
 		return $res;
 	}
@@ -38,7 +38,7 @@ class Gettext_Translations extends Translations {
 	/**
 	 * Adds parantheses to the inner parts of ternary operators in
 	 * plural expressions, because PHP evaluates ternary oerators from left to right
-	 * 
+	 *
 	 * @param string $expression the expression without parentheses
 	 * @return string the expression with parentheses added
 	 */
@@ -66,7 +66,7 @@ class Gettext_Translations extends Translations {
 		}
 		return rtrim($res, ';');
 	}
-	
+
 	public function make_headers($translation) {
 		$headers = array();
 		// sometimes \ns are used instead of real new lines
@@ -86,7 +86,7 @@ class Gettext_Translations extends Translations {
 			$this->_gettext_select_plural_form = $this->_make_gettext_select_plural_form($value);
 	}
 
-	
+
 }
 
 ?>

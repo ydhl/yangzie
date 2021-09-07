@@ -16,7 +16,7 @@ class YZE_DBAImpl extends YZE_Object
 	private static $me;
 
 	private function __construct(){
-		if($this->conn)return $this->conn;
+		if($this->conn)return;
 		$app_module = new App_Module();
 
 		if(!$app_module->db_name)return;
@@ -288,7 +288,7 @@ class YZE_DBAImpl extends YZE_Object
 					throw new YZE_DBAException(sprintf(__("Field '%s' cannot be null"), $entity->get_column_mean($column)));
 				}
 				// 不为null并且没有默认值时验证是否设置了指
-				if (mb_strlen($columnInfo['default'], 'utf8') == 0  && !key_exists($column, $records)) {
+				if (!isset($columnInfo['default'] && !key_exists($column, $records)) {
 					throw new YZE_DBAException(sprintf(__("Field '%s' doesn't have a default value"), $entity->get_column_mean($column)));
 				}
 			}

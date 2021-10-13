@@ -23,7 +23,7 @@ define("YZE_DB_HOST_M",  "127.0.0.1");
 /**
  * MYSQL数据库名
  */
-define("YZE_DB_DATABASE",  "test");
+define("YZE_DB_DATABASE",  "");
 /**
  * MYSQL端口
  */
@@ -31,11 +31,11 @@ define("YZE_DB_PORT",  "3306");
 /**
  * MYSQL密码
  */
-define("YZE_DB_PASS",  "ydhl");
+define("YZE_DB_PASS",  "");
 /**
  * MYSQL加解密的秘钥
  */
-define("YZE_DB_CRYPT_KEY",  "ydhl");
+define("YZE_DB_CRYPT_KEY",  "");
 /**
  * 网站地址
  */

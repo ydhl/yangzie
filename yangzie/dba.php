@@ -288,7 +288,7 @@ class YZE_DBAImpl extends YZE_Object
 					throw new YZE_DBAException(sprintf(__("Field '%s' cannot be null"), $entity->get_column_mean($column)));
 				}
 				// 不为null并且没有默认值时验证是否设置了指
-				if (!isset($columnInfo['default'] && !key_exists($column, $records)) {
+				if (!isset($columnInfo['default']) && !key_exists($column, $records)) {
 					throw new YZE_DBAException(sprintf(__("Field '%s' doesn't have a default value"), $entity->get_column_mean($column)));
 				}
 			}

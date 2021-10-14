@@ -86,12 +86,6 @@ abstract class YZE_Model extends YZE_Object{
 	public function get_module_name(){
 		return $this::MODULE_NAME;
 	}
-	public function get_version_name(){
-		return $this::VERSION;
-	}
-	public function get_version_value(){
-		return $this->get(@$this::VERSION);
-	}
 
 	public function has_set_value($column){
 		return array_key_exists($column,$this->records);

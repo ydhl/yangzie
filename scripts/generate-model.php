@@ -66,7 +66,9 @@ trait $class{
 		$db = mysqli_connect(
 				$app_module->get_module_config("db_host"),
 				$app_module->get_module_config("db_user"),
-				$app_module->get_module_config("db_psw")
+				$app_module->get_module_config("db_psw"),
+				$app_module->get_module_config("db_name"),
+				$app_module->get_module_config("db_port")
 				);
 
 		$importClass = "";
@@ -165,7 +167,6 @@ class $class extends YZE_Model{
     use $method_class;
     $constantdefine
     const TABLE= \"$table\";
-    const VERSION = 'modified_on';
     const MODULE_NAME = \"$package\";
     const KEY_NAME = \"$key\";
     const CLASS_NAME = 'app\\$package\\$class';

@@ -388,7 +388,9 @@ function is_validate_table($table){
 	$db = mysqli_connect(
 			$app_module->get_module_config("db_host"),
 			$app_module->get_module_config("db_user"),
-			$app_module->get_module_config("db_psw")
+			$app_module->get_module_config("db_psw"),
+			$app_module->get_module_config("db_name"),
+			$app_module->get_module_config("db_port")
 	);
 	mysqli_select_db($db, $app_module->get_module_config("db_name"));
 	return mysqli_query($db, "show full columns from `$table`");

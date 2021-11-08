@@ -226,7 +226,11 @@ class YZE_Exception_Controller extends YZE_Resource_Controller {
             ), $this );
         }
 
-        return new YZE_Simple_View ( YZE_APP_VIEWS_INC . $this->exception->getCode (), array (
+        $errorCode = $this->exception->getCode ();
+        if (!file_exists(YZE_APP_VIEWS_INC . $errorCode .".tpl.php")){
+            $errorCode = 500;
+        }
+        return new YZE_Simple_View ( YZE_APP_VIEWS_INC . $errorCode, array (
                 "exception" => $this->exception
         ), $this );
     }

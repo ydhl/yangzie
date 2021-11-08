@@ -159,7 +159,7 @@ function yze_handle_request() {
     }catch(\Exception $e){
         $controller = $request->controller ();
         try{
-            if ($dba) $dba->rollback();
+            if (@$dba) $dba->rollback();
 
             if( !$controller) $controller = new YZE_Exception_Controller();
 

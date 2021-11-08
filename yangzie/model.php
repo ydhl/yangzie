@@ -389,24 +389,6 @@ abstract class YZE_Model extends YZE_Object{
 		return $this->save($type, $sql);
 	}
 
-    /**
-     * 更新Model的版本字段
-     */
-    public function update_version()
-    {
-        if (!$this->get_version_name()){
-            return;
-        }
-        $new_value = $this->get_version_value();
-        switch ($this->getFieldType($this->get_version_name())) {
-            case "integer":
-            case "float":   $new_value = $new_value+1;break;
-            case "date":    $new_value = date("Y-m-d H:i:s");break;
-        }
-        $this->set($this->get_version_name(), $new_value);
-    }
-
-
 	public function __get($name){
 	    $value = $this->get($name);
 	    if (in_array($name, $this->encrypt_columns)){

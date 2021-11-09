@@ -264,8 +264,7 @@ class YZE_DBAImpl extends YZE_Object
 	private function _save_update(YZE_Model $entity){
 	    \yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_UPDATE, $entity);
 	    $sql = new YZE_SQL();
-	    //自动把version更新
-	    $entity->update_version();
+
 	    $sql->update('t', $this->get_entity_record($entity))
 	    ->from(get_class($entity),"t");
 	    $sql->where("t",$entity->get_key_name(),YZE_SQL::EQ,$entity->get_key());

@@ -1,0 +1,66 @@
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8">
+    <title>Graphql Client</title>
+    <style>
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #graphiql {
+        height: 100vh;
+      }
+    </style>
+    <script
+      crossorigin
+      src="./react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="./react-dom.development.js"
+    ></script>
+    <link rel="stylesheet" href="./graphiql.min.css" />
+  </head>
+
+  <body>
+    <div id="graphiql">Loading...</div>
+    <script
+      src="./graphiql.min.js"
+      type="application/javascript"
+    ></script>
+    <script src="./renderExample.js" type="application/javascript"></script>
+    <script>
+        //https://graphiql-test.netlify.app/
+      function graphQLFetcher(graphQLParams) {
+        return fetch(
+          'http://yangzie.localhost/graphql',
+            // 'https://graphiql-test.netlify.app/.netlify/functions/schema-demo',
+          {
+            method: 'post',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(graphQLParams),
+            credentials: 'omit',
+          },
+        ).then(function (response) {
+          return response.json().catch(function () {
+            return response.text();
+          });
+        });
+      }
+
+      ReactDOM.render(
+        React.createElement(GraphiQL, {
+          fetcher: graphQLFetcher,
+          defaultVariableEditorOpen: true,
+        }),
+        document.getElementById('graphiql'),
+      );
+    </script>
+  </body>
+</html>

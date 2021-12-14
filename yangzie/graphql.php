@@ -25,6 +25,7 @@ class GraphqlResult extends YZE_JSON_View{
  * @link yangzie.yidianhulian.com
  */
 class Graphql_Controller extends YZE_Resource_Controller {
+    use Graphql_Schema;
     private $operationType = 'query';
     private $operationName;
     private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
@@ -41,14 +42,41 @@ class Graphql_Controller extends YZE_Resource_Controller {
     public function index() {
         $this->layout = '';
         try{
+            // 1. 线解析graphql成语法结构体
             $nodes = $this->parse();
-            $datas = $this->query($nodes);
-            return GraphqlResult::success($this, $datas);
+            $result = [];
+            // 2. 对每个结构进行数据查询
+            foreach ($nodes as $node) {
+                //2.1 特殊端查询：向服务端询问有哪些可查询端内容 https://graphql.cn/learn/introspection/
+                if (strtoupper($node['name']) == '__SCHEMA'){
+                    $schemeResult = [];
+                    foreach ($node['sub'] as $schemaNode){
+                        $schemaName = strtoupper($schemaNode['name']);
+                        switch ($schemaName){
+                            case 'QUERYTYPE': $schemeResult[$schemaNode['name']] = $this->schemaQueryType($schemaNode);break;
+                            case 'SUBSCRIPTIONTYPE': $schemeResult[$schemaNode['name']] = $this->schemaSubscriptionType($schemaNode);break;
+                            case 'MUTATIONTYPE': $schemeResult[$schemaNode['name']] = $this->schemaMutationType($schemaNode);break;
+                            case 'TYPES': $schemeResult[$schemaNode['name']] = $this->schemaTypes($schemaNode);break;
+                            case 'DIRECTIVES': $schemeResult[$schemaNode['name']] = $this->schemaDirectives($schemaNode);break;
+                        }
+                    }
+                    $result['__schema'] = $schemeResult;
+                }else{
+                    // 2.2 具体数据查询
+                    $result[$node['name']] = $this->query($node);
+                }
+            }
+            // 3. 返回结构
+            return GraphqlResult::success($this, $result);
         }catch (\Exception $e){
             return GraphqlResult::error($this, $e->getMessage());
         }
     }
 
+    /**
+     * 根据请求端方法（post/get）已经传参端方式，获取请求中端数据
+     * @return array [0=>查询字符串, 1=>变量字符串, 2=>操作名称字符串]
+     */
     private function fetchRequest() {
         $request = $this->request;
 
@@ -58,26 +86,40 @@ class Graphql_Controller extends YZE_Resource_Controller {
         }
 
         return[
-            trim($request->get_from_get('query')),
-            trim($request->get_from_get('variables')),
-            trim($request->get_from_get('operationName'))
+            trim($request->get_from_request('query')),
+            trim($request->get_from_request('variables')),
+            trim($request->get_from_request('operationName'))
         ];
-        return [$query, $vars, $operationName];
     }
 
     /**
-     * 解析请求并对field做验证，如果有错误抛出异常
+     * 解析请求并对field做验证，如果有错误抛出异常。
+     * query IntrospectionQuery { __schema { queryType { name } } }返回的结构体格式如下：
+     * <pre>
+     * [
+     *  0=>[
+     *   'name'=>'__schema',
+     *   'sub'=>[
+     *      ... 下面的结构体
+     *   ]
+     *  ]
+     * ]
+     * </pre>
+     * 每个结构体的格式如下：[name=>名称, sub=>[下面的结构体], args=>[参数结构体]]；
+     * 参数结构体的格式如下：[name=>参数名, default=>默认值]
      * @throws YZE_FatalException
      */
     private function parse(){
         $request = $this->request;
         list($query, $vars, $operationName) = $this->fetchRequest();
+        //用正则来分离query里面的结构
         preg_match_all($this->fetchActRegx, $query, $matches);
         //处理query 或者 mutation name
         $acts = $matches[0];
         if (!$acts){
             throw new YZE_FatalException('query is missing');
         }
+        // query {, query operationName {, mutation {, mutation operationName {的情况
         if (!strcasecmp('query', $acts[0]) || !strcasecmp('mutation', $acts[0])){
             $this->operationType = $acts[0];
             if ($acts[1]!="{"){
@@ -87,6 +129,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             return $this->fetchNode(array_slice($acts, 2));
         }
 
+        // 直接{开头的情况
         return $this->fetchNode(array_slice($acts, 1));
     }
 
@@ -176,6 +219,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
     }
 
     /**
+     * 提取查询字符串中的参数部分
      * @param $argString
      * @return array
      */
@@ -230,12 +274,29 @@ class Graphql_Controller extends YZE_Resource_Controller {
     }
 
     /**
+     * 查询具体的node值
+     * @param $node [name=>'', sub=>[]]
+     */
+    private function queryField($node) {
+
+        return $node['name'];
+    }
+    /**
      * 解析并返回查询结果，对field做验证，如果有错误抛出异常
-     *
+     * @param $nodes [[name=>'', sub=>[]], [name=>'', sub=>[]]]
      * @throws YZE_FatalException
      */
-    private function query($nodes = []) {
-        return $nodes;
+    private function query($node = []) {
+
+        if (@$node['sub']){
+            $result = [];
+            foreach ($node['sub'] as $sub) {
+                $result[$sub['name']] = $this->query($sub);
+            }
+            return $result;
+        }else{
+            return $this->queryField($node);
+        }
     }
 }
 

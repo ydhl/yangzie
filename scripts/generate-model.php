@@ -187,7 +187,7 @@ class $class extends YZE_Model{
 	{$assocFieldFuncs}
 	{$enumFunction}
 	/**
-	 * 返回每个字段的具体的面向用户可读的含义，比如login_name表示登录名
+	 * 返回每个字段的描述文本
 	 * @param \$column
 	 * @return mixed
 	 */
@@ -197,6 +197,14 @@ class $class extends YZE_Model{
     	default: return \$column;
     	}
 		return \$column;
+	}
+    /**
+	 * 返回表的描述
+	 * @param \$column
+	 * @return mixed
+	 */
+    public function get_description(){
+		return '';
 	}
 }?>";
 	}

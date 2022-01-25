@@ -11,17 +11,17 @@ function yze_autoload($class) {
     $_ = preg_split("{\\\\}", strtolower($class));
 
     // 不以app开头的class交给hook处理
-    if($_[0]!="app"){
+    if($_[0]!="app" && $_[0]!="yangzie"){
         YZE_Hook::do_hook("YZE_HOOK_AUTO_LOAD_CLASS", $class);
         return;
     }
 
     $module_name = $_[1];
-    $class_name = $_[2];
+    $class_name = @$_[2];
     $loaded_module_info = \yangzie\YZE_Object::loaded_module($module_name);
 
     $file = "";
-    if($loaded_module_info['is_phar']){
+    if(@$loaded_module_info['is_phar']){
         $module_name .= ".phar";
         $file = "phar://";
     }
@@ -42,12 +42,19 @@ function yze_autoload($class) {
         }
     }else{
         $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
+        if (!file_exists($file)){
+            $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".trait.php";
+        }
     }
 
     if(@$file && file_exists($file)){
         include $file;
     }
 }
+
+spl_autoload_register("\yangzie\yze_autoload");
+
+
 
 /**
  * 加载所有的模块，设置其配置
@@ -137,7 +144,7 @@ function yze_handle_request() {
 
         $request->init ();
         $controller = $request->controller ();
-        
+
         foreach($controller->response_headers() as $header){
             header($header);
         }

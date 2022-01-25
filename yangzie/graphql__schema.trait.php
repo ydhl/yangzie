@@ -5,40 +5,23 @@ namespace yangzie;
 /**
  * graphql schema 内省处理
  */
-trait Graphql_Schema{
+trait Graphql__Schema{
 
-    /**
-     * 返回系统的查询入口，默认叫YangzieQuery
-     * @param $node
-     * @return string
-     */
-    private function schemaQueryType($node) {
-        if (!$node || !@$node['sub']) return '';
-        $result = [];
-        foreach ($node['sub'] as $sub){
-            $name = strtoupper($sub['name']);
-            switch ($name){
-                case 'NAME' : $result[$sub['name']] = "YangzieQuery";break;
+    public function __schema($node){
+        $schemeResult = [];
+        $models = $this->find_All_Models();
+        foreach ($node['sub'] as $schemaNode){
+            $schemaName = strtoupper($schemaNode['name']);
+            switch ($schemaName){
+                case 'QUERYTYPE': $schemeResult[$schemaNode['name']] = $this->schema_Query_type($models, $schemaNode);break;
+                case 'SUBSCRIPTIONTYPE': $schemeResult[$schemaNode['name']] = $this->schema_Subscription_Type($schemaNode);break;
+                case 'MUTATIONTYPE': $schemeResult[$schemaNode['name']] = $this->schema_Mutation_Type($models, $schemaNode);break;
+                case 'TYPES': $schemeResult[$schemaNode['name']] = $this->all_schema_Types($models, $schemaNode);break;
+                case 'DIRECTIVES': $schemeResult[$schemaNode['name']] = $this->schema_Directives($schemaNode);break;
+                case 'DESCRIPTION': $schemeResult[$schemaNode['name']] = YZE_APP_NAME." schema for GraphiQL";break;
             }
         }
-        return $result;
-    }
-
-    /**
-     * 返回系统的更改操作入口，默认叫YangzieMutation
-     * @param $node
-     * @return string
-     */
-    private function schemaMutationType($node) {
-        if (!$node || !@$node['sub']) return '';
-        $result = [];
-        foreach ($node['sub'] as $sub){
-            $name = strtoupper($sub['name']);
-            switch ($name){
-                case 'NAME' : $result[$sub['name']] = "YangzieMutation";break;
-            }
-        }
-        return $result;
+        return $schemeResult;
     }
 
     /**
@@ -46,7 +29,7 @@ trait Graphql_Schema{
      * @param $node
      * @return string
      */
-    private function schemaSubscriptionType($node) {
+    private function schema_Subscription_Type($node) {
         return null;
     }
 
@@ -55,19 +38,19 @@ trait Graphql_Schema{
      * @param $node
      * @return string
      */
-    private function schemaDirectives($node) {
+    private function schema_Directives($node) {
         return null;
     }
 
-    private function _schemaQuerytype($models, $node) {
+    private function schema_Query_type($models, $node) {
         // 根据查询的内容返回
-        $result = [];
+        $rst = [];
         foreach ($node['sub'] as $sub){
             $subName = strtoupper($sub['name']);
             switch ($subName){
-                case 'NAME': $result[$sub['name']] = 'YangzieQuery'; break;
-                case 'KIND': $result[$sub['name']] = 'OBJECT'; break;
-                case 'DESCRIPTION': $result[$sub['name']] = 'Yangzie Query entry'; break;
+                case 'NAME': $rst[$sub['name']] = 'YangzieQuery'; break;
+                case 'KIND': $rst[$sub['name']] = 'OBJECT'; break;
+                case 'DESCRIPTION': $rst[$sub['name']] = 'Yangzie Query entry'; break;
                 case 'FIELDS': {
                     $queryFileds = [];
                     foreach ($models as $table => $class){
@@ -78,7 +61,7 @@ trait Graphql_Schema{
                             switch ($subName) {
                                 case 'NAME': $result[$field_sub['name']] = $table; break;
                                 case 'DESCRIPTION': $result[$field_sub['name']] = $modelObject->get_description(); break;
-                                case 'TYPE': $result[$field_sub['name']] = [ 'kind'=> 'OBJECT', 'ofType'=>null, 'name'=>$table ]; break;
+                                case 'TYPE': $result[$field_sub['name']] = $this->_introspection_field_type($field_sub, [ 'kind'=> 'OBJECT', 'ofType'=>null, 'name'=>$table ]); break;
                                 // TODO 以下要完善
                                 case 'ARGS': $result[$field_sub['name']] = []; break;
                                 case 'ISDEPRECATED': $result[$field_sub['name']] = false; break;
@@ -87,19 +70,54 @@ trait Graphql_Schema{
                         }
                         $queryFileds[] = $result;
                     }
-                    $result[$sub['name']] = $queryFileds; break;
+                    $rst[$sub['name']] = $queryFileds; break;
                 }
                 // TODO 以下要完善
-                case 'INPUTFIELDS': $result[$sub['name']] = null; break;
-                case 'INTERFACES': $result[$sub['name']] = []; break;
-                case 'ENUMVALUES': $result[$sub['name']] = null; break;
-                case 'POSSIBLETYPES': $result[$sub['name']] = null; break;
+                case 'INPUTFIELDS': $rst[$sub['name']] = null; break;
+                case 'INTERFACES': $rst[$sub['name']] = []; break;
+                case 'ENUMVALUES': $rst[$sub['name']] = null; break;
+                case 'POSSIBLETYPES': $rst[$sub['name']] = null; break;
             }
+        }
+        return $rst;
+    }
+
+    private function _get_mutations($subNodes){
+        $result = [];
+        foreach ($this->basic_types() as $type => $info){
+            $mutaionFileds = [];
+            foreach ($subNodes as $filed_sub) {
+                $subName = strtoupper($filed_sub['name']);
+                switch ($subName) {
+                    case 'ARGS': $mutaionFileds[$filed_sub['name']] = $this->_introspection_field_args($filed_sub, [[
+                        "name"=> "value",
+                        "description"=> null,
+                        "type"=> [
+                            "kind"=> "SCALAR",
+                            "name"=> $type,
+                            "ofType"=> null
+                        ],
+                        "defaultValue"=> null,
+                        "isDeprecated"=> false,
+                        "deprecationReason"=> null
+                    ]]);break;
+                    case 'NAME': $mutaionFileds[$filed_sub['name']] = 'set'.ucfirst(strtolower($type));break;
+                    case 'DESCRIPTION': $mutaionFileds[$filed_sub['name']] = 'Set the '.$info['description'].' field';break;
+                    case 'TYPE': $mutaionFileds[$filed_sub['name']] = $this->_introspection_field_type($filed_sub, [
+                        'kind'=> 'SCALAR',
+                        'ofType'=>null,
+                        'name'=>$type
+                    ]);break;
+                    case 'ISDEPRECATED': $mutaionFileds[$filed_sub['name']] = false;break;
+                    case 'DEPRECATIONREASON': $mutaionFileds[$filed_sub['name']] = "";break;
+                }
+            }
+            $result[] = $mutaionFileds;
         }
         return $result;
     }
 
-    private function _schemaMutaiontype($models, $node) {
+    private function schema_Mutation_Type($models, $node) {
 
         $rst = [];
         foreach ($node['sub'] as $sub) {
@@ -110,34 +128,8 @@ trait Graphql_Schema{
                 case 'DESCRIPTION': $rst[$sub['name']] = 'Yangzie Mutation entry';break;
                 case 'FIELDS': // 这里就是有哪些更新操作
                 {
-                    $mutaionFileds = [];
-                    foreach ($sub['sub'] as $filed_sub) {
-                        $subName = strtoupper($filed_sub['name']);
-                        switch ($subName) {
-                            case 'ARGS': $mutaionFileds[$filed_sub['name']] = [
-                                "name"=> "value",
-                                "description"=> null,
-                                "type"=> [
-                                    "kind"=> "SCALAR",
-                                    "name"=> "string",
-                                    "ofType"=> null
-                                ],
-                                "defaultValue"=> null,
-                                "isDeprecated"=> false,
-                                "deprecationReason"=> null
-                            ];break;
-                            case 'NAME': $mutaionFileds[$filed_sub['name']] = 'setString';break;
-                            case 'DESCRIPTION': $mutaionFileds[$filed_sub['name']] = 'Set the string field';break;
-                            case 'TYPE': $mutaionFileds[$filed_sub['name']] = [
-                                'kind'=> 'SCALAR',
-                                'ofType'=>null,
-                                'name'=>'string'
-                            ];break;
-                            case 'ISDEPRECATED': $mutaionFileds[$filed_sub['name']] = false;break;
-                            case 'DEPRECATIONREASON': $mutaionFileds[$filed_sub['name']] = "";break;
-                        }
-                    }
-                    $rst[$sub['name']] = $mutaionFileds;break;
+                    $rst[$sub['name']] = $this->_get_mutations($sub['sub']);
+                    break;
                 }
                 case 'INPUTFIELDS': $rst[$sub['name']] = null;break;
                 case 'INTERFACES': $rst[$sub['name']] = [];break;
@@ -151,23 +143,17 @@ trait Graphql_Schema{
     /**
      * 基础数据类型
      */
-    private function _schemaBasictype(&$results, $node){
-        $basicTypes = [
-            'float'=>'decimal,float,double.',
-            'integer'=>'int,tinyint,smallint,mediumint,bigint',
-            'date'=>'timestamp,date,datetime,time,year',
-            'enum'=>'enum',
-            'string'=>'string',
-        ];
+    private function _schema_Basic_type(&$results, $node){
+        $basicTypes = $this->basic_types();
 
-        foreach ($basicTypes as $basicType=>$desc){
+        foreach ($basicTypes as $basicType=>$info){
             $rst = [];
             foreach ($node['sub'] as $sub) {
                 $subName = strtoupper($sub['name']);
                 switch ($subName) {
                     case 'KIND': $rst[$sub['name']] = 'SCALAR'; break;
                     case 'NAME': $rst[$sub['name']] = $basicType; break;
-                    case 'DESCRIPTION': $rst[$sub['name']] = $desc; break;
+                    case 'DESCRIPTION': $rst[$sub['name']] = $info['description']; break;
                     case 'FIELDS': $rst[$sub['name']] = null; break;
                     case 'INPUTFIELDS': $rst[$sub['name']] = null; break;
                     case 'INTERFACES': $rst[$sub['name']] = null; break;
@@ -184,14 +170,22 @@ trait Graphql_Schema{
      * @param $node
      * @return array
      */
-    private function schemaTypes($node) {
+    private function all_schema_Types($models, $node) {
         if (!$node || !@$node['sub']) return [];
-        $models = $this->findAllModels();
-        if (!$models) return [];
         $results = [];
-        $results[] = $this->_schemaQuerytype($models, $node);
-        $results[] = $this->_schemaMutaiontype($models, $node);
-        $this->_schemaBasictype($results, $node);
+        $results[] = $this->schema_Query_type($models, $node);
+        $results[] = $this->schema_Mutation_Type($models, $node);
+        $this->_schema_Basic_type($results, $node);
+
+        // 类型系统的基础类型
+        $this->_introspection__schema($results, $node);
+        $this->_introspection__type($results, $node);
+        $this->_introspection__typekind($results, $node);
+        $this->_introspection__field($results, $node);
+        $this->_introspection__inputvalue($results, $node);
+        $this->_introspection__enumvalue($results, $node);
+        $this->_introspection__directive($results, $node);
+        $this->_introspection__directiveLocation($results, $node);
 
         // 每一个model都是types的一级节点
         foreach ($models as $table => $model){
@@ -202,10 +196,10 @@ trait Graphql_Schema{
                 // 类型scheme查询基本是已知的
                 $subName = strtoupper($sub['name']);
                 switch ($subName){
-                    case 'NAME': $modelResult[$sub['name']] = $table; break; // 表名作为name
-                    case 'KIND': $modelResult[$sub['name']] = 'OBJECT'; break; // Model都是OBJECT
+                    case 'NAME': $modelResult[$sub['name']] = "{$table}"; break; // 表名作为name
+                    case 'KIND': $modelResult[$sub['name']] = "OBJECT"; break; // Model都是OBJECT
                     case 'DESCRIPTION': $modelResult[$sub['name']] = $modelObject->get_description(); break;
-                    case 'FIELDS': $modelResult[$sub['name']] = $this->getModelFields($modelObject, $sub); break;
+                    case 'FIELDS': $modelResult[$sub['name']] = $this->get_Model_Fields($modelObject, $sub); break;
                     // TODO 以下要完善
                     case 'INPUTFIELDS': $modelResult[$sub['name']] = null; break;
                     case 'INTERFACES': $modelResult[$sub['name']] = []; break;
@@ -224,7 +218,7 @@ trait Graphql_Schema{
      *
      * @return ['table name'=>'Model Class Full Name']
      */
-    private function findAllModels(){
+    private function find_All_Models(){
         $models = [];
         foreach (glob(YZE_APP_MODULES_INC.'*') as $module){
             $moduleName = basename($module);
@@ -249,7 +243,7 @@ trait Graphql_Schema{
      * @param $node 查询结构体
      * @return []
      */
-    private function getModelFields(YZE_Model $model, $node){
+    private function get_Model_Fields(YZE_Model $model, $node){
         if (!$model || !$node) return [];
         $args = @$node['args']; // 目前还用不上
         $columns = $model->get_columns();
@@ -261,8 +255,8 @@ trait Graphql_Schema{
                 switch ($subName){
                     case 'NAME': $columnResult[$sub['name']] = $columnName; break;
                     case 'DESCRIPTION': $columnResult[$sub['name']] = $model->get_column_mean($columnName); break;
-                    case 'ARGS': $columnResult[$sub['name']] = $this->getModelFieldArgs($columnConfig, $columnName, $sub); break;
-                    case 'TYPE': $columnResult[$sub['name']] = $this->getModelFieldType($columnConfig, $columnName, $sub); break;
+                    case 'ARGS': $columnResult[$sub['name']] = $this->get_Model_Field_Args($columnConfig, $columnName, $sub); break;
+                    case 'TYPE': $columnResult[$sub['name']] = $this->get_Model_Field_Type($columnConfig, $columnName, $sub); break;
                     case 'ISDEPRECATED': $columnResult[$sub['name']] = false; break;
                     case 'DEPRECATIONREASON': $columnResult[$sub['name']] = ''; break;
                 }
@@ -277,7 +271,7 @@ trait Graphql_Schema{
      * @param $columnName
      * @param $node
      */
-    private function getModelFieldArgs($columnConfig, $columnName, $node){
+    private function get_Model_Field_Args($columnConfig, $columnName, $node){
         return []; //TODO
     }
 
@@ -287,15 +281,15 @@ trait Graphql_Schema{
      * @param $node
      * @return array
      */
-    private function getModelFieldType($columnConfig, $columnName, $node){
+    private function get_Model_Field_Type($columnConfig, $columnName, $node){
         if (!$columnName || !$node) return [];
         $typeResult = [];
         foreach ($node['sub'] as $sub){
             // 类型scheme查询基本是已知的
             $subName = strtoupper($sub['name']);
             switch ($subName){
-                case 'NAME': $typeResult[$sub['name']] = $columnName; break;
-                case 'KIND': $typeResult[$sub['name']] = $columnConfig['type']; break;
+                case 'NAME': $typeResult[$sub['name']] = $columnConfig['type']; break;
+                case 'KIND': $typeResult[$sub['name']] = 'SCALAR'; break;
                 case 'OFTYPE': $typeResult[$sub['name']] = null; break;
             }
         }

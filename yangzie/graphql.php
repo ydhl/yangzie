@@ -25,7 +25,7 @@ class GraphqlResult extends YZE_JSON_View{
  * @link yangzie.yidianhulian.com
  */
 class Graphql_Controller extends YZE_Resource_Controller {
-    use Graphql_Schema;
+    use Graphql__Introspection,Graphql__Schema, Graphql__Type;
     private $operationType = 'query';
     private $operationName;
     private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
@@ -47,24 +47,17 @@ class Graphql_Controller extends YZE_Resource_Controller {
             $result = [];
             // 2. 对每个结构进行数据查询
             foreach ($nodes as $node) {
-                //2.1 特殊端查询：向服务端询问有哪些可查询端内容 https://graphql.cn/learn/introspection/
-                if (strtoupper($node['name']) == '__SCHEMA'){
-                    $schemeResult = [];
-                    foreach ($node['sub'] as $schemaNode){
-                        $schemaName = strtoupper($schemaNode['name']);
-                        switch ($schemaName){
-                            case 'QUERYTYPE': $schemeResult[$schemaNode['name']] = $this->schemaQueryType($schemaNode);break;
-                            case 'SUBSCRIPTIONTYPE': $schemeResult[$schemaNode['name']] = $this->schemaSubscriptionType($schemaNode);break;
-                            case 'MUTATIONTYPE': $schemeResult[$schemaNode['name']] = $this->schemaMutationType($schemaNode);break;
-                            case 'TYPES': $schemeResult[$schemaNode['name']] = $this->schemaTypes($schemaNode);break;
-                            case 'DIRECTIVES': $schemeResult[$schemaNode['name']] = $this->schemaDirectives($schemaNode);break;
-                        }
+                //2.1 内省特殊的查询：如__SCHEMA 向服务端询问有哪些可查询端内容 https://graphql.cn/learn/introspection/
+                if (preg_match("/^__/", $node['name'], $matches)){
+                    $method = $node['name'];
+                    if(!method_exists($this, $method)){
+                        throw new YZE_FatalException('can not query for '.$method.', method not found');
                     }
-                    $result['__schema'] = $schemeResult;
-                }else{
-                    // 2.2 具体数据查询
-                    $result[$node['name']] = $this->query($node);
+                    $result[$node['name']] = $this->$method($node);
+                    continue;
                 }
+                // 2.2 具体数据查询
+                $result[$node['name']] = $this->query($node);
             }
             // 3. 返回结构
             return GraphqlResult::success($this, $result);
@@ -77,7 +70,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * 根据请求端方法（post/get）已经传参端方式，获取请求中端数据
      * @return array [0=>查询字符串, 1=>变量字符串, 2=>操作名称字符串]
      */
-    private function fetchRequest() {
+    private function fetch_Request() {
         $request = $this->request;
 
         if (strcmp(@$_SERVER['CONTENT_TYPE'], 'application/json') === 0 ){
@@ -111,7 +104,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      */
     private function parse(){
         $request = $this->request;
-        list($query, $vars, $operationName) = $this->fetchRequest();
+        list($query, $vars, $operationName) = $this->fetch_Request();
         //用正则来分离query里面的结构
         preg_match_all($this->fetchActRegx, $query, $matches);
         //处理query 或者 mutation name
@@ -124,20 +117,20 @@ class Graphql_Controller extends YZE_Resource_Controller {
             $this->operationType = $acts[0];
             if ($acts[1]!="{"){
                 $this->operationName = $acts[1];
-                return $this->fetchNode(array_slice($acts, 3));
+                return $this->fetch_Node(array_slice($acts, 3));
             }
-            return $this->fetchNode(array_slice($acts, 2));
+            return $this->fetch_Node(array_slice($acts, 2));
         }
 
         // 直接{开头的情况
-        return $this->fetchNode(array_slice($acts, 1));
+        return $this->fetch_Node(array_slice($acts, 1));
     }
 
     /**
      * 提取指定的fragment
      * @param $acts
      */
-    private function fetchFragment($acts, $fragmentName) {
+    private function fetch_Fragment($acts, $fragmentName) {
         $fragmentIndex = -1;
         foreach ($acts as $index => $act) {
             if (!strcasecmp('fragment', $acts[$index]) && !strcasecmp($acts[$index+1], $fragmentName)){
@@ -153,7 +146,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             }
             $fragmentIndex++;
         }
-        return $this->fetchNode(array_slice($acts, $fragmentIndex + 1));
+        return $this->fetch_Node(array_slice($acts, $fragmentIndex + 1));
     }
 
     /**
@@ -162,7 +155,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @param int $fetchedLength
      * @return array
      */
-    private function fetchNode ($acts, &$fetchedLength=0) {
+    private function fetch_Node ($acts, &$fetchedLength=0) {
         $nodes = [];
         $currNode = [];
         $index = 0;
@@ -186,7 +179,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             // 开始解析新节点
             if ($act == "{"){
                 $subLength = 0;
-                @$currNode['sub'] = $this->fetchNode(array_slice($acts, $index), $subLength);
+                @$currNode['sub'] = $this->fetch_Node(array_slice($acts, $index), $subLength);
                 $index += $subLength;
                 $nodes[] = $currNode;
                 $currNode = [];
@@ -194,7 +187,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             }
             //参数处理
             if ($act[0] == "("){
-                @$currNode['args'] = $this->fetchArgs($act);
+                @$currNode['args'] = $this->fetch_Args($act);
                 continue;
             }
             // ：别名处理,:后面是别名，index往后移动一位
@@ -204,7 +197,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             }
             // fragment 处理，后面是fragment，index移动一位
             if ($act == "..."){
-                $nodes = array_merge($nodes, $this->fetchFragment($acts, $acts[$index++]));
+                $nodes = array_merge($nodes, $this->fetch_Fragment($acts, $acts[$index++]));
                 $currNode = [];
                 continue;
             }
@@ -223,7 +216,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @param $argString
      * @return array
      */
-    private function fetchArgs ($argString) {
+    private function fetch_Args ($argString) {
         $ignoredBracket = mb_substr($argString, 1, mb_strlen($argString)-1);
         preg_match_all("/\w+|,|\"|'|\\\\|:|\(|\)|\{|\}/miu", $ignoredBracket, $quoteMatches);
         $acts = [];
@@ -277,7 +270,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * 查询具体的node值
      * @param $node [name=>'', sub=>[]]
      */
-    private function queryField($node) {
+    private function query_Field($node) {
 
         return $node['name'];
     }
@@ -295,7 +288,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             }
             return $result;
         }else{
-            return $this->queryField($node);
+            return $this->query_Field($node);
         }
     }
 }

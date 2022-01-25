@@ -60,7 +60,7 @@ date_default_timezone_set('Asia/Chongqing');
 /**
  * 应用名
  */
-define("APPLICATION_NAME", "Yangzie");
+define("YZE_APP_NAME", "Yangzie");
 /**
  * 是否是session less应用，session less将不开启session功能
  */

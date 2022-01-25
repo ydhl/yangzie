@@ -4,7 +4,7 @@ namespace yangzie;
 <html>
     <head>
         <meta charset="utf-8">
-        <title><?php echo $this->get_data("yze_page_title")?> － <?php echo APPLICATION_NAME?></title>
+        <title><?php echo $this->get_data("yze_page_title")?> － <?php echo YZE_APP_NAME?></title>
         <?php
         yze_css_bundle("");
         yze_module_css_bundle();

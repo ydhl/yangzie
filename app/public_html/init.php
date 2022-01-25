@@ -34,8 +34,6 @@ define("YZE_APP_VIEWS_INC",     YZE_APP_PATH."vendor/views/");
 ini_set('include_path', get_include_path().PS.dirname(dirname(dirname(__FILE__))));
 require_once YANGZIE.'/init.php';
 
-spl_autoload_register("\yangzie\yze_autoload");
-
 
 try{
 	/**

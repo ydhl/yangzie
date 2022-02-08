@@ -13,32 +13,36 @@ trait Graphql__Type{
      * @return array
      */
     public function __type($node){
-        $args = $node['args']; // 查询参数, 目前type查询只支持name参数
-//        print_r($node);
-        // 确保用户查询的结果中由查询参数名对应的信息，便于和参数进行比对
+        $args = (array)@$node->args; // 查询参数, 目前type查询只支持name参数
+
+        // 确保用户查询的结果中有查询参数名对应的信息，便于和参数进行比对
         // { __type(name:"test") { description } }
         // 查询的字段只有description，但查询的参数名是name（查询的值是test），那么需要在查询的字段中加上name
         $hasArgName = [];
         foreach ($args as $arg) {
-            foreach ($node['sub'] as $item){
-                if (strtolower($item['name'])==$arg['name']){
-                    $hasArgName[$arg['name']] = true;
+            if (!preg_match("/\"\w+\"/", @$arg->defaultValue)) {
+                throw new YZE_FatalException("arg ({$arg->defaultValue}) must be a string with double quote");
+            }
+            foreach (@$node->sub as $item){
+                if (strtolower($item->name)==$arg->name){
+                    $hasArgName[$arg->name] = true;
                     break;
                 }
             }
         }
 
+        // 如果查询字段没有name，则补上
         $addedField = [];
-
         foreach ($args as $arg) {
-            if ( ! @$hasArgName[$arg['name']]){
-                $addedField[] = $arg['name'];
-                $node['sub'][] = ['name' => $arg['name']];
+            if ( ! @$hasArgName[$arg->name]){
+                $addedField[] = $arg->name;
+                $node->sub[] = ['name' => $arg->name];
             }
         }
+
         $match = function($item, $args) {
             foreach ($args as $arg) {
-                if (!preg_match("/\"?".@$item[$arg['name']]."\"?/", @$arg['default'])) {
+                if (!preg_match("/\"".@$item[$arg->name]."\"/", @$arg->defaultValue)) {
                     return false;
                 }
             }
@@ -49,6 +53,7 @@ trait Graphql__Type{
         $allTypes = $this->all_schema_Types($models, $node);
 //        print_r(json_decode(json_encode($allTypes), true));
         $searchedTypes = [];
+//        print_r($args);
         foreach ($allTypes as $item){
             if ($match($item, $args)){
                 // 为了查询而补上的字段删除
@@ -58,7 +63,7 @@ trait Graphql__Type{
                 $searchedTypes[] = $item;
             }
         }
-        return $searchedTypes;
+        return $searchedTypes?:null;
     }
 
 }

@@ -16,7 +16,7 @@ class Generate_Model_Script extends AbstractScript{
 		$this->class_name 		= $argv['class_name'];
 
 		if(empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
-			die(__(Generate_Model_Script::USAGE));
+			die(YZE_SCRIPT_USAGE);
 		}
 
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
@@ -25,19 +25,23 @@ class Generate_Model_Script extends AbstractScript{
 		//Model
 		$model_class = YZE_Object::format_class_name($this->class_name,"Model");
         $method_class = $model_class."_Method";
-        $code = $this->create_method_code($method_class);
-        echo __("create model method {$method_class} ");
-        $this->save_class($code, $method_class, $this->module_name, 'trait', false);
-		$handleResult = $this->create_model_code($model_class, $method_class);
+
+		$column_mean = [];
+		$handleResult = $this->create_model_code($model_class, $method_class, $column_mean);
 		echo __("create model {$model_class} :");
 		$this->save_class($handleResult, $model_class, $this->module_name);
+
+		$code = $this->create_method_code($method_class, $column_mean);
+		echo __("create model method {$method_class} ");
+		$this->save_class($code, $method_class, $this->module_name, 'trait', false);
+
 		echo __("create model {$model_class} phpt file :");
 		$this->save_test($handleResult, $model_class, $this->module_name);
 
 		echo __("Done!\n");
 	}
 
-    public function create_method_code($class){
+    public function create_method_code($class, $column_mean){
         $package=$this->module_name;
 
         return "<?php
@@ -53,12 +57,32 @@ use \yangzie\YZE_DBAImpl;
  * @package $package
  */
 trait $class{
+	/**
+	 * 返回每个字段的描述文本
+	 * @param \$column
+	 * @return mixed
+	 */
+    public function get_column_mean(\$column){
+    	switch (\$column){
+    	".join("\r\n\t\t",$column_mean)."
+    	default: return \$column;
+    	}
+		return \$column;
+	}
+    /**
+	 * 返回表的描述
+	 * @param \$column
+	 * @return mixed
+	 */
+    public function get_description(){
+		return '".$this->class_name." model';
+	}
     // 这里实现model的业务方法 
 }?>";
     }
 
 
-	public function create_model_code($class, $method_class){
+	public function create_model_code($class, $method_class, &$column_mean){
 		$table = $this->table_name;
 		$package=$this->module_name;
 		$app_module = new \app\App_Module();
@@ -71,7 +95,7 @@ trait $class{
 				$app_module->get_module_config("db_port")
 				);
 
-		$importClass = "";
+		$importClass = [];
 		$assocFields = "";
 		$assocFieldFuncs = "";
 		$enumFunction = "";
@@ -81,9 +105,12 @@ trait $class{
 		where TABLE_SCHEMA = '".$app_module->get_module_config("db_name")."' and TABLE_NAME = '{$table}'
 		and referenced_column_name is not NULL");
 		while ($row=mysqli_fetch_assoc($result)) {
-			$col = rtrim($row['REFERENCED_TABLE_NAME'], "s");//先假定复数形式
+			$col = rtrim($row['COLUMN_NAME'], '_id')."_".$row['REFERENCED_TABLE_NAME'];
 			$col_class = $this->get_class_of_table($row['REFERENCED_TABLE_NAME']);
-			$importClass .= "use $col_class;\r\n";
+
+			if ($row['REFERENCED_TABLE_NAME'] != $this->table_name){
+				$importClass[] = "use $col_class;";
+			}
 			$sortClass = substr($col_class, strripos($col_class, "\\")+1);
 			$assocFields .= "
 	private \${$col};
@@ -95,7 +122,7 @@ trait $class{
 		}
 		return \$this->{$col};
 	}
-	
+
 	/**
 	 * @return $class
 	 */
@@ -117,7 +144,6 @@ trait $class{
 		    $unique_key[$row['Column_name']] = $row['Key_name'];
 		}
 		$constant   = array();
-		$column_mean= [];
 
 		$result = mysqli_query($db, "show full columns from `$table`");
 		while ($row=mysqli_fetch_assoc($result)) {
@@ -156,7 +182,7 @@ use \yangzie\YZE_Model;
 use \yangzie\YZE_SQL;
 use \yangzie\YZE_DBAException;
 use \yangzie\YZE_DBAImpl;
-{$importClass}
+".join("\r\n",array_unique($importClass))."
 /**
  *
  *
@@ -186,26 +212,7 @@ class $class extends YZE_Model{
     {$assocFields}
 	{$assocFieldFuncs}
 	{$enumFunction}
-	/**
-	 * 返回每个字段的描述文本
-	 * @param \$column
-	 * @return mixed
-	 */
-    public function get_column_mean(\$column){
-    	switch (\$column){
-    	".join("\r\n\t\t",$column_mean)."
-    	default: return \$column;
-    	}
-		return \$column;
-	}
-    /**
-	 * 返回表的描述
-	 * @param \$column
-	 * @return mixed
-	 */
-    public function get_description(){
-		return '';
-	}
+
 }?>";
 	}
 
@@ -320,14 +327,13 @@ class $class extends YZE_Model{
 		}
 
 		if ( @ self::$chain_tables[$table] ){//之前已经处理过了
-			return self::$chain_tables[$table];
+			return "\\app\\".self::$chain_tables[$table]."\\{$class_name}";
 		}
 
 		clear_terminal();
 
-		echo wrap_output(sprintf(__("    ================================================================
-		
-    未能识别关联表%s的Model类，请输入该类所在的module名（默认当前模块）："), $table));
+		echo wrap_output(sprintf(__("\r\n
+未能识别关联表%s的Model类，请输入该类所在的module名（默认当前模块）："), $table));
 		$module = get_input();
 
 		if ( ! $module){

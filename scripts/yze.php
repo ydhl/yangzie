@@ -2,7 +2,7 @@
 namespace yangzie;
 define("YZE_SCRIPT_LOGO", "
 ================================================================
-		YANGZIE(V1.5.4) Generate Script
+		YANGZIE(V2.0.0) Generate Script
 		易点互联®
 ================================================================");
 
@@ -10,6 +10,17 @@ define("YZE_METHED_HEADER", "
 ================================================================
 		%s
 ================================================================");
+define("YZE_SCRIPT_USAGE", YZE_SCRIPT_LOGO."
+
+\t1.  Generate module, controller, view Scaffolding file
+\t2.  Generae model (database to code)	
+\t3.  Delete module
+\t4.  Delete controller and view file	
+\t5.  Phar a module
+\t6.  Run unit
+\t0.  Quit
+
+please input number to select: ");
 
 
 global $language, $db;
@@ -44,17 +55,7 @@ if(true){
 
 function display_home_wizard(){
 	clear_terminal();
-	echo wrap_output(__(YZE_SCRIPT_LOGO."
-
-\t1.  Generate module, controller, view Scaffolding file
-\t2.  Generae model (database to code)	
-\t3.  Delete module
-\t4.  Delete controller and view file	
-\t5.  Phar a module
-\t6.  Run unit
-\t0.  Quit
-
-please input number to select: "));
+	echo wrap_output(YZE_SCRIPT_USAGE);
 
 	while(!in_array(($input = fgets(STDIN)), array(0,1, 2, 3, 4, 5, 6))){
 		echo wrap_output(__("please input number to select: "));

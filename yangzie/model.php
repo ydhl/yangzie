@@ -51,6 +51,20 @@ abstract class YZE_Model extends YZE_Object{
 	public function get_unique_key(){
 	    return $this->unique_key;
 	}
+
+	/**
+	 * 格式 [column=>[关联的表类名=>关联的目标表字段]]
+	 * @var array
+	 */
+	protected $relation_column = array();
+
+	/**
+	 * 格式 [column=>[target_class=>关联的表类名,target_id=>关联的目标表字段, graphql_field=>]]
+	 * @return array
+	 */
+	public function get_relation_columns(){
+		return $this->relation_column;
+	}
 	/**
 	 * 返回表名
 	 */

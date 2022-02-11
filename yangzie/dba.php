@@ -463,7 +463,7 @@ class YZE_DBAImpl extends YZE_Object
             throw new YZE_DBAException("can not prepare sql");
         }
         if($stm->execute($values)){
-            return $stm->fetch(PDO::FETCH_ASSOC);
+            return $stm->fetch(PDO::FETCH_ASSOC)?:null;
         }
 
         throw new YZE_DBAException(join(",", $stm->errorInfo()));
@@ -482,12 +482,11 @@ class YZE_DBAImpl extends YZE_Object
         $sql = "SELECT $fields FROM $table";
         if ($where) $sql .= " WHERE $where";
         $stm = $this->conn->prepare($sql);
-
         if( ! $stm){
             throw new YZE_DBAException("can not prepare sql");
         }
         if($stm->execute($values)){
-            return $stm->fetchAll(PDO::FETCH_ASSOC);
+            return $stm->fetchAll(PDO::FETCH_ASSOC)?:null;
         }
         throw new YZE_DBAException(join(",", $stm->errorInfo()));
     }
@@ -809,6 +808,9 @@ class YZE_PDOStatementWrapper extends YZE_Object{
 	public function next(){
 		$this->index +=1;
 		return @$this->result[$this->index];
+	}
+	public function get_results(){
+		return $this->result;
 	}
 	/**
 	 * 如果提供了alias,则会已{$table_alias}_{$name}为字段名查找

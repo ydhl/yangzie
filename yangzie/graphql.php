@@ -7,9 +7,13 @@ class GraphqlSearchArg{
      */
     public $name;
     /**
-     * @var 参数值
+     * @var 默认参数值
      */
     public $defaultValue;
+    /**
+     * @var 参数值
+     */
+    public $value;
 }
 class GraphqlSearchNode{
     /**
@@ -1032,10 +1036,21 @@ class GraphqlResult extends YZE_JSON_View{
  * @link yangzie.yidianhulian.com
  */
 class Graphql_Controller extends YZE_Resource_Controller {
-    use Graphql__Schema, Graphql__Type;
+    use Graphql__Schema, Graphql__Type, Graphql__Typename;
     private $operationType = 'query';
     private $operationName;
+    /**
+     * 变量
+     * @var
+     */
+    private $vars;
+    /**
+     * 参数
+     * @var
+     */
+    private $args;
     private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
+    private $allModelTypes;
     public function response_headers(){
         return [
             "Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect",
@@ -1050,7 +1065,9 @@ class Graphql_Controller extends YZE_Resource_Controller {
         $this->layout = '';
         try{
             // 1. 线解析graphql成语法结构体
-            $nodes = $this->parse();
+            list($query, $vars) = $this->fetch_Request();
+            $this->vars = $vars;
+            $nodes = $this->parse($query);
             $result = [];
             // 2. 对每个结构进行数据查询
             foreach ($nodes as $node) {
@@ -1064,7 +1081,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                     continue;
                 }
                 // 2.2 具体数据查询
-                $result[$node->name] = $this->query($node);
+                $result[$node->name] = $this->model_query($node->name, $node, @$this->vars['where']);
             }
             // 3. 返回结构
             return GraphqlResult::success($this, $result);
@@ -1110,9 +1127,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @throws YZE_FatalException
      * @return array<GraphqlSearchNode>
      */
-    private function parse(){
-        $request = $this->request;
-        list($query, $vars, $operationName) = $this->fetch_Request();
+    private function parse($query){
         //用正则来分离query里面的结构
         preg_match_all($this->fetchActRegx, $query, $matches);
         //处理query 或者 mutation name
@@ -1120,16 +1135,25 @@ class Graphql_Controller extends YZE_Resource_Controller {
         if (!$acts){
             throw new YZE_FatalException('query is missing');
         }
-        // query {, query operationName {, mutation {, mutation operationName {的情况
+        //{
+        //query {
+        //query operationName {
+        //query operationName(arg) {
+        //mutation {
+        //mutation operationName {
+        //mutation operationName(arg) {的情况
         if (!strcasecmp('query', $acts[0]) || !strcasecmp('mutation', $acts[0])){
             $this->operationType = $acts[0];
             if ($acts[1]!="{"){
                 $this->operationName = $acts[1];
+                if ($acts[2]!='{'){
+                    $this->args = $this->fetch_Args($acts[2]);
+                    return $this->fetch_Node(array_slice($acts, 4));
+                }
                 return $this->fetch_Node(array_slice($acts, 3));
             }
             return $this->fetch_Node(array_slice($acts, 2));
         }
-
         // 直接{开头的情况
         return $this->fetch_Node(array_slice($acts, 1));
     }
@@ -1267,7 +1291,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $args[] = $currArg;
                 $currArg = new GraphqlSearchArg();
             }
-            $currArg->defaultValue = $act;
+            $currArg->value = $act;
         }
         if ($currArg->name) {
             $args[] = $currArg;
@@ -1276,29 +1300,130 @@ class Graphql_Controller extends YZE_Resource_Controller {
     }
 
     /**
-     * 查询具体的node值
-     * @param GraphqlSearchNode $node [name=>'', sub=>[]]
-     */
-    private function query_Field(GraphqlSearchNode $node) {
-
-        return $node->name;
-    }
-    /**
      * 解析并返回查询结果，对field做验证，如果有错误抛出异常
      * @param GraphqlSearchNode $node [name=>'', sub=>[]]
      * @throws YZE_FatalException
      */
-    private function query(GraphqlSearchNode $node) {
-
-        if ($node->sub){
-            $result = [];
-            foreach ($node->sub as $sub) {
-                $result[$sub->name] = $this->query($sub);
-            }
-            return $result;
-        }else{
-            return $this->query_Field($node);
+    private function model_query($table, GraphqlSearchNode $node, $var) {
+        $models = $this->find_All_Models();
+        if (!$models) return null;
+        $dba = YZE_DBAImpl::getDBA();
+        if (!$node->sub){ // 没有查询具体的字段
+            return null;
         }
+        $result = [];
+        $searchColumns = [];
+        $foreignKeyColumns = [];
+        /**
+         * 外键关联配置：[filed_name=>[column=>关联的字段, target_class=>"",target_column=>"", 'node'=>查询结构体,'ids'=>[关联的字段的具体值列表]]]
+         */
+        $searchAssocTables = [];
+        /**
+         * 外键关联配置：[filed_name=>[column=>关联的字段, target_class=>"",target_column=>""]]
+         */
+        $relationConfig = [];
+        /**
+         * 查询出来的关联表数据：[filed_name=>[key=>[field_name=>field_value]]]
+         */
+        $assocTableRecords = [];
+        $class = @$models[$table];
+        if (!class_exists($class)) throw new YZE_FatalException("field '{$node->name}' not exist");
+        $modelObject = new $class();
+        $columnConfig = $modelObject->get_columns();
+        foreach($modelObject->get_relation_columns() as $column => $config){
+            $config['column'] = $column;
+            $relationConfig[$config['graphql_field']] = $config;
+        }
+        foreach ($node->sub as $sub) {
+            if ($sub->name == "__typename"){ // 内省关键字处理
+                $result["__typename"] = "__Field";
+            }elseif (!$sub->sub ){// 查询的字段
+                if (!$columnConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
+                $result[$sub->name] = null;
+                $searchColumns[] = $sub->name;
+            }else{ // 查询的关联表
+                if (!$relationConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
+                $result[$sub->name] = null;
+                $searchAssocTables[$sub->name] = $relationConfig[$sub->name];
+                $searchAssocTables[$sub->name]['node'] = $sub;
+                $searchAssocTables[$sub->name]['ids'] = [];
+                $foreignKeyColumns[] = $searchAssocTables[$sub->name]['column'];
+            }
+        }
+
+        // 查询字段
+        $where = null;
+        if ($var){
+            $op = strtolower(trim($var['op']));
+            $where = $var['column'].' '.$var['op'];
+            if ($op == "in" || $op =='not in'){
+                $where .= "(".$var['value'].")";
+            }else{
+                $where .= ' '.$dba->quote($var['value']);
+            }
+            $page = intval(@$var['page']);
+            $page = $page <=0 ? 1 : $page;
+            $count = intval(@$var['count']);
+            $count = $count <=0 ? 10 : $count;
+            $page = ($page - 1 ) * $count;
+            $where .= " limit {$page}, $count";
+        }
+        $rsts = $dba->nativeQuery("select ".join(',', array_merge($foreignKeyColumns,$searchColumns))
+            ." from `{$table}` where {$where}");
+        $rsts = $rsts->get_results();
+        // 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
+        $rsts = array_map(function ($item) use($result, &$searchAssocTables){
+            // 关联表的外键id列表，后面关联表查询使用
+            foreach ($searchAssocTables as &$value){
+                $value['ids'][] = $item[$value['column']];
+            }
+            return array_merge($result, $item);
+        }, $rsts);
+
+        // 查询关联表的字段
+        foreach ($searchAssocTables as $fieldName=>$assocInfo){
+            $targetClass = $assocInfo['target_class'];
+            $targetColumn = $assocInfo['target_column'];
+            if (!class_exists($targetClass)) {
+                continue;
+            }
+            $targetModel = new $targetClass();
+            $key_name = $targetModel->get_key_name();
+            $assocTableRecords[$fieldName] = [];
+
+            // 判断是否有id查询，为了关联查询，需要把关联表的主键也查询出来
+            $hasKey = GraphqlIntrospection::find_search_node_by_name($assocInfo['node']->sub, $key_name);
+            if (!$hasKey->has_value()){
+                $id = new GraphqlSearchNode();
+                $id->name = $key_name;
+                $assocInfo['node']->sub[] = $id;
+            }
+
+            foreach($this->model_query($targetClass::TABLE, $assocInfo['node'],
+                ['column'=>$targetColumn, 'op'=>'in', 'value'=>join(",",array_unique($assocInfo['ids']))]) as $item){
+                $key = $item[$key_name];
+                if (!$hasKey->has_value()){
+                    unset($item[$key_name]);
+                }
+                $assocTableRecords[$fieldName][$key] = $item;
+            }
+        }
+        //去掉那些为了关联查询而增加的额外查询字段，只返回用户查询的内容
+        $rsts = array_map(function ($item) use($foreignKeyColumns, $searchColumns, $assocTableRecords, $searchAssocTables){
+            // 把关联表对应的数据放到item中对应的位置去
+            foreach($assocTableRecords as $fieldName => $data){
+                $myColumn = $searchAssocTables[$fieldName]['column'];
+                $item[$fieldName] = @$data[$item[$myColumn]] ?: null;
+            }
+            // 移出因为关联查询而临时添加的字段
+            foreach ($foreignKeyColumns as $column){
+                if (!in_array($column, $searchColumns)){
+                    unset($item[$column]);
+                }
+            }
+            return $item;
+        }, $rsts);
+        return $rsts;
     }
 
     private function basic_types() {
@@ -1310,6 +1435,41 @@ class Graphql_Controller extends YZE_Resource_Controller {
             'Boolean'=>['description'=>''],
             'ID'=>['description'=>'']
         ];
+    }
+
+    /**
+     * 返回格式[tableName=>[__Field]]
+     * @return mixed
+     * @throws YZE_FatalException
+     */
+    private function get_all_model_types(){
+        if ($this->allModelTypes) return $this->allModelTypes;
+        $models = $this->find_All_Models();
+        $searchNode = $this->parse("{
+    __schema {
+      types {
+        ...FullType
+      }
+    }
+}
+
+fragment FullType on __Type {
+    name
+    fields(includeDeprecated: true) {
+        name
+        type{
+            name
+        }
+    }
+}
+");
+        $searchNode = reset($searchNode);
+        $searchNode = GraphqlIntrospection::find_search_node_by_name($searchNode->sub, 'types');
+        $types = $this->get_model_schema($models, $searchNode);
+        foreach ($types as $type){
+            $this->allModelTypes[$type['name']] = $type['fields'];
+        }
+        return $this->allModelTypes;
     }
 }
 

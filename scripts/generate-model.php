@@ -96,6 +96,7 @@ trait $class{
 				);
 
 		$importClass = [];
+		$relation_column = [];
 		$assocFields = "";
 		$assocFieldFuncs = "";
 		$enumFunction = "";
@@ -112,6 +113,11 @@ trait $class{
 				$importClass[] = "use $col_class;";
 			}
 			$sortClass = substr($col_class, strripos($col_class, "\\")+1);
+			$relation_column[$row['COLUMN_NAME']] = [
+				'graphql_field'=>rtrim($row['COLUMN_NAME'],'_id'),
+				'target_class'=>$col_class,
+				'target_column'=>$row['REFERENCED_COLUMN_NAME']
+			];
 			$assocFields .= "
 	private \${$col};
 ";
@@ -208,6 +214,11 @@ class $class extends YZE_Model{
      * @see YZE_Model::\$unique_key
      */
     protected \$unique_key = ".var_export($unique_key, true).";
+
+    /**
+     * @see YZE_Model::\$relation_column
+     */
+    protected \$relation_column = ".var_export($relation_column, true).";
     		
     {$assocFields}
 	{$assocFieldFuncs}

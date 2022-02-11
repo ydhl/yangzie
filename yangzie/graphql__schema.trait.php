@@ -79,17 +79,19 @@ trait Graphql__Schema
         $queryFileds = [];
         $fieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'fields');
         $argSearch = GraphqlIntrospection::find_search_node_by_name($fieldSearch->sub, 'args');
+        $typeSearch = GraphqlIntrospection::find_search_node_by_name($fieldSearch->sub, 'type');
 //        print_r($argSearch);
         foreach ($models as $table => $class) {
+            $typeIntro = new GraphqlIntrospection($typeSearch, ['kind' => 'OBJECT', 'ofType' => null, 'name' => $table]);
             $modelObject = new $class;
             $queryFileds[] = [
                 'name' => $table,
                 '__typename'=>'__Field',
                 'description' => $modelObject->get_description(),
-                'type' => ['kind' => 'OBJECT', 'ofType' => null, 'name' => $table],
+                'type' => $typeIntro->search(),
                 'isDeprecated' => false,
                 'deprecationReason' => null,
-                'args' => $this->get_Model_Args($modelObject, $argSearch)
+                'args' => $this->get_Model_Args($argSearch)
             ];
         }
         $intro = new GraphqlIntrospection($node, [
@@ -197,6 +199,30 @@ trait Graphql__Schema
         return $intro->search();
     }
 
+    private function get_model_schema($models, GraphqlSearchNode $node){
+        $results = [];
+        // 每一个model都是types的一级节点
+        foreach ($models as $table => $model) {
+            $modelObject = new $model;
+            // 根据scheme请求返回内容
+            $fieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'fields');
+            $fields = $this->get_Model_Fields($modelObject, $fieldSearch);
+            $intro = new GraphqlIntrospection($node, [
+                'name' => $table,
+                'kind' => 'OBJECT',
+                '__typename' => '__Type',
+                'description' => $modelObject->get_description(),
+                'fields' => $fields,
+                'inputFields' => null,
+                'interfaces' => [],
+                'enumValues' => null,
+                'possibleTypes' => null,
+                'specifiedByUrl' => ''
+            ]);
+            $results[] = $intro->search();
+        }
+        return $results;
+    }
     /**
      * 返回系统有哪些查询类型（也就是Model）,默认情况下每个Modal的cloumn都将返回，表示都可以被graphql查询
      * @param GraphqlSearchNode $node
@@ -257,26 +283,26 @@ trait Graphql__Schema
             }
         }
 
-        // 每一个model都是types的一级节点
-        foreach ($models as $table => $model) {
-            $modelObject = new $model;
-            // 根据scheme请求返回内容
-            $fieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'fields');
-            $fields = $this->get_Model_Fields($modelObject, $fieldSearch);
-            $intro = new GraphqlIntrospection($node, [
-                'name' => $table,
-                'kind' => 'OBJECT',
-                '__typename' => '__Type',
-                'description' => $modelObject->get_description(),
-                'fields' => $fields,
-                'inputFields' => null,
-                'interfaces' => [],
-                'enumValues' => null,
-                'possibleTypes' => null,
-                'specifiedByUrl' => ''
-            ]);
-            $results[] = $intro->search();
-        }
+        $results = array_merge($results, $this->get_model_schema($models, $node));
+
+        // model的查询参数类型
+        $modelObject = new $model;
+        // 根据scheme请求返回内容
+        $fieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'inputFields');
+        $fields = $this->get_Model_Where_Fields($fieldSearch);
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'Where',
+            'kind' => 'INPUT_OBJECT',
+            '__typename' => '__Type',
+            'description' => "model的查询条件",
+            'fields' => null,
+            'inputFields' => $fields,
+            'interfaces' => [],
+            'enumValues' => null,
+            'possibleTypes' => null,
+            'specifiedByUrl' => ''
+        ]);
+        $results[] = $intro->search();
         return $results;
     }
 
@@ -335,7 +361,6 @@ trait Graphql__Schema
     private function get_Model_Fields(YZE_Model $model, GraphqlSearchNode $node)
     {
         if (!$model || !$node->has_value()) return [];
-        $args = $node->args; // 目前还用不上
         $columns = $model->get_columns();
         $result = [];
         $typeSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'type');
@@ -352,48 +377,120 @@ trait Graphql__Schema
             ]);
             $result[] = $intro->search();
         }
+        // 如果有关联表，则关联表也作为field
+        $unique_keys = $model->get_relation_columns();
+        foreach ($unique_keys as $column => $relationInfo){
+            $assoName = $relationInfo['graphql_field'];
+            $modelClass = $relationInfo['target_class'];
+            if (!class_exists($modelClass))continue;
+            $intro = new GraphqlIntrospection($node, [
+                'name' => $assoName,
+                'description' => '',
+                "__typename"=>"__Field",
+                'args' => [],
+                'type' => [
+                    'name' => $modelClass::TABLE,
+                    'kind' => 'OBJECT',
+                    "__typename"=>"__Type",
+                    'ofType' => null
+                ],
+                'isDeprecated' => false,
+                'deprecationReason' => null,
+            ]);
+            $result[] = $intro->search();
+        }
+
         return $result;
     }
+    private function get_Model_Where_Fields(GraphqlSearchNode $node)
+    {
+        if (!$node->has_value()) return [];
+        $result = [];
+        $typeSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'type');
+        $typeIntro = new GraphqlIntrospection($typeSearch, [
+            "kind" => "NON_NULL",
+            "__typename"=>"__Type",
+            "name" => null,
+            "ofType" => [
+                "kind" => "SCALAR",
+                "__typename"=>"__Type",
+                "name" => "String",
+                "ofType" => null
+            ]
+        ]);
+        $numberTypeIntro = new GraphqlIntrospection($typeSearch, [
+            "kind" => "SCALAR",
+            "__typename"=>"__Type",
+            "name" => 'Int',
+            "ofType" => null
+        ]);
 
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'column',
+            'description' => __("查询字段名"),
+            "__typename"=>"__InputValue",
+            'type' => $typeIntro->search(),
+            'defaultValue' => null,
+        ]);
+        $result[] = $intro->search();
+
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'op',
+            'description' => __("比较条件"),
+            "__typename"=>"__InputValue",
+            'type' => $typeIntro->search(),
+            'defaultValue' => null,
+        ]);
+        $result[] = $intro->search();
+
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'value',
+            'description' => __("查询值"),
+            "__typename"=>"__InputValue",
+            'type' => $typeIntro->search(),
+            'defaultValue' => null,
+        ]);
+        $result[] = $intro->search();
+
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'page',
+            'description' => __("当前页"),
+            "__typename"=>"__InputValue",
+            'type' => $numberTypeIntro->search(),
+            'defaultValue' => "1",
+        ]);
+        $result[] = $intro->search();
+
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'count',
+            'description' => __("每页大小"),
+            "__typename"=>"__InputValue",
+            'type' => $numberTypeIntro->search(),
+            'defaultValue' => "10",
+        ]);
+        $result[] = $intro->search();
+        return $result;
+    }
     /**
      * 获取查询某个字段的查询条件
      * @param $columnName
      * @param GraphqlSearchNode $node
      */
-    private function get_Model_Args(YZE_Model $model, GraphqlSearchNode $node)
+    private function get_Model_Args(GraphqlSearchNode $node)
     {
-        if (!$node->has_value()) return null;
+        if (!$node->has_value()) return [];
         $args = [
             [
-                "name" => "column",
-                "description" => "search column",
+                "name" => "where",
+                "description" => "search where",
                 "__typename"=>"__InputValue",
                 "type" => [
-                    "kind" => "SCALAR",
+                    "kind" => "OBJECT",
                     "__typename"=>"__Type",
-                    "name" => "String",
+                    "name" => "Where",
                     "ofType" => null
                 ],
-                "defaultValue" => '""',
-                "isDeprecated" => false,
-                "deprecationReason" => null
-            ],
-            [
-                "name" => "value",
-                "description" => "search value of column",
-                "__typename"=>"__Type",
-                "type" => [
-                    "kind" => "NON_NULL",
-                    "__typename"=>"__Type",
-                    "name" => null,
-                    "ofType" => [
-                        "kind" => "SCALAR",
-                        "__typename"=>"__Type",
-                        "name" => "String",
-                        "ofType" => null
-                    ]
-                ],
-                "defaultValue" => '""',
+                "defaultValue" => null,
                 "isDeprecated" => false,
                 "deprecationReason" => null
             ]

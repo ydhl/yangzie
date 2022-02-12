@@ -1044,11 +1044,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @var
      */
     private $vars;
-    /**
-     * 参数
-     * @var
-     */
-    private $args;
+
     private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
     private $allModelTypes;
     public function response_headers(){
@@ -1067,8 +1063,10 @@ class Graphql_Controller extends YZE_Resource_Controller {
             // 1. 线解析graphql成语法结构体
             list($query, $vars) = $this->fetch_Request();
             $this->vars = $vars;
+
             $nodes = $this->parse($query);
             $result = [];
+            $count = [];
             // 2. 对每个结构进行数据查询
             foreach ($nodes as $node) {
                 //2.1 内省特殊的查询：如__SCHEMA 向服务端询问有哪些可查询端内容 https://graphql.cn/learn/introspection/
@@ -1080,8 +1078,28 @@ class Graphql_Controller extends YZE_Resource_Controller {
                     $result[$node->name] = $this->$method($node);
                     continue;
                 }
+
+                // 提取形参实参
+                $wheres = null;
+                $dql = null;
+                foreach ((array)$node->args as $arg){
+                    if ($arg->name == 'wheres'){
+                        $wheres = $this->vars[$arg->value];
+                    }else if ($arg->name == 'dql'){
+                        $dql = $this->vars[$arg->value];
+                    }
+                }
                 // 2.2 具体数据查询
-                $result[$node->name] = $this->model_query($node->name, $node, @$this->vars['where']);
+                if ($node->name != "count"){
+                    $total = 0;
+                    $result[$node->name] = $this->model_query($node->name, $node, $wheres, $dql, $total);
+                    $count[$node->name] = $total;
+                }else{
+                    $result[$node->name] = [];
+                }
+            }
+            if (isset($result['count'])){
+                $result['count'] = $count;
             }
             // 3. 返回结构
             return GraphqlResult::success($this, $result);
@@ -1147,7 +1165,6 @@ class Graphql_Controller extends YZE_Resource_Controller {
             if ($acts[1]!="{"){
                 $this->operationName = $acts[1];
                 if ($acts[2]!='{'){
-                    $this->args = $this->fetch_Args($acts[2]);
                     return $this->fetch_Node(array_slice($acts, 4));
                 }
                 return $this->fetch_Node(array_slice($acts, 3));
@@ -1304,7 +1321,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @param GraphqlSearchNode $node [name=>'', sub=>[]]
      * @throws YZE_FatalException
      */
-    private function model_query($table, GraphqlSearchNode $node, $var) {
+    private function model_query($table, GraphqlSearchNode $node, $wheres, $pagination=[], &$total=0) {
         $models = $this->find_All_Models();
         if (!$models) return null;
         $dba = YZE_DBAImpl::getDBA();
@@ -1338,7 +1355,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             if ($sub->name == "__typename"){ // 内省关键字处理
                 $result["__typename"] = "__Field";
             }elseif (!$sub->sub ){// 查询的字段
-                if (!$columnConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
+                if (!@$columnConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
                 $result[$sub->name] = null;
                 $searchColumns[] = $sub->name;
             }else{ // 查询的关联表
@@ -1352,24 +1369,42 @@ class Graphql_Controller extends YZE_Resource_Controller {
         }
 
         // 查询字段
-        $where = null;
-        if ($var){
-            $op = strtolower(trim($var['op']));
-            $where = $var['column'].' '.$var['op'];
-            if ($op == "in" || $op =='not in'){
-                $where .= "(".$var['value'].")";
-            }else{
-                $where .= ' '.$dba->quote($var['value']);
+        $where = "";
+        if ($wheres){
+            if (!is_array(reset($wheres))){
+                $wheres = [$wheres];
             }
-            $page = intval(@$var['page']);
+            foreach ($wheres as $index => $_where){
+                if (!$columnConfig[$_where['column']]){
+                    throw new YZE_FatalException("field '".$_where['column']."' not exist");
+                }
+                $op = $this->get_op($_where['op']);
+                $where .= $_where['column'].' '.$_where['op'];
+                if ($op == "in" || $op =='not in' || $op =='find_in_set'){
+                    $where .= "(".$_where['value'].")";
+                }else{
+                    $where .= ' '.$dba->quote($_where['value']);
+                }
+                if ($index+1 != count($wheres)){
+                    $where .= ' '.$this->get_andor($_where['andor']);
+                }
+            }
+        }
+        $paginationWhere = '';
+        if ($pagination){
+            $page = intval(@$pagination['page']);
             $page = $page <=0 ? 1 : $page;
-            $count = intval(@$var['count']);
+            $count = intval(@$pagination['count']);
             $count = $count <=0 ? 10 : $count;
             $page = ($page - 1 ) * $count;
-            $where .= " limit {$page}, $count";
+            $paginationWhere = " limit {$page}, $count";
         }
+        $totalRst = $dba->nativeQuery("select count(*) as t from `{$table}` ".($where ? "where {$where}" : "").$paginationWhere);
+        $totalRst->next();
+        $total = intval($totalRst->f('t'));
+
         $rsts = $dba->nativeQuery("select ".join(',', array_merge($foreignKeyColumns,$searchColumns))
-            ." from `{$table}` where {$where}");
+            ." from `{$table}` ".($where ? "where {$where}" : "").$paginationWhere);
         $rsts = $rsts->get_results();
         // 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
         $rsts = array_map(function ($item) use($result, &$searchAssocTables){
@@ -1424,6 +1459,36 @@ class Graphql_Controller extends YZE_Resource_Controller {
             return $item;
         }, $rsts);
         return $rsts;
+    }
+    private function get_andor($op){
+        switch (strtolower($op)) {
+            case 'and':
+                return 'and';
+            case 'or':
+                return 'or';
+            default:
+                throw new YZE_FatalException("not support operation: " . $op);
+        }
+    }
+    private function get_op($op){
+        switch ($op){
+            case '=': return '=';
+            case '>=': return '>=';
+            case '<=': return '<=';
+            case '>': return '>';
+            case '<': return '<';
+            case '!=':
+            case '<>': return '!=';
+            case 'like': return 'like';
+            case 'not like': return 'not like';
+            case 'between': return 'between';
+            case 'find_in_set': return 'find_in_set';
+            case 'in': return 'in';
+            case 'not in': return 'not in';
+            case 'is not null': return 'is not null';
+            case 'is null': return 'is null';
+            default: throw new YZE_FatalException("not support operation: ".$op);
+        }
     }
 
     private function basic_types() {

@@ -81,9 +81,11 @@ trait Graphql__Schema
         $argSearch = GraphqlIntrospection::find_search_node_by_name($fieldSearch->sub, 'args');
         $typeSearch = GraphqlIntrospection::find_search_node_by_name($fieldSearch->sub, 'type');
 //        print_r($argSearch);
+        $fieldNames = [];
         foreach ($models as $table => $class) {
             $typeIntro = new GraphqlIntrospection($typeSearch, ['kind' => 'OBJECT', 'ofType' => null, 'name' => $table]);
             $modelObject = new $class;
+            $fieldNames[] = $table;
             $queryFileds[] = [
                 'name' => $table,
                 '__typename'=>'__Field',
@@ -94,6 +96,24 @@ trait Graphql__Schema
                 'args' => $this->get_Model_Args($argSearch)
             ];
         }
+
+        $typeIntro = new GraphqlIntrospection($typeSearch, ['kind' => 'OBJECT', 'ofType' => null, 'name' => 'count']);
+        $queryFileds[] = [
+            'name' => 'count',
+            '__typename'=>'__Field',
+            'description' => '分页数据',
+            'type' => $typeIntro->search(),
+            'isDeprecated' => false,
+            'deprecationReason' => null,
+            'args' => []
+        ];
+
+        $fieldNames[] = 'count';
+
+        if (count($fieldNames) != count(array_unique($fieldNames))){
+            throw new YZE_FatalException(sprintf(__('field 定义重复了请检查: %s')), join(',', $fieldNames));
+        }
+
         $intro = new GraphqlIntrospection($node, [
             'name' => 'YangzieQuery',
             'kind' => 'OBJECT',
@@ -117,40 +137,6 @@ trait Graphql__Schema
     private function schema_Subscription_Type($node)
     {
         return null;
-//        $intro = new GraphqlIntrospection($node, [
-//            'name' => 'YangzieSubscription',
-//            'kind' => 'OBJECT',
-//            'description' => 'Yangzie Subscription',
-//            'fields' => [[
-//                "name"=> "message",
-//                "description"=> "Subscribe to a message",
-//                "args"=> [[
-//                        "name"=> "delay",
-//                        "description"=> "delay in milleseconds for subsequent results, for demonstration purposes",
-//                        "type"=> [
-//                           "kind"=> "SCALAR",
-//                           "name"=> "Int",
-//                           "ofType"=> null
-//                        ],
-//                      "defaultValue"=> "600",
-//                      "isDeprecated"=> false,
-//                      "deprecationReason"=> null
-//                ]],
-//                "type"=> [
-//                "kind"=> "SCALAR",
-//                    "name"=> "String",
-//                    "ofType"=> null
-//                  ],
-//              "isDeprecated"=> false,
-//              "deprecationReason"=> null
-//            ]],
-//            'inputFields' => null,
-//            'interfaces' => [],
-//            'enumValues' => null,
-//            'possibleTypes' => null,
-//            'specifiedByUrl' => ''
-//        ]);
-//        return $intro->search();
     }
 
     private function schema_Mutation_Type($models, GraphqlSearchNode $node)
@@ -286,23 +272,51 @@ trait Graphql__Schema
         $results = array_merge($results, $this->get_model_schema($models, $node));
 
         // model的查询参数类型
-        $modelObject = new $model;
         // 根据scheme请求返回内容
-        $fieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'inputFields');
-        $fields = $this->get_Model_Where_Fields($fieldSearch);
+        $inputFieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'inputFields');
+        $fieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'fields');
         $intro = new GraphqlIntrospection($node, [
-            'name' => 'Where',
-            'kind' => 'INPUT_OBJECT',
+            'name' => 'count',
+            'kind' => 'OBJECT',
             '__typename' => '__Type',
-            'description' => "model的查询条件",
-            'fields' => null,
-            'inputFields' => $fields,
+            'description' => "查询分页数据",
+            'fields' => $this->get_count_Fields($models, $fieldSearch),
+            'inputFields' => null,
             'interfaces' => [],
             'enumValues' => null,
             'possibleTypes' => null,
             'specifiedByUrl' => ''
         ]);
         $results[] = $intro->search();
+
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'Where',
+            'kind' => 'INPUT_OBJECT',
+            '__typename' => '__Type',
+            'description' => "model的查询条件",
+            'fields' => null,
+            'inputFields' => $this->get_Model_Where_Fields($inputFieldSearch),
+            'interfaces' => [],
+            'enumValues' => null,
+            'possibleTypes' => null,
+            'specifiedByUrl' => ''
+        ]);
+        $results[] = $intro->search();
+
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'DQL',
+            'kind' => 'INPUT_OBJECT',
+            '__typename' => '__Type',
+            'description' => "分页，分组和排序",
+            'fields' => null,
+            'inputFields' => $this->get_Model_Dql_Fields($inputFieldSearch),
+            'interfaces' => [],
+            'enumValues' => null,
+            'possibleTypes' => null,
+            'specifiedByUrl' => ''
+        ]);
+        $results[] = $intro->search();
+
         return $results;
     }
 
@@ -377,6 +391,8 @@ trait Graphql__Schema
             ]);
             $result[] = $intro->search();
         }
+
+        $result[] = $intro->search();
         // 如果有关联表，则关联表也作为field
         $unique_keys = $model->get_relation_columns();
         foreach ($unique_keys as $column => $relationInfo){
@@ -402,6 +418,25 @@ trait Graphql__Schema
 
         return $result;
     }
+    private function get_count_Fields($models, GraphqlSearchNode $node){
+        $queryFileds = [];
+        $typeSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'type');
+
+        foreach ($models as $table => $class) {
+            $typeIntro = new GraphqlIntrospection($typeSearch, ['kind' => 'SCALAR', 'ofType' => null, 'name' => 'Int']);
+            $queryFileds[] = [
+                'name' => $table,
+                '__typename'=>'__Field',
+                'description' => sprintf(__("%s count"), $table),
+                'type' => $typeIntro->search(),
+                'isDeprecated' => false,
+                'deprecationReason' => null,
+                'args' => []
+            ];
+        }
+
+        return $queryFileds;
+    }
     private function get_Model_Where_Fields(GraphqlSearchNode $node)
     {
         if (!$node->has_value()) return [];
@@ -418,11 +453,22 @@ trait Graphql__Schema
                 "ofType" => null
             ]
         ]);
-        $numberTypeIntro = new GraphqlIntrospection($typeSearch, [
+        $nullIntro = new GraphqlIntrospection($typeSearch, [
             "kind" => "SCALAR",
             "__typename"=>"__Type",
-            "name" => 'Int',
+            "name" => "String",
             "ofType" => null
+        ]);
+        $listTypeIntro = new GraphqlIntrospection($typeSearch, [
+            "kind" => "LIST",
+            "__typename"=>"__Type",
+            "name" => null,
+            "ofType" => [
+                "kind" => "SCALAR",
+                "__typename"=>"__Type",
+                "name" => 'String',
+                "ofType" => null
+            ]
         ]);
 
         $intro = new GraphqlIntrospection($node, [
@@ -446,6 +492,64 @@ trait Graphql__Schema
         $intro = new GraphqlIntrospection($node, [
             'name' => 'value',
             'description' => __("查询值"),
+            "__typename"=>"__InputValue",
+            'type' => $listTypeIntro->search(),
+            'defaultValue' => null,
+        ]);
+        $result[] = $intro->search();
+
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'andor',
+            'description' => __("And / Or 拼接下一个where"),
+            "__typename"=>"__InputValue",
+            'type' => $nullIntro->search(),
+            'defaultValue' => null,
+        ]);
+        $result[] = $intro->search();
+        return $result;
+    }
+
+    private function get_Model_Dql_Fields(GraphqlSearchNode $node)
+    {
+        if (!$node->has_value()) return [];
+        $result = [];
+        $typeSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'type');
+        $typeIntro = new GraphqlIntrospection($typeSearch, [
+            "kind" => "NON_NULL",
+            "__typename"=>"__Type",
+            "name" => null,
+            "ofType" => [
+                "kind" => "SCALAR",
+                "__typename"=>"__Type",
+                "name" => "String",
+                "ofType" => null
+            ]
+        ]);
+        $numberTypeIntro = new GraphqlIntrospection($typeSearch, [
+            "kind" => "SCALAR",
+            "__typename"=>"__Type",
+            "name" => 'Int',
+            "ofType" => null
+        ]);
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'having',
+            'description' => __("Having"),
+            "__typename"=>"__InputValue",
+            'type' => $typeIntro->search(),
+            'defaultValue' => null,
+        ]);
+        $result[] = $intro->search();
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'orderBy',
+            'description' => __("排序"),
+            "__typename"=>"__InputValue",
+            'type' => $typeIntro->search(),
+            'defaultValue' => null,
+        ]);
+        $result[] = $intro->search();
+        $intro = new GraphqlIntrospection($node, [
+            'name' => 'groupBy',
+            'description' => __("分组"),
             "__typename"=>"__InputValue",
             'type' => $typeIntro->search(),
             'defaultValue' => null,
@@ -471,6 +575,7 @@ trait Graphql__Schema
         $result[] = $intro->search();
         return $result;
     }
+
     /**
      * 获取查询某个字段的查询条件
      * @param $columnName
@@ -481,13 +586,32 @@ trait Graphql__Schema
         if (!$node->has_value()) return [];
         $args = [
             [
-                "name" => "where",
-                "description" => "search where",
+                "name" => "wheres",
+                "description" => "查询条件数组",
+                "__typename"=>"__InputValue",
+                "type" => [
+                    "kind" => "LIST",
+                    "__typename"=>"__Type",
+                    "name" => null,
+                    "ofType" => [
+                        "kind" => "Object",
+                        "__typename"=>"__Type",
+                        "name" => 'Where',
+                        "ofType" => null
+                    ]
+                ],
+                "defaultValue" => null,
+                "isDeprecated" => false,
+                "deprecationReason" => null
+            ],
+            [
+                "name" => "dql",
+                "description" => "分支、分页、排序",
                 "__typename"=>"__InputValue",
                 "type" => [
                     "kind" => "OBJECT",
                     "__typename"=>"__Type",
-                    "name" => "Where",
+                    "name" => "DQL",
                     "ofType" => null
                 ],
                 "defaultValue" => null,

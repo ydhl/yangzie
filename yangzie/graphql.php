@@ -1048,6 +1048,11 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @var
      */
     private $vars;
+    /**
+     * 变量的默认值
+     * @var array
+     */
+    private $varDefault;
 
     private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
     private $allModelTypes;
@@ -1174,6 +1179,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             if ($acts[1]!="{"){
                 $this->operationName = $acts[1];
                 if ($acts[2]!='{'){
+                    $this->parse_var_default($acts[2]);
                     return $this->fetch_Node(array_slice($acts, 4));
                 }
                 return $this->fetch_Node(array_slice($acts, 3));
@@ -1182,6 +1188,10 @@ class Graphql_Controller extends YZE_Resource_Controller {
         }
         // 直接{开头的情况
         return $this->fetch_Node(array_slice($acts, 1));
+    }
+
+    private function parse_var_default($args){
+        // 处理默认值
     }
 
     /**
@@ -1517,12 +1527,13 @@ class Graphql_Controller extends YZE_Resource_Controller {
             if (!is_array(reset($wheres))){
                 $wheres = [$wheres];
             }
+
             foreach ($wheres as $index => $_where){
-                if (!$columnConfig[$_where['column']]){
+                if (!@$columnConfig[$_where['column']]){
                     throw new YZE_FatalException("field '".$_where['column']."' not exist");
                 }
                 $op = $this->get_op($_where['op']);
-                $where .= $_where['column'].' '.$_where['op'];
+                $where .= ' '.$_where['column'].' '.$_where['op'];
                 if ($op == "in" || $op =='not in' || $op =='find_in_set'){
                     $where .= "(".$this->filter_array_value($_where['value']).")";
                 }else{

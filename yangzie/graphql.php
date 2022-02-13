@@ -14,6 +14,10 @@ class GraphqlSearchArg{
      * @var 参数值
      */
     public $value;
+    /**
+     * @var 传入的值是不是变量
+     */
+    public $valueIsVar;
 }
 class GraphqlSearchNode{
     /**
@@ -1082,17 +1086,21 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 // 提取形参实参
                 $wheres = null;
                 $dql = null;
+                $id = null;
                 foreach ((array)$node->args as $arg){
                     if ($arg->name == 'wheres'){
-                        $wheres = $this->vars[$arg->value];
+                        $wheres = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
                     }else if ($arg->name == 'dql'){
-                        $dql = $this->vars[$arg->value];
+                        $dql = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
+                    }else if ($arg->name == 'id'){
+                        $id = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
                     }
                 }
+//                print_r($node->args);
                 // 2.2 具体数据查询
                 if ($node->name != "count"){
                     $total = 0;
-                    $result[$node->name] = $this->model_query($node->name, $node, $wheres, $dql, $total);
+                    $result[$node->name] = $this->model_query($node->name, $node, $id, $wheres, $dql, $total);
                     $count[$node->name] = $total;
                 }else{
                     $result[$node->name] = [];
@@ -1149,6 +1157,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
         //用正则来分离query里面的结构
         preg_match_all($this->fetchActRegx, $query, $matches);
         //处理query 或者 mutation name
+
         $acts = $matches[0];
         if (!$acts){
             throw new YZE_FatalException('query is missing');
@@ -1236,8 +1245,9 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 continue;
             }
             //参数处理
-            if ($act[0] == "("){
-                $currNode->args = $this->fetch_Args($act);
+            if (substr($act, 0, 1) == "("){
+                $arg_acts = $this->parse_args($act);
+                $currNode->args = $this->fetch_Args($arg_acts);
                 continue;
             }
             // ：别名处理,:后面是别名，index往后移动一位
@@ -1262,56 +1272,187 @@ class Graphql_Controller extends YZE_Resource_Controller {
     }
 
     /**
+     * 逐个字符遍历，提取参数名和参数值和参数列表的元字符[]{}
+     *
+     * 测试字符串
+     * '(id: "\"{(1000),", a:"(2\\\')", c:1)';
+     *
+     * '(wheres: [{column: "id:,{()}[]\",", op: "=", value: "\"】28中文\"}"}], id: 2, c: "c", a:$a)'
+     *
+     * (a:1,b:2)
+     *
+     * @param $argString
+     * @return array
+     */
+    private function parse_args($argString){
+        //
+        $acts = [];
+        $index = 0;
+        $words = [];
+        $isHandleValue = false;
+        $isInQuote = null;
+        while (true){
+            if ($index >= mb_strlen($argString)) {
+                // 剩余的内容
+                if ($words)$acts[] = join('', $words);
+                break;
+            }
+            $c = mb_substr($argString, $index++, 1);
+
+            // case 0 在没有值内容时，遇到的元字符
+            if (in_array($c, ['{', '}', '[', ']']) && !$isHandleValue){
+                $acts[] = $c;
+                continue;
+            }
+
+            // case 1 在没有处理值时遇到: 表示参数名结束，如果当前在处理值，那么:是值内容，比如name: "value:"
+            if ($c == ":" && !$isHandleValue){//名
+                $words[] = $c;
+                $acts[] = join('', $words);
+                $words = [];
+
+                // 名后面就是值开始
+                $isHandleValue = true;
+
+                // 往下推直到值的第一个字符不是空格的字符
+                while(true){
+                    $c = mb_substr($argString, $index++, 1);
+                    if($c!=" ") break;
+                }
+                if (in_array($c, ["{","["])){
+                    $isHandleValue = false; // 下级参数
+                    $acts[] = $c;
+                }else{
+                    if (in_array($c, ["'",'"'])){ // 引号值
+                        $isInQuote = $c;
+                    }
+                    $words[] = $c;
+                }
+                continue;
+            }
+
+            // 检测是否值结束，值的结束以,})
+            if ($isHandleValue && in_array($c, [',','}',')'])){
+                $isFinishedValue = false;
+                if (!$isInQuote){// 非字符串值是没有引号的，那么遇到这些字符就表示结束
+                    $isFinishedValue = true;
+                }else{// 字符串则判断前一个字符是"，前2个字符不是\则是结束,比如"", "\",",
+                    // $prev_c = mb_substr($argString, $index-2, 1);
+                    // $prev_2nd_c = mb_substr($argString, $index-3, 1);
+                    $prev_c = end($words);
+                    $prev_2nd_c = prev($words);
+                    reset($words);
+
+                    if ($prev_c && $prev_2nd_c && $prev_c == $isInQuote && $prev_2nd_c != '\\'){
+                        $isFinishedValue = true;
+                    }
+                }
+                if ($isFinishedValue){
+                    $acts[] = join('', $words);
+                    $isHandleValue = false;
+                    $isInQuote = null;
+                    $words = [];
+                    if ($c == "}"){// 由于这时由于isInQuote的影响，没有进入case 0
+                        $acts[] = "}";
+                    }
+
+                    continue;
+                }
+            }
+            if (($c == "(" || $c == ")") && !$isInQuote){// 忽略(),
+                continue;
+            }
+            if (($c == "," || $c == " ") && !$isHandleValue){// 忽略参数名分隔符，和对应的空格,
+                continue;
+            }
+
+            $words[] = $c;
+        }
+        return $acts;
+    }
+
+    private function array_key_last($array){
+        $keys = array_keys($array);
+        return end($keys);
+    }
+
+    private function fetch_Args_array ($end, $acts, &$fetchedLength=0) {
+        $args = [];
+        $index = 0;
+        while (true) {
+            $act = $acts[$index++];
+            // 解析完了
+            if ($act == $end) {
+                $fetchedLength = $index;
+                break;
+            }
+
+            // 开始解析下级数组
+            if ($act == "{" || $act == "[") {
+                $subLength = 0;
+                $jsonValue = $this->fetch_Args_array($act == "[" ? "]" : "}",array_slice($acts, $index), $subLength);
+                $index += $subLength;
+                $key_last = $this->array_key_last($args);
+                if ($key_last){
+                    $args[$this->array_key_last($args)] = $jsonValue;
+                }else{
+                    $args[] = $jsonValue;
+                }
+                continue;
+            }
+            if (substr($act,-1) == ":"){
+                $args[rtrim($act, ":")] = null;
+            }else{
+                if (substr($act,0,1) == '$'){
+                    $args[$this->array_key_last($args)] = $this->vars[substr($act,1)];
+                }else{
+                    $args[$this->array_key_last($args)] = $act;
+                }
+            }
+        }
+        return $args;
+    }
+    /**
      * 提取查询字符串中的参数部分
      * @param $argString
      * @return array
      */
-    private function fetch_Args ($argString) {
-        $ignoredBracket = mb_substr($argString, 1, mb_strlen($argString)-1);
-        preg_match_all("/\w+|,|\"|'|\\\\|:|\(|\)|\{|\}/miu", $ignoredBracket, $quoteMatches);
-        $acts = [];
-        $isQuoting = false;
-        $quoteString = [];
+    private function fetch_Args ($acts) {
         $args = [];
-
-        // 上面的正则解析出来的数据比较细，把解析出来的参数字符串在重新按照name:v的格式梳理一遍
-        // 测试字符串：(id: "\"{(1000),", a:"(2')", c:1)
-        foreach ($quoteMatches[0] as $index => $act){
-            // 单词 : ,
-           if (!$isQuoting && (preg_match("/\w+/miu",$act) || $act == ":" || $act == ",")) {
-               $acts[] = $act;
-               continue;
-           }
-            // 引号处理
-            if ($act=='"' && $quoteMatches[0][$index-1]!='\\'){
-                if (!$isQuoting){
-                    $isQuoting = true;
-                    $quoteString[] = $act;
-                    continue;
-                }
-                $isQuoting = false;
-                $quoteString[] = $act;
-                $acts[] = join('', $quoteString);
-                $quoteString = [];
-                continue;
-            }
-            $quoteString[] = $act;
-        }
         $currArg = new GraphqlSearchArg();
-        foreach ($acts as $act) {
-            if (!$currArg->name){
-                $currArg->name = $act;
+        $index = 0;
+        while (true) {
+            // 解析完了
+            if ($index >= count($acts)) {
+                if ($currArg->name){
+                    $args[] = $currArg;
+                }
+                break;
+            }
+            $act = $acts[$index++];
+
+            // 开始解析下级数组
+            if ($act == "[" || $act == "{") {
+                $subLength = 0;
+                $jsonValue = $this->fetch_Args_array($act == "[" ? "]" : "}",array_slice($acts, $index), $subLength);
+                $index += $subLength;
+                $currArg->value = $jsonValue;
+                $args[] = $currArg;
+                $currArg = new GraphqlSearchArg();
                 continue;
             }
-            if ($act == ":")continue;
-            if ($act == ","){
+            if (!$currArg->name){
+                $currArg->name = rtrim($act, ":");
+            }else{
+                if (substr($act,0,1)=="\$"){
+                    $currArg->value = substr($act, 1);
+                    $currArg->valueIsVar = true;
+                }else{
+                    $currArg->value = $act;
+                }
                 $args[] = $currArg;
                 $currArg = new GraphqlSearchArg();
             }
-            $currArg->value = $act;
-        }
-        if ($currArg->name) {
-            $args[] = $currArg;
         }
         return $args;
     }
@@ -1321,7 +1462,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @param GraphqlSearchNode $node [name=>'', sub=>[]]
      * @throws YZE_FatalException
      */
-    private function model_query($table, GraphqlSearchNode $node, $wheres, $pagination=[], &$total=0) {
+    private function model_query($table, GraphqlSearchNode $node, $id, $wheres, $dql=[], &$total=0) {
         $models = $this->find_All_Models();
         if (!$models) return null;
         $dba = YZE_DBAImpl::getDBA();
@@ -1370,7 +1511,9 @@ class Graphql_Controller extends YZE_Resource_Controller {
 
         // 查询字段
         $where = "";
-        if ($wheres){
+        if ($id){
+            $where .= ' '.$modelObject->get_key_name()."=".$id;
+        }else if ($wheres){
             if (!is_array(reset($wheres))){
                 $wheres = [$wheres];
             }
@@ -1381,7 +1524,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $op = $this->get_op($_where['op']);
                 $where .= $_where['column'].' '.$_where['op'];
                 if ($op == "in" || $op =='not in' || $op =='find_in_set'){
-                    $where .= "(".$_where['value'].")";
+                    $where .= "(".$this->filter_array_value($_where['value']).")";
                 }else{
                     $where .= ' '.$dba->quote($_where['value']);
                 }
@@ -1390,21 +1533,33 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 }
             }
         }
-        $paginationWhere = '';
-        if ($pagination){
-            $page = intval(@$pagination['page']);
+        $pagination = '';
+        if ($dql){
+            $page = intval(@$dql['page']);
             $page = $page <=0 ? 1 : $page;
-            $count = intval(@$pagination['count']);
+            $count = intval(@$dql['count']);
             $count = $count <=0 ? 10 : $count;
             $page = ($page - 1 ) * $count;
-            $paginationWhere = " limit {$page}, $count";
+
+            if (@$dql['orderBy']){
+                $sort = ['ASC'=>'ASC','DESC'=>'DESC',''=>'ASC'];
+                if (!$columnConfig[$dql['orderBy']]) throw new YZE_FatalException("orderBy field '{$dql['orderBy']}' not exist");
+                $where .= ' order by '.$dql['orderBy'].' '.$sort[strtoupper(@$dql['sort']?:"")];
+            }
+
+            if (@$dql['groupBy']){
+                if (!$columnConfig[$dql['groupBy']]) throw new YZE_FatalException("groupBy field '{$dql['groupBy']}' not exist");
+                $where .= ' group by '.$dql['groupBy'];
+            }
+
+            $pagination = " limit {$page}, $count";
         }
-        $totalRst = $dba->nativeQuery("select count(*) as t from `{$table}` ".($where ? "where {$where}" : "").$paginationWhere);
+        $totalRst = $dba->nativeQuery("select count(*) as t from `{$table}` ".($where ? "where {$where}" : "").$pagination);
         $totalRst->next();
         $total = intval($totalRst->f('t'));
 
         $rsts = $dba->nativeQuery("select ".join(',', array_merge($foreignKeyColumns,$searchColumns))
-            ." from `{$table}` ".($where ? "where {$where}" : "").$paginationWhere);
+            ." from `{$table}` ".($where ? "where {$where}" : "").$pagination);
         $rsts = $rsts->get_results();
         // 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
         $rsts = array_map(function ($item) use($result, &$searchAssocTables){
@@ -1434,7 +1589,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $assocInfo['node']->sub[] = $id;
             }
 
-            foreach($this->model_query($targetClass::TABLE, $assocInfo['node'],
+            foreach($this->model_query($targetClass::TABLE, $assocInfo['node'], null,
                 ['column'=>$targetColumn, 'op'=>'in', 'value'=>join(",",array_unique($assocInfo['ids']))]) as $item){
                 $key = $item[$key_name];
                 if (!$hasKey->has_value()){
@@ -1469,6 +1624,14 @@ class Graphql_Controller extends YZE_Resource_Controller {
             default:
                 throw new YZE_FatalException("not support operation: " . $op);
         }
+    }
+    private function filter_array_value($values){
+        $_ = [];
+        $dba = YZE_DBAImpl::getDBA();
+        foreach ((array)$values as $v){
+            $_[] = $dba->quote($v);
+        }
+        return join(",", $_);
     }
     private function get_op($op){
         switch ($op){

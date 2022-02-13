@@ -515,15 +515,10 @@ trait Graphql__Schema
         $result = [];
         $typeSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'type');
         $typeIntro = new GraphqlIntrospection($typeSearch, [
-            "kind" => "NON_NULL",
+            "kind" => "SCALAR",
             "__typename"=>"__Type",
-            "name" => null,
-            "ofType" => [
-                "kind" => "SCALAR",
-                "__typename"=>"__Type",
-                "name" => "String",
-                "ofType" => null
-            ]
+            "name" => "String",
+            "ofType" => null
         ]);
         $numberTypeIntro = new GraphqlIntrospection($typeSearch, [
             "kind" => "SCALAR",
@@ -531,17 +526,18 @@ trait Graphql__Schema
             "name" => 'Int',
             "ofType" => null
         ]);
+
         $intro = new GraphqlIntrospection($node, [
-            'name' => 'having',
-            'description' => __("Having"),
+            'name' => 'orderBy',
+            'description' => __("排序"),
             "__typename"=>"__InputValue",
             'type' => $typeIntro->search(),
             'defaultValue' => null,
         ]);
         $result[] = $intro->search();
         $intro = new GraphqlIntrospection($node, [
-            'name' => 'orderBy',
-            'description' => __("排序"),
+            'name' => 'sort',
+            'description' => __("ASC / DESC"),
             "__typename"=>"__InputValue",
             'type' => $typeIntro->search(),
             'defaultValue' => null,
@@ -586,8 +582,22 @@ trait Graphql__Schema
         if (!$node->has_value()) return [];
         $args = [
             [
+                "name" => "id",
+                "description" => __("主键查询, 当传入时忽略 wheres 参数"),
+                "__typename"=>"__InputValue",
+                "type" => [
+                    "kind" => "SCALAR",
+                    "__typename"=>"__Type",
+                    "name" => "ID",
+                    "ofType" => null
+                ],
+                "defaultValue" => null,
+                "isDeprecated" => false,
+                "deprecationReason" => null
+            ],
+            [
                 "name" => "wheres",
-                "description" => "查询条件数组",
+                "description" => __("查询条件数组"),
                 "__typename"=>"__InputValue",
                 "type" => [
                     "kind" => "LIST",
@@ -606,7 +616,7 @@ trait Graphql__Schema
             ],
             [
                 "name" => "dql",
-                "description" => "分支、分页、排序",
+                "description" => __("分支、分页、排序"),
                 "__typename"=>"__InputValue",
                 "type" => [
                     "kind" => "OBJECT",

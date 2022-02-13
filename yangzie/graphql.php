@@ -1101,6 +1101,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                         $id = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
                     }
                 }
+
 //                print_r($node->args);
                 // 2.2 具体数据查询
                 if ($node->name != "count"){
@@ -1416,7 +1417,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 if (substr($act,0,1) == '$'){
                     $args[$this->array_key_last($args)] = $this->vars[substr($act,1)];
                 }else{
-                    $args[$this->array_key_last($args)] = $act;
+                    $args[$this->array_key_last($args)] = trim($act, '"');
                 }
             }
         }
@@ -1545,6 +1546,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             }
         }
         $pagination = '';
+        $orderby = '';
         if ($dql){
             $page = intval(@$dql['page']);
             $page = $page <=0 ? 1 : $page;
@@ -1553,24 +1555,28 @@ class Graphql_Controller extends YZE_Resource_Controller {
             $page = ($page - 1 ) * $count;
 
             if (@$dql['orderBy']){
-                $sort = ['ASC'=>'ASC','DESC'=>'DESC',''=>'ASC'];
-                if (!$columnConfig[$dql['orderBy']]) throw new YZE_FatalException("orderBy field '{$dql['orderBy']}' not exist");
-                $where .= ' order by '.$dql['orderBy'].' '.$sort[strtoupper(@$dql['sort']?:"")];
+                $sorts = ['ASC'=>'ASC','DESC'=>'DESC',''=>'ASC'];
+                if (!$columnConfig[@$dql['orderBy']]) throw new YZE_FatalException("orderBy field '{$dql['orderBy']}' not exist");
+                $sort = @$sorts[strtoupper(@$dql['sort']?:"")];
+                if (!$sort) throw new YZE_FatalException("sort type '{$dql['sort']}' not support");
+                $orderby .= ' order by '.$dql['orderBy'].' '.$sort;
             }
 
             if (@$dql['groupBy']){
                 if (!$columnConfig[$dql['groupBy']]) throw new YZE_FatalException("groupBy field '{$dql['groupBy']}' not exist");
-                $where .= ' group by '.$dql['groupBy'];
+                $orderby .= ' group by '.$dql['groupBy'];
             }
 
             $pagination = " limit {$page}, $count";
         }
-        $totalRst = $dba->nativeQuery("select count(*) as t from `{$table}` ".($where ? "where {$where}" : "").$pagination);
+
+        $totalRst = $dba->nativeQuery("select count(*) as t from `{$table}` ".($where ? "where {$where}" : "").$orderby);
         $totalRst->next();
         $total = intval($totalRst->f('t'));
 
         $rsts = $dba->nativeQuery("select ".join(',', array_merge($foreignKeyColumns,$searchColumns))
-            ." from `{$table}` ".($where ? "where {$where}" : "").$pagination);
+            ." from `{$table}` ".($where ? "where {$where}" : "").$orderby.$pagination);
+
         $rsts = $rsts->get_results();
         // 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
         $rsts = array_map(function ($item) use($result, &$searchAssocTables){

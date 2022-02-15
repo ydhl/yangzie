@@ -23,6 +23,15 @@ class GraphqlInputValue implements GraphqlDatable{
      * @var null
      */
     public $deprecationReason = null;
+
+    /**
+     * @param $name
+     * @param GraphqlType $type
+     * @param $description
+     * @param $defaultValue
+     * @param $isDeprecated
+     * @param $deprecationReason
+     */
     public function __construct($name, GraphqlType $type, $description="", $defaultValue=null, $isDeprecated=false, $deprecationReason=null){
         $this->name = $name;
         $this->type = $type;
@@ -100,16 +109,16 @@ class GraphqlType implements GraphqlDatable{
      */
     public $ofType = null;
 
-
     /**
-     * @param string $name
+     * @param string|null $name
+     * @param string|null $description
      * @param string $kind 字段的类型，见GraphqlType::KIND
-     * @param string $description
-     * @param GraphqlField[] $fields
-     * @param GraphqlField[] $interfaces
-     * @param GraphqlField[] $possibleTypes
-     * @param GraphqlField[] $enumValues
-     * @param GraphqlField[] $inputFields
+     * @param GraphqlType|null $ofType
+     * @param array $fields
+     * @param array $interfaces
+     * @param array $possibleTypes
+     * @param array $enumValues
+     * @param array $inputFields
      * @param string $specifiedByURL
      */
     public function __construct(string $name=null, string $description=null, string $kind = GraphqlType::KIND_OBJECT, GraphqlType $ofType=null,
@@ -225,6 +234,123 @@ class GraphqlField implements GraphqlDatable{
         ];
     }
 }
+class GraphqlEnumValue implements GraphqlDatable{
+    /**
+     * enum的名字
+     * @var string
+     */
+    public $name;
+    /**
+     * 描述
+     * @var string
+     */
+    public $description = "";
+    public $typename="__EnumValue";
+    /**
+     * 是否弃用
+     * @var bool
+     */
+    public $isDeprecated = false;
+    /**
+     * 弃用原因，如果没有弃用必须返回null
+     * @var null
+     */
+    public $deprecationReason = null;
 
+    /**
+     * @param $name
+     * @param $description
+     * @param $isDeprecated
+     * @param $deprecationReason
+     */
+    public function __construct($name, $description="",  $isDeprecated=false, $deprecationReason=null){
+        $this->name = $name;
+        $this->description = $description;
+        $this->isDeprecated = $isDeprecated;
+        $this->deprecationReason = $deprecationReason;
+    }
+    public function get_data(){
+        return [
+            "name"=> $this->name,
+            "description"=> $this->description,
+            "__typename"=> $this->typename,
+            "isDeprecated"=> $this->isDeprecated,
+            "deprecationReason"=> $this->deprecationReason,
+        ];
+    }
+}
+class GraphqlDirective implements GraphqlDatable{
+    const  LOCATION_QUERY = "QUERY";
+    const  LOCATION_MUTATION = "MUTATION";
+    const  LOCATION_SUBSCRIPTION = "SUBSCRIPTION";
+    const  LOCATION_FIELD = "FIELD";
+    const  LOCATION_FRAGMENT_DEFINITION = "FRAGMENT_DEFINITION";
+    const  LOCATION_FRAGMENT_SPREAD = "FRAGMENT_SPREAD";
+    const  LOCATION_INLINE_FRAGMENT = "INLINE_FRAGMENT";
+    const  LOCATION_VARIABLE_DEFINITION = "VARIABLE_DEFINITION";
+    const  LOCATION_SCHEMA = "SCHEMA";
+    const  LOCATION_SCALAR = "SCALAR";
+    const  LOCATION_OBJECT = "OBJECT";
+    const  LOCATION_FIELD_DEFINITION = "FIELD_DEFINITION";
+    const  LOCATION_ARGUMENT_DEFINITION = "ARGUMENT_DEFINITION";
+    const  LOCATION_INTERFACE = "INTERFACE";
+    const  LOCATION_UNION = "UNION";
+    const  LOCATION_ENUM = "ENUM";
+    const  LOCATION_ENUM_VALUE = "ENUM_VALUE";
+    const  LOCATION_INPUT_OBJECT = "INPUT_OBJECT";
+    const  LOCATION_INPUT_FIELD_DEFINITION = "INPUT_FIELD_DEFINITION";
+    /**
+     * 的名字
+     * @var string
+     */
+    public $name;
+    /**
+     * 描述
+     * @var string
+     */
+    public $description = "";
+    /**
+     * @var array<GraphqlInputValue>
+     */
+    public $args = [];
+    public $typename="__Directive";
+    /**
+     * LOCATION_XX常量
+     * @var array
+     */
+    public $locations = [];
+    /**
+     *
+     * @var boolean
+     */
+    public $isRepeatable = false;
 
+    /**
+     * @param $name
+     * @param $description
+     * @param $isDeprecated
+     * @param $deprecationReason
+     */
+    public function __construct($name, $description="",  $args=[], $locations=[], $isRepeatable=false){
+        $this->name = $name;
+        $this->description = $description;
+        $this->args = $args;
+        $this->locations = $locations;
+        $this->isRepeatable = $isRepeatable;
+    }
+    public function get_data(){
+        $args = [];
+        foreach ($this->args as $arg){
+            $args[] = $arg->get_data();
+        }
+        return [
+            "name"=> $this->name,
+            "description"=> $this->description,
+            "__typename"=> $this->typename,
+            "args"=> $args?:[],
+            "locations"=> $this->locations,
+            "isRepeatable"=> $this->isRepeatable,
+        ];
+    }
+}
 ?>

@@ -77,6 +77,36 @@ trait $class{
     public function get_description(){
 		return '".$this->class_name." model';
 	}
+
+	/**
+	 * 当前model是否允许在graphql中进行查询
+	 * @return boolean
+	 */
+	public function is_enable_graphql(){
+		return true;
+	}
+	
+	/**
+	 * 自定义的Field，field的type nane是系统的表名, 该接口提供一个在通过graphql查询{$this->table_name}时可以联合查询的其他表的方式
+	 * 
+	 * 如果要返回的不是表名而是自定义的类型，那么该类型必须通过YZE_GRAPHQL_TYPES进行定义并返回
+	 * 
+	 * 具体如何查询，需要在query_graphql_fields中实现
+	 * @return array<GraphqlField>
+	 */
+	public function custom_graphql_fields(){
+		return [];
+	}
+	
+	/**
+	 * 根据传入的fieldName名返回对应的subFields值
+	 * @param string table 要查询的表， 由custom_graphql_fields 返回
+	 * @param array returnFields fieldName下级字段名， 由custom_graphql_fields 返回
+	 * @return array<GraphqlField>
+	 */
+	public function query_graphql_fields(\$table, \$returnFields){
+		return [];
+	}
     // 这里实现model的业务方法 
 }?>";
     }

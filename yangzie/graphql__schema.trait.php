@@ -64,12 +64,12 @@ trait Graphql__Schema
                 new GraphqlType($table,null,  GraphqlType::KIND_OBJECT),
                 $modelObject->get_description(),
                 $this->get_Model_Args($argSearch));
-            $queryFileds[] = $field->get_data();
+            $queryFileds[] = $field;
         }
 
 
         $field = new GraphqlField("count", new GraphqlType('count',null,  GraphqlType::KIND_OBJECT), "分页数据");
-        $queryFileds[] = $field->get_data();
+        $queryFileds[] = $field;
 
         $fieldNames[] = 'count';
 
@@ -77,18 +77,8 @@ trait Graphql__Schema
             throw new YZE_FatalException(sprintf(__('field 定义重复了请检查: %s')), join(',', $fieldNames));
         }
 
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'YangzieQuery',
-            'kind' => 'OBJECT',
-            '__typename'=>'__Type',
-            'description' => 'Yangzie Query entry',
-            'fields' => $queryFileds,
-            'inputFields' => null,
-            'interfaces' => [],
-            'enumValues' => null,
-            'possibleTypes' => null,
-            'specifiedByUrl' => ''
-        ]);
+        $type = new GraphqlType("YangzieQuery","Yangzie Query entry", GraphqlType::KIND_OBJECT, null, $queryFileds);
+        $intro = new GraphqlIntrospection($node, $type->get_data());
         return $intro->search();
     }
 
@@ -106,45 +96,17 @@ trait Graphql__Schema
     {
         $queryFileds = [];
         foreach ($this->basic_types() as $type => $info) {
-            $queryFileds[] = [
-                'name' => 'set' . ucfirst(strtolower($type)),
-                'description' => 'Set the ' . $info['description'] . ' field',
-                '__typename'=>'__Field',
-                'args' => [[
-                    "name" => "value",
-                    "description" => null,
-                    "__typename"=>"__InputValue",
-                    "type" => [
-                        "__typename"=>"__Type",
-                        "kind" => "SCALAR",
-                        "name" => $type,
-                        "ofType" => null
-                    ],
-                    "defaultValue" => null,
-                    "isDeprecated" => false,
-                    "deprecationReason" => null
-                ]],
-                'type' => [
-                    'kind' => 'SCALAR',
-                    "__typename"=>"__Type",
-                    'ofType' => null,
-                    'name' => $type
-                ]
-            ];
+            $field = new GraphqlField(
+                'set' . ucfirst(strtolower($type)),
+                new GraphqlType($type, null, GraphqlType::KIND_SCALAR),
+                'Set the ' . $info['description'] . ' field',
+                [new GraphqlInputValue("value", new GraphqlType($type, null, GraphqlType::KIND_SCALAR))]
+            );
+            $queryFileds[] = $field;
         }
 
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'YangzieMutation',
-            'kind' => 'OBJECT',
-            '__typename'=>'__Field',
-            'description' => 'Yangzie Mutation entry',
-            'fields' => $queryFileds,
-            'inputFields' => null,
-            'interfaces' => [],
-            'enumValues' => null,
-            'possibleTypes' => null,
-            'specifiedByUrl' => ''
-        ]);
+        $type = new GraphqlType("YangzieMutation", "Yangzie Mutation entry", GraphqlType::KIND_OBJECT, null, $queryFileds);
+        $intro = new GraphqlIntrospection($node, $type->get_data());
         return $intro->search();
     }
 
@@ -155,18 +117,8 @@ trait Graphql__Schema
             $modelObject = new $model;
             // 根据scheme请求返回内容
             $fields = $this->get_Model_Fields($modelObject);
-            $intro = new GraphqlIntrospection($node, [
-                'name' => $table,
-                'kind' => 'OBJECT',
-                '__typename' => '__Type',
-                'description' => $modelObject->get_description(),
-                'fields' => $fields,
-                'inputFields' => null,
-                'interfaces' => [],
-                'enumValues' => null,
-                'possibleTypes' => null,
-                'specifiedByUrl' => ''
-            ]);
+            $type = new GraphqlType($table, $modelObject->get_description(), GraphqlType::KIND_OBJECT, null, $fields);
+            $intro = new GraphqlIntrospection($node, $type->get_data());
             $results[] = $intro->search();
 
         }
@@ -216,18 +168,9 @@ trait Graphql__Schema
                 $enumTypeName = $model::TABLE . '_' . $columnName;
                 $fieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'fields');
                 $enumValues = $this->get_Model_Enum($modelObject, $fieldSearch, $columnName);
-                $intro = new GraphqlIntrospection($node, [
-                    'name' => $enumTypeName,
-                    'kind' => 'ENUM',
-                    'description' => $modelObject->get_column_mean($columnName),
-                    'fields' => null,
-                    '__typename' => '__Type',
-                    'inputFields' => null,
-                    'interfaces' => [],
-                    'enumValues' => $enumValues,
-                    'possibleTypes' => null,
-                    'specifiedByUrl' => ''
-                ]);
+                $type = new GraphqlType($enumTypeName, $modelObject->get_column_mean($columnName), GraphqlType::KIND_ENUM);
+                $type->enumValues = $enumValues;
+                $intro = new GraphqlIntrospection($node, $type->get_data());
                 $results[] = $intro->search();
             }
         }
@@ -236,47 +179,27 @@ trait Graphql__Schema
 
         // model的查询参数类型
         // 根据scheme请求返回内容
-        $inputFieldSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'inputFields');
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'count',
-            'kind' => 'OBJECT',
-            '__typename' => '__Type',
-            'description' => "查询分页数据",
-            'fields' => $this->get_count_Fields($models),
-            'inputFields' => null,
-            'interfaces' => [],
-            'enumValues' => null,
-            'possibleTypes' => null,
-            'specifiedByUrl' => ''
-        ]);
+        $type = new GraphqlType("count", "查询分页数据");
+        $queryFileds = [];
+        foreach ($models as $table => $class) {
+            $field = new GraphqlField($table,
+                new GraphqlType('Int',null, GraphqlType::KIND_SCALAR)
+                , sprintf(__("%s count"), $table)
+            );
+            $queryFileds[] = $field;
+        }
+        $type->fields = $queryFileds;
+        $intro = new GraphqlIntrospection($node, $type->get_data());
         $results[] = $intro->search();
 
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'Where',
-            'kind' => 'INPUT_OBJECT',
-            '__typename' => '__Type',
-            'description' => "model的查询条件",
-            'fields' => null,
-            'inputFields' => $this->get_Model_Where_Fields($inputFieldSearch),
-            'interfaces' => [],
-            'enumValues' => null,
-            'possibleTypes' => null,
-            'specifiedByUrl' => ''
-        ]);
+        $type = new GraphqlType("Where", "model的查询条件", GraphqlType::KIND_INPUT_OBJECT);
+        $type->inputFields = $this->get_Model_Where_Fields();
+        $intro = new GraphqlIntrospection($node, $type->get_data());
         $results[] = $intro->search();
 
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'DQL',
-            'kind' => 'INPUT_OBJECT',
-            '__typename' => '__Type',
-            'description' => "分页，分组和排序",
-            'fields' => null,
-            'inputFields' => $this->get_Model_Dql_Fields($inputFieldSearch),
-            'interfaces' => [],
-            'enumValues' => null,
-            'possibleTypes' => null,
-            'specifiedByUrl' => ''
-        ]);
+        $type = new GraphqlType("DQL", __("分页，分组和排序"), GraphqlType::KIND_INPUT_OBJECT);
+        $type->inputFields = $this->get_Model_Dql_Fields();
+        $intro = new GraphqlIntrospection($node, $type->get_data());
         $results[] = $intro->search();
 
         return $results;
@@ -291,18 +214,8 @@ trait Graphql__Schema
         $rst = [];
 
         foreach ($basicTypes as $basicType => $info) {
-            $intro = new GraphqlIntrospection($node, [
-                'name' => $basicType,
-                'kind' => 'SCALAR',
-                '__typename'=>'__Type',
-                'description' => $info['description'],
-                'fields' => null,
-                'inputFields' => null,
-                'interfaces' => null,
-                'enumValues' => null,
-                'possibleTypes' => null,
-                'specifiedByUrl' => ''
-            ]);
+            $type = new GraphqlType($basicType, $info['description'], GraphqlType::KIND_SCALAR);
+            $intro = new GraphqlIntrospection($node, $type->get_data());
             $rst[] = $intro->search();
         }
         return $rst;
@@ -315,14 +228,7 @@ trait Graphql__Schema
         $method = "get_{$columnName}";
         if (!method_exists($model, $method)) return [];
         foreach ($model->$method() as $enum) {
-            $intro = new GraphqlIntrospection($node, [
-                'name' => $enum,
-                'description' => '',
-                '__typename' => '__EnumValue',
-                'isDeprecated' => false,
-                'deprecationReason' => null,
-            ]);
-            $result[] = $intro->search();
+            $result[] = new GraphqlEnumValue($enum);
         }
         return $result;
     }
@@ -344,12 +250,12 @@ trait Graphql__Schema
                 $this->get_Model_Field_Type($model, $columnConfig, $columnName),
                 $model->get_column_mean($columnName)
             );
-            $result[] = $field->get_data();
+            $result[] = $field;
         }
 
         if (method_exists($model, "custom_graphql_fields")){
             foreach ($model->custom_graphql_fields() as $custom_field){
-                $result[] = $custom_field->get_data();
+                $result[] = $custom_field;
             }
         }
 
@@ -361,156 +267,34 @@ trait Graphql__Schema
             if (!class_exists($modelClass))continue;
             $field = new GraphqlField($assoName, new GraphqlType($modelClass::TABLE, null, GraphqlType::KIND_OBJECT), $column." field"
             );
-            $result[] = $field->get_data();
+            $result[] = $field;
         }
 
         return $result;
     }
-    private function get_count_Fields($models){
-        $queryFileds = [];
-
-        foreach ($models as $table => $class) {
-            $field = new GraphqlField($table,
-                new GraphqlType('Int',null, GraphqlType::KIND_SCALAR)
-                , sprintf(__("%s count"), $table)
-            );
-            $queryFileds[] = $field->get_data();
-        }
-
-        return $queryFileds;
-    }
-    private function get_Model_Where_Fields(GraphqlSearchNode $node)
+    private function get_Model_Where_Fields()
     {
-        if (!$node->has_value()) return [];
         $result = [];
-        $typeSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'type');
-        $typeIntro = new GraphqlIntrospection($typeSearch, [
-            "kind" => "NON_NULL",
-            "__typename"=>"__Type",
-            "name" => null,
-            "ofType" => [
-                "kind" => "SCALAR",
-                "__typename"=>"__Type",
-                "name" => "String",
-                "ofType" => null
-            ]
-        ]);
-        $nullIntro = new GraphqlIntrospection($typeSearch, [
-            "kind" => "SCALAR",
-            "__typename"=>"__Type",
-            "name" => "String",
-            "ofType" => null
-        ]);
-        $listTypeIntro = new GraphqlIntrospection($typeSearch, [
-            "kind" => "LIST",
-            "__typename"=>"__Type",
-            "name" => null,
-            "ofType" => [
-                "kind" => "SCALAR",
-                "__typename"=>"__Type",
-                "name" => 'String',
-                "ofType" => null
-            ]
-        ]);
-
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'column',
-            'description' => __("查询字段名"),
-            "__typename"=>"__InputValue",
-            'type' => $typeIntro->search(),
-            'defaultValue' => null,
-        ]);
-        $result[] = $intro->search();
-
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'op',
-            'description' => __("比较条件"),
-            "__typename"=>"__InputValue",
-            'type' => $typeIntro->search(),
-            'defaultValue' => null,
-        ]);
-        $result[] = $intro->search();
-
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'value',
-            'description' => __("查询值"),
-            "__typename"=>"__InputValue",
-            'type' => $listTypeIntro->search(),
-            'defaultValue' => null,
-        ]);
-        $result[] = $intro->search();
-
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'andor',
-            'description' => __("And / Or 拼接下一个where"),
-            "__typename"=>"__InputValue",
-            'type' => $nullIntro->search(),
-            'defaultValue' => null,
-        ]);
-        $result[] = $intro->search();
+        $typeIntro = new GraphqlType(null,null,GraphqlType::KIND_NON_NULL, new GraphqlType('String',null,GraphqlType::KIND_SCALAR));
+        $nullIntro = new GraphqlType("String",null, GraphqlType::KIND_SCALAR);
+        $listTypeIntro = new GraphqlType(null,null,GraphqlType::KIND_LIST, new GraphqlType('String',null,GraphqlType::KIND_SCALAR));
+        $result[] = new GraphqlInputValue("column", $typeIntro, __("查询字段名"));
+        $result[] = new GraphqlInputValue("op", $typeIntro, __("比较条件"));
+        $result[] = new GraphqlInputValue("value", $listTypeIntro, __("查询值"));
+        $result[] = new GraphqlInputValue("andor", $nullIntro, __("And / Or 拼接下一个where"));
         return $result;
     }
 
-    private function get_Model_Dql_Fields(GraphqlSearchNode $node)
+    private function get_Model_Dql_Fields()
     {
-        if (!$node->has_value()) return [];
         $result = [];
-        $typeSearch = GraphqlIntrospection::find_search_node_by_name($node->sub, 'type');
-        $typeIntro = new GraphqlIntrospection($typeSearch, [
-            "kind" => "SCALAR",
-            "__typename"=>"__Type",
-            "name" => "String",
-            "ofType" => null
-        ]);
-        $numberTypeIntro = new GraphqlIntrospection($typeSearch, [
-            "kind" => "SCALAR",
-            "__typename"=>"__Type",
-            "name" => 'Int',
-            "ofType" => null
-        ]);
-
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'orderBy',
-            'description' => __("排序"),
-            "__typename"=>"__InputValue",
-            'type' => $typeIntro->search(),
-            'defaultValue' => null,
-        ]);
-        $result[] = $intro->search();
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'sort',
-            'description' => __("ASC / DESC"),
-            "__typename"=>"__InputValue",
-            'type' => $typeIntro->search(),
-            'defaultValue' => null,
-        ]);
-        $result[] = $intro->search();
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'groupBy',
-            'description' => __("分组"),
-            "__typename"=>"__InputValue",
-            'type' => $typeIntro->search(),
-            'defaultValue' => null,
-        ]);
-        $result[] = $intro->search();
-
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'page',
-            'description' => __("当前页"),
-            "__typename"=>"__InputValue",
-            'type' => $numberTypeIntro->search(),
-            'defaultValue' => "1",
-        ]);
-        $result[] = $intro->search();
-
-        $intro = new GraphqlIntrospection($node, [
-            'name' => 'count',
-            'description' => __("每页大小"),
-            "__typename"=>"__InputValue",
-            'type' => $numberTypeIntro->search(),
-            'defaultValue' => "10",
-        ]);
-        $result[] = $intro->search();
+        $typeIntro = new GraphqlType("String", null, GraphqlType::KIND_SCALAR);
+        $numberTypeIntro = new GraphqlType("Int", null, GraphqlType::KIND_SCALAR);
+        $result[] = new GraphqlInputValue("orderBy", $typeIntro, __("排序"));
+        $result[] = new GraphqlInputValue("sort", $typeIntro, __("ASC / DESC"));
+        $result[] = new GraphqlInputValue("groupBy", $typeIntro, __("分组"));
+        $result[] = new GraphqlInputValue("page", $numberTypeIntro, __("当前页"), "1");
+        $result[] = new GraphqlInputValue("count", $numberTypeIntro, __("每页大小"), "10");
         return $result;
     }
 
@@ -551,212 +335,83 @@ trait Graphql__Schema
      */
     private function schema_Directives($node)
     {
+        $booleanType = new GraphqlType("Boolean", null, GraphqlType::KIND_SCALAR);
+        $stringType = new GraphqlType("String", null, GraphqlType::KIND_SCALAR);
+        $intType = new GraphqlType("Int", null, GraphqlType::KIND_SCALAR);
+        $nonNullBooleanType = new GraphqlType(null, null, GraphqlType::KIND_NON_NULL,$booleanType);
+        $nonNullStringType = new GraphqlType(null, null, GraphqlType::KIND_NON_NULL,$stringType);
         $directives = [
-            [
-                "name" => "include",
-                "description" => "Directs the executor to include this field or fragment only when the `if` argument is true.",
-                "locations" => [
+            new GraphqlDirective("include",
+                __("Directs the executor to include this field or fragment only when the `if` argument is true."),
+                [
+                    new GraphqlInputValue("if", $nonNullBooleanType, __("Included when true."))
+                ],
+                [
                     "FIELD",
                     "FRAGMENT_SPREAD",
                     "INLINE_FRAGMENT"
-                ],
-                "__typename"=>"__Type",
-                "args" => [
-                    [
-                        "name" => "if",
-                        "description" => "Included when true.",
-                        "__typename"=>"__InputValue",
-                        "type" => [
-                            "kind" => "NON_NULL",
-                            "__typename"=>"__Type",
-                            "name" => null,
-                            "ofType" => [
-                                "kind" => "SCALAR",
-                                "__typename"=>"__Type",
-                                "name" => "Boolean",
-                                "ofType" => null
-                            ]
-                        ],
-                        "defaultValue" => null,
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ]
                 ]
-            ],
-            [
-                "name" => "skip",
-                "description" => "Directs the executor to skip this field or fragment when the `if` argument is true.",
-                "locations" => [
+            ),
+            new GraphqlDirective("skip",
+                __("Directs the executor to skip this field or fragment when the `if` argument is true."),
+                [
+                    new GraphqlInputValue("if",$nonNullBooleanType, __("Skipped when true."))
+                ],
+                [
                     "FIELD",
                     "FRAGMENT_SPREAD",
                     "INLINE_FRAGMENT"
-                ],
-                "__typename"=>"__TYPE",
-                "args" => [
-                    [
-                        "name" => "if",
-                        "description" => "Skipped when true.",
-                        "type" => [
-                            "__typename"=>"__Type",
-                            "kind" => "NON_NULL",
-                            "name" => null,
-                            "__typename"=>"__Type",
-                            "ofType" => [
-                                "kind" => "SCALAR",
-                                "name" => "Boolean",
-                                "ofType" => null
-                            ]
-                        ],
-                        "defaultValue" => null,
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ]
                 ]
-            ],
-            [
-                "name" => "defer",
-                "description" => "Directs the executor to defer this fragment when the `if` argument is true or undefined.",
-                "locations" => [
+            ),
+
+            new GraphqlDirective("defer",
+                __("Directs the executor to defer this fragment when the `if` argument is true or undefined."),
+                [
+                    new GraphqlInputValue("if",$booleanType, __("Deferred when true or undefined.")),
+                    new GraphqlInputValue("label",$stringType, __("Unique name."))
+                ],
+                [
                     "FRAGMENT_SPREAD",
                     "INLINE_FRAGMENT"
-                ],
-                "__typename"=>"__Type",
-                "args" => [
-                    [
-                        "name" => "if",
-                        "description" => "Deferred when true or undefined.",
-                        "type" => [
-                            "__typename"=>"__Type",
-                            "kind" => "SCALAR",
-                            "name" => "Boolean",
-                            "ofType" => null
-                        ],
-                        "defaultValue" => null,
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ],
-                    [
-                        "name" => "label",
-                        "description" => "Unique name",
-                        "type" => [
-                            "__typename"=>"__Type",
-                            "kind" => "SCALAR",
-                            "name" => "String",
-                            "ofType" => null
-                        ],
-                        "defaultValue" => null,
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ]
                 ]
-            ],
-            [
-                "name" => "stream",
-                "description" => "Directs the executor to stream plural fields when the `if` argument is true or undefined.",
-                "locations" => [
+            ),
+            new GraphqlDirective("stream",
+                __("Directs the executor to stream plural fields when the `if` argument is true or undefined."),
+                [
+                    new GraphqlInputValue("if",$booleanType, __("Stream when true or undefined.")),
+                    new GraphqlInputValue("label",$stringType, __("Unique name.")),
+                    new GraphqlInputValue("initialCount",$intType, __("Number of items to return immediately."))
+                ],
+                [
                     "FIELD"
-                ],
-                "__typename"=>"__Type",
-                "args" => [
-                    [
-                        "name" => "if",
-                        "description" => "Stream when true or undefined.",
-                        "type" => [
-                            "kind" => "SCALAR",
-                            "__typename"=>"__Type",
-                            "name" => "Boolean",
-                            "ofType" => null
-                        ],
-                        "defaultValue" => null,
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ],
-                    [
-                        "name" => "label",
-                        "description" => "Unique name",
-                        "type" => [
-                            "kind" => "SCALAR",
-                            "name" => "String",
-                            "__typename"=>"__Type",
-                            "ofType" => null
-                        ],
-                        "defaultValue" => null,
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ],
-                    [
-                        "name" => "initialCount",
-                        "description" => "Number of items to return immediately",
-                        "type" => [
-                            "kind" => "SCALAR",
-                            "__typename"=>"__Type",
-                            "name" => "Int",
-                            "ofType" => null
-                        ],
-                        "defaultValue" => "0",
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ]
                 ]
-            ],
-            [
-                "name" => "deprecated",
-                "description" => "Marks an element of a GraphQL schema as no longer supported.",
-                "locations" => [
+            ),
+
+            new GraphqlDirective("deprecated",
+                __("Marks an element of a GraphQL schema as no longer supported."),
+                [
+                    new GraphqlInputValue("reason",$stringType, __("Explains why this element was deprecated, usually also including a suggestion for how to access supported similar data. Formatted using the Markdown syntax, as specified by [CommonMark](https=>//commonmark.org/).",'"No longer supported"')),
+                ],
+                [
                     "FIELD_DEFINITION",
                     "ARGUMENT_DEFINITION",
                     "INPUT_FIELD_DEFINITION",
                     "ENUM_VALUE"
-                ],
-                "__typename"=>"__Type",
-                "args" => [
-                    [
-                        "name" => "reason",
-                        "description" => "Explains why this element was deprecated, usually also including a suggestion for how to access supported similar data. Formatted using the Markdown syntax, as specified by [CommonMark](https=>//commonmark.org/).",
-                        "type" => [
-                            "kind" => "SCALAR",
-                            "name" => "String",
-                            "__typename"=>"__Type",
-                            "ofType" => null
-                        ],
-                        "defaultValue" => '"No longer supported"',
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ]
                 ]
-            ],
-            [
-                "name" => "specifiedBy",
-                "description" => "Exposes a URL that specifies the behaviour of this scalar.",
-                "locations" => [
+            ),
+            new GraphqlDirective("specifiedBy",
+                __("Exposes a URL that specifies the behaviour of this scalar."),
+                [
+                    new GraphqlInputValue("url",$nonNullStringType, __("The URL that specifies the behaviour of this scalar.")),
+                ],
+                [
                     "SCALAR"
-                ],
-                "__typename"=>"__Type",
-                "args" => [
-                    [
-                        "name" => "url",
-                        "description" => "The URL that specifies the behaviour of this scalar.",
-                        "type" => [
-                            "kind" => "NON_NULL",
-                            "__typename"=>"__Type",
-                            "name" => null,
-                            "ofType" => [
-                                "__typename"=>"__Type",
-                                "kind" => "SCALAR",
-                                "name" => "String",
-                                "ofType" => null
-                            ]
-                        ],
-                        "defaultValue" => null,
-                        "isDeprecated" => false,
-                        "deprecationReason" => null
-                    ]
                 ]
-            ]
+            )
         ];
         $results = [];
         foreach ($directives as $directive){
-            $intro = new GraphqlIntrospection($node, $directive);
+            $intro = new GraphqlIntrospection($node, $directive->get_data());
             $results[] = $intro->search();
         }
         return $results;

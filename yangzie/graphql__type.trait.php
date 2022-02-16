@@ -20,8 +20,8 @@ trait Graphql__Type{
         // 查询的字段只有description，但查询的参数名是name（查询的值是test），那么需要在查询的字段中加上name
         $hasArgName = [];
         foreach ($args as $arg) {
-            if (!preg_match("/\"\w+\"/", @$arg->defaultValue)) {
-                throw new YZE_FatalException("arg ({$arg->defaultValue}) must be a string with double quote");
+            if (!preg_match("/\"\w+\"/", @$arg->value)) {
+                throw new YZE_FatalException("arg ({$arg->value}) must be a string with double quote");
             }
             foreach (@$node->sub as $item){
                 if (strtolower($item->name)==$arg->name){
@@ -42,7 +42,7 @@ trait Graphql__Type{
 
         $match = function($item, $args) {
             foreach ($args as $arg) {
-                if (!preg_match("/\"".@$item[$arg->name]."\"/", @$arg->defaultValue)) {
+                if (!preg_match("/\"".@$item[$arg->name]."\"/", @$arg->value)) {
                     return false;
                 }
             }

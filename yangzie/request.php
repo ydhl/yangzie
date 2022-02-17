@@ -217,11 +217,7 @@ class YZE_Request extends YZE_Object {
         $method = ($this->is_get() ? "" : $this->request_method."_") . str_replace("-", "_", $action);
         $this->set_method ( $method );
 
-        if(strcmp($curr_module, 'graphql')===0) {
-            $this->controller_name = "graphql";
-            $this->controller_class = "Graphql_Controller";
-            $this->controller = new Graphql_Controller( $this );
-        }else if (@$curr_module && $controller_name) {
+        if (@$curr_module && $controller_name) {
             $this->set_module ( $curr_module )->set_controller_name ( $controller_name );
         } else{
             $this->controller_name = "yze_default";

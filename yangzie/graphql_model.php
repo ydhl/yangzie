@@ -353,4 +353,99 @@ class GraphqlDirective implements GraphqlDatable{
         ];
     }
 }
+class GraphqlQueryWhere{
+    /**
+     * 字段名
+     * @var string
+     */
+    public $column;
+    /**
+     * 比较操作符
+     * @var string
+     */
+    public $op;
+    /**
+     * @var string|array 查询值，如果op是in find_in_set等操作，可以传入数组
+     */
+    public $value;
+    /**
+     * 和下一个where如何拼接
+     * @var string and / or
+     */
+    public $andor;
+
+    /**
+     * @param string $column
+     * @param string $op
+     * @param string|array $value 查询值，如果op是in, 那么值是array
+     * @param string $andor
+     */
+    public function __construct(string $column, string $op, $value, string $andor="and")
+    {
+        $this->column = $column;
+        $this->op = $op;
+        $this->value = $value;
+        $this->andor = $andor;
+    }
+
+    /**
+     * @param $wheres
+     * @return array<GraphqlQueryWhere>
+     */
+    public static function build($wheres){
+        if (!is_array(reset($wheres))){
+            $wheres = [$wheres];
+        }
+        $_ = [];
+        foreach ($wheres as $where){
+            $_[] = new GraphqlQueryWhere(@$where['column'], @$where['op'], @$where['value'], @$where['andor']?:'and');
+        }
+        return $_;
+    }
+}
+class GraphqlQueryClause{
+    /**
+     *
+     * @var string
+     */
+    public $orderby;
+    /**
+     * @var string
+     */
+    public $groupby;
+    /**
+     * @var string ASC / DESC
+     */
+    public $sort;
+    /**
+     * 当前页
+     * @var int
+     */
+    public $page;
+    /**
+     * 每页条数
+     * @var int
+     */
+    public $count;
+
+    /**
+     * @param string $orderby
+     * @param string $groupby
+     * @param string $sort
+     * @param int $page
+     * @param int $count
+     */
+    public function __construct(string $orderby, string $groupby="", string $sort="DESC", int $page=1, int $count=10)
+    {
+        $this->orderby = $orderby;
+        $this->groupby = $groupby;
+        $this->sort = $sort;
+        $this->page = $page;
+        $this->count = $count;
+    }
+
+    public static function build($clause){
+        return new GraphqlQueryClause(@$clause['orderBy'],@$clause['groupBy'],@$clause['sort'],@$clause['page'],@$clause['count']);
+    }
+}
 ?>

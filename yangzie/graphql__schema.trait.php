@@ -197,8 +197,8 @@ trait Graphql__Schema
         $intro = new GraphqlIntrospection($node, $type->get_data());
         $results[] = $intro->search();
 
-        $type = new GraphqlType("DQL", __("分页，分组和排序"), GraphqlType::KIND_INPUT_OBJECT);
-        $type->inputFields = $this->get_Model_Dql_Fields();
+        $type = new GraphqlType("Clause", __("分页，分组和排序"), GraphqlType::KIND_INPUT_OBJECT);
+        $type->inputFields = $this->get_Model_Clause_Fields();
         $intro = new GraphqlIntrospection($node, $type->get_data());
         $results[] = $intro->search();
 
@@ -467,7 +467,7 @@ trait Graphql__Schema
         return $result;
     }
 
-    private function get_Model_Dql_Fields()
+    private function get_Model_Clause_Fields()
     {
         $result = [];
         $typeIntro = new GraphqlType("String", null, GraphqlType::KIND_SCALAR);
@@ -491,7 +491,7 @@ trait Graphql__Schema
         return [
             new GraphqlInputValue("id", new GraphqlType("ID",null, GraphqlType::KIND_SCALAR),__("主键查询, 当传入时忽略 wheres 参数")),
             new GraphqlInputValue("wheres", new GraphqlType(null,null, GraphqlType::KIND_LIST, new GraphqlType('Where',null,  GraphqlType::KIND_OBJECT)), __("查询条件数组")),
-            new GraphqlInputValue("dql", new GraphqlType('DQL',null, GraphqlType::KIND_OBJECT), __("分支、分页、排序")),
+            new GraphqlInputValue("clause", new GraphqlType('Clause',null, GraphqlType::KIND_OBJECT), __("分支、分页、排序")),
         ];
     }
 

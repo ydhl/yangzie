@@ -174,10 +174,10 @@ class Graphql_Controller extends YZE_Resource_Controller {
             // 1. 线解析graphql成语法结构体
             list($query, $vars) = $this->fetch_Request();
             $this->vars = $vars;
-
             $nodes = $this->parse($query);
             $result = [];
             $count = [];
+
             // 2. 对每个结构进行数据查询
             foreach ($nodes as $node) {
                 //2.1 内省特殊的查询：如__SCHEMA 向服务端询问有哪些可查询端内容 https://graphql.cn/learn/introspection/
@@ -192,23 +192,22 @@ class Graphql_Controller extends YZE_Resource_Controller {
 
                 // 提取形参实参
                 $wheres = null;
-                $dql = null;
+                $clause = null;
                 $id = null;
                 foreach ((array)$node->args as $arg){
                     if ($arg->name == 'wheres'){
-                        $wheres = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
-                    }else if ($arg->name == 'dql'){
-                        $dql = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
+                        $wheres = GraphqlQueryWhere::build($arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value);
+                    }else if ($arg->name == 'clause'){
+                        $clause = GraphqlQueryClause::build($arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value);
                     }else if ($arg->name == 'id'){
                         $id = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
                     }
                 }
 
-//                print_r($node->args);
                 // 2.2 具体数据查询
                 if ($node->name != "count"){
                     $total = 0;
-                    $result[$node->name] = $this->query($node->name, $node, $id, $wheres, $dql, $total);
+                    $result[$node->name] = $this->query($node->name, $node, $id, $wheres, $clause, $total);
                     $count[$node->name] = $total;
                 }else{
                     $result[$node->name] = [];
@@ -270,6 +269,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
         if (!$acts){
             throw new YZE_FatalException('query is missing');
         }
+
         //{
         //query {
         //query operationName {
@@ -456,7 +456,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                     $prev_2nd_c = prev($words);
                     reset($words);
 
-                    if ($prev_c && $prev_2nd_c && $prev_c == $isInQuote && $prev_2nd_c != '\\'){
+                    if (strlen($prev_c) && strlen($prev_2nd_c) && $prev_c == $isInQuote && $prev_2nd_c != '\\'){
                         $isFinishedValue = true;
                     }
                 }
@@ -493,9 +493,9 @@ class Graphql_Controller extends YZE_Resource_Controller {
         $args = [];
         $index = 0;
         while (true) {
-            $act = $acts[$index++];
+            $act = @$acts[$index++];
             // 解析完了
-            if ($act == $end) {
+            if ($act == $end || $index > count($acts)) {
                 $fetchedLength = $index;
                 break;
             }
@@ -567,22 +567,30 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $currArg = new GraphqlSearchArg();
             }
         }
+
         return $args;
     }
 
     /**
      * 解析并返回查询结果，对field做验证，如果有错误抛出异常
-     * @param GraphqlSearchNode $node [name=>'', sub=>[]]
+     * @param $table
+     * @param GraphqlSearchNode $node
+     * @param $id
+     * @param array<GraphqlQueryWhere> $wheres
+     * @param GraphqlQueryClause $clause
+     * @param $total
+     * @return array|array[]|mixed|void|null
+     * @throws YZE_DBAException
      * @throws YZE_FatalException
      */
-    private function query($table, GraphqlSearchNode $node, $id, $wheres, $dql=[], &$total=0) {
+    private function query($table, GraphqlSearchNode $node, $id, $wheres, $clause=[], &$total=0) {
         $models = $this->find_All_Models();
         if (!$node->sub){ // 没有查询具体的字段
             return null;
         }
 
         $class = @$models[$table];
-        if ($class) return $this->model_query($class, $node,$id, $wheres, $dql, $total);
+        if ($class) return $this->model_query($class, $node,$id, $wheres, $clause, $total);
         if (!$models) return null;
     }
 

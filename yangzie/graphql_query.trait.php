@@ -83,15 +83,14 @@ trait Graphql_Query{
      * @param $class
      * @param GraphqlSearchNode $node
      * @param $id
-     * @param $wheres
-     * @param $dql
+     * @param array<GraphqlQueryWhere> $wheres
+     * @param GraphqlQueryClause $clause
      * @param $total
      * @return array|array[]|mixed
      * @throws YZE_DBAException
      * @throws YZE_FatalException
      */
-    public function model_query($class, GraphqlSearchNode $node, $id, $wheres, $dql=[], &$total=0){
-        $models = $this->get_models();
+    public function model_query($class, GraphqlSearchNode $node, $id, array $wheres, GraphqlQueryClause $clause=null, &$total=0){
         $table = $class::TABLE;
         $dba = YZE_DBAImpl::getDBA();
 
@@ -110,9 +109,12 @@ trait Graphql_Query{
          * 查询出来的关联表数据：[filed_name=>[key=>[field_name=>field_value]]]
          */
         $assocTableRecords = [];
+
         if (!class_exists($class)) throw new YZE_FatalException("field '{$node->name}' not exist");
         $modelObject = new $class();
         $columnConfig = $modelObject->get_columns();
+        $foreignKeyColumns[] = $modelObject->get_key_name();
+
         foreach($modelObject->get_relation_columns() as $column => $config){
             $config['column'] = $column;
             $relationConfig[$config['graphql_field']] = $config;
@@ -123,6 +125,7 @@ trait Graphql_Query{
                 $custom_fields[] = $field->name;
             }
         }
+        $queryCustomFields = [];
 
         foreach ($node->sub as $sub) {
             if ($sub->name == "__typename"){ // 内省关键字处理
@@ -137,11 +140,9 @@ trait Graphql_Query{
                 $searchAssocTables[$sub->name]['node'] = $sub;
                 $searchAssocTables[$sub->name]['ids'] = [];
                 $foreignKeyColumns[] = $searchAssocTables[$sub->name]['column'];
-            }else if (@$custom_fields[$sub->name]){ // 查询通过custom_graphql_field定义的字段
-                if (method_exists($modelObject, "query_graphql_fields")){
-                    return $modelObject->query_graphql_fields($sub);
-                }
-                return [];
+            }else if (in_array($sub->name, $custom_fields)){ // 查询通过custom_graphql_field定义的字段
+                $result[$sub->name] = null;
+                $queryCustomFields[$sub->name] = $sub;
             }else{
                 throw new YZE_FatalException("field '{$sub->name}' not exist");
             }
@@ -152,46 +153,42 @@ trait Graphql_Query{
         if ($id){
             $where .= ' '.$modelObject->get_key_name()."=".$id;
         }else if ($wheres){
-            if (!is_array(reset($wheres))){
-                $wheres = [$wheres];
-            }
-
             foreach ($wheres as $index => $_where){
-                if (!@$columnConfig[$_where['column']]){
-                    throw new YZE_FatalException("field '".$_where['column']."' not exist");
+                if (!@$columnConfig[$_where->column]){
+                    throw new YZE_FatalException("field '".$_where->column."' not exist");
                 }
-                $op = $this->get_op($_where['op']);
-                $where .= ' '.$_where['column'].' '.$_where['op'];
+                $op = $this->get_op($_where->op);
+                $where .= ' '.$_where->column.' '.$_where->op;
                 if ($op == "in" || $op =='not in' || $op =='find_in_set'){
-                    $where .= "(".$this->filter_array_value($_where['value']).")";
+                    $where .= "(".$this->filter_array_value($_where->value).")";
                 }else{
-                    $where .= ' '.$dba->quote($_where['value']);
+                    $where .= ' '.$dba->quote($_where->value);
                 }
                 if ($index+1 != count($wheres)){
-                    $where .= ' '.$this->get_andor($_where['andor']);
+                    $where .= ' '.$this->get_andor($_where->andor);
                 }
             }
         }
         $pagination = '';
         $orderby = '';
-        if ($dql){
-            $page = intval(@$dql['page']);
+        if ($clause){
+            $page = intval($clause->page);
             $page = $page <=0 ? 1 : $page;
-            $count = intval(@$dql['count']);
+            $count = intval($clause->count);
             $count = $count <=0 ? 10 : $count;
             $page = ($page - 1 ) * $count;
 
-            if (@$dql['orderBy']){
+            if (@$clause->orderby){
                 $sorts = ['ASC'=>'ASC','DESC'=>'DESC',''=>'ASC'];
-                if (!$columnConfig[@$dql['orderBy']]) throw new YZE_FatalException("orderBy field '{$dql['orderBy']}' not exist");
-                $sort = @$sorts[strtoupper(@$dql['sort']?:"")];
-                if (!$sort) throw new YZE_FatalException("sort type '{$dql['sort']}' not support");
-                $orderby .= ' order by '.$dql['orderBy'].' '.$sort;
+                if (!$columnConfig[@$clause->orderby]) throw new YZE_FatalException("orderBy field '{$clause->orderby}' not exist");
+                $sort = @$sorts[strtoupper(@$clause->sort?:"")];
+                if (!$sort) throw new YZE_FatalException("sort type '{$clause->sort}' not support");
+                $orderby .= ' order by '.$clause->orderby.' '.$sort;
             }
 
-            if (@$dql['groupBy']){
-                if (!$columnConfig[$dql['groupBy']]) throw new YZE_FatalException("groupBy field '{$dql['groupBy']}' not exist");
-                $orderby .= ' group by '.$dql['groupBy'];
+            if (@$clause->groupby){
+                if (!$columnConfig[$clause->groupby]) throw new YZE_FatalException("groupBy field '{$clause->groupby}' not exist");
+                $orderby .= ' group by '.$clause->groupby;
             }
 
             $pagination = " limit {$page}, $count";
@@ -201,19 +198,27 @@ trait Graphql_Query{
         $totalRst->next();
         $total = intval($totalRst->f('t'));
 
-        $rsts = $dba->nativeQuery("select ".join(',', array_merge($foreignKeyColumns,$searchColumns))
+        $rsts = $dba->nativeQuery("select ".join(',', array_unique(array_merge($foreignKeyColumns,$searchColumns)))
             ." from `{$table}` ".($where ? "where {$where}" : "").$orderby.$pagination);
 
         $rsts = $rsts->get_results();
         // 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
-        $rsts = array_map(function ($item) use($result, &$searchAssocTables){
+        $rsts = array_map(function ($item) use($result, &$searchAssocTables, $custom_fields){
             // 关联表的外键id列表，后面关联表查询使用
             foreach ($searchAssocTables as &$value){
                 $value['ids'][] = $item[$value['column']];
             }
+
             return array_merge($result, $item);
         }, $rsts);
 
+        //自定义查询的处理
+        foreach ((array)$queryCustomFields as $field => $sub){
+            foreach ($rsts as &$item){
+                $modelObject = $class::from_array($item);
+                $item[$field] = $modelObject->query_graphql_fields($sub);
+            }
+        }
         // 查询关联表的字段
         foreach ($searchAssocTables as $fieldName=>$assocInfo){
             $targetClass = $assocInfo['target_class'];
@@ -234,7 +239,7 @@ trait Graphql_Query{
             }
 
             foreach($this->model_query($targetClass, $assocInfo['node'], null,
-                ['column'=>$targetColumn, 'op'=>'in', 'value'=>join(",",array_unique($assocInfo['ids']))]) as $item){
+                [new GraphqlQueryWhere($targetColumn, 'in', array_unique($assocInfo['ids']))]) as $item){
                 $key = $item[$key_name];
                 if (!$hasKey->has_value()){
                     unset($item[$key_name]);
@@ -257,7 +262,8 @@ trait Graphql_Query{
             }
             return $item;
         }, $rsts);
-        return $rsts;
+
+        return $rsts?:null;
     }
 }
 

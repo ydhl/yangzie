@@ -12,6 +12,7 @@ namespace yangzie;
  *
  */
 abstract class YZE_Model extends YZE_Object{
+	use Graphql_Query;
 	/**
 	 * @var YZE_SQL
 	 */
@@ -128,6 +129,12 @@ abstract class YZE_Model extends YZE_Object{
 		$array = json_decode($json, true);
 		if(is_null($array))return null;
 
+		return self::from_Array($array);
+	}
+	/**
+	 * 根据jsonString创建对象, 如果json不是有效的json，返回null
+	 */
+	public static function from_Array(array $array){
 		$class = get_called_class();
 		$obj = new $class();
 

@@ -497,13 +497,18 @@ class GraphqlCustomType extends GraphqlType {
  * 在传入的types中增加自己的自定义type，并return返回types:
  *
  *
- * \yangzie\YZE_Hook::add_hook(YZE_GRAPHQL_CUSTOM_QUERY_TYPE, function ($types){
- *
- *  $types[] = new GraphqlCustomType("your type");
- *
- *  return $types;
- *
+ * \yangzie\YZE_Hook::add_hook(YZE_GRAPHQL_CUSTOM_QUERY_TYPE, function (&$types){
+ *  <br/><br/>
+ *  $type->fields = [ new GraphqlField("uuid", new  GraphqlType("String", "test",  GraphqlType::KIND_SCALAR)) ];<br/>
+ *  //如果字段类型是完整封装的model，那么通过model的get_graphql_fields的方法返回field<br/>
+ *  $type->fields = $FooModel->get_graphql_fields();<br/>
+ *  $type->args = [ new GraphqlInputValue("argname", new  GraphqlType("String", "test",  GraphqlType::KIND_SCALAR)) ];<br/>
+ *  $types[] = $type;<br/>
+ *  return $types;<br/>
+ *  <br/><br/>
  * });
+ *
+ *
  */
 define("YZE_GRAPHQL_CUSTOM_QUERY_TYPE", "YZE_GRAPHQL_CUSTOM_QUERY_TYPE");
 /**

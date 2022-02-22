@@ -434,16 +434,7 @@ trait Graphql__Schema
      */
     private function get_Model_Fields(YZE_Model $model)
     {
-        $columns = $model->get_columns();
-        $result = [];
-
-        foreach ($columns as $columnName => $columnConfig) {
-            $field = new GraphqlField($columnName,
-                $this->get_Model_Field_Type($model, $columnConfig, $columnName),
-                $model->get_column_mean($columnName)
-            );
-            $result[] = $field;
-        }
+        $result = $model->get_graphql_fields();
 
         if (method_exists($model, "custom_graphql_fields")){
             foreach ($model->custom_graphql_fields() as $custom_field){
@@ -505,20 +496,7 @@ trait Graphql__Schema
         ];
     }
 
-    /**
-     * 获取字段的类型
-     * @param $columnName
-     * @param GraphqlSearchNode $node
-     * @return GraphqlType
-     */
-    private function get_Model_Field_Type(YZE_Model $model, $columnConfig, $columnName)
-    {
-        $map = ['integer' => 'Int', 'date' => 'Date', 'string' => 'String', 'float' => 'Float'];
-        return new GraphqlType(
-            $columnConfig['type'] == 'enum' ? $model::TABLE . '_' . $columnName : $map[$columnConfig['type']],
-            null,
-            $columnConfig['type'] == 'enum' ? 'ENUM' : 'SCALAR');
-    }
+
 
     /**
      * 返回系统有哪些指令类型

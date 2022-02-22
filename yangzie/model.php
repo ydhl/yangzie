@@ -87,17 +87,39 @@ abstract class YZE_Model extends YZE_Object{
 	public function get_columns(){
 		return static::$columns;
 	}
+
 	/**
-	 * 返回所有的字段，已,分隔，如果指定了pre，则字段会起别名：{$pre}.{$item} as {$pre}_{$item}
-	 * @param string $pre
+	 * 把model的字段封装成GraphqlField 返回
+	 * @return array<GraphqlField>
 	 */
-	public static function get_column_string($pre=""){
-		$cls = get_called_class();
-		$obj = new $cls;
-		return join(",", array_map(function($item) use ($pre){
-			return $pre ? "{$pre}.{$item} as {$pre}_{$item}" :  "{$item}";
-		}, array_keys($obj->get_columns())));
+	public function get_graphql_fields(){
+		$result = [];
+		foreach (static::$columns as $columnName => $columnConfig) {
+			$field = new GraphqlField($columnName,
+				$this->get_Model_Field_Type($columnConfig, $columnName),
+				$this->get_column_mean($columnName)
+			);
+			$result[] = $field;
+		}
+		return $result;
 	}
+
+	/**
+	 * 获取字段的类型
+	 * @param YZE_Model $model
+	 * @param $columnConfig
+	 * @param $columnName
+	 * @return GraphqlType
+	 */
+	private function get_Model_Field_Type($columnConfig, $columnName)
+	{
+		$map = ['integer' => 'Int', 'date' => 'Date', 'string' => 'String', 'float' => 'Float'];
+		return new GraphqlType(
+			$columnConfig['type'] == 'enum' ? $this->get_table() . '_' . $columnName : $map[$columnConfig['type']],
+			null,
+			$columnConfig['type'] == 'enum' ? 'ENUM' : 'SCALAR');
+	}
+
 	public function get_module_name(){
 		return $this::MODULE_NAME;
 	}
@@ -256,7 +278,7 @@ abstract class YZE_Model extends YZE_Object{
 
         return true;
 	}
-	public function isEmptyDate($name){
+	public function is_Empty_Date($name){
 		return !$this->get($name) || $this->get($name)=="0000-00-00" || $this->get($name)=="0000-00-00 00:00:00";;
 	}
 
@@ -323,7 +345,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param array $fileds
 	 * @return YZE_Model
 	 */
-	public function insertOrUpdate( $checkFields ){
+	public function insert_Or_Update( $checkFields ){
 	    if ( ! $checkFields){
 	        $this->save();
 	        return $this;

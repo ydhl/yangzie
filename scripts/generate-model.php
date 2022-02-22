@@ -85,7 +85,7 @@ trait $class{
 	public function is_enable_graphql(){
 		return true;
 	}
-	
+
 	/**
 	 * 自定义的Field，field的type nane是系统的表名, 该接口提供一个在通过graphql查询{$this->table_name}时可以联合查询的其他表的方式
 	 * 

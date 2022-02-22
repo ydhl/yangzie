@@ -179,8 +179,8 @@ function yze_handle_request() {
                 $response = $controller->do_exception($e);
             }
 
-            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,
-                ["exception"=>$e, "controller"=>$controller, "response"=>$response]);
+            $filter_data = ["exception"=>$e, "controller"=>$controller, "response"=>$response];
+            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,$filter_data);
             $response = $filter_data['response'];
 
             $output($request, $controller, $response);

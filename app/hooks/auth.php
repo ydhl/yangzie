@@ -17,24 +17,24 @@ use \yangzie\YZE_Hook;
 use \yangzie\YZE_Need_Signin_Exception;
 use app\sp\Service_Provider_Model;
 
-YZE_Hook::add_hook ( YZE_HOOK_GET_LOGIN_USER, function  ( $datas ) {
-	$loginUser = $_SESSION [ 'admin' ];
+YZE_Hook::add_hook ( YZE_HOOK_GET_LOGIN_USER, function  (&$data) {
+	$loginUser = @$_SESSION [ 'admin' ];
 	if( ! $loginUser)return null;
 
 	return $loginUser;
 } );
 
-YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function  ( $data ) {
+YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function  ( &$data ) {
 	$_SESSION [ 'admin' ] = $data;
 } );
 
-YZE_Hook::add_hook ( YZE_FILTER_GET_USER_ARO_NAME, function  ( $data ) {
+YZE_Hook::add_hook ( YZE_FILTER_GET_USER_ARO_NAME, function  ( &$data ) {
 	if ( !@$_SESSION [ 'admin' ] )return "/";
 	return "TODO your ARO NAME";
 } );
 
 
-YZE_Hook::add_hook(YZE_FILTER_YZE_EXCEPTION, function ($datas){
+YZE_Hook::add_hook(YZE_FILTER_YZE_EXCEPTION, function (&$datas){
     //如果array("exception"=>$e, "controller"=>$controller, "response"=>$response)
     // 把signin替换成自己的登录url
 

@@ -7,7 +7,7 @@ interface GraphqlDatable{
 class GraphqlInputValue implements GraphqlDatable{
     public $name;
     public $description = "";
-    public $typename = "__InputValue";
+    private $typename = "__InputValue";
     /**
      * @var GraphqlType
      */
@@ -63,7 +63,7 @@ class GraphqlType implements GraphqlDatable{
     const KIND_NON_NULL = "NON_NULL";
 
     /**
-     * 字段的名字
+     * 字段的名字, 如果是标量类型kind=SCALAR，那么已知的标量类型有String，Int，Boolean，Date，Float，ID
      * @var string
      */
     public $name;
@@ -77,8 +77,9 @@ class GraphqlType implements GraphqlDatable{
      * @var string
      */
     public $description = "";
-    public $typename="__Type";
+    private $typename="__Type";
     /**
+     * 能查询的字段内容数组
      * @var array<GraphqlField>
      */
     public $fields = [];
@@ -110,7 +111,7 @@ class GraphqlType implements GraphqlDatable{
     public $ofType = null;
 
     /**
-     * @param string|null $name
+     * @param string|null $name 字段的名字, 如果是标量类型kind=SCALAR，那么已知的标量类型有String，Int，Boolean，Date，Float，ID；如果kind是NON_NULL, LIST name可以为null
      * @param string|null $description
      * @param string $kind 字段的类型，见GraphqlType::KIND
      * @param GraphqlType|null $ofType
@@ -161,7 +162,7 @@ class GraphqlType implements GraphqlDatable{
             '__typename' => $this->typename,
             'description' => $this->description,
             'specifiedByUrl' => $this->specifiedByURL,
-            'fields' => $fields?:null,
+            'fields' => $fields?:[],
             'inputFields' => $inputFields?:null,
             'interfaces' => $interfaces,
             'enumValues' => $enumValues?:null,
@@ -181,7 +182,7 @@ class GraphqlField implements GraphqlDatable{
      * @var string
      */
     public $description = "";
-    public $typename="__Field";
+    private $typename="__Field";
     /**
      * @var array<GraphqlInputValue>
      */
@@ -245,7 +246,7 @@ class GraphqlEnumValue implements GraphqlDatable{
      * @var string
      */
     public $description = "";
-    public $typename="__EnumValue";
+    private $typename="__EnumValue";
     /**
      * 是否弃用
      * @var bool
@@ -313,7 +314,7 @@ class GraphqlDirective implements GraphqlDatable{
      * @var array<GraphqlInputValue>
      */
     public $args = [];
-    public $typename="__Directive";
+    private $typename="__Directive";
     /**
      * LOCATION_XX常量
      * @var array
@@ -448,4 +449,70 @@ class GraphqlQueryClause{
         return new GraphqlQueryClause(@$clause['orderBy'],@$clause['groupBy'],@$clause['sort'],@$clause['page'],@$clause['count']);
     }
 }
+
+/**
+ * YZE_GRAPHQL_CUSTOM_QUERY_TYPE Hook中定义的自定义类型, 其是GraphqlType和GraphqlField的集合体
+ */
+class GraphqlCustomType extends GraphqlType {
+    /**
+     * 查询参数数组
+     * @var array<GraphqlInputValue>
+     */
+    public $args = [];
+    /**
+     * 是否弃用
+     * @var bool
+     */
+    public $isDeprecated = false;
+    /**
+     * 弃用原因，如果没有弃用必须返回null
+     * @var null
+     */
+    public $deprecationReason = null;
+
+    /**
+     * @param string|null $name
+     * @param string|null $description
+     * @param string $kind
+     * @param array<GraphqlInputValue> $args
+     * @param bool $isDeprecated
+     * @param $deprecationReason
+     */
+    public function __construct(string $name=null, string $description=null, array $args=[], string $kind = GraphqlType::KIND_OBJECT, bool $isDeprecated=false, $deprecationReason=null)
+    {
+        parent::__construct($name, $description);
+        $this->fields = [];
+        $this->kind = $kind;
+        $this->args = $args;
+        $this->isDeprecated = $isDeprecated;
+        $this->deprecationReason = $deprecationReason;
+    }
+    public function get_data()
+    {
+        return parent::get_data();
+    }
+}
+/**
+ * 通过该hook返回自定义的graphql filed，返回的的类型是GraphqlCustomType,
+ * 在传入的types中增加自己的自定义type，并return返回types:
+ *
+ *
+ * \yangzie\YZE_Hook::add_hook(YZE_GRAPHQL_CUSTOM_QUERY_TYPE, function ($types){
+ *
+ *  $types[] = new GraphqlCustomType("your type");
+ *
+ *  return $types;
+ *
+ * });
+ */
+define("YZE_GRAPHQL_CUSTOM_QUERY_TYPE", "YZE_GRAPHQL_CUSTOM_QUERY_TYPE");
+/**
+ * 对YZE_GRAPHQL_CUSTOM_QUERY_TYPE的内容查询并返回，传入参数是一个数组：
+ * [
+ * 'search'=>$node,  // GraphqlSearchNode 查询结构体
+ * 'rsts'=>[],  // 返回的结果
+ * 'total'=>0 // 满足条件的总数
+ * ]
+ */
+define("YZE_GRAPHQL_CUSTOM_SEARCH", "YZE_GRAPHQL_CUSTOM_SEARCH");
 ?>

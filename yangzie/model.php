@@ -71,7 +71,7 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public function get_table(){
 		$data = array("table"=>$this::TABLE, "module"=>$this->get_module_name());
-		$result = \yangzie\YZE_Hook::do_hook("get_table", $data);
+		$result = \yangzie\YZE_Hook::do_hook("get_table", $data)??$data;
 		return $result["table"];
 	}
 	/**
@@ -634,9 +634,11 @@ abstract class YZE_Model extends YZE_Object{
 	}
 	public function clean(){
 		$this->sql->clean();
+		return $this;
 	}
 	public function clean_where(){
 		$this->sql->clean_where();
+		return $this;
 	}
 	/**
 	 * 清空表中所有数据，主键重新从1开始

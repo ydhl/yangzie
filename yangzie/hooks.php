@@ -99,57 +99,52 @@
     final class YZE_Hook {
         private static $listeners = array ();
         private static $currModule;
+
         /**
-         * 增加hook
+         * 增加hook， 如果有多个注册回调，则返回的是最后一个回调函数的返回结果，如果想把所有回调的数据汇总，则可以通过修改引用参数的方式返回；
+         * 具体如何做，需要针对具体的$filterName说明清楚
+         * @param $event
+         * @param $funcName 参数必须是引用，需要加&
+         * @param $object
+         * @return void
          */
-        public static function add_hook($event, $func_name, $object = null) {
+        public static function add_hook($event, $funcName, $object = null) {
             //include_hooks中已经知道模块名了
-            self::$listeners [$event] [self::$currModule] [] = array (
-                                                                      "function" => $func_name,
-                                                                      "object" => $object
-                                                                      );
-        }
-        private static function _call_user_func($listeners, $data, $is_filter){
-
-            foreach ( $listeners as $listener ) {
-                if (is_object ( $listener ['object'] )) {
-                    $filter_data = call_user_func ( array($listener ['object'], $listener ['function']), $data);
-                } else {
-                    $filter_data = call_user_func ( $listener ['function'], $data );
-                }
-                if($is_filter){
-                    $data = $filter_data;
-                }
-            }
-            return $is_filter ? $filter_data : $data;
+            self::$listeners [$event] [self::$currModule] [] = ["function" => $funcName, "object" => $object ];
         }
 
         /**
-         * 如果没有hook注册，返回null
+         * 如果没有hook注册，返回null;
          *
-         * @param unknown hookname
-         * @param unknown $data
+         * 如果有多个注册回调，则返回的是最后一个回调函数的返回结果，如果想把所有回调的数据汇总，则可以通过修改引用参数的方式返回;
+         * 具体如何做，需要针对具体的$filterName说明清楚
+         *
+         * @param string $filterName
+         * @param unknown $data 传递给回调函数的data，如果修改了data的内容，会影响后续的回调，
          * @param unknown $module 指定则指调用该module下面的hook，多个可用,分隔，依次调用其中的module
-         * @param boolean $is_filter true表示上个hook的结果会进入下个hook，
-         *  false表示每个hook传入的data都是最原始的data;在这种情况下，整个hook执行的结果还是data
-         *  false，通常用于进行event通知，不在乎hook返回的值；只在乎hook的副作用，比如echo
          * @return unknown|mixed
          */
-        public static function do_hook($filter_name, $data=array(), $module=null, $is_filter=true) {
-            $listeners = self::has_hook ( $filter_name, $module );
+        public static function do_hook($filterName, &$data=null, $module=null) {
+            $listeners = self::has_hook ( $filterName, $module );
+            if (! $listeners) return null;
 
-            if (! $listeners) return $data;
-
-            $data = self::_call_user_func($listeners, $data, $is_filter);
-            return $data;
+            $filter_data = null;
+            foreach ( $listeners as $listener ) {
+                if (is_object ( $listener['object'] ) && method_exists($listener['object'], $listener['function'])) {
+                    $filter_data = $listener['object']->$listener['function']($data);
+                } else if (is_callable($listener['function'])){
+                    $filter_data = $listener['function']( $data );
+                }
+            }
+            return $filter_data;
         }
 
-        public static function has_hook($filter_name, $module=null) {
+        public static function has_hook($filterName, $module=null) {
             if($module){
                 $modules = explode(",", $module);
                 $funcs = array();
                 foreach ($modules as $module){
-                    foreach ((array)@self::$listeners [$filter_name][$module] as $func){
+                    foreach ((array)@self::$listeners [$filterName][$module] as $func){
                         $funcs[] = $func;
                     }
                 }
@@ -157,7 +152,7 @@
             }
 
             $funcs = array();
-            foreach ((array)@self::$listeners [$filter_name] as $m=>$_funcs){
+            foreach ((array)@self::$listeners [$filterName] as $m=>$_funcs){
                 foreach ((array)$_funcs as $func){
                     $funcs[] = $func;
                 }

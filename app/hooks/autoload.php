@@ -16,7 +16,7 @@ use \yangzie\YZE_Request;
 use \yangzie\YZE_Hook;
 use \yangzie\YZE_Need_Signin_Exception;
 
-YZE_Hook::add_hook(YZE_HOOK_AUTO_LOAD_CLASS, function ( $class ) {
-    //echo $class;
+YZE_Hook::add_hook(YZE_HOOK_AUTO_LOAD_CLASS, function ( &$class ) {
+//    echo $class;
 });
 ?>

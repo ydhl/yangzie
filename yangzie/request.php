@@ -166,7 +166,8 @@ class YZE_Request extends YZE_Object {
             $this->full_uri = $newUri;
             $this->queryString = parse_url ( $newUri, PHP_URL_QUERY );
         }
-        $uri = \yangzie\YZE_Hook::do_hook ( YZE_HOOK_FILTER_URI, urldecode ( $this->uri ) );
+        $uri = urldecode ( $this->uri );
+        $uri = \yangzie\YZE_Hook::do_hook ( YZE_HOOK_FILTER_URI,  $uri) ?? $uri;
         $this->uri = is_array ( $uri ) ? "/" . implode ( "/", $uri ) : $uri;
     }
 

@@ -90,9 +90,25 @@ trait Graphql_Query{
      * @throws YZE_DBAException
      * @throws YZE_FatalException
      */
-    public function model_query($class, GraphqlSearchNode $node, $id, array $wheres, GraphqlQueryClause $clause=null, &$total=0){
+    public function model_query($class, GraphqlSearchNode $node, &$total=0){
         $table = $class::TABLE;
         $dba = YZE_DBAImpl::getDBA();
+
+
+        // 提取缺省的model的wheres，clause，id三个参数形参实参，对于自定义的字段，这些参数其实并没有用到。
+        $wheres = null;
+        $clause = null;
+        $id = null;
+        foreach ((array)$node->args as $arg){
+            if ($arg->name == 'wheres'){
+                $wheres = GraphqlQueryWhere::build($arg->value);
+            }else if ($arg->name == 'clause'){
+                $clause = GraphqlQueryClause::build($arg->value);
+            }else if ($arg->name == 'id'){
+                $id = $arg->value;
+            }
+        }
+
 
         $result = [];
         $searchColumns = [];

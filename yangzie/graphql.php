@@ -7,17 +7,9 @@ class GraphqlSearchArg{
      */
     public $name;
     /**
-     * @var 默认参数值
-     */
-    public $defaultValue;
-    /**
      * @var 参数值
      */
     public $value;
-    /**
-     * @var 传入的值是不是变量
-     */
-    public $valueIsVar;
 }
 class GraphqlSearchNode{
     /**
@@ -190,24 +182,10 @@ class Graphql_Controller extends YZE_Resource_Controller {
                     continue;
                 }
 
-                // 提取形参实参
-                $wheres = null;
-                $clause = null;
-                $id = null;
-                foreach ((array)$node->args as $arg){
-                    if ($arg->name == 'wheres'){
-                        $wheres = GraphqlQueryWhere::build($arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value);
-                    }else if ($arg->name == 'clause'){
-                        $clause = GraphqlQueryClause::build($arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value);
-                    }else if ($arg->name == 'id'){
-                        $id = $arg->valueIsVar ? @$this->vars[$arg->value] : $arg->value;
-                    }
-                }
-
                 // 2.2 具体数据查询
                 if ($node->name != "count"){
                     $total = 0;
-                    $result[$node->name] = $this->query($node->name, $node, $id, $wheres, $clause, $total);
+                    $result[$node->name] = $this->query($node->name, $node, $total);
                     $count[$node->name] = $total;
                 }else{
                     $result[$node->name] = [];
@@ -558,8 +536,8 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $currArg->name = rtrim($act, ":");
             }else{
                 if (substr($act,0,1)=="\$"){
-                    $currArg->value = substr($act, 1);
-                    $currArg->valueIsVar = true;
+                    // 参数值是变量值，则通过变量获取
+                    $currArg->value = $this->vars[substr($act, 1)];
                 }else{
                     $currArg->value = $act;
                 }
@@ -575,23 +553,24 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * 解析并返回查询结果，对field做验证，如果有错误抛出异常
      * @param $table
      * @param GraphqlSearchNode $node
-     * @param $id
-     * @param array<GraphqlQueryWhere> $wheres
-     * @param GraphqlQueryClause $clause
      * @param $total
      * @return array|array[]|mixed|void|null
      * @throws YZE_DBAException
      * @throws YZE_FatalException
      */
-    private function query($table, GraphqlSearchNode $node, $id, $wheres, $clause=[], &$total=0) {
+    private function query($table, GraphqlSearchNode $node, &$total=0) {
         $models = $this->find_All_Models();
         if (!$node->sub){ // 没有查询具体的字段
             return null;
         }
 
         $class = @$models[$table];
-        if ($class) return $this->model_query($class, $node,$id, $wheres, $clause, $total);
-        if (!$models) return null;
+        if ($class) return $this->model_query($class, $node, $total);
+        // 自定义字段的查询
+        $data = ['search'=>$node, 'rsts'=>[], 'total'=>0];
+        YZE_Hook::do_hook(YZE_GRAPHQL_CUSTOM_SEARCH, $data);
+        $total = $data["total"];
+        return $data["rsts"];
     }
 
     private function basic_types() {

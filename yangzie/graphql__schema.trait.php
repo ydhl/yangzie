@@ -66,6 +66,7 @@ trait Graphql__Schema
                 $this->get_Model_Args($argSearch));
             $queryFileds[] = $field;
         }
+        $this->custom_fields($queryFileds, $fieldNames);
 
 
         $field = new GraphqlField("count", new GraphqlType('count',null,  GraphqlType::KIND_OBJECT), "分页数据");
@@ -176,8 +177,9 @@ trait Graphql__Schema
         }
 
         $results = array_merge($results, $this->get_model_schema($models, $node));
+        $this->custom_query_types($node, $results);
 
-        // model的查询参数类型
+            // model的查询参数类型
         // 根据scheme请求返回内容
         $type = new GraphqlType("count", "查询分页数据");
         $queryFileds = [];
@@ -187,6 +189,14 @@ trait Graphql__Schema
                 , sprintf(__("%s count"), $table)
             );
             $queryFileds[] = $field;
+        }
+        $customFields = [];
+        $this->custom_fields($customFields);
+        foreach ($customFields as $customField) {
+            $queryFileds[] = new GraphqlField($customField->name,
+                new GraphqlType('Int',null, GraphqlType::KIND_SCALAR)
+                , sprintf(__("%s count"), $customField->name)
+            );
         }
         $type->fields = $queryFileds;
         $intro = new GraphqlIntrospection($node, $type->get_data());
@@ -597,6 +607,28 @@ trait Graphql__Schema
             $results[] = $intro->search();
         }
         return $results;
+    }
+
+    private function custom_query_types($node, &$results){
+        $types = [];
+        YZE_Hook::do_hook(YZE_GRAPHQL_CUSTOM_QUERY_TYPE, $types);
+        if (!$types) return;
+
+        foreach ($types as $type){
+            $intro = new GraphqlIntrospection($node, $type->get_data());
+            $results[] = $intro->search();
+        }
+    }
+
+    private function custom_fields(&$results, &$names=[]){
+        $types = [];
+        YZE_Hook::do_hook(YZE_GRAPHQL_CUSTOM_QUERY_TYPE, $types);
+        if (!$types) return;
+
+        foreach ($types as $type){
+            $names[] = $type->name;
+            $results[] = new GraphqlField($type->name, $type, $type->description, $type->args);
+        }
     }
 }
 

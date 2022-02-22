@@ -539,7 +539,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                     // 参数值是变量值，则通过变量获取
                     $currArg->value = $this->vars[substr($act, 1)];
                 }else{
-                    $currArg->value = $act;
+                    $currArg->value = trim($act, '"');
                 }
                 $args[] = $currArg;
                 $currArg = new GraphqlSearchArg();

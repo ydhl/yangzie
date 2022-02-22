@@ -434,7 +434,8 @@ trait Graphql__Schema
      */
     private function get_Model_Fields(YZE_Model $model)
     {
-        $result = $model->get_graphql_fields();
+        $user = YZE_Hook::do_hook(YZE_HOOK_GET_LOGIN_USER);
+        $result = $model->get_graphql_fields($user);
 
         if (method_exists($model, "custom_graphql_fields")){
             foreach ($model->custom_graphql_fields() as $custom_field){

@@ -89,12 +89,22 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	/**
+	 * 获取user能看到的所有column，默认是返回所有的column；
+	 * Model如果需要根据登录用户来控制能查询什么字段，则需要重载该方法
+	 *
+	 * @param $user 当前登录用户
+	 * @return array 需要返回self::$column一样的结构体
+	 */
+	public function get_graphql_column($user){
+		return $this->get_columns();
+	}
+	/**
 	 * 把model的字段封装成GraphqlField 返回
 	 * @return array<GraphqlField>
 	 */
-	public function get_graphql_fields(){
+	public function get_graphql_fields($user){
 		$result = [];
-		foreach (static::$columns as $columnName => $columnConfig) {
+		foreach ($this->get_graphql_column($user) as $columnName => $columnConfig) {
 			$field = new GraphqlField($columnName,
 				$this->get_Model_Field_Type($columnConfig, $columnName),
 				$this->get_column_mean($columnName)

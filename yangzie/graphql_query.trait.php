@@ -79,32 +79,28 @@ trait Graphql_Query{
     }
     /**
      * 针对model的查询
-     * @param $models
      * @param $class
      * @param GraphqlSearchNode $node
-     * @param $id
+     * @param $total 返回满足条件的总数
      * @param array<GraphqlQueryWhere> $wheres
      * @param GraphqlQueryClause $clause
-     * @param $total
+     * @param $id
      * @return array|array[]|mixed
      * @throws YZE_DBAException
      * @throws YZE_FatalException
      */
-    public function model_query($class, GraphqlSearchNode $node, &$total=0){
+    public function model_query($class, GraphqlSearchNode $node, &$total=0, $wheres=[], GraphqlQueryClause $clause=null, $id=null){
         $table = $class::TABLE;
         $dba = YZE_DBAImpl::getDBA();
 
 
         // 提取缺省的model的wheres，clause，id三个参数形参实参，对于自定义的字段，这些参数其实并没有用到。
-        $wheres = null;
-        $clause = null;
-        $id = null;
         foreach ((array)$node->args as $arg){
-            if ($arg->name == 'wheres'){
+            if ($arg->name == 'wheres' && !$wheres){
                 $wheres = GraphqlQueryWhere::build($arg->value);
-            }else if ($arg->name == 'clause'){
+            }else if ($arg->name == 'clause' && !$clause){
                 $clause = GraphqlQueryClause::build($arg->value);
-            }else if ($arg->name == 'id'){
+            }else if ($arg->name == 'id' && !$id){
                 $id = $arg->value;
             }
         }

@@ -99,7 +99,10 @@ trait $class{
 	}
 	
 	/**
-	 * 根据传入的fieldName名返回对应的subFields值
+	 * 根据传入的fieldName名返回对应的subFields值, 可通过 \$this->model_query 对具体的表进行查询，并返回
+	 * 
+	 * 如果要自己写查询实现，那么需要遍历通过\$returnFields->sub对具体的field做查询，如果field还有sub，那么说明他是一个独立的type，旗下还有字段
+	 * 
 	 * @param string table 要查询的表， 由custom_graphql_fields 返回
 	 * @param array returnFields fieldName下级字段名， 由custom_graphql_fields 返回
 	 * @return array<GraphqlField>

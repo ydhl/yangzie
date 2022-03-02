@@ -63,10 +63,10 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 // 2.2 具体数据查询
                 if ($node->name != "count"){
                     $total = 0;
-                    $result[$node->name] = $this->query($node->name, $node, $total);
-                    $count[$node->name] = $total;
+                    $result[$node->alias?:$node->name] = $this->query($node->name, $node, $total);
+                    $count[$node->alias?:$node->name] = $total;
                 }else{
-                    $result[$node->name] = [];
+                    $result[$node->alias?:$node->name] = [];
                 }
             }
             if (isset($result['count'])){
@@ -221,7 +221,9 @@ class Graphql_Controller extends YZE_Resource_Controller {
             }
             // ：别名处理,:后面是别名，index往后移动一位
             if ($act == ":"){
-                $currNode->alias = $acts[$index++];
+                $alias = $acts[$index++];
+                $currNode->alias = $currNode->name;
+                $currNode->name = $alias;
                 continue;
             }
             // fragment 处理，后面是fragment，index移动一位

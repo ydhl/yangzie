@@ -250,7 +250,8 @@ trait Graphql_Query{
                 $assocInfo['node']->sub[] = $id;
             }
 
-            foreach($this->model_query($targetClass, $assocInfo['node'], null,
+            $total = 0;
+            foreach($this->model_query($targetClass, $assocInfo['node'], $total,
                 [new GraphqlQueryWhere($targetColumn, 'in', array_unique($assocInfo['ids']))]) as $item){
                 $key = $item[$key_name];
                 if (!$hasKey->has_value()){

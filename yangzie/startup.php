@@ -40,11 +40,12 @@ function yze_autoload($class) {
         if ( ! file_exists($file)){
             $file = YZE_INSTALL_PATH . preg_replace("{_view$}i", "",strtr(strtolower($class), array("\\"=>"/"))) . ".view.php";
         }
-    }else{
+    }
+    if (!file_exists($file)){
         $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".class.php";
-        if (!file_exists($file)){
-            $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".trait.php";
-        }
+    }
+    if (!file_exists($file)){
+        $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".trait.php";
     }
 
     if(@$file && file_exists($file)){

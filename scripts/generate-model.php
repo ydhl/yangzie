@@ -50,6 +50,7 @@ use \yangzie\YZE_Model;
 use \yangzie\YZE_SQL;
 use \yangzie\YZE_DBAException;
 use \yangzie\YZE_DBAImpl;
+use yangzie\GraphqlSearchNode;
 /**
  *
  *
@@ -99,15 +100,11 @@ trait $class{
 	}
 	
 	/**
-	 * 根据传入的fieldName名返回对应的subFields值, 可通过 \$this->model_query 对具体的表进行查询，并返回
-	 * 
-	 * 如果要自己写查询实现，那么需要遍历通过\$returnFields->sub对具体的field做查询，如果field还有sub，那么说明他是一个独立的type，旗下还有字段
-	 * 
-	 * @param string table 要查询的表， 由custom_graphql_fields 返回
-	 * @param array returnFields fieldName下级字段名， 由custom_graphql_fields 返回
+	 * 根据传入的fieldName名返回对应的subFields值
+	 * @param \$graphqlSearchNode 查询的内容结构体
 	 * @return array<GraphqlField>
 	 */
-	public function query_graphql_fields(\$table, \$returnFields){
+	public function query_graphql_fields(GraphqlSearchNode \$searchNode){
 		return [];
 	}
     // 这里实现model的业务方法 
@@ -365,7 +362,7 @@ class $class extends YZE_Model{
 
 	protected function get_class_of_table($table){
 		global $db;
-		$class_name = YZE_Object::format_class_name(rtrim($table, "s"),"Model");
+		$class_name = YZE_Object::format_class_name($table,"Model");
 		if(class_exists($class_name)){
 			return $class_name;
 		}
@@ -404,20 +401,4 @@ class $class extends YZE_Model{
 	}
 }
 
-class Generate_Refreshmodel_Script extends Generate_Model_Script{
-	public function generate(){
-		$argv = $this->args;
-		$cls = $argv['class_name'];
-
-		$argv['module_name'] = constant("$cls::MODULE_NAME");
-		$argv['table_name']  = constant("$cls::TABLE");
-		$argv['class_name']  = preg_replace("{_model}", "",
-				preg_replace("{\|?app\|".$argv['module_name']."\|}", "",
-						str_replace("\\", "|", $cls)));
-		$this->args = $argv;
-		parent::generate();
-	}
-
-
-}
 ?>

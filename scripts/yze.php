@@ -301,13 +301,12 @@ generate model，%s back:
 		echo get_colored_text(wrap_output(__("\tmodule is invalid, please check:  ")), "red");
 	}
 
-	$model = rtrim($table,"s");
 
 	return array(
 		"cmd" => "model",
 		"base"=>"table",
 		"module_name"=>$module,
-		"class_name"=>$model,
+		"class_name"=>$table,
 		"table_name"=>$table,
 	);
 }

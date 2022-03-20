@@ -95,15 +95,11 @@ trait Graphql__Schema
 
     private function schema_Mutation_Type($models, GraphqlSearchNode $node)
     {
+        // 每个表的单记录更新
+        // TODO controller的action映射
         $queryFileds = [];
-        foreach ($this->basic_types() as $type => $info) {
-            $field = new GraphqlField(
-                'set' . ucfirst(strtolower($type)),
-                new GraphqlType($type, null, GraphqlType::KIND_SCALAR),
-                'Set the ' . $info['description'] . ' field',
-                [new GraphqlInputValue("value", new GraphqlType($type, null, GraphqlType::KIND_SCALAR))]
-            );
-            $queryFileds[] = $field;
+        foreach ($this->getModelMutations($models) as $mutationInfo) {
+            $queryFileds[] = $mutationInfo['field'];
         }
 
         $type = new GraphqlType("YangzieMutation", "Yangzie Mutation entry", GraphqlType::KIND_OBJECT, null, $queryFileds);

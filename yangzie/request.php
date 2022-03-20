@@ -56,36 +56,36 @@ class YZE_Request extends YZE_Object {
         $this->post [$name] = $value;
         return $this;
     }
-    public function get_from_post($name, $default = null) {
+    public function get_from_post($name, $default = null, $cutoff_length=null) {
         if (array_key_exists ( $name, $this->post )) {
-            return @$this->post [$name];
+            return $cutoff_length ? substr(@$this->post [$name], 0, $cutoff_length) : $this->post [$name];
         }
         return $default;
     }
     public function get_from_server($name) {
         return @$this->server [$name];
     }
-    public function get_from_cookie($name, $default = null) {
+    public function get_from_cookie($name, $default = null, $cutoff_length=null) {
         if (array_key_exists ( $name, $this->cookie )) {
-            return @$this->cookie [$name];
+            return $cutoff_length ? substr(@$this->cookie [$name], 0, $cutoff_length) : @$this->cookie [$name];
         }
         return $default;
     }
-    public function get_from_get($name, $default = null) {
+    public function get_from_get($name, $default = null, $cutoff_length=null) {
         if (array_key_exists ( $name, $this->get )) {
-            return @$this->get [$name];
+            return $cutoff_length ? substr(@$this->get [$name], 0, $cutoff_length) : @$this->get [$name];
         }
         return $default;
     }
-    public function get_from_request($name, $default = null) {
+    public function get_from_request($name, $default = null, $cutoff_length=null) {
         if (array_key_exists ( $name, $this->post )) {
-            return @$this->post [$name];
+            return $cutoff_length ? substr(@$this->post [$name], 0, $cutoff_length) : $this->post [$name];
         }
         if (array_key_exists ( $name, $this->cookie )) {
-            return @$this->cookie [$name];
+            return $cutoff_length ? substr(@$this->cookie [$name], 0, $cutoff_length) : @$this->cookie [$name];
         }
         if (array_key_exists ( $name, $this->get )) {
-            return @$this->get [$name];
+            return $cutoff_length ? substr(@$this->get [$name], 0, $cutoff_length) : @$this->get [$name];
         }
         return $default;
     }

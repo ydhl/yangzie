@@ -1,5 +1,6 @@
 <?php
 namespace yangzie;
+use app\vendor\Before_Save_Model;
 /**
  * model抽象，封装了基本的表与model的映射、操作。
  * yangzie约定表都必需包含以下的字段内容：
@@ -12,7 +13,7 @@ namespace yangzie;
  *
  */
 abstract class YZE_Model extends YZE_Object{
-	use Graphql_Query;
+	use Graphql_Query,Before_Save_Model;
 	/**
 	 * @var YZE_SQL
 	 */
@@ -142,6 +143,7 @@ abstract class YZE_Model extends YZE_Object{
 		return array_key_exists($column,static::$columns);
 	}
 
+	
 	/**
 	 * 对model转换成json对象
 	 *
@@ -344,6 +346,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param string $sql 完整的判断查询sql
 	 */
 	public function save($type=YZE_SQL::INSERT_NORMAL, YZE_SQL $sql=null){
+		$this->beforeSave();
 	    YZE_DBAImpl::getDBA()->save($this, $type, $sql);
 		return $this;
 	}
@@ -576,7 +579,7 @@ abstract class YZE_Model extends YZE_Object{
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		$obj = is_array($obj) ? $obj[$alias] : $obj;
-		return $obj ? $obj->Get("COUNT_ALIAS") : 0;
+		return intval($obj ? $obj->Get("COUNT_ALIAS") : 0);
 	}
 	/**
 	 * 返回sum结果, 该方法调用后sql中where部分会保留

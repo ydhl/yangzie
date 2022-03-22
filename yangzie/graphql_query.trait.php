@@ -16,9 +16,8 @@ trait Graphql_Query{
                 throw new YZE_FatalException("not support operation: " . $op);
         }
     }
-    private function filter_array_value($values){
+    private function filter_array_value($dba, $values){
         $_ = [];
-        $dba = YZE_DBAImpl::getDBA();
         foreach ((array)$values as $v){
             $_[] = $dba->quote($v);
         }
@@ -92,7 +91,6 @@ trait Graphql_Query{
     public function model_query($class, GraphqlSearchNode $node, &$total=0, $wheres=[], GraphqlQueryClause $clause=null, $id=null){
         $table = $class::TABLE;
         $dba = YZE_DBAImpl::getDBA($class::DB_NAME);
-
 
         // 提取缺省的model的wheres，clause，id三个参数形参实参，对于自定义的字段，这些参数其实并没有用到。
         foreach ((array)$node->args as $arg){
@@ -172,9 +170,9 @@ trait Graphql_Query{
                 $op = $this->get_op($_where->op);
                 $where .= ' `'.$_where->column.'` '.$_where->op;
                 if ($op == "in" || $op =='not in' || $op =='find_in_set'){
-                    $where .= "(".$this->filter_array_value($_where->value).")";
+                    $where .= "(".$this->filter_array_value($dba, $_where->value).")";
                 }else{
-                    $where .= ' '.$dba->quote($_where->value);
+                    $where .= ' '.$dba->quote(reset($_where->value));
                 }
                 if ($index+1 != count($wheres)){
                     $where .= ' '.$this->get_andor($_where->andor);

@@ -72,9 +72,9 @@ trait Graphql_Mutation
 
             $result = [];
             foreach ($node->sub as $subNode){
-                $result[$subNode->name] = $model->get($subNode->name);
+                $result[$subNode->alias?:$subNode->name] = $model->get($subNode->name);
             }
-            $results[] = $result;
+            $results[$node->alias?:$node->name] = $result;
         }
         return GraphqlResult::success($this, $results);
     }

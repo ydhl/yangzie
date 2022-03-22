@@ -12,7 +12,7 @@ namespace yangzie;
  * @link yangzie.yidianhulian.com
  */
 class Graphql_Controller extends YZE_Resource_Controller {
-    use Graphql__Schema, Graphql__Type, Graphql__Typename, Graphql_Query;
+    use Graphql__Schema, Graphql__Type, Graphql__Typename, Graphql_Query, Graphql_Mutation;
     private $operationType = 'query';
     private $operationName;
     /**
@@ -26,7 +26,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
      */
     private $varDefault;
 
-    private $fetchActRegx = "/:|\{|\}|\(.+\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
+    private $fetchActRegx = "/:|\{|\}|\(.+?\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
     private $allModelTypes;
     public function response_headers(){
         return [
@@ -45,9 +45,11 @@ class Graphql_Controller extends YZE_Resource_Controller {
             list($query, $vars) = $this->fetch_Request();
             $this->vars = $vars;
             $nodes = $this->parse($query);
+            if ($this->operationType == "mutation"){
+                return $this->mutation($nodes);
+            }
             $result = [];
             $count = [];
-
             // 2. 对每个结构进行数据查询
             foreach ($nodes as $node) {
                 //2.1 内省特殊的查询：如__SCHEMA 向服务端询问有哪些可查询端内容 https://graphql.cn/learn/introspection/
@@ -134,7 +136,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
         //mutation operationName {
         //mutation operationName(arg) {的情况
         if (!strcasecmp('query', $acts[0]) || !strcasecmp('mutation', $acts[0])){
-            $this->operationType = $acts[0];
+            $this->operationType = strtolower($acts[0]);
             if ($acts[1]!="{"){
                 $this->operationName = $acts[1];
                 if ($acts[2]!='{'){
@@ -252,6 +254,8 @@ class Graphql_Controller extends YZE_Resource_Controller {
      *
      * (a:1,b:2)
      *
+     * (wheres:[{column:"name",op: "like", value:[$name]}])
+     *
      * @param $argString
      * @return array
      */
@@ -272,6 +276,10 @@ class Graphql_Controller extends YZE_Resource_Controller {
 
             // case 0 在没有值内容时，遇到的元字符
             if (in_array($c, ['{', '}', '[', ']']) && !$isHandleValue){
+                if($c =="]"){
+                    $acts[] = join('', $words);//[$name]的情况
+                    $words = [];
+                }
                 $acts[] = $c;
                 continue;
             }
@@ -339,7 +347,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
 
             $words[] = $c;
         }
-        return $acts;
+        return array_filter($acts);
     }
 
     private function array_key_last($array){
@@ -365,7 +373,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $index += $subLength;
                 $key_last = $this->array_key_last($args);
                 if ($key_last){
-                    $args[$this->array_key_last($args)] = $jsonValue;
+                    $args[$key_last] = $jsonValue;
                 }else{
                     $args[] = $jsonValue;
                 }

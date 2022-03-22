@@ -260,7 +260,6 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @return array
      */
     private function parse_args($argString){
-        //
         $acts = [];
         $index = 0;
         $words = [];
@@ -277,7 +276,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
             // case 0 在没有值内容时，遇到的元字符
             if (in_array($c, ['{', '}', '[', ']']) && !$isHandleValue){
                 if($c =="]"){
-                    $acts[] = join('', $words);//[$name]的情况
+                    if ($words) $acts[] = join('', $words);//[$name]的情况
                     $words = [];
                 }
                 $acts[] = $c;
@@ -347,7 +346,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
 
             $words[] = $c;
         }
-        return array_filter($acts);
+        return $acts;
     }
 
     private function array_key_last($array){
@@ -415,6 +414,7 @@ class Graphql_Controller extends YZE_Resource_Controller {
                 $subLength = 0;
                 $jsonValue = $this->fetch_Args_array($act == "[" ? "]" : "}",array_slice($acts, $index), $subLength);
                 $index += $subLength;
+
                 $currArg->value = $jsonValue;
                 $args[] = $currArg;
                 $currArg = new GraphqlSearchArg();

@@ -427,26 +427,26 @@ class GraphqlQueryClause{
      * 每页条数
      * @var int
      */
-    public $count;
+    public $limit;
 
     /**
      * @param string $orderby
      * @param string $groupby
      * @param string $sort
      * @param int $page
-     * @param int $count
+     * @param int $limit
      */
-    public function __construct(string $orderby, string $groupby="", string $sort="DESC", int $page=1, int $count=10)
+    public function __construct(string $orderby="", string $groupby="", string $sort="DESC", int $page=1, int $limit=10)
     {
         $this->orderby = $orderby;
         $this->groupby = $groupby;
         $this->sort = $sort;
         $this->page = $page;
-        $this->count = $count;
+        $this->limit = $limit;
     }
 
-    public static function build($clause){
-        return new GraphqlQueryClause(@$clause['orderBy'],@$clause['groupBy'],@$clause['sort'],@$clause['page'],@$clause['count']);
+    public static function build(array $clause){
+        return new GraphqlQueryClause(@$clause['orderBy']?:"",@$clause['groupBy']?:"",@$clause['sort']?:"DESC",@$clause['page']?:1,@$clause['limit']?:10);
     }
 }
 

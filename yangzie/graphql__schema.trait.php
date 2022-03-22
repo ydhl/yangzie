@@ -474,7 +474,7 @@ trait Graphql__Schema
         $result[] = new GraphqlInputValue("sort", $typeIntro, __("ASC / DESC"));
         $result[] = new GraphqlInputValue("groupBy", $typeIntro, __("分组"));
         $result[] = new GraphqlInputValue("page", $numberTypeIntro, __("当前页"), "1");
-        $result[] = new GraphqlInputValue("count", $numberTypeIntro, __("每页大小"), "10");
+        $result[] = new GraphqlInputValue("limit", $numberTypeIntro, __("每页大小"), "10");
         return $result;
     }
 

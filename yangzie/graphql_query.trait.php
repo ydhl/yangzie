@@ -184,7 +184,7 @@ trait Graphql_Query{
         if ($clause){
             $page = intval($clause->page);
             $page = $page <=0 ? 1 : $page;
-            $count = intval($clause->count);
+            $count = intval($clause->limit);
             $count = $count <=0 ? 10 : $count;
             $page = ($page - 1 ) * $count;
 

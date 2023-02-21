@@ -6,7 +6,7 @@ namespace yangzie;
  * graphql 查询处理
  */
 trait Graphql_Query{
-    private function get_andor($op){
+    private static function get_andor($op){
         switch (strtolower($op)) {
             case 'and':
                 return 'and';
@@ -16,14 +16,15 @@ trait Graphql_Query{
                 throw new YZE_FatalException("not support operation: " . $op);
         }
     }
-    private function filter_array_value($dba, $values){
+    private static function filter_array_value($dba, $values){
         $_ = [];
         foreach ((array)$values as $v){
             $_[] = $dba->quote($v);
         }
-        return join(",", $_);
+        return $_ ? join(",", $_) : 'null';
     }
-    private function get_op($op){
+    private static function get_op($op){
+        $op = strtolower($op);
         switch ($op){
             case '=': return '=';
             case '>=': return '>=';
@@ -68,16 +69,15 @@ trait Graphql_Query{
                 }, $basename);
                 $basename = 'app\\' . $moduleName . '\\' . join("_", $basename);
                 require_once $model;
-                $modelObject = new $basename();
-                if (method_exists($modelObject,"is_enable_graphql") && $modelObject->is_enable_graphql()){
-                    $models[$modelObject::TABLE] = $modelObject::CLASS_NAME;
+                if (method_exists($basename,"is_enable_graphql") && $basename::is_enable_graphql()){
+                    $models[$basename::TABLE] = $basename::CLASS_NAME;
                 }
             }
         }
         return $models;
     }
     /**
-     * 针对model的查询
+     * 针对model的查询, 返回数组结果
      * @param $class
      * @param GraphqlSearchNode $node
      * @param $total 返回满足条件的总数
@@ -88,10 +88,9 @@ trait Graphql_Query{
      * @throws YZE_DBAException
      * @throws YZE_FatalException
      */
-    public function model_query($class, GraphqlSearchNode $node, &$total=0, $wheres=[], GraphqlQueryClause $clause=null, $id=null){
+    public static function model_query($class, GraphqlSearchNode $node, &$total=0, $wheres=[], GraphqlQueryClause $clause=null, $id=null){
         $table = $class::TABLE;
         $dba = YZE_DBAImpl::getDBA($class::DB_NAME);
-
         // 提取缺省的model的wheres，clause，id三个参数形参实参，对于自定义的字段，这些参数其实并没有用到。
         foreach ((array)$node->args as $arg){
             if ($arg->name == 'wheres' && !$wheres){
@@ -105,8 +104,6 @@ trait Graphql_Query{
 
 
         $result = [];
-        $searchColumns = [];
-        $foreignKeyColumns = [];
         /**
          * 外键关联配置：[filed_name=>[column=>关联的字段, target_class=>"",target_column=>"", 'node'=>查询结构体,'ids'=>[关联的字段的具体值列表]]]
          */
@@ -122,22 +119,18 @@ trait Graphql_Query{
 
         if (!class_exists($class)) throw new YZE_FatalException("field '{$node->name}' not exist");
         $modelObject = new $class();
-        $columnConfig = $modelObject->get_columns();
-        $foreignKeyColumns[] = $modelObject->get_key_name();
+        $columnConfig = $modelObject::get_columns();
 
-        foreach($modelObject->get_relation_columns() as $column => $config){
+        foreach($class::get_relation_columns() as $column => $config){
             $config['column'] = $column;
             $relationConfig[$config['graphql_field']] = $config;
         }
-        $custom_fields = [];
-        if (method_exists($modelObject, "custom_graphql_fields")){
-            foreach ($modelObject->custom_graphql_fields() as $field){
-                $custom_fields[] = $field->name;
-            }
-        }
+        $custom_fields = array_keys($class::custom_graphql_fields());
         $queryCustomFields = [];
 
+        $aliasMap = [];// 查询的field和别名映射
         foreach ($node->sub as $sub) {
+            if ($sub->alias) $aliasMap[$sub->name][] = $sub->alias;
             if ($sub->name == "__typename"){ // 内省关键字处理
                 $result["__typename"] = "__Field";
             }elseif (in_array($sub->name, $custom_fields)){ // 查询通过custom_graphql_field定义的字段
@@ -146,13 +139,11 @@ trait Graphql_Query{
             }elseif (!$sub->sub ){// 直接查询的字段
                 if (!@$columnConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
                 $result[$sub->name] = null;
-                $searchColumns[] = $sub->name;
             }else if (@$relationConfig[$sub->name]){ // 查询的关联表
                 $result[$sub->name] = null;
                 $searchAssocTables[$sub->name] = $relationConfig[$sub->name];
                 $searchAssocTables[$sub->name]['node'] = $sub;
                 $searchAssocTables[$sub->name]['ids'] = [];
-                $foreignKeyColumns[] = $searchAssocTables[$sub->name]['column'];
             }else{
                 throw new YZE_FatalException("field '{$sub->name}' not exist");
             }
@@ -160,33 +151,32 @@ trait Graphql_Query{
 
         // 查询字段
         $where = "";
-        if ($id){
-            $where .= ' '.$modelObject->get_key_name()."=".$id;
+        if (isset($id)){
+            if(is_numeric($id)){
+                $where .= ' '.$modelObject->get_key_name()."=".$id;
+            }else{
+                $where .= ' '.$modelObject->get_uuid_name()."=".$dba->quote($id);
+            }
         }else if ($wheres){
             foreach ($wheres as $index => $_where){
                 if (!@$columnConfig[$_where->column]){
                     throw new YZE_FatalException("field '".$_where->column."' not exist");
                 }
-                $op = $this->get_op($_where->op);
+                $op = self::get_op($_where->op);
                 $where .= ' `'.$_where->column.'` '.$_where->op;
                 if ($op == "in" || $op =='not in' || $op =='find_in_set'){
-                    $where .= "(".$this->filter_array_value($dba, $_where->value).")";
-                }else{
-                    $where .= ' '.$dba->quote(reset($_where->value));
+                    $where .= "(".self::filter_array_value($dba, $_where->value).")";
+                }else if(!in_array($op ,["is null",'is not null']) ){
+                    $where .= ' '.$dba->quote(is_array($_where->value) ? reset($_where->value) : $_where->value);
                 }
                 if ($index+1 != count($wheres)){
-                    $where .= ' '.$this->get_andor($_where->andor);
+                    $where .= ' '.self::get_andor($_where->andor);
                 }
             }
         }
         $pagination = '';
         $orderby = '';
         if ($clause){
-            $page = intval($clause->page);
-            $page = $page <=0 ? 1 : $page;
-            $count = intval($clause->limit);
-            $count = $count <=0 ? 10 : $count;
-            $page = ($page - 1 ) * $count;
 
             if (@$clause->orderby){
                 $sorts = ['ASC'=>'ASC','DESC'=>'DESC',''=>'ASC'];
@@ -201,18 +191,23 @@ trait Graphql_Query{
                 $orderby .= ' group by `'.$clause->groupby."`";
             }
 
-            $pagination = " limit {$page}, $count";
+            if ($clause->page>=1){
+                $page = $clause->page;
+                $count = $clause->limit;
+                $count = $count <=0 ? 10 : $count;
+                $page = ($page - 1 ) * $count;
+                $pagination = " limit {$page}, $count";
+            }
         }
-
         $totalRst = $dba->nativeQuery("select count(*) as t from `{$table}` ".($where ? "where {$where}" : "").$orderby);
         $totalRst->next();
         $total = intval($totalRst->f('t'));
-
-        $rsts = $dba->nativeQuery("select `".join('`,`', array_unique(array_merge($foreignKeyColumns,$searchColumns)))
+        $rsts = $dba->nativeQuery("select `".join('`,`', array_keys($modelObject::get_columns()))
             ."` from `{$table}` ".($where ? "where {$where}" : "").$orderby.$pagination);
 
         $rsts = $rsts->get_results();
-        // 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
+
+        //0. 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
         $rsts = array_map(function ($item) use($result, &$searchAssocTables, $custom_fields){
             // 关联表的外键id列表，后面关联表查询使用
             foreach ($searchAssocTables as &$value){
@@ -222,12 +217,122 @@ trait Graphql_Query{
             return array_merge($result, $item);
         }, $rsts);
 
+        //1. 自定义查询的处理
+        foreach ((array)$queryCustomFields as $field => $sub){
+            foreach ($rsts as $index => $item){
+                $modelObject = $class::from_array($item);
+                $rsts[$index][$field] = $modelObject->query_graphql_fields($sub);
+            }
+        }
+        //2. 查询关联表的字段
+
+        foreach ($searchAssocTables as $fieldName=>$assocInfo){
+            $targetClass = $assocInfo['target_class'];
+            $targetColumn = $assocInfo['target_column'];
+            if (!class_exists($targetClass)) {
+                continue;
+            }
+            $key_name = $targetClass::KEY_NAME;
+            $assocTableRecords[$fieldName] = [];
+
+            // 判断是否有id field，为了关联查询，需要把关联表的主键也查询出来, 如果没有id，则增加一个
+            $primaryKeyField = GraphqlIntrospection::find_search_node_by_name($assocInfo['node']->sub, $key_name);
+            if (!$primaryKeyField->has_value()){
+                $id = new GraphqlSearchNode();
+                $id->name = $key_name;
+                $assocInfo['node']->sub[] = $id;
+            }else{
+                $key_name = $primaryKeyField->alias?:$key_name;
+            }
+
+            $asscTotal = 0;
+            $assocData = static::model_query($targetClass, $assocInfo['node'], $asscTotal,
+                [new GraphqlQueryWhere($targetColumn, 'in', array_unique($assocInfo['ids']))]);
+            foreach($assocData as $assocItem){
+                $key = $assocItem[$key_name];
+                if (!$primaryKeyField->has_value()){
+                    unset($assocItem[$key_name]);
+                }
+                $assocTableRecords[$fieldName][$key] = $assocItem;
+            }
+        }
+
+        //3. 去掉那些为了关联查询而增加的额外查询字段，只返回用户查询的内容
+        $rsts = array_map(function ($item) use($result, $assocTableRecords, $searchAssocTables){
+            // 把关联表对应的数据放到item中对应的位置去
+
+            foreach($assocTableRecords as $fieldName => $data){
+                $myColumn = $searchAssocTables[$fieldName]['column'];
+                $item[$fieldName] = @$data[$item[$myColumn]] ?: null;
+            }
+            // 移出因为关联查询而临时添加的字段
+            return array_intersect_key($item,$result);
+        }, $rsts);
+
+        // 别名替换
+        if ($aliasMap){
+            $rsts = array_map(function ($item) use ($aliasMap) {
+                foreach ($item as $name => $value) {
+                    if ($aliasMap[$name]) {
+                        foreach ($aliasMap[$name] as $alias){
+                            $item[$alias] = $value;
+                        }
+                        unset($item[$name]);
+                    }
+                }
+                return $item;
+            }, $rsts);
+        }
+        return $rsts?:null;
+    }
+
+    public function model_get(GraphqlSearchNode $node){
+        $result = [];
+        /**
+         * 外键关联配置：[filed_name=>[column=>关联的字段, target_class=>"",target_column=>"", 'node'=>查询结构体,'ids'=>[关联的字段的具体值列表]]]
+         */
+        $searchAssocTables = [];
+        /**
+         * 外键关联配置：[filed_name=>[column=>关联的字段, target_class=>"",target_column=>""]]
+         */
+        $relationConfig = [];
+
+        $columnConfig = $this::get_columns();
+
+        foreach(static::get_relation_columns() as $column => $config){
+            $config['column'] = $column;
+            $relationConfig[$config['graphql_field']] = $config;
+        }
+        $custom_fields = array_keys(static::custom_graphql_fields());
+        $queryCustomFields = [];
+
+        $aliasMap = [];// 查询的field和别名映射
+        foreach ($node->sub as $sub) {
+            if ($sub->alias) $aliasMap[$sub->name][] = $sub->alias;
+            if ($sub->name == "__typename"){ // 内省关键字处理
+                $result["__typename"] = "__Field";
+            }elseif (in_array($sub->name, $custom_fields)){ // 查询通过custom_graphql_field定义的字段
+                $result[$sub->name] = null;
+                $queryCustomFields[$sub->name] = $sub;
+            }elseif (!$sub->sub ){// 直接查询的字段
+                if (!@$columnConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
+                $result[$sub->name] = null;
+            }else if (@$relationConfig[$sub->name]){ // 查询的关联表
+                $result[$sub->name] = null;
+                $searchAssocTables[$sub->name] = $relationConfig[$sub->name];
+                $searchAssocTables[$sub->name]['node'] = $sub;
+                $searchAssocTables[$sub->name]['id'] = $this->get($relationConfig[$sub->name]['column']);
+            }else{
+                throw new YZE_FatalException("field '{$sub->name}' not exist");
+            }
+        }
+
+        // 对查询的数据中的每行进行过滤，确保返回的顺序和请求的顺序一直
+        $rsts = array_merge($result, $this->Get_records());
+
         //自定义查询的处理
         foreach ((array)$queryCustomFields as $field => $sub){
-            foreach ($rsts as &$item){
-                $modelObject = $class::from_array($item);
-                $item[$field] = $modelObject->query_graphql_fields($sub);
-            }
+            $rsts[$field] = $this->query_graphql_fields($sub);
         }
         // 查询关联表的字段
         foreach ($searchAssocTables as $fieldName=>$assocInfo){
@@ -236,45 +341,22 @@ trait Graphql_Query{
             if (!class_exists($targetClass)) {
                 continue;
             }
-            $targetModel = new $targetClass();
-            $key_name = $targetModel->get_key_name();
-            $assocTableRecords[$fieldName] = [];
-
-            // 判断是否有id查询，为了关联查询，需要把关联表的主键也查询出来
-            $hasKey = GraphqlIntrospection::find_search_node_by_name($assocInfo['node']->sub, $key_name);
-            if (!$hasKey->has_value()){
-                $id = new GraphqlSearchNode();
-                $id->name = $key_name;
-                $assocInfo['node']->sub[] = $id;
-            }
-
-            $total = 0;
-            foreach($this->model_query($targetClass, $assocInfo['node'], $total,
-                [new GraphqlQueryWhere($targetColumn, 'in', array_unique($assocInfo['ids']))]) as $item){
-                $key = $item[$key_name];
-                if (!$hasKey->has_value()){
-                    unset($item[$key_name]);
+            $targetModel = $targetClass::from()->where($targetColumn."=:id")->getSingle([":id"=>$assocInfo['id']]);
+            $rsts[$fieldName] = $targetModel ? $targetModel->model_get($assocInfo['node']) : null;
+        }
+        $rsts = array_intersect_key($rsts,$result);
+        // 别名替换
+        if ($aliasMap){
+            foreach ($rsts as $name => $value) {
+                if ($aliasMap[$name]) {
+                    foreach ($aliasMap[$name] as $alias){
+                        $rsts[$alias] = $value;
+                    }
+                    unset($rsts[$name]);
                 }
-                $assocTableRecords[$fieldName][$key] = $item;
             }
         }
-        //去掉那些为了关联查询而增加的额外查询字段，只返回用户查询的内容
-        $rsts = array_map(function ($item) use($foreignKeyColumns, $searchColumns, $assocTableRecords, $searchAssocTables){
-            // 把关联表对应的数据放到item中对应的位置去
-            foreach($assocTableRecords as $fieldName => $data){
-                $myColumn = $searchAssocTables[$fieldName]['column'];
-                $item[$fieldName] = @$data[$item[$myColumn]] ?: null;
-            }
-            // 移出因为关联查询而临时添加的字段
-            foreach ($foreignKeyColumns as $column){
-                if (!in_array($column, $searchColumns)){
-                    unset($item[$column]);
-                }
-            }
-            return $item;
-        }, $rsts);
-
-        return $rsts?:null;
+        return $rsts;
     }
 }
 

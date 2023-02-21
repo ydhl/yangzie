@@ -277,7 +277,7 @@ class YZE_Request extends YZE_Object {
 
             if (! $acl->check_byname ( $aro, $aco_name )) {
 
-                throw new YZE_Permission_Deny_Exception ( printf ( __ ( "You do not have permission(%s:%s)" ), \app\yze_get_aco_desc ( $aco_name ), $aro) );
+                throw new YZE_Permission_Deny_Exception ( sprintf ( __ ( "You do not have permission(%s:%s)" ), \app\yze_get_aco_desc ( $aco_name ), $aro) );
             }
 
         }

@@ -177,13 +177,13 @@ class YZE_ACL extends YZE_Object{
 	    
 	    foreach ((array)$array as $aco) {
 	        $newaco = strtr($aco, array("*"=>".*"));
-	        if (preg_match("{^".$newaco."}", $aconame)){
+	        if (preg_match("{^".$newaco."}i", $aconame)){
 	            return null;
 	        }
 	    }
 		foreach ((array)$this->acos_aros as $aco=>$ignore) {
 			$newaco = strtr($aco, array("*"=>".*"));
-			if (preg_match("{^".$newaco."}", $aconame)){
+			if (preg_match("{^".$newaco."}i", $aconame)){
 				return $aco;
 			}
 		}
@@ -198,7 +198,7 @@ class YZE_ACL extends YZE_Object{
 		        $k .= "/*";
 		    }
 			$k = strtr($k, array("*"=>".*"));
-			if (preg_match("{^".$k."$}", $check)) {
+			if (preg_match("{^".$k."$}i", $check)) {
 				return true;
 			}
 		}

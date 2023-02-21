@@ -37,7 +37,10 @@ trait Graphql_Mutation
                 $removeMutation,
                 new GraphqlType($table, null, GraphqlType::KIND_OBJECT),
                 'remove the ' . $table . ' record and unset the primary key'
-                ,[new GraphqlInputValue($keyName, $modelObject->get_Model_Field_Type($columnConfigs[$keyName], $keyName))]
+                ,[
+                    new GraphqlInputValue($keyName, $modelObject->get_Model_Field_Type($columnConfigs[$keyName], $keyName)),
+                    new GraphqlInputValue("uuid", new GraphqlType("String", null, 'SCALAR'))
+                ]
             );
             $_[$removeMutation] = ["field"=>$removeField,"class"=>$model];
         }
@@ -64,8 +67,13 @@ trait Graphql_Mutation
                 $model->set($arg->name, $arg->value);
             }
             if (preg_match("/^remove/", $node->name)){
-                $model->refresh();
-                $model->remove();
+                if ($model->get_key()){
+                    $class::remove_by_id($model->get_key());
+                }else if($model->get_uuid()){
+                    $class::remove_by_uuid($model->get_uuid());
+                }else{
+                    throw new YZE_FatalException($model->get_key_name()." or ".$model->get_uuid_name()." must specify one");
+                }
             }else{
                 $model->save();
             }

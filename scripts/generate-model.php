@@ -1,11 +1,15 @@
 <?php
 namespace yangzie;
 
+use app\App_Module;
+
 class Generate_Model_Script extends AbstractScript{
 	protected $base;
 	protected $module_name;
 	protected $table_name;
 	protected $class_name;
+	protected $db_name;
+	protected $uuid;
 	static $chain_tables = [];
 
 	public function generate(){
@@ -14,8 +18,10 @@ class Generate_Model_Script extends AbstractScript{
 		$this->module_name 	= $argv['module_name'];
 		$this->table_name 		= $argv['table_name'];
 		$this->class_name 		= $argv['class_name'];
+		$this->db_name 		= $argv['db_name'];
+		$this->uuid 		= $argv['uuid'];
 
-		if(empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
+		if(empty($this->db_name) || empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
 			die(YZE_SCRIPT_USAGE);
 		}
 
@@ -115,15 +121,11 @@ trait $class{
 	public function create_model_code($class, $method_class, &$column_mean){
 		$table = $this->table_name;
 		$package=$this->module_name;
-		$app_module = new \app\App_Module();
+		$dbName = $this->db_name;
 
-		$db = mysqli_connect(
-				$app_module->get_module_config("db_host"),
-				$app_module->get_module_config("db_user"),
-				$app_module->get_module_config("db_psw"),
-				$app_module->get_module_config("db_name"),
-				$app_module->get_module_config("db_port")
-				);
+		list('host'=>$host,'port'=>$port,'user'=>$user,'psw'=>$psw,'charset'=>$charset) = App_Module::getDBConfig($dbName);
+
+		$db = mysqli_connect($host, $user, $psw, $dbName, $port);
 
 		$importClass = [];
 		$relation_column = [];
@@ -133,7 +135,7 @@ trait $class{
 		mysqli_select_db($db, "INFORMATION_SCHEMA");
 		$result = mysqli_query($db, "select COLUMN_NAME,CONSTRAINT_NAME,
 		REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME from KEY_COLUMN_USAGE
-		where TABLE_SCHEMA = '".$app_module->get_module_config("db_name")."' and TABLE_NAME = '{$table}'
+		where TABLE_SCHEMA = '".$dbName."' and TABLE_NAME = '{$table}'
 		and referenced_column_name is not NULL");
 		while ($row=mysqli_fetch_assoc($result)) {
 			$col = rtrim($row['COLUMN_NAME'], '_id')."_".$row['REFERENCED_TABLE_NAME'];
@@ -170,8 +172,8 @@ trait $class{
 		}
 
 
-		mysqli_select_db($db, $app_module->get_module_config("db_name"));
-		mysqli_query($db, "set names ".$app_module->get_module_config("db_charset"));
+		mysqli_select_db($db, $this->db_name);
+		mysqli_query($db, "set names ".$charset);
 
 
 		$unique_key = array();
@@ -231,7 +233,12 @@ class $class extends YZE_Model{
     const TABLE= \"$table\";
     const MODULE_NAME = \"$package\";
     const KEY_NAME = \"$key\";
+	const UUID_NAME = \"$uuid\";
     const CLASS_NAME = 'app\\$package\\$class';
+    /**
+	 * model 所在的数据库名
+	 */
+	const DB_NAME = \"$dbName\";
     /**
      * @see YZE_Model::\$encrypt_columns 
      */
@@ -392,7 +399,9 @@ class $class extends YZE_Model{
 			"base"       => "table",
 			"module_name"=> $module,
 			"class_name" => preg_replace('/_model$/i', "", $class_name),
-			"table_name" => $table));
+			"table_name" => $table,
+			"uuid" => $this->uuid,
+			"db_name" => $this->db_name));
 		$object->generate();
 		echo "\r\n".get_colored_text(wrap_output(sprintf(__("    生成结束 %s ."), "\\app\\{$module}\\{$class_name}")), "blue", "white")."\r\n";
 
@@ -400,5 +409,4 @@ class $class extends YZE_Model{
 		return "\\app\\{$module}\\{$class_name}";
 	}
 }
-
 ?>

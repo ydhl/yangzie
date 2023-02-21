@@ -153,13 +153,13 @@ function yze_handle_request() {
         $request->auth ();
         $dba->beginTransaction();
 
-        $action = "YZE_ACTION_BEFORE_" .  strtoupper($request->the_method());
-        \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
+        $action = "YZE_ACTION_BEFORE_" .  strtoupper($request->get_request_method());
+        if(defined(@constant ( $action ))) \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
         \yangzie\YZE_Hook::do_hook(YZE_ACTION_BEFORE_DISPATCH, $controller);
         $response = $request->dispatch();
         \yangzie\YZE_Hook::do_hook(YZE_ACTION_AFTER_DISPATCH, $controller);
-        $action = "YZE_ACTION_AFTER_" .  strtoupper($request->the_method());
-        \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
+        $action = "YZE_ACTION_AFTER_" .  strtoupper($request->get_request_method());
+        if(defined(@constant ( $action ))) \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
 
         $dba->commit();
 

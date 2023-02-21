@@ -487,7 +487,7 @@ trait Graphql__Schema
     {
         if (!$node->has_value()) return [];
         return [
-            new GraphqlInputValue("id", new GraphqlType("ID",null, GraphqlType::KIND_SCALAR),__("主键查询, 当传入时忽略 wheres 参数")),
+            new GraphqlInputValue("id", new GraphqlType("ID",null, GraphqlType::KIND_SCALAR),__("主键(数字)或uuid（字符串）, 当传入时忽略 wheres 参数")),
             new GraphqlInputValue("wheres", new GraphqlType(null,null, GraphqlType::KIND_LIST, new GraphqlType('Where',null,  GraphqlType::KIND_OBJECT)), __("查询条件数组")),
             new GraphqlInputValue("clause", new GraphqlType('Clause',null, GraphqlType::KIND_OBJECT), __("分支、分页、排序")),
         ];

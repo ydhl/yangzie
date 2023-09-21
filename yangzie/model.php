@@ -1,6 +1,5 @@
 <?php
 namespace yangzie;
-use app\vendor\Before_Save_Model;
 
 /**
  * model抽象，封装了基本的表与model的映射、操作。
@@ -14,7 +13,7 @@ use app\vendor\Before_Save_Model;
  *
  */
 abstract class YZE_Model extends YZE_Object{
-	use Graphql_Query, Before_Save_Model;
+	use Graphql_Query;
 	/**
 	 * @var YZE_SQL
 	 */
@@ -136,6 +135,10 @@ abstract class YZE_Model extends YZE_Object{
 			$columnConfig['type'] == 'enum' ? 'ENUM' : 'SCALAR');
 	}
 
+	public function before_save(){
+
+	}
+
 	public function get_module_name(){
 		return $this::MODULE_NAME;
 	}
@@ -246,7 +249,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param int $id
 	 */
 	public static function find_by_id($id){
-		return YZE_DBAImpl::getDBA(static::DB_NAME)->find($id,get_called_class());
+		return YZE_DBAImpl::getDBA()->find($id,get_called_class());
 	}
 
 	/**
@@ -260,7 +263,7 @@ abstract class YZE_Model extends YZE_Object{
 	    }
 	    $ids = array_filter($ids);
 	    if( ! $ids)return $arr;
-	    foreach (YZE_DBAImpl::getDBA(static::DB_NAME)->find_by($ids, get_called_class()) as $obj){
+	    foreach (YZE_DBAImpl::getDBA()->find_by($ids, get_called_class()) as $obj){
 	        $arr[ $obj->id ] = $obj;
 	    }
 	    return $arr;
@@ -291,12 +294,12 @@ abstract class YZE_Model extends YZE_Object{
             $sql->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
         }
 
-        YZE_DBAImpl::getDBA(static::DB_NAME)->execute($sql);
+        YZE_DBAImpl::getDBA()->execute($sql);
 
         return true;
 	}
 	public static function remove_by_uuid($uuid){
-		$dba = YZE_DBAImpl::getDBA(static::DB_NAME);
+		$dba = YZE_DBAImpl::getDBA();
 		$dba->exec("delete from ".static::TABLE." where uuid=".$dba->quote($uuid));
 		return true;
 	}
@@ -336,7 +339,7 @@ abstract class YZE_Model extends YZE_Object{
 		    $sql->where("t", $entity->get_key_name(), YZE_SQL::EQ, $id);
 		}
 
-		YZE_DBAImpl::getDBA(static::DB_NAME)->execute($sql);
+		YZE_DBAImpl::getDBA()->execute($sql);
 		return true;
 	}
 
@@ -347,7 +350,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @throws YZE_DBAException
 	 */
 	public static function find_all(){
-		return YZE_DBAImpl::getDBA(static::DB_NAME)->findAll(get_called_class());
+		return YZE_DBAImpl::getDBA()->findAll(get_called_class());
 	}
 
 	/**
@@ -365,8 +368,8 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param string $sql 完整的判断查询sql
 	 */
 	public function save($type=YZE_SQL::INSERT_NORMAL, YZE_SQL $sql=null){
-		$this->beforeSave();
-	    YZE_DBAImpl::getDBA(static::DB_NAME)->save($this, $type, $sql);
+		$this->before_Save();
+	    YZE_DBAImpl::getDBA()->save($this, $type, $sql);
 		return $this;
 	}
 
@@ -397,7 +400,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * !!! 但这个对象所包含的数据还存在，只是主键不存在了
 	 */
 	public function remove(){
-		YZE_DBAImpl::getDBA(static::DB_NAME)->delete($this);
+		YZE_DBAImpl::getDBA()->delete($this);
 		return $this;
 	}
 
@@ -408,7 +411,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return
 	 */
 	public function refresh(){
-		$new = YZE_DBAImpl::getDBA(static::DB_NAME)->find($this->get_key(), get_class($this));
+		$new = YZE_DBAImpl::getDBA()->find($this->get_key(), get_class($this));
 		if($new){
 			foreach ($new->get_records() as $name => $value){
 				$this->set($name, $value);
@@ -424,7 +427,7 @@ abstract class YZE_Model extends YZE_Object{
 	public static function remove_all(){
 		$sql = new YZE_SQL();
 		$sql->delete()->from(get_called_class(),'a');
-		return YZE_DBAImpl::getDBA(static::DB_NAME)->execute($sql);
+		return YZE_DBAImpl::getDBA()->execute($sql);
 	}
 	/**
 	 * 把当前对象的主键值删除
@@ -465,14 +468,14 @@ abstract class YZE_Model extends YZE_Object{
 	public function __get($name){
 	    $value = $this->get($name);
 	    if (in_array($name, $this->encrypt_columns)){
-	    	$value = YZE_DBAImpl::getDBA(static::DB_NAME)->decrypt($value, YZE_DB_CRYPT_KEY);
+	    	$value = YZE_DBAImpl::getDBA()->decrypt($value, YZE_DB_CRYPT_KEY);
 		}
 	    return $value;
 	}
 
 	public function __set($name, $value){
 		if (in_array($name, $this->encrypt_columns)){
-			$value = YZE_DBAImpl::getDBA(static::DB_NAME)->encrypt($value, YZE_DB_CRYPT_KEY);
+			$value = YZE_DBAImpl::getDBA()->encrypt($value, YZE_DB_CRYPT_KEY);
 		}
 	    return $this->set($name, $value);
 	}
@@ -547,7 +550,7 @@ abstract class YZE_Model extends YZE_Object{
 			$this->sql->select($alias);
 		}
 
-		$obj = YZE_DBAImpl::getDBA(static::DB_NAME)->select($this->sql, $params);
+		$obj = YZE_DBAImpl::getDBA()->select($this->sql, $params);
 
 		$this->sql->clean_select();
 		return $obj;
@@ -569,7 +572,7 @@ abstract class YZE_Model extends YZE_Object{
 			$this->sql->select($alias);
 		}
 		$this->sql->limit(1);
-		$obj = YZE_DBAImpl::getDBA(static::DB_NAME)->getSingle($this->sql, $params);
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		return $obj;
 	}
@@ -591,7 +594,7 @@ abstract class YZE_Model extends YZE_Object{
 		}
 		$this->sql->count($alias , $field, "COUNT_ALIAS", $distinct);
 
-		$obj = YZE_DBAImpl::getDBA(static::DB_NAME)->getSingle($this->sql, $params);
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		$obj = is_array($obj) ? $obj[$alias] : $obj;
@@ -614,7 +617,7 @@ abstract class YZE_Model extends YZE_Object{
 		}
 		$this->sql->sum($alias, $field, "SUM_ALIAS");
 
-		$obj = YZE_DBAImpl::getDBA(static::DB_NAME)->getSingle($this->sql, $params);
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		$obj = is_array($obj) ? $obj[$alias] : $obj;
@@ -637,7 +640,7 @@ abstract class YZE_Model extends YZE_Object{
 		}
 		$this->sql->max($alias, $field, "MAX_ALIAS");
 
-		$obj = YZE_DBAImpl::getDBA(static::DB_NAME)->getSingle($this->sql, $params);
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		$obj = is_array($obj) ? $obj[$alias] : $obj;
@@ -660,7 +663,7 @@ abstract class YZE_Model extends YZE_Object{
 		}
 		$this->sql->min($alias, $field, "MIN_ALIAS");
 
-		$obj = YZE_DBAImpl::getDBA(static::DB_NAME)->getSingle($this->sql, $params);
+		$obj = YZE_DBAImpl::getDBA()->getSingle($this->sql, $params);
 		$this->sql->clean_select();
 		if ( ! $obj)return 0;
 		$obj = is_array($obj) ? $obj[$alias] : $obj;
@@ -676,7 +679,7 @@ abstract class YZE_Model extends YZE_Object{
 		if ( ! $this->sql->has_from()){
 			$this->sql->from(static::CLASS_NAME, $alias ? $alias : "m");
 		}
-		$statement = YZE_DBAImpl::getDBA(static::DB_NAME)->getConn()->prepare($this->sql->delete()->__toString());
+		$statement = YZE_DBAImpl::getDBA()->getConn()->prepare($this->sql->delete()->__toString());
 		if(! $statement->execute($params) ){
 		    throw new YZE_FatalException(join(",", $statement->errorInfo()));
 		}
@@ -696,7 +699,7 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public static function truncate(){
 		$sql = "TRUNCATE `".YZE_DB_DATABASE."`.`".static::TABLE."`;";
-		YZE_DBAImpl::getDBA(static::DB_NAME)->exec($sql);
+		YZE_DBAImpl::getDBA()->exec($sql);
 	}
 
 	private function initSql($alias=null) {
@@ -718,7 +721,7 @@ abstract class YZE_Model extends YZE_Object{
 
     public static function uuid() {
         $sql = "select uuid() as uuid";
-        $rst = YZE_DBAImpl::getDBA(static::DB_NAME)->nativeQuery($sql);
+        $rst = YZE_DBAImpl::getDBA()->nativeQuery($sql);
         $rst->next();
         return $rst->f("uuid");
     }

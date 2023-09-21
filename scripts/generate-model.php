@@ -13,12 +13,13 @@ class Generate_Model_Script extends AbstractScript{
 	static $chain_tables = [];
 
 	public function generate(){
+		$app_module = new \app\App_Module();
 		$argv = $this->args;
 		$this->base 				= $argv['base'];
 		$this->module_name 	= $argv['module_name'];
 		$this->table_name 		= $argv['table_name'];
 		$this->class_name 		= $argv['class_name'];
-		$this->db_name 		= $argv['db_name'];
+		$this->db_name 		= $argv['db_name'] ?: $app_module->get_module_config("db_name");
 		$this->uuid 		= $argv['uuid'];
 
 		if(empty($this->db_name) || empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
@@ -27,7 +28,6 @@ class Generate_Model_Script extends AbstractScript{
 
 		$generate_module = new Generate_Module_Script(array("module_name" => $this->module_name));
 		$generate_module->generate();
-
 		//Model
 		$model_class = YZE_Object::format_class_name($this->class_name,"Model");
         $method_class = $model_class."_Method";
@@ -122,10 +122,10 @@ trait $class{
 		$table = $this->table_name;
 		$package=$this->module_name;
 		$dbName = $this->db_name;
+		$uuid = 'uuid';
 
-		list('host'=>$host,'port'=>$port,'user'=>$user,'psw'=>$psw,'charset'=>$charset) = App_Module::getDBConfig($dbName);
-
-		$db = mysqli_connect($host, $user, $psw, $dbName, $port);
+		$app_module = new \app\App_Module();
+		$db = mysqli_connect($app_module->get_module_config("db_host"), $app_module->get_module_config("db_user"), $app_module->get_module_config("db_psw"), $dbName, $app_module->get_module_config("db_port"));
 
 		$importClass = [];
 		$relation_column = [];
@@ -173,7 +173,7 @@ trait $class{
 
 
 		mysqli_select_db($db, $this->db_name);
-		mysqli_query($db, "set names ".$charset);
+		mysqli_query($db, "set names UTF8MB4");
 
 
 		$unique_key = array();
@@ -193,7 +193,7 @@ trait $class{
 			if ($currEnums){
 			$enumFunction .= "
 	public function get_{$row['Field']}(){
-		return ['".join("','", array_keys($currEnums))."'];
+		return ['".join("','", array_values($currEnums))."'];
 	}";
 			}
 
@@ -209,7 +209,7 @@ trait $class{
 		}
 
 		$constantdefine = '';
-		foreach($constant as $c=>$v){
+		foreach($constant as $v=>$c){
 		    $constantdefine .= "
     const $v = '$c';";
 		}
@@ -268,7 +268,7 @@ class $class extends YZE_Model{
 		if(preg_match("/^enum\((?<v>.+)\)/",$type,$matches)){
 			foreach(explode(",",$matches['v']) as $c){
 				$c = trim($c,"'");
-				$constant[$c] = strtoupper($name)."_".strtr(strtoupper($c),array("-"=>"_"," "=>"_"));
+				$constant[strtoupper($name)."_".strtr(strtoupper($c),array("-"=>"_"," "=>"_"))] = $c;
 			}
 			return $constant;
 		}

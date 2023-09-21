@@ -333,7 +333,7 @@ class YZE_Simple_View extends YZE_View_Adapter {
 		if( ! file_exists("{$this->tpl}.{$this->format}.php")){
             //if format not exist then use tpl
             if($this->format == "tpl"){
-                throw new YZE_Resource_Not_Found_Exception(" view {$this->tpl}.{$this->format}.php not found");
+                throw new YZE_Resource_Not_Found_Exception(" 界面 {$this->tpl}.{$this->format}.php 不存在");
             }else{
                 $this->format = "tpl";
                 $this->check_view();
@@ -404,7 +404,7 @@ class YZE_JSON_View extends YZE_View_Adapter {
 	}
 	protected function display_self(){
 		header("Content-Type: application/json; charset=utf-8");
-		echo json_encode($this->data);
+		echo json_encode($this->data, JSON_UNESCAPED_UNICODE);
 	}
 
 
@@ -539,7 +539,7 @@ class YZE_Layout extends YZE_View_Adapter{
 		        include $layoutfile;
 		        return;
 		    }
-		    throw new YZE_Resource_Not_Found_Exception(" layout {$moblayoutfile} not found");
+		    throw new YZE_Resource_Not_Found_Exception(" 布局 {$moblayoutfile} 不存在");
 		}else{
 			echo $this->data['content_of_view'];
 		}

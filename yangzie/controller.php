@@ -151,7 +151,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
 
         if (strcasecmp ( $format, "json" ) == 0) {
             $this->layout = "";
-            return YZE_JSON_View::error($this, $e->getMessage());
+            return YZE_JSON_View::error($this, $e->getMessage(), $e->getCode());
         }else if (! $response) {
             $this->set_View_Data ( "exception", $e );
             $response = $this->getResponse ( YZE_APP_VIEWS_INC . "500" );

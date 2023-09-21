@@ -460,7 +460,7 @@ class YZE_Request extends YZE_Object {
 
         $method = $this->the_method();
         if (! method_exists ( $controller, $method )) {
-            throw new YZE_Resource_Not_Found_Exception ( $this->controller_class . "::" . $method . " not found" );
+            throw new YZE_Resource_Not_Found_Exception ( $this->controller_class . "::" . $method . " 不存在" );
         }
 
         return $controller->handle_request();

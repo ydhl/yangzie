@@ -341,10 +341,14 @@ class YZE_DBAImpl extends YZE_Object
 		$insert_id = $this->conn->lastInsertId();
 
 		if($type == YZE_SQL::INSERT_EXIST || $type == YZE_SQL::INSERT_NOT_EXIST){
-		    if( $rowCount ){
-		      //这种情况下last insert id 得不到?
-		        $entity->set($entity->get_key_name(), $insert_id);
-		    }
+		    if( !$rowCount ){
+		      	//这种情况下last insert id 得不到?
+				// 这种情况下只会查一个表
+				$check_table = $checkSql->get_select_table();
+				$checkSql->clean_select()->select(array_key_first($check_table), [$entity->get_key_name()]);
+				$checkRst = $this->getSingle($checkSql);
+				$insert_id = $checkRst->get($entity->get_key_name());
+			}
 		}elseif($type == YZE_SQL::INSERT_NOT_EXIST_OR_UPDATE){
 		    if( ! $rowCount ){
 		        $alias = $checkSql->get_alias($entity->get_table());
@@ -354,7 +358,6 @@ class YZE_DBAImpl extends YZE_Object
 		        $obj = $this->getSingle($checkSql);
 		        $insert_id = $obj->get_key();
 		    }
-		    $entity->set($entity->get_key_name(), $insert_id);
 		}else if($type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_UPDATE){
 		    //0 not modified, 1 insert, 2 update
 		    if($rowCount==2 && count($entity->get_unique_key())>1){
@@ -366,13 +369,13 @@ class YZE_DBAImpl extends YZE_Object
 		            $entity->set($field, $records[$field]);
 		        }
 		        $entity->save();
+				$insert_id = $entity->get_key();
 		    }
 		}else if($type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_IGNORE){
 		    $insert_id = 0;
 		}
 
-		$entity->set($entity->get_key_name(),$insert_id);
-
+		$entity->set($entity->get_key_name(), $insert_id);
 		\yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_INSERT, $entity);
 		return $insert_id;
 	}

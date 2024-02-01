@@ -89,8 +89,8 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * @throws YZE_FatalException
 	 */
 	public function check(){
-		if( version_compare(PHP_VERSION,'5.3.0','lt')){
-			throw new YZE_FatalException("要求5.3及以上PHP版本");
+		if( version_compare(PHP_VERSION,'7.3.0','lt')){
+			throw new YZE_FatalException("要求7.3及以上PHP版本");
 		}
 	}
 

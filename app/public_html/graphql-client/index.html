@@ -26,6 +26,9 @@
   </head>
 
   <body>
+  <script>
+    const api = 'http://yangzie.localhost/graphql';
+  </script>
     <div id="graphiql">Loading...</div>
     <script
       src="./graphiql.min.js"
@@ -33,11 +36,8 @@
     ></script>
     <script src="./renderExample.js" type="application/javascript"></script>
     <script>
-        //https://graphiql-test.netlify.app/
       function graphQLFetcher(graphQLParams) {
-        return fetch(
-          'http://yangzie.localhost/graphql',
-            // 'https://graphiql-test.netlify.app/.netlify/functions/schema-demo',
+        return fetch(api,
           {
             method: 'post',
             headers: {

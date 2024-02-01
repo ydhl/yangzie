@@ -91,7 +91,6 @@ function updateURL() {
   history.replaceState(null, null, newSearch);
 }
 
-const api = 'http://yangzie.localhost/graphql';
 
 // Render <GraphiQL /> into the body.
 // See the README in the top level of this module to learn more about

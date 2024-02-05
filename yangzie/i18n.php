@@ -3,7 +3,6 @@ namespace yangzie;
 
 use MO;
 use Translations;
-use const YZE_APP_INC;
 class YZE_I18N extends YZE_Object{
 	private $i18n = [];
 	private static $me;

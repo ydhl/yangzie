@@ -3,11 +3,11 @@
 namespace yangzie;
 
 /**
- * 表示一个请求的响应结果。可能是可查看的内容，比如html，xml，json，yaml等，
+ * 表示一个HTTP请求的响应结果。可能是可查看的内容，比如html，xml，json，yaml等，
  * 也可以只是一些http响应头，比如 301 redirect，304 not modified等
  *
  * @access public
- * @author liizii, <libol007@gmail.com>
+ * @author liizii
  */
 interface YZE_IResponse {
     /**
@@ -29,7 +29,7 @@ interface YZE_IResponse {
  * @author liizii
  *
  */
-class YZE_Response_304_NotModified implements YZE_IResponse {
+class YZE_Response_304_NotModified extends YZE_Object implements YZE_IResponse {
     private $headers;
     public function __construct($headers, YZE_Resource_Controller $controller) {
         $this->headers = $headers;
@@ -42,7 +42,6 @@ class YZE_Response_304_NotModified implements YZE_IResponse {
         }
     }
     public function add_header($header_name, $header_value) {
-        // TODO 头中需要进行什么编码？
         $this->headers [$header_name] = $header_value;
     }
     public function get_data($key) {
@@ -58,16 +57,15 @@ class YZE_Response_304_NotModified implements YZE_IResponse {
  * @author liizii
  *
  */
-class YZE_Redirect implements YZE_IResponse {
+class YZE_Redirect extends YZE_Object implements YZE_IResponse {
     private $destinationURI;
 	private $sourceController;
 
     /**
      * 输出重定向
      *
-     * @param unknown $destination_uri
+     * @param string $destination_uri
      * @param YZE_Resource_Controller $source_controller
-     * @param array $datas 传递给目标控制器的数据
      *
      */
     public function __construct($destination_uri,
@@ -89,7 +87,7 @@ class YZE_Redirect implements YZE_IResponse {
     }
 
     public function get_data($key){
-        return ['uri'=>$this->destinationURI];
+        return '';
     }
 }
 
@@ -111,7 +109,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	public $layout;
 
 	/**
-	 * 指定视图的容器视图，当前视图的内容将在mater view的$this->content_of_view();中输出，<br/>
+	 * 指定视图的容器视图，当前视图的内容将在master view的$this->content_of_view();中输出，<br/>
 	 * master view的内容可以嵌套，最顶级的master view的内容将在layout的$this->content_of_view();输出<br/>
 	 * master也支持content_of_section<br/>
 	 * <br/>
@@ -137,7 +135,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	 *
 	 * @var YZE_Resource_Controller
 	 */
-	protected $controller;#生成Response的Controller
+	protected $controller;
 
 
 	public function content_of_section($section){
@@ -152,6 +150,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	 * 响应视图上要显示的数据，具体是什么内容由响应视图自己决定
 	 *
 	 * @param array $data 其中的view指当前请求处理时控制器设置的数据，cache指处理请求时之前缓存下来的数据
+	 * @param YZE_Resource_Controller $controller
 	 */
 	public function __construct($data, YZE_Resource_Controller $controller){
 		$this->data = (array)$data;
@@ -253,16 +252,13 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	/**
 	 *
 	 * @param YZE_Resource_Controller $controller
-	 * @param unknown $data
-	 * @param string $success
-	 * @param number $errorcode
-	 * @param string $msg
-	 *
+	 * @param string $format
+	 * @param array $data
 	 * @return YZE_IResponse
 	 */
-	public static function build_view(YZE_Resource_Controller $controller, $format, $data, $data_type="data", $success=true, $errorcode=0, $msg=''){
-		if($format=="json") return new YZE_JSON_View($controller, $data, $data_type);
-		if($format=="xml") return new YZE_XML_View($controller, $data, $data_type);
+	public static function build_view(YZE_Resource_Controller $controller, $format, $data){
+		if($format=="json") return new YZE_JSON_View($controller, $data);
+		if($format=="xml") return new YZE_XML_View($controller, $data);
 		return new YZE_Notpl_View($data, $controller);
 
 	}
@@ -280,14 +276,15 @@ class YZE_Simple_View extends YZE_View_Adapter {
 
 	/**
 	 * 通过模板、数据构建视图输出
-	 * @param string $tpl 模板的路径全名。
+	 * @param string $tpl_name 模板的路径全名。
 	 * @param array $data
 	 * @param YZE_Resource_Controller $controller
+	 * @param string $format
 	 */
 	public function __construct($tpl_name, $data, YZE_Resource_Controller $controller, $format=null){
 		parent::__construct($data,$controller);
 		$this->tpl 		= $tpl_name;
-		$this->format 	= $format ? $format : $controller->getRequest()->get_output_format();
+		$this->format 	= $format ?: $controller->get_Request()->get_output_format();
 
 	}
 	protected function check_master(){
@@ -315,7 +312,7 @@ class YZE_Simple_View extends YZE_View_Adapter {
 			return true;
 		}
 
-		//如果不是默认的tpl格式，则换成tpl在找一遍，其他情况抛异常
+		//如果不是默认的tpl格式，则换成tpl再找一遍，其他情况抛异常
         if($this->format == "tpl"){
             throw new YZE_Resource_Not_Found_Exception(" master view {$this->master_view}.{$this->format}.php not found from below path:
             <ul><li> {$module_view_path}/{$this->master_view}.{$this->format}.php</li>
@@ -393,11 +390,7 @@ class YZE_JSON_View extends YZE_View_Adapter {
 	/**
 	 *
 	 * @param YZE_Resource_Controller $controller
-	 * @param unknown $data
-	 * @param string $data_type data 为数据，redirect 为重定向
-	 * @param string $success
-	 * @param number $errorcode
-	 * @param string $msg
+	 * @param array $data
 	 */
 	public function __construct(YZE_Resource_Controller $controller, $data){
 		parent::__construct($data,$controller);
@@ -435,11 +428,7 @@ class YZE_XML_View extends YZE_View_Adapter {
 	/**
 	 *
 	 * @param YZE_Resource_Controller $controller
-	 * @param unknown $data
-	 * @param string $data_type data 为数据，redirect 为重定向
-	 * @param string $success
-	 * @param number $errorcode
-	 * @param string $msg
+	 * @param string $data
 	 */
 	public function __construct(YZE_Resource_Controller $controller, $data){
 		parent::__construct($data, $controller);
@@ -487,14 +476,15 @@ class YZE_XML_View extends YZE_View_Adapter {
 }
 
 /**
- * layout指定义视图响应的数据定义格式，比如输出html是<html>....</html>，
- * 输出xml的格式是<xml>...</xml>，json是{}等等，
- *
+ * layout指定义视图响应的数据定义格式，比如输出html是&lt;html&gt;....&lt;/html&gt;，
+ * 输出xml的格式是&lt;xml&gt;...&lt;/xml&gt;，json是{}等等，
+ * <pre>
  * layout也是视图响应，也包含模板，它在定义的响应数据格式中加上请求的视图的内容，这其中有一些约定：
  * layout模板中的content_for_layout指的是请求的视图输出内容。
  * content_for_layout是固定的、表示视图内容的变量
  * 其它的需要在layout中显示的变量，可以在controller中通过set_view_data设置后，
  * 在layout模板中通过$this->view->get_data()取出来。
+ * </pre>
  *
  * @author liizii
  *

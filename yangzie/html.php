@@ -19,10 +19,8 @@ function yze_die(YZE_View_Adapter $view, YZE_Resource_Controller $controller) {
  * 返回当前控制器的出错信息
  *
  * @author leeboo
- *
  * @param $begin_tag 每条错误消息的开始html标签
  * @param $end_tag 每条错误消息的结束html标签
- *
  * @return string
  *
  */
@@ -57,7 +55,7 @@ function yze_merge_query_string($url, $args = array(), $format=null){
  * 输出js加载script代码, 工作路径是网站工作目录（public_html），
  * 所以js中如果有资源地址访问，请注意要调成相对于网站工作目录
  * @param string $bundle, 多个bundle用,号分隔
- * @param string version 版本
+ * @param string $version 版本
  */
 function yze_js_bundle($bundle, $version=""){
 ?>
@@ -69,7 +67,7 @@ function yze_js_bundle($bundle, $version=""){
  * 输出css加载link代码, 工作路径是网站工作目录（public_html），
  * 所以css中如果有资源地址访问，请注意要调成相对于网站工作目录
  * @param string $bundle, 多个bundle用,号分隔
- * @param string version 版本
+ * @param string $version 版本
  */
 function yze_css_bundle($bundle, $version=""){
 ?>

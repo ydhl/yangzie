@@ -22,8 +22,7 @@ namespace yangzie;
  *
  * @category Framework
  * @package Yangzie
- * @author liizii, <libol007@gmail.com>
- * @license http://www.php.net/license/3_01.txt PHP License 3.01
+ * @author liizii
  * @link yangzie.yidianhulian.com
  */
 abstract class YZE_Resource_Controller extends YZE_Object {
@@ -32,58 +31,27 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     protected $view = "";
 
     /**
-     *
      * @var YZE_Request
      */
     protected $request;
     /**
      * 所在模块
-     *
      * @var YZE_Base_Module
      */
     protected $module;
-    public function __construct($request = null) {
-        $this->request = $request ?: YZE_Request::get_instance ();
-        $this->module = $this->request->module_obj ();
-        // init layout
-        if ($this->request->get_output_format ()) {
-            $this->layout = $this->request->get_output_format ();
-        }
-    }
-    public function getRequest() {
-        return $this->request;
-    }
-    public function get_Layout() {
-        return $this->layout;
-    }
-    public function set_View_Data($name, $value) {
-        $this->view_data [$name] = $value;
-        return $this;
-    }
     /**
-     * 取得视图数据
-     */
-    public function get_View_Data($name) {
-        return @$this->view_data [$name];
-    }
-
-    /**
+     * 返回当前请求对响应对象
      *
      * @author leeboo
-     *
-     * @param string $view_tpl
-     *            模板的路径
+     * @param string $view_tpl 模板的路径
      * @param string $format
      * @return \yangzie\YZE_Simple_View
-     *
-     * @return
-     *
      */
-    private function getResponse($view_tpl = null, $format = null) {
+    private function get_Response($view_tpl = null, $format = null) {
         $request = $this->request;
         $method  = $request->the_method();
         if(!$request->is_get()){
-        	$method = preg_replace("/[^_]+?_/", "", $method, 1);
+            $method = preg_replace("/[^_]+?_/", "", $method, 1);
         }
 
         $view_data  = $this->view_data;
@@ -108,21 +76,56 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         return new YZE_Simple_View ( $view, $view_data, $this, $format );
     }
 
+    public function __construct($request = null) {
+        $this->request = $request ?: YZE_Request::get_instance ();
+        $this->module = $this->request->module_instance ();
+        // init layout
+        if ($this->request->get_output_format ()) {
+            $this->layout = $this->request->get_output_format ();
+        }
+    }
+
     /**
-     * 子类重载设置响应头，可根据当前请求的action等信息做出区别对待
-     * 任何http头数组，比如
+     * 当前请求实例
+     * @return YZE_Request
+     */
+    public function get_Request() {
+        return $this->request;
+    }
+    /**
+     * 布局名，比如tpl，则对应对是app/vendor/layouts/tpl.layout.php文件
+     * @return string
+     */
+    public function get_Layout() {
+        return $this->layout;
+    }
+    public function set_View_Data($name, $value) {
+        $this->view_data [$name] = $value;
+        return $this;
+    }
+
+    public function get_View_Data($name) {
+        return @$this->view_data [$name];
+    }
+
+
+    /**
+     * 子类重载设置响应头，可根据当前请求的信息做出区别对待
+     * 比如
+     * <pre>
      * [
      * "Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect",
      * "Access-Control-Allow-Methods: GET, POST, PUT,DELETE,OPTIONS,PATCH",
      * "Access-Control-Allow-Origin: *"
      * ]
+     * </pre>
      */
     public function response_headers(){
         return [];
     }
 
     /**
-     * 调用映射的action并返回响应
+     * 调用映射的action方法并返回响应
      * @return YZE_Redirect|YZE_Simple_View
      */
     public final function handle_request(){
@@ -132,7 +135,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
 
         $response = $this->$method ();
         if (! $response) {
-            $response = $this->getResponse ();
+            $response = $this->get_Response ();
         }
 
         $format = $request->get_output_format();
@@ -142,10 +145,17 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         }
         return $response?:$redirect;
     }
+
+    /**
+     * 在action处理过程中出现的异常进入该方法，之类需要重载exception方法做具体的异常处理
+     *
+     * @param \Exception $e
+     * @return YZE_IResponse|YZE_JSON_View|YZE_Simple_View
+     */
     public final function do_exception(\Exception $e) {
         $request = $this->request;
         $request->set_Exception($e);
-        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
+        \yangzie\YZE_Hook::do_hook ( YZE_HOOK_BEFORE_DO_EXCEPTION, $this );
         $format = $request->get_output_format();
         $response = $this->exception ( $e );
 
@@ -154,55 +164,61 @@ abstract class YZE_Resource_Controller extends YZE_Object {
             return YZE_JSON_View::error($this, $e->getMessage(), $e->getCode());
         }else if (! $response) {
             $this->set_View_Data ( "exception", $e );
-            $response = $this->getResponse ( YZE_APP_VIEWS_INC . "500" );
+            $response = $this->get_Response ( YZE_APP_VIEWS_INC . "500" );
         }
 
         return $response;
     }
 
     /**
-     * 出现不可恢复的异常后的处理, 如何处理
+     * 子类重载该方法对请求处理过程中出现对异常进行处理
      *
      * @author leeboo
-     *
      * @param Exception $e
-     *
      * @return YZE_IResponse
      */
     public function exception(\Exception $e) {
     }
+
     /**
-     * 获取action上指定注解的值
-     * @param $action
+     * 获取action上指定注解的值，
+     * <pre>
+     * //@ test testvalue
+     * public function index()
+     * get_Annotation('index', 'test') 将返回testvalue
+     * </pre>
+     * @param string $action 方法名
+     * @param string $annotation 检查对注解
      */
-    public function getAnnotation($action, $annotation){
+    public function get_Annotation($action, $annotation){
         try{
             $ref = new \ReflectionObject ($this);
             $methodRef = $ref->getMethod($action);
-            if (!$methodRef) return $action;
+            if (!$methodRef) return null;
 
             $comment = $methodRef->getDocComment();
             preg_match("/@{$annotation}\s(?P<name>.+)/i", $comment, $matches);
-            return @$matches['name'] ?: $action;
+            return @$matches['name'] ?: null;
         }catch (\Exception $e){
-            return $action;
+            return null;
         }
     }
 
     /**
      * 判断action上是否有指定注解
-     * @param $action
+     * @param string $action 方法名
+     * @param string $annotation 检查对注解
      */
-    public function hasAnnotation($action, $annotation){
+    public function has_Annotation($action, $annotation){
         try{
             $ref  = new \ReflectionObject ( $this );
             $methodRef = $ref->getMethod($action);
-            if (!$methodRef) return $action;
+            if (!$methodRef) return false;
 
             $comment = $methodRef->getDocComment();
-            return preg_match("/@{$annotation}/i", $comment, $matches);
+            return preg_match("/@{$annotation}/i", $comment) ? true : false;
         }catch (\Exception $e) {
-            return $action;
+            return false;
         }
     }
 
@@ -210,7 +226,7 @@ abstract class YZE_Resource_Controller extends YZE_Object {
 class Yze_Default_Controller extends YZE_Resource_Controller {
     public function index() {
         $this->set_View_Data ( "yze_page_title", __ ( "Yangzie Framework" ) );
-        return new YZE_Simple_View ( YANGZIE . "/welcome", $this->view_data, $this );
+        return new YZE_Simple_View ( YANGZIE . "welcome", $this->view_data, $this );
     }
 }
 class YZE_Exception_Controller extends YZE_Resource_Controller {
@@ -248,7 +264,6 @@ class YZE_Exception_Controller extends YZE_Resource_Controller {
             case 500 :
             default:
                 header ( "HTTP/1.0 500 Internal Server Error" );
-                return;
         }
     }
 }

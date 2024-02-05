@@ -3,13 +3,11 @@
 namespace yangzie;
 
 /**
- * 一次处理上下文，是一个缓存机制，负责管理一次请求中使用到的数据库连接，实体缓存
- * 及其它需要缓存到会话中的内容
+ * 一次请求处理的上下文，单例模式；
  *
  * @category Framework
  * @package Yangzie
- * @author liizii, <libol007@gmail.com>
- * @license http://www.php.net/license/3_01.txt PHP License 3.01
+ * @author liizii
  * @link yangzie.yidianhulian.com
  */
 class YZE_Request extends YZE_Object {
@@ -36,59 +34,133 @@ class YZE_Request extends YZE_Object {
     private static $me;
     private $context;
 
-
+    /**
+     * 在上下文中设置值, 在这次请求的中可取出该值
+     * @param $name
+     * @param $value
+     * @return YZE_Request
+     */
     public function set($name, $value){
         $this->context[$name] = $value;
         return $this;
     }
+
+    /**
+     * 在上下文中取值
+     * @param $name
+     * @return mixed
+     */
     public function get($name)
     {
         return @$this->context[$name];
     }
+
+    /**
+     * post请求数据
+     * @return array
+     */
     public function the_post_datas() {
         return $this->post;
     }
+
+    /**
+     * 请求的get数据
+     * @return array
+     */
     public function the_get_datas() {
         return $this->get;
     }
 
+    /**
+     * 往post数据中设置值，注意该值是后端设置，不是前端提交的
+     * @param string $name
+     * @param string $value
+     * @return YZE_Request
+     */
     public function set_post($name, $value) {
         $this->post [$name] = $value;
         return $this;
     }
-    public function get_from_post($name, $default = null, $cutoff_length=null) {
+
+    /**
+     * 从post数据中取值
+     * @param string $name
+     * @param string $default post中不存在name时返回该值
+     * @return false|mixed|string|null
+     */
+    public function get_from_post($name, $default = null) {
         if (array_key_exists ( $name, $this->post )) {
-            return $cutoff_length ? substr(@$this->post [$name], 0, $cutoff_length) : $this->post [$name];
+            return $this->post [$name];
         }
         return $default;
     }
-    public function get_from_server($name) {
-        return @$this->server [$name];
+
+    /**
+     * 从$_SERVER中取值
+     * @param string $name
+     * @param string $default 不存在name时返回该值
+     * @return mixed
+     */
+    public function get_from_server($name, $default=null) {
+        if (array_key_exists ( $name, $this->server )) {
+            return @$this->server [$name];
+        }
+        return $default;
     }
-    public function get_from_cookie($name, $default = null, $cutoff_length=null) {
+
+    /**
+     * 从cookie中取值
+     * @param string $name
+     * @param string $default 不存在name时返回该值
+     * @return false|mixed|string|null
+     */
+    public function get_from_cookie($name, $default = null) {
         if (array_key_exists ( $name, $this->cookie )) {
-            return $cutoff_length ? substr(@$this->cookie [$name], 0, $cutoff_length) : @$this->cookie [$name];
+            return @$this->cookie [$name];
         }
         return $default;
     }
-    public function get_from_get($name, $default = null, $cutoff_length=null) {
+
+    /**
+     * 从query string取值
+     * @param string $name
+     * @param string $default 不存在name时返回该值
+     * @return false|mixed|string|null
+     */
+    public function get_from_get($name, $default = null) {
         if (array_key_exists ( $name, $this->get )) {
-            return $cutoff_length ? substr(@$this->get [$name], 0, $cutoff_length) : @$this->get [$name];
+            return @$this->get [$name];
         }
         return $default;
     }
-    public function get_from_request($name, $default = null, $cutoff_length=null) {
+
+    /**
+     * 从post > cookie > get > server中取值
+     *
+     * @param string $name
+     * @param string $default 不存在name时返回该值
+     * @return false|mixed|string|null
+     */
+    public function get_from_request($name, $default = null) {
         if (array_key_exists ( $name, $this->post )) {
-            return $cutoff_length ? substr(@$this->post [$name], 0, $cutoff_length) : $this->post [$name];
+            return $this->get_from_post($name, $default);
         }
         if (array_key_exists ( $name, $this->cookie )) {
-            return $cutoff_length ? substr(@$this->cookie [$name], 0, $cutoff_length) : @$this->cookie [$name];
+            return $this->get_from_cookie($name, $default);
         }
         if (array_key_exists ( $name, $this->get )) {
-            return $cutoff_length ? substr(@$this->get [$name], 0, $cutoff_length) : @$this->get [$name];
+            return $this->get_from_get($name, $default);
+        }
+        if (array_key_exists ( $name, $this->server )) {
+            return $this->get_from_server($name, $default);
         }
         return $default;
     }
+
+    /**
+     * 当前请求的方法，如get post delete put等
+     * @return mixed
+     */
     public function get_request_method() {
         return $this->request_method;
     }
@@ -98,32 +170,35 @@ class YZE_Request extends YZE_Object {
      * 只返回/people-1/question-2/answers
      * 返回的url进行了urldecode
      *
-     * 如果使用了rewrite则url请实际的地址，如果使用的是path_info，则url为path_info部分，如果是普通的请求，则url是yze_action参数值
-     * 因为采用的是单入口，所以对于后两种请求，真实的url都是domain/index.php
-     *
      * @return string
-     * @author liizii, <libol007@gmail.com>
+     * @author liizii
      */
     public function the_uri() {
         return $this->uri;
     }
 
     /**
-     * 请求的路径及query strin
+     * 请求的路径及query string
      * 返回的url没有urldecode
      *
-     * @return unknown
+     * @return string
      */
     public function the_full_uri() {
         return $this->full_uri;
     }
+
+    /**
+     * 请求字符串，请求地址中?后面的部分
+     * @return mixed
+     */
     public function the_query() {
         return $this->queryString;
     }
 
     /**
+     * 请求的scheme，如http，https
      */
-    public function getScheme() {
+    public function get_Scheme() {
         $scheme = 'http';
         if (isset ( $_SERVER ['HTTPS'] ) && $_SERVER ['HTTPS'] == 'on') {
             $scheme .= 's';
@@ -141,12 +216,16 @@ class YZE_Request extends YZE_Object {
         $this->uuid = uniqid ();
     }
 
+    /**
+     * 每次请求的唯一uuid
+     * @return string
+     */
     public function uuid() {
         return $this->uuid;
     }
 
     /**
-     *
+     * 返回YZE_Request 实例
      * @return YZE_Request
      */
     public static function get_instance() {
@@ -175,11 +254,10 @@ class YZE_Request extends YZE_Object {
      * 初始化请求
      * 解析请求的uri，如果没有传入url，默认解析当前请求的uri
      *
-     * @param string $uri
-     * @param string $method
-     *            该请求的方法
-     * @param string $format
-     *            请求返回的格式, 如果uri中没有明确指定格式，则返回该格式
+     * @param string $newUri
+     * @param string $action 该请求的方法
+     * @param string $format 请求返回的格式, 如果uri中没有明确指定格式，则返回该格式
+     * @param string $request_method http请求方法
      * @return YZE_Request
      */
     public function init($newUri = null, $action = null, $format = null, $request_method=null) {
@@ -201,7 +279,7 @@ class YZE_Request extends YZE_Object {
 
         $routers = YZE_Router::get_instance ()->get_routers ();
 
-        $config_args = self::parse_url ( $routers, $uri ); // 地址映射及返回格式
+        $config_args = self::parse_url ( $routers, $uri );
         $this->set_vars ( @( array ) $config_args ['args'] );
         if ($format && ! $this->get_var ( "__yze_resp_format__" )) {
             $this->set_var ( "__yze_resp_format__", $format );
@@ -228,28 +306,38 @@ class YZE_Request extends YZE_Object {
 
         $controller_cls = $this->controller_class ();
 
-
-        if (! ($controller = $this->controller ())) {
+        if (! $this->controller_instance ()) {
             throw new YZE_Resource_Not_Found_Exception ( "Controller $controller_cls Not Found" );
         }
         return $this;
     }
 
     /**
-     * 请求的方法：get,post,put,delete
+     * 映射的控制器方法
+     * @return string
      */
     public function the_method() {
         return $this->method;
     }
+
+    /**
+     * 是否是post请求
+     * @return bool
+     */
     public function is_post() {
         return strcasecmp ( $this->request_method, "post" ) === 0;
     }
+
+    /**
+     * 是否是get请求
+     * @return bool
+     */
     public function is_get() {
         return strcasecmp ( $this->request_method, "get" ) === 0;
     }
     /**
-     *
-     * @param $just_path 如果为true只显示uri的path部分
+     * 访问当前请求的来源地址
+     * @param string $just_path 如果为true只显示uri的path部分
      */
     public function the_referer_uri($just_path = false) {
         $referer = @$_SERVER ['HTTP_REFERER'];
@@ -258,40 +346,48 @@ class YZE_Request extends YZE_Object {
         }
         return parse_url ( $referer, PHP_URL_PATH );
     }
+
+    /**
+     * 对当前请求做身份认证处理,options请求不做处理
+     *
+     * @return YZE_Request
+     * @throws YZE_Need_Signin_Exception
+     * @throws YZE_Permission_Deny_Exception
+     */
     public function auth() {
         // Options请求不做验证
         if (!strcasecmp($this->request_method, 'options')){
             return $this;
         }
         $req_method = $this->the_method ();
-        if ($this->need_auth ( $req_method )) { // 需要验证
-            $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
+        if (!$this->need_auth ( $req_method )) return $this;
 
-            if ( ! $loginuser ) throw new YZE_Need_Signin_Exception (__ ( "Please signin" ));
+        // 需要验证
+        $loginuser = YZE_Hook::do_hook ( YZE_HOOK_GET_LOGIN_USER );
+        if ( ! $loginuser ) throw new YZE_Need_Signin_Exception (__ ( "Please signin" ));
 
-            $aro = \yangzie\YZE_Hook::do_hook ( YZE_FILTER_GET_USER_ARO_NAME);
+        $aro = \yangzie\YZE_Hook::do_hook ( YZE_HOOK_GET_USER_ARO_NAME);
 
-            // 验证请求的方法是否有权限调用
-            $acl = YZE_ACL::get_instance ();
-            $aco_name = "/" . $this->module () . "/" . $this->controller_name ( true ) . "/" . $req_method;
+        // 验证请求的方法是否有权限调用
+        $acl = YZE_ACL::get_instance ();
+        $aco_name = "/" . $this->module () . "/" . $this->controller_name ( true ) . "/" . $req_method;
 
-            if (! $acl->check_byname ( $aro, $aco_name )) {
-
-                throw new YZE_Permission_Deny_Exception ( sprintf ( __ ( "You do not have permission(%s:%s)" ), \app\yze_get_aco_desc ( $aco_name ), $aro) );
-            }
-
+        if (! $acl->check_byname ( $aro, $aco_name )) {
+            throw new YZE_Permission_Deny_Exception ( sprintf ( __ ( "You do not have permission(%s:%s)" ), \app\yze_get_aco_desc ( $aco_name ), $aro) );
         }
         return $this;
     }
 
     /**
      *
-     * 取得请求指定的输出格式
+     * 取得请求指定的输出格式, 默认为tpl，也就是返回普通的html内容；
+     *
+     * 可通过后缀的方式指定输出格式，比如/foo/bar.json，/foo/bar.xml，json、xml就是输出格式
+     *
+     * 其他情况下pc端返回tpl，移动端返回mob
      *
      * @author leeboo
-     *
-     *
-     * @return
+     * @return string
      *
      */
     public function get_output_format() {
@@ -303,39 +399,36 @@ class YZE_Request extends YZE_Object {
         }
         return "tpl"; // default
     }
+
+    /**
+     * 是否是移动端，user agent包含android|iphone|ipad的看作移动端
+     * @return false
+     */
     public function is_mobile_client() {
         return preg_match ( "/android|iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] );
     }
-    public function isInWeixin(){
-    	return preg_match ( "/MicroMessenger/i", $_SERVER ['HTTP_USER_AGENT'] );
-    }
-    public function isInIOS(){
+
+    /**
+     * 是否是ios环境，user agent包含iphone|ipad的看作ios环境
+     * @return false
+     */
+    public function is_In_IOS(){
         return preg_match ( "/iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] );
     }
-    public function isInAndroid(){
+
+    /**
+     * 是否是ios环境，user agent包含android的看作android环境
+     * @return false
+     */
+    public function is_In_Android(){
         return preg_match ( "/android/i", $_SERVER ['HTTP_USER_AGENT'] );
     }
-    public static function build_query($data) {
-        $ret = array ();
 
-        foreach ( ( array ) $data as $k => $v ) {
-            $k = urlencode ( $k );
-            if ($v === NULL)
-                continue;
-            elseif ($v === FALSE)
-                $v = '0';
-
-            if (is_array ( $v ) || is_object ( $v ))
-                array_push ( $ret, YZE_Request::build_query ( $v ) );
-            else
-                array_push ( $ret, $k . '=' . urlencode ( $v ) );
-        }
-
-        $sep = ini_get ( 'arg_separator.output' );
-
-        return implode ( $sep, $ret );
-    }
-
+    /**
+     * 把data_str 格式化成GMT格式
+     * @param $date_str
+     * @return string
+     */
     public static function format_gmdate($date_str) {
         return gmdate ( 'D, d M Y H:i:s', strtotime ( $date_str ) ) . " GMT";
     }
@@ -349,18 +442,24 @@ class YZE_Request extends YZE_Object {
         $this->vars [$name] = $val;
         return $this;
     }
+
+    /**
+     * 取得var变量，var变量是router中url中正则表示的命名参数
+     *
+     * @param $key
+     * @param $default
+     * @return mixed|null
+     */
     public function get_var($key, $default = null) {
         $vars = $this->vars;
         return @array_key_exists ( $key, $vars ) ? $vars [$key] : $default;
     }
     /**
      * 当前的请求是否需要认证
-     * @return bool true for need auth
+     * @return bool true
      */
-    public function needAuth(){
-        return $this->need_auth($this->the_method());
-    }
-    private function need_auth($req_method) {
+    private function need_auth() {
+        $req_method = $this->the_method();
         $need_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "need" );
         $no_auth_methods = $this->get_auth_methods ( $this->controller_name ( true ), "noneed" );
 
@@ -374,28 +473,28 @@ class YZE_Request extends YZE_Object {
         return false;
     }
     private function get_auth_methods($controller_name, $type) {
-        if (!$this->module_obj ()) return null;
+        if (!$this->module_instance ()) return null;
         if ($type == "need") {
-            $auth_methods = @$this->module_obj ()->auths [$controller_name];
+            $auth_methods = @$this->module_instance ()->auths [$controller_name];
             if ($auth_methods) return $auth_methods;
 
-            if ($this->module_obj ()->auths=="*" || $this->module_obj ()->auths == ['*']) return '*';
+            if ($this->module_instance ()->auths=="*" || $this->module_instance ()->auths == ['*']) return '*';
         } elseif ($type == "noneed") {
-            $auth_methods = @$this->module_obj ()->no_auths [$controller_name];
+            $auth_methods = @$this->module_instance ()->no_auths [$controller_name];
             if ($auth_methods) return $auth_methods;
 
-            if ($this->module_obj ()->no_auths=="*" || $this->module_obj ()->no_auths == ['*']) return '*';
+            if ($this->module_instance ()->no_auths=="*" || $this->module_instance ()->no_auths == ['*']) return '*';
         }
         return null;
     }
 
     /**
-     * 根据路由配置解析当前url，如果路由中没有配置，则根据默认的地址格式解析：/module/controller/vars.format
+     * 根据路由表配置解析当前url，如果路由中没有配置，则根据默认的地址格式解析：/module/controller/vars.format
      *
-     * @param unknown_type $routers
-     * @param unknown_type $uri
+     * @param array $routers 路由表
+     * @param string $uri 地址
      *
-     * @return Array('controller_name'=>, 'module'=>, 'args'=>)
+     * @return array 格式('controller_name'=>, 'module'=>, 'args'=>)
      */
     public static function parse_url($routers, $uri) {
         $_ = array ();
@@ -437,8 +536,6 @@ class YZE_Request extends YZE_Object {
             $_ ['controller_name'] = "index";
         }
 
-
-
         if (count ( $uri_split ) > 3) {
             $_ ['args'] = array_slice ( $uri_split, 3 );
         }
@@ -448,13 +545,18 @@ class YZE_Request extends YZE_Object {
         	}else{
         		$_ ['args'][] = $uri_split[2];
         	}
-
         }
         if (preg_match ( "#\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches )) {
             $_ ['args'] ["__yze_resp_format__"] = $matches ['__yze_resp_format__'];
         }
         return $_;
     }
+
+    /**
+     * 处理请求，把控制交给具体控制器的具体方法
+     * @return mixed
+     * @throws YZE_Resource_Not_Found_Exception
+     */
     public function dispatch() {
         $controller = $this->controller;
 
@@ -482,8 +584,9 @@ class YZE_Request extends YZE_Object {
         return $this;
     }
     /**
-     * 控制器名字,如\app\module_name\controller_name
+     * 控制器名字,如\app\module_name\controller_name，如果返回短格式，则返回controller_name
      *
+     * @param bool $is_sort true 返回短格式
      * @return string
      */
     public function controller_name($is_sort = false) {
@@ -493,8 +596,9 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
-     * 控制器类名,如\app\module_name\controller_name
+     * 控制器类名,如\app\module_name\controller_name_Controller，如果返回短格式，则返回controller_name
      *
+     * @param bool $is_sort true 返回短格式
      * @return string
      */
     public function controller_class($is_sort = false) {
@@ -509,7 +613,7 @@ class YZE_Request extends YZE_Object {
      *
      * @return YZE_Resource_Controller
      */
-    public function controller() {
+    public function controller_instance() {
         return $this->controller;
     }
     public function set_module($module) {
@@ -528,24 +632,31 @@ class YZE_Request extends YZE_Object {
         }
         return $this;
     }
+
+    /**
+     * 返回模块名
+     * @return mixed
+     */
     public function module() {
         return $this->module;
     }
     /**
-     *
+     * 返回模块类名
      * @return YZE_Base_Module
      */
     public function module_class() {
         return $this->module_class;
     }
     /**
+     * 模块的配置对象
      * @return YZE_Base_Module;
      */
-    public function module_obj() {
+    public function module_instance() {
         return $this->module_obj;
     }
     /**
      * 返回当前请求的模块views目录，注意结尾无/
+     * @return string
      */
     public function view_path() {
         $info = \yangzie\YZE_Object::loaded_module ( $this->module () );
@@ -556,12 +667,21 @@ class YZE_Request extends YZE_Object {
         }
     }
 
+    /**
+     *
+     * @return \Exception
+     */
     public function get_exception(){
     	return $this->exception;
     }
     public function set_Exception(\Exception $exception){
     	$this->exception = $exception;
     }
+
+    /**
+     * 返回前端支持的语言
+     * @return string
+     */
     public function get_Accept_Language(){
         preg_match("/(?P<lang>[^,]+),/",@$_SERVER['HTTP_ACCEPT_LANGUAGE'], $matchs);
         return $matchs ? strtolower($matchs['lang']) : '';

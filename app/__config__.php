@@ -1,7 +1,7 @@
 <?php
 namespace  app;
 
-use yangzie\YZE_FatalException;
+use yangzie\YZE_Exception;
 use function yangzie\yze_js_bundle;
 
 /**
@@ -23,7 +23,7 @@ define("YZE_DB_HOST_M",  "127.0.0.1");
 /**
  * MYSQL数据库名
  */
-define("YZE_DB_DATABASE",  "");
+define("YZE_DB_DATABASE",  "inspection");
 /**
  * MYSQL端口
  */
@@ -31,7 +31,7 @@ define("YZE_DB_PORT",  "3306");
 /**
  * MYSQL密码
  */
-define("YZE_DB_PASS",  "");
+define("YZE_DB_PASS",  "12345678");
 /**
  * MYSQL加解密的秘钥
  */
@@ -68,8 +68,7 @@ define("SESSIONLESS", false);
 
 
 /**
- * app模块配置
- *
+ * 返回应用级的配置
  * @author leeboo
  *
  */
@@ -84,8 +83,8 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	public $db_charset= 'UTF8';
 
 	/**
-	 * App 访问时做一些检查，比如php的版本
-	 * @return bool|void
+	 * App 访问时做一些检查，比如php的版本；如果有不满足的条件则抛出异常
+	 * @return void
 	 * @throws YZE_FatalException
 	 */
 	public function check(){
@@ -94,10 +93,12 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		}
 	}
 
-	protected function _config()
-	{
-		//动态返回配置
-		return array();
+	/**
+	 * 动态返回配置
+	 * @return array
+	 */
+	protected function config(): array{
+		return [];
 	}
 
 	/**
@@ -105,7 +106,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * 但要注意是按文件名排序顺序包含的，如果被包含的文件之间有依赖关系，这会导致代码错误，这种情况请手动添加包含的文件
 	 */
 	public function module_include_files() {
-        $files = [
+        return [
 			"app/vendor/pomo/translation_entry.class.php",
 			"app/vendor/pomo/pomo_stringreader.class.php",
 			"app/vendor/pomo/pomo_cachedfilereader.class.php",
@@ -115,29 +116,30 @@ class App_Module extends \yangzie\YZE_Base_Module{
 			"app/vendor/pomo/mo.class.php",
 			"vendor/autoload.php",
 		];
-
-        return $files;
 	}
 
 	/**
-	 * js资源分组，在加载时方便直接通过分组名加载;
+	 * js资源分组及其包含的文件，在加载时方便直接通过分组名加载;
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
 	 * 在layouts中通过接口yze_js_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)
 	 */
 	public function js_bundle($bundle){
-		$config = ["yangzie" => ['/js/yze_ajax.js']];
+		$config = [
+//			"foo" => ['/js/foo.js']
+		];
 		return $config[$bundle];
 	}
 	/**
-	 * css资源分组，在加载时方便直接通过分组名加载;
+	 * css资源分组及其包含的文件，在加载时方便直接通过分组名加载;
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
 	 * 在layouts中通过接口yze_css_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)
 	 */
 	public function css_bundle($bundle){
-		$config = array (
-		);
+		$config = [
+//			"foo" => ['/css/foo.css']
+		];
 		return $config[$bundle];
 	}
 }

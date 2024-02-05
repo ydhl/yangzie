@@ -39,7 +39,7 @@ use \yangzie\YZE_Base_Module as YZE_Base_Module;
 class {$module}_Module extends YZE_Base_Module{
     public \$auths = array();
     public \$no_auths = array();
-    protected function _config(){
+    protected function config(){
         return [
         'name'=>'{$module}',
         'routers' => [

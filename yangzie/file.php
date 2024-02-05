@@ -1,6 +1,12 @@
 <?php
 namespace yangzie;
 
+/**
+ * 通过后缀名判断给定的文件是不是图片
+ *
+ * @param $file
+ * @return bool
+ */
 function yze_isimage($file){
 	$type = array("png","gif","jpeg","jpg","bmp","ico");
 	return in_array(strtolower(pathinfo($file,PATHINFO_EXTENSION) ?: $file), $type);
@@ -29,10 +35,17 @@ function yze_get_abs_path($path, $in=''){
     return ($leftHasSperator ? DIRECTORY_SEPARATOR : '').implode(DIRECTORY_SEPARATOR, $absolutes);
 }
 
-function yze_remove_abs_path($path, $in){
+/**
+ * 从路径path中删除need_remove
+ *
+ * @param $path
+ * @param $need_remove
+ * @return string
+ */
+function yze_remove_path($path, $need_remove){
 	$path = strtr($path, array(DS=>"/"));
-	$in =  strtr($in, array(DS=>"/"));
-	return strtr($path, array($in=>''));
+    $need_remove =  strtr($need_remove, array(DS=>"/"));
+	return strtr($path, array($need_remove=>''));
 }
 
 /**
@@ -113,7 +126,7 @@ function yze_copy_dir($srcDir, $destDir) {
  */
 function yze_make_dirs($dirs){
 	if (file_exists($dirs))return;
-
+    $dir = '';
 	foreach (explode(DS,strtr(rtrim($dirs,DS),array("/"=>DS))) as $d){
 		$dir = @$dir.$d.DS;
 		@mkdir($dir,0777);

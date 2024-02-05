@@ -1,5 +1,6 @@
 <?php
 namespace yangzie;
+// 正常返回视图布局
 ?>
 <html>
     <head>

@@ -1,7 +1,6 @@
 <?php
-
-require_once 'hooks.php';//framework hook处理,hook处理程序
 require_once 'yangzie.php';
+require_once 'hooks.php';//framework hook处理,hook处理程序
 require_once 'file.php';
 require_once 'session.php';
 require_once 'request.php';

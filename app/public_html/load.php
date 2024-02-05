@@ -1,10 +1,11 @@
 <?php
 /**
  * 该文件是独立于框架外直接访问的，所以部分框架的功能不能使用，比如YZE_Request, YZE_Controller等
- * 该文件的作用<br/><br/
- * 1. 对系统的js,css bundle打包下载，参数t=css|js, b=要加载的bundle，在__config__.php中进行定义<br/>
- * 2. 对某个模块的bundle进行打包下载，参数t=css|js, m=模块名，在模块的__config__.php中进行定义<br/>
- * 3. 访问某个模块下面的静态资源, 参数t=asset, m=模块名，src=要加载的资源路径，位于模块下面的public_html<br/><br/>
+ * 该文件的作用
+ *
+ * 1. 对系统的js,css bundle打包下载，参数t=css|js, b=要加载的bundle，在__config__.php中进行定义
+ * 2. 对某个模块的bundle进行打包下载，参数t=css|js, m=模块名，在模块的__config__.php中进行定义
+ * 3. 访问某个模块下面的静态资源, 参数t=asset, m=模块名，src=要加载的资源路径，位于模块下面的public_html
  * 通过yze_css_bundle,通过yze_js_bundle,yze_module_js_bundle,yze_module_css_bundle接口生产访问本文件的html脚本
  */
 use app\App_Module;

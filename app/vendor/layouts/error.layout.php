@@ -1,5 +1,5 @@
 <?php
-// 请求出现错误时使用的布局
+// 请求出现错误时使用的布局; 修改该页面自定义错误页面
 ?><html>
 <head >
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />

@@ -5,16 +5,10 @@ namespace yangzie;
 use \app\App_Module;
 
 /**
- * 自动加载处理
+ * 自动加载文件处理
  */
 function yze_autoload($class) {
     $_ = preg_split("{\\\\}", strtolower($class));
-
-    // 不以app开头的class交给hook处理
-    if($_[0]!="app" && $_[0]!="yangzie"){
-        YZE_Hook::do_hook("YZE_HOOK_AUTO_LOAD_CLASS", $class);
-        return;
-    }
 
     $module_name = $_[1];
     $class_name = @$_[2];
@@ -50,6 +44,8 @@ function yze_autoload($class) {
 
     if(@$file && file_exists($file)){
         include $file;
+    }else{
+        YZE_Hook::do_hook("YZE_HOOK_AUTO_LOAD_CLASS", $class);
     }
 }
 
@@ -58,15 +54,15 @@ spl_autoload_register("\yangzie\yze_autoload");
 
 
 /**
- * 加载所有的模块，设置其配置
+ * 加载所有的模块，初始化配置
  */
 function yze_load_app() {
     // 加载app配置
     if (! file_exists ( YZE_APP_PATH . "__config__.php" )) {
         die ( __ ( "app/__config__.php not found" ) );
     }
-    include_once YZE_APP_INC . '__config__.php';
-    include_once YZE_APP_INC . '__aros_acos__.php';
+    include_once YZE_APP_PATH . '__config__.php';
+    include_once YZE_APP_PATH . '__aros_acos__.php';
 
     $app_module = new App_Module ();
     $app_module->check ();
@@ -75,9 +71,7 @@ function yze_load_app() {
     foreach ( ( array ) $module_include_files as $path ) {
         $path = YZE_INSTALL_PATH.ltrim($path, DS);
         if(is_dir($path)){
-            // print_r(glob(rtrim($path, DS) . "/*"));
             foreach (glob(rtrim($path, DS) . "/*") as $file) {
-                // echo $file;
                 include_once $file;
             }
         }else {
@@ -85,7 +79,7 @@ function yze_load_app() {
         }
     }
 
-    YZE_Hook::include_hooks("app", YZE_APP_INC.'hooks');
+    YZE_Hook::include_hooks("app", YZE_APP_PATH.'hooks');
 
     $hook_dirs = [];
     foreach (glob(YZE_APP_MODULES_INC . "*") as $module) {
@@ -124,7 +118,7 @@ function yze_load_app() {
 }
 
 /**
- * yangzie入口
+ * yangzie处理入口
  * 开始处理请求，如果没有指定uri，默认处理当前的uri请求,
  * @return string
  */
@@ -141,47 +135,40 @@ function yze_handle_request() {
 
     try {
         $request = YZE_Request::get_instance ();
-        $dba     = YZE_DBAImpl::getDBA ();
+        $dba     = YZE_DBAImpl::get_instance ();
 
         $request->init ();
-        $controller = $request->controller ();
+        $controller = $request->controller_instance ();
 
         foreach($controller->response_headers() as $header){
             header($header);
         }
 
         $request->auth ();
-        $dba->beginTransaction();
+        $dba->begin_Transaction();
 
-        $action = "YZE_ACTION_BEFORE_" .  strtoupper($request->get_request_method());
-        if(defined(@constant ( $action ))) \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
-        \yangzie\YZE_Hook::do_hook(YZE_ACTION_BEFORE_DISPATCH, $controller);
+        \yangzie\YZE_Hook::do_hook(YZE_HOOK_BEFORE_DISPATCH);
         $response = $request->dispatch();
-        \yangzie\YZE_Hook::do_hook(YZE_ACTION_AFTER_DISPATCH, $controller);
-        $action = "YZE_ACTION_AFTER_" .  strtoupper($request->get_request_method());
-        if(defined(@constant ( $action ))) \yangzie\YZE_Hook::do_hook ( @constant ( $action ), $controller );
+        \yangzie\YZE_Hook::do_hook(YZE_HOOK_AFTER_DISPATCH);
 
         $dba->commit();
 
         $output($request, $controller, $response);
     }catch(\Exception $e){
-        $controller = $request->controller ();
+        $controller = $request->controller_instance ();
         try{
             if (@$dba) $dba->rollback();
-
             if( !$controller) $controller = new YZE_Exception_Controller();
-
             if(is_a($e, "\\yangzie\\YZE_Suspend_Exception")) $controller = new YZE_Exception_Controller();
 
             $response = $controller->do_exception($e);
-
             if( ! $response){
                 $controller = new YZE_Exception_Controller();
                 $response = $controller->do_exception($e);
             }
 
             $filter_data = ["exception"=>$e, "controller"=>$controller, "response"=>$response];
-            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_FILTER_YZE_EXCEPTION,$filter_data);
+            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_HOOK_YZE_EXCEPTION,$filter_data);
             $response = $filter_data['response'];
 
             $output($request, $controller, $response);

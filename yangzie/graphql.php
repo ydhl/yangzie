@@ -7,8 +7,7 @@ namespace yangzie;
  *
  * @category Framework
  * @package Yangzie
- * @author liizii, <libol007@gmail.com>
- * @license http://www.php.net/license/3_01.txt PHP License 3.01
+ * @author liizii
  * @link yangzie.yidianhulian.com
  */
 class Graphql_Controller extends YZE_Resource_Controller {

@@ -1,5 +1,5 @@
 --TEST--
-DBA Tester 
+DBA Tester
 --FILE--
 <?php
 namespace  yangzie;
@@ -33,7 +33,7 @@ class UserModel extends YZE_Model{
  * 初始化数据
  */
 
-YZE_DBAImpl::getDBA()->migration(UserModel::CLASS_NAME);
+YZE_DBAImpl::get_instance()->migration(UserModel::CLASS_NAME);
 UserModel::truncate();
 
 $user = new UserModel();
@@ -50,7 +50,7 @@ $user1->set(UserModel::F_TITLE, "test user 1")
  * 这里的测试需要配置数据库连接
  */
 
-$db = YZE_DBAImpl::getDBA();
+$db = YZE_DBAImpl::get_instance();
 
 echo $db->lookup("id","testusers","id >=:id", array(":id"=>"1")),"\r\n";
 print_r( $db->lookup_record("id,title","testusers","id =:id", array(":id"=>"1")) );

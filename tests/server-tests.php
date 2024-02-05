@@ -1,9 +1,9 @@
 <?php
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
+   | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2010 The PHP Group                                |
+   | Copyright (c) 1997-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -41,35 +41,27 @@ define('QA_SUBMISSION_PAGE', 'http://qa.php.net/buildtest-process.php');
  */
 
 define('PCRE_MISSING_ERROR',
-'+-----------------------------------------------------------+
+	'+-----------------------------------------------------------+
 |                       ! ERROR !                           |
 | The test-suite requires that you have pcre extension      |
 | enabled. To enable this extension either compile your PHP |
 | with --with-pcre-regex or if you have compiled pcre as a  |
 | shared module load it via php.ini.                        |
 +-----------------------------------------------------------+');
-define('SAFE_MODE_WARNING',
-'+-----------------------------------------------------------+
-|                       ! WARNING !                         |
-| You are running the test-suite with "safe_mode" ENABLED ! |
-|                                                           |
-| Chances are high that no test will work at all,           |
-| depending on how you configured "safe_mode" !             |
-+-----------------------------------------------------------+');
 define('TMP_MISSING',
-'+-----------------------------------------------------------+
+	'+-----------------------------------------------------------+
 |                       ! ERROR   !                         |
 | You must create /tmp for session tests to work!           |
 |                                                           |
 +-----------------------------------------------------------+');
 define('PROC_OPEN_MISSING',
-'+-----------------------------------------------------------+
+	'+-----------------------------------------------------------+
 |                       ! ERROR !                           |
 | The test-suite requires that proc_open() is available.    |
 | Please check if you disabled it in php.ini.               |
 +-----------------------------------------------------------+');
 define('REQ_PHP_VERSION',
-'+-----------------------------------------------------------+
+	'+-----------------------------------------------------------+
 |                       ! ERROR !                           |
 | The test-suite must be run with PHP 5 or later.           |
 | You can still test older extecutables by setting          |
@@ -138,7 +130,7 @@ function generate_diff($wanted,$output)
 }
 
 function mkpath($path,$mode = 0777) {
-	$dirs = split('[\\/]',$path);
+	$dirs = preg_split('/[\\/]/',$path);
 	$path = $dirs[0];
 	for($i = 1;$i < count($dirs);$i++) {
 		$path .= '/'.$dirs[$i];
@@ -148,7 +140,7 @@ function mkpath($path,$mode = 0777) {
 
 function copyfiles($src,$new) {
 	$d = dir($src);
-	while (($entry = $d->read())) {
+	while ($entry = $d->read()) {
 		if (is_file("$src/$entry")) {
 			copy("$src/$entry", "$new/$entry");
 		}
@@ -162,21 +154,21 @@ function post_result_data($query,$data)
 	$post = "php_test_data=" . urlencode(base64_encode(preg_replace("/[\\x00]/", "[0x0]", $data)));
 	$r = new HTTPRequest($url,NULL,NULL,$post);
 	return $this->response_headers['Status']=='200';
-} 
+}
 
 
 function execute($command, $args=NULL, $input=NULL, $cwd=NULL, $env=NULL)
 {
 	$data = "";
-	
-	if (gettype($args)=='array') {
+
+	if (is_array($args)) {
 		$args = join($args,' ');
 	}
 	$commandline = "$command $args";
 	$proc = proc_open($commandline, array(
-				0 => array('pipe', 'r'),
-				1 => array('pipe', 'w')),
-				$pipes, $cwd, $env);
+		0 => array('pipe', 'r'),
+		1 => array('pipe', 'w')),
+		$pipes, $cwd, $env);
 
 	if (!$proc)
 		return false;
@@ -187,7 +179,7 @@ function execute($command, $args=NULL, $input=NULL, $cwd=NULL, $env=NULL)
 			return NULL;
 		}
 	}
-	
+
 	fclose($pipes[0]);
 
 	while (true) {
@@ -238,24 +230,24 @@ function executeCode($php, $ini_overwrites, $code, $remove_headers=true, $cwd=NU
 
 class HTTPRequest
 {
-    public $headers = array();
-    public $timeout = 4;
-    public $urlparts = NULL;
-    public $url = '';
-    public $userAgent = 'PHP-Test-Harness';
-    public $options = array();
-    public $postdata = NULL;
-    public $errmsg = '';
-    public $errno = 0;
-    public $response;
-    public $response_headers;
-    public $outgoing_payload;
-    public $incoming_payload = '';
+	public $headers = array();
+	public $timeout = 4;
+	public $urlparts = NULL;
+	public $url = '';
+	public $userAgent = 'PHP-Test-Harness';
+	public $options = array();
+	public $postdata = NULL;
+	public $errmsg = '';
+	public $errno = 0;
+	public $response;
+	public $response_headers;
+	public $outgoing_payload;
+	public $incoming_payload = '';
 
-    /*
+	/*
     URL is the full url
     headers is assoc array of outgoing http headers
-    
+
     options may include
     timeout
     proxy_host
@@ -263,138 +255,138 @@ class HTTPRequest
     proxy_user
     proxy_pass
     method (GET|POST)
-    
+
     post data is, well, post data.  It is not processed so
         multipart stuff must be prepared before calling this
         (or add it to class)
     */
-    function HTTPRequest($URL, $headers=array(), $options=array(), $postdata=NULL)
-    {
-        $this->urlparts = @parse_url($URL);
-        $this->url = $URL;
-        $this->options = $options;
-        $this->headers = $headers;
-        $this->postdata = &$postdata;
-        $this->doRequest();
-    }
-    
-    function doRequest()
-    {
-        if (!$this->_validateUrl()) return;
-        
-        if (isset($this->options['timeout'])) 
-            $this->timeout = (int)$this->options['timeout'];
-    
-        $this->_sendHTTP();
-    }
+	function HTTPRequest($URL, $headers=array(), $options=array(), $postdata=NULL)
+	{
+		$this->urlparts = @parse_url($URL);
+		$this->url = $URL;
+		$this->options = $options;
+		$this->headers = $headers;
+		$this->postdata = &$postdata;
+		$this->doRequest();
+	}
 
-    function _validateUrl()
-    {
-        if ( ! is_array($this->urlparts) ) {
-            return FALSE;
-        }
-        if (!isset($this->urlparts['host'])) {
-            $this->urlparts['host']='127.0.0.1';
-        }
-        if (!isset($this->urlparts['port'])) {
-            $this->urlparts['port'] = 80;
-        }
-        if (!isset($this->urlparts['path']) || !$this->urlparts['path'])
-            $this->urlparts['path'] = '/';
-        return TRUE;
-    }
-    
-    function _parseResponse()
-    {
-        if (preg_match("/^(.*?)\r?\n\r?\n(.*)/s", $this->incoming_payload, $match)) {
-            $this->response = $match[2];
-            if (preg_match("/^HTTP\/1\.. (\d+).*/s",$match[1],$status) && !$status[1]) {
-                    $this->errmsg = "HTTP Response $status[1] Not Found";
-                    return FALSE;
-            }
-            $rh = preg_split("/[\n\r]+/",$match[1]);
-            $this->response_headers = array();
-            foreach ($rh as $line) {
-                if (strpos($line, ':')!==false) {
-                    $line = explode(":", $line, 2);
-                    $this->response_headers[trim($line[0])] = trim($line[1]);
-                }
-            }
-            $this->response_headers['Status']=$status[1];
-            // if no content, return false
-            if(strlen($this->response) > 0) return TRUE;
-        }
-        $this->errmsg = 'Invalid HTTP Response';
-        return FALSE;
-    }
-    
-    function &_getRequest()
-    {
-        $fullpath = $this->urlparts['path'].
-                    (isset($this->urlparts['query'])?'?'.$this->urlparts['query']:'').
-                    (isset($this->urlparts['fragment'])?'#'.$this->urlparts['fragment']:'');
-        if (isset($this->options['proxy_host'])) {
-            $fullpath = 'http://'.$this->urlparts['host'].':'.$this->urlparts['port'].$fullpath;
-        }
-        if (isset($this->options['proxy_user'])) {
-            $headers['Proxy-Authorization'] = 'Basic ' . base64_encode($this->options['proxy_user'].":".$this->options['proxy_pass']);
-        }
-        $headers['User-Agent'] = $this->userAgent;
-        $headers['Host'] = $this->urlparts['host'];
-        $headers['Content-Length'] = strlen($this->postdata);
-        $headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        if (isset($this->headers)) {
-            $headers = array_merge($headers, $this->headers);
-        }
-        $headertext = '';
-        foreach ($headers as $k => $v) {
-            $headertext .= "$k: $v\r\n";
-        }
-        $method = trim($this->options['method'])?strtoupper(trim($this->options['method'])):'GET';
-        $this->outgoing_payload = 
-                "$method $fullpath HTTP/1.0\r\n".
-                $headertext."\r\n".
-                $this->postdata;
-        return $this->outgoing_payload;
-    }
-    
-    function &_sendHTTP()
-    {
-        $this->_getRequest();
-        $host = $this->urlparts['host'];
-        $port = $this->urlparts['port'];
-        if (isset($this->options['proxy_host'])) {
-            $host = $this->options['proxy_host'];
-            $port = isset($this->options['proxy_port'])?$this->options['proxy_port']:8080;
-        }
-        // send
-        if ($this->timeout > 0) {
-            $fp = fsockopen($host, $port, $this->errno, $this->errmsg, $this->timeout);
-        } else {
-            $fp = fsockopen($host, $port, $this->errno, $this->errmsg);
-        }
-        if (!$fp) {
-            $this->errmsg = "Connect Error to $host:$port";
-            return NULL;
-        }
-        if ($this->timeout > 0) {
-            // some builds of php do not support this, silence
-            // the warning
-            @socket_set_timeout($fp, $this->timeout);
-        }
-        if (!fputs($fp, $this->outgoing_payload, strlen($this->outgoing_payload))) {
-            $this->errmsg = "Error Sending Request Data to $host";
-            return NULL;
-        }
-        
-        while ($data = fread($fp, 32768)) {
-            $this->incoming_payload .= $data;
-        }
+	function doRequest()
+	{
+		if (!$this->_validateUrl()) return;
 
-        fclose($fp);
+		if (isset($this->options['timeout']))
+			$this->timeout = (int)$this->options['timeout'];
 
-        $this->_parseResponse();
-    }
+		$this->_sendHTTP();
+	}
+
+	function _validateUrl()
+	{
+		if ( ! is_array($this->urlparts) ) {
+			return FALSE;
+		}
+		if (!isset($this->urlparts['host'])) {
+			$this->urlparts['host']='127.0.0.1';
+		}
+		if (!isset($this->urlparts['port'])) {
+			$this->urlparts['port'] = 80;
+		}
+		if (!isset($this->urlparts['path']) || !$this->urlparts['path'])
+			$this->urlparts['path'] = '/';
+		return TRUE;
+	}
+
+	function _parseResponse()
+	{
+		if (preg_match("/^(.*?)\r?\n\r?\n(.*)/s", $this->incoming_payload, $match)) {
+			$this->response = $match[2];
+			if (preg_match("/^HTTP\/1\.. (\d+).*/s",$match[1],$status) && !$status[1]) {
+				$this->errmsg = "HTTP Response $status[1] Not Found";
+				return FALSE;
+			}
+			$rh = preg_split("/[\n\r]+/",$match[1]);
+			$this->response_headers = array();
+			foreach ($rh as $line) {
+				if (strpos($line, ':')!==false) {
+					$line = explode(":", $line, 2);
+					$this->response_headers[trim($line[0])] = trim($line[1]);
+				}
+			}
+			$this->response_headers['Status']=$status[1];
+			// if no content, return false
+			if(strlen($this->response) > 0) return TRUE;
+		}
+		$this->errmsg = 'Invalid HTTP Response';
+		return FALSE;
+	}
+
+	function &_getRequest()
+	{
+		$fullpath = $this->urlparts['path'].
+			(isset($this->urlparts['query'])?'?'.$this->urlparts['query']:'').
+			(isset($this->urlparts['fragment'])?'#'.$this->urlparts['fragment']:'');
+		if (isset($this->options['proxy_host'])) {
+			$fullpath = 'http://'.$this->urlparts['host'].':'.$this->urlparts['port'].$fullpath;
+		}
+		if (isset($this->options['proxy_user'])) {
+			$headers['Proxy-Authorization'] = 'Basic ' . base64_encode($this->options['proxy_user'].":".$this->options['proxy_pass']);
+		}
+		$headers['User-Agent'] = $this->userAgent;
+		$headers['Host'] = $this->urlparts['host'];
+		$headers['Content-Length'] = strlen($this->postdata);
+		$headers['Content-Type'] = 'application/x-www-form-urlencoded';
+		if (isset($this->headers)) {
+			$headers = array_merge($headers, $this->headers);
+		}
+		$headertext = '';
+		foreach ($headers as $k => $v) {
+			$headertext .= "$k: $v\r\n";
+		}
+		$method = trim($this->options['method'])?strtoupper(trim($this->options['method'])):'GET';
+		$this->outgoing_payload =
+			"$method $fullpath HTTP/1.0\r\n".
+			$headertext."\r\n".
+			$this->postdata;
+		return $this->outgoing_payload;
+	}
+
+	function _sendHTTP()
+	{
+		$this->_getRequest();
+		$host = $this->urlparts['host'];
+		$port = $this->urlparts['port'];
+		if (isset($this->options['proxy_host'])) {
+			$host = $this->options['proxy_host'];
+			$port = $this->options['proxy_port'] ?? 8080;
+		}
+		// send
+		if ($this->timeout > 0) {
+			$fp = fsockopen($host, $port, $this->errno, $this->errmsg, $this->timeout);
+		} else {
+			$fp = fsockopen($host, $port, $this->errno, $this->errmsg);
+		}
+		if (!$fp) {
+			$this->errmsg = "Connect Error to $host:$port";
+			return NULL;
+		}
+		if ($this->timeout > 0) {
+			// some builds of php do not support this, silence
+			// the warning
+			@socket_set_timeout($fp, $this->timeout);
+		}
+		if (!fputs($fp, $this->outgoing_payload, strlen($this->outgoing_payload))) {
+			$this->errmsg = "Error Sending Request Data to $host";
+			return NULL;
+		}
+
+		while ($data = fread($fp, 32768)) {
+			$this->incoming_payload .= $data;
+		}
+
+		fclose($fp);
+
+		$this->_parseResponse();
+	}
 
 # a simple test case
 #$r = new HTTPRequest('http://localhost:81/info.php/path/info');
@@ -413,7 +405,7 @@ class testHarness {
 	public $xargs = array(
 		#arg         env var                value        default   description
 		'c' => array(''                    ,'file'       ,NULL    ,'configuration file, see server-tests-config.php for example'),
-		'd' => array('TEST_PATHS'          ,'paths'      ,NULL    ,'colon seperate path list'),
+		'd' => array('TEST_PATHS'          ,'paths'      ,NULL    ,'colon separate path list'),
 		'e' => array('TEST_PHP_ERROR_STYLE','EMACS|MSVC' ,'EMACS' ,'editor error style'),
 		'h' => array(''                    ,''           ,NULL    ,'this help'),
 		'i' => array('PHPRC'               ,'path|file'  ,NULL    ,'ini file to use for tests (sets PHPRC)'),
@@ -421,7 +413,7 @@ class testHarness {
 		'm' => array('TEST_BASE_PATH'      ,'path'       ,NULL    ,'copy tests to this path before testing'),
 		'n' => array('NO_PHPTEST_SUMMARY'  ,''           ,0       ,'do not print test summary'),
 		'p' => array('TEST_PHP_EXECUTABLE' ,'path'       ,NULL    ,'php executable to be tested'),
-		'q' => array('NO_INTERACTION'      ,''           ,0       ,'no console interaction (ie dont contact QA)'),
+		'q' => array('NO_INTERACTION'      ,''           ,0       ,'no console interaction (ie don\'t contact QA)'),
 		'r' => array('REPORT_EXIT_STATUS'  ,''           ,0       ,'exit with status at end of execution'),
 		's' => array('TEST_PHP_SRCDIR'     ,'path'       ,NULL    ,'path to php source code'),
 		't' => array('TEST_PHP_DETAILED'   ,'number'     ,0       ,'level of detail output to dump'),
@@ -429,8 +421,8 @@ class testHarness {
 		'v' => array('TEST_CONTEXT_INFO'   ,''           ,0       ,'view text executable context info'),
 		'w' => array('TEST_WEB'            ,''           ,0       ,'run tests via http'),
 		'x' => array('TEST_WEB_EXT'        ,'file ext'   ,'php'   ,'http file extension to use')
-		);
-	
+	);
+
 	public $conf = array();
 	public $test_to_run = array();
 	public $test_files = array();
@@ -447,33 +439,31 @@ class testHarness {
 	public $test_executable_iscgi = false;
 	public $inisettings; // the test executables settings, used for web tests
 	public $iswin32 = false;
-	
+
 	public $ddash = "=====================================================================";
 	public $sdash = "---------------------------------------------------------------------";
 
 	// Default ini settings
 	public $ini_overwrites = array(
-			'output_handler'=>'',
-			'zlib.output_compression'=>'Off',
-			'open_basedir'=>'',
-			'safe_mode'=>'0',
-			'disable_functions'=>'',
-			'output_buffering'=>'Off',
-			'error_reporting'=>'4095',
-			'display_errors'=>'1',
-			'log_errors'=>'0',
-			'html_errors'=>'0',
-			'track_errors'=>'1',
-			'report_memleaks'=>'1',
-			'report_zend_debug'=>'0',
-			'docref_root'=>'/phpmanual/',
-			'docref_ext'=>'.html',
-			'error_prepend_string'=>'',
-			'error_append_string'=>'',
-			'auto_prepend_file'=>'',
-			'auto_append_file'=>'',
-			'magic_quotes_runtime'=>'0',
-		);	
+		'output_handler'=>'',
+		'zlib.output_compression'=>'Off',
+		'open_basedir'=>'',
+		'disable_functions'=>'',
+		'output_buffering'=>'Off',
+		'error_reporting'=>'4095',
+		'display_errors'=>'1',
+		'log_errors'=>'0',
+		'html_errors'=>'0',
+		'track_errors'=>'1',
+		'report_memleaks'=>'1',
+		'report_zend_debug'=>'0',
+		'docref_root'=>'/phpmanual/',
+		'docref_ext'=>'.html',
+		'error_prepend_string'=>'',
+		'error_append_string'=>'',
+		'auto_prepend_file'=>'',
+		'auto_append_file'=>'',
+	);
 	public $env = array();
 	public $info_params = array();
 
@@ -482,7 +472,7 @@ class testHarness {
 		$this->checkRequirements();
 		$this->env = $_ENV;
 		$this->removeSensitiveEnvVars();
-		
+
 		$this->initializeConfiguration();
 		$this->parseArgs();
 		$this->setTestPaths();
@@ -500,13 +490,13 @@ class testHarness {
 			$this->conf['TEST_PHP_SRCDIR'] = str_replace('/','\\',$this->conf['TEST_PHP_SRCDIR']);
 			$this->conf['TEST_BASE_PATH'] = str_replace('/','\\',$this->conf['TEST_BASE_PATH']);
 		}
-		
+
 		if (!$this->conf['TEST_WEB'] && !is_executable($this->conf['TEST_PHP_EXECUTABLE'])) {
 			$this->error("invalid PHP executable specified by TEST_PHP_EXECUTABLE  = " .
-					$this->conf['TEST_PHP_EXECUTABLE']);
+				$this->conf['TEST_PHP_EXECUTABLE']);
 			return false;
 		}
-		
+
 		$this->getInstalledExtensions();
 		$this->getExecutableInfo();
 		$this->getExecutableIniSettings();
@@ -516,11 +506,11 @@ class testHarness {
 		// add TEST_PHP_SRCDIR to the include path, this facilitates
 		// tests including files from src/tests
 		//$this->ini_overwrites['include_path'] = $this->cwd.($this->iswin32?';.;':':.:').$this->exec_info['INCLUDE_PATH'];
-		
+
 		$params = array();
 		settings2array($this->ini_overwrites,$params);
 		$this->info_params = settings2params($params);
-		
+
 		$this->contextHeader();
 		if ($this->conf['TEST_CONTEXT_INFO']) return;
 		$this->loadFileList();
@@ -534,7 +524,7 @@ class testHarness {
 		$out = $this->runscript(PHP_INI_SETTINGS_SCRIPT,true);
 		$this->inisettings = unserialize($out);
 	}
-	
+
 	function getExecutableInfo()
 	{
 		$out = $this->runscript(PHP_INFO_SCRIPT,true);
@@ -550,12 +540,12 @@ class testHarness {
 		}
 		$this->exec_info = $info;
 	}
-	
+
 	function getInstalledExtensions()
 	{
 		// get the list of installed extensions
 		$out = $this->runscript(PHP_EXTENSIONS_SCRIPT,true);
-		$this->exts_to_test = split(":",$out);
+		$this->exts_to_test = explode(":",$out);
 		sort($this->exts_to_test);
 		$this->exts_tested = count($this->exts_to_test);
 	}
@@ -581,7 +571,7 @@ class testHarness {
 			unlink($tmp_file);
 			if (0 && $removeheaders &&
 				preg_match("/^(.*?)\r?\n\r?\n(.*)/s", $out, $match)) {
-					return $match[2];
+				return $match[2];
 			}
 			return $out;
 		} else {
@@ -589,35 +579,35 @@ class testHarness {
 		}
 	}
 
-	
+
 	// Use this function to do any displaying of text, so that
 	// things can be over-written as necessary.
-	
+
 	function writemsg($msg) {
-	    
-	    echo $msg;
-	    
+
+		echo $msg;
+
 	}
-	
+
 	// Another wrapper function, this one should be used any time
 	// a particular test passes or fails
-	
+
 	function showstatus($item, $status, $reason = '') {
-	    
-	    switch($status) {
-		case 'PASSED':
-		    $this->writemsg("PASSED: $item ($reason)\n");
-		    break;
-		case 'FAILED':
-		    $this->writemsg("FAILED: $item ($reason)\n");
-		    break;
-		case 'SKIPPED':
-		    $this->writemsg("SKIPPED: $item ($reason)\n");
-		    break;
-	    }
+
+		switch($status) {
+			case 'PASSED':
+				$this->writemsg("PASSED: $item ($reason)\n");
+				break;
+			case 'FAILED':
+				$this->writemsg("FAILED: $item ($reason)\n");
+				break;
+			case 'SKIPPED':
+				$this->writemsg("SKIPPED: $item ($reason)\n");
+				break;
+		}
 	}
-	
-	
+
+
 	function help()
 	{
 		$usage = "usage: php run-tests.php [options]\n";
@@ -626,17 +616,17 @@ class testHarness {
 		}
 		return $usage;
 	}
-	
+
 	function parseArgs() {
 		global $argc;
 		global $argv;
 		global $_SERVER;
-		
+
 		if (!isset($argv)) {
 			$argv = $_SERVER['argv'];
 			$argc = $_SERVER['argc'];
 		}
-	
+
 		$conf = NULL;
 		for ($i=1; $i<$argc;) {
 			if ($argv[$i][0] != '-') continue;
@@ -646,32 +636,32 @@ class testHarness {
 				@$value = $argv[$i++];
 			}
 			switch($opt) {
-			case 'c':
-				/* TODO: Implement configuraiton file */
-				include($value);
-				if (!isset($conf)) {
-					$this->writemsg("Invalid configuration file\n");
-					exit(1);
-				}
-				$this->conf = array_merge($this->conf,$conf);
-				break;
-			case 'e':
-				$this->conf['TEST_PHP_ERROR_STYLE'] = strtoupper($value);
-				break;
-			case 'h':
-				print $this->help();
-				exit(0);
-			default:
-				if ($this->xargs[$opt][1] && isset($value))
-					$this->conf[$this->xargs[$opt][0]] = $value;
-				else if (!$this->xargs[$opt][1])
-					$this->conf[$this->xargs[$opt][0]] = isset($value)?$value:1;
-				else
-					$this->error("Invalid argument setting for argument $opt, should be [{$this->xargs[$opt][1]}]\n");
-				break;
+				case 'c':
+					/* TODO: Implement configuraiton file */
+					include $value;
+					if (!isset($conf)) {
+						$this->writemsg("Invalid configuration file\n");
+						exit(1);
+					}
+					$this->conf = array_merge($this->conf,$conf);
+					break;
+				case 'e':
+					$this->conf['TEST_PHP_ERROR_STYLE'] = strtoupper($value);
+					break;
+				case 'h':
+					print $this->help();
+					exit(0);
+				default:
+					if ($this->xargs[$opt][1] && isset($value))
+						$this->conf[$this->xargs[$opt][0]] = $value;
+					else if (!$this->xargs[$opt][1])
+						$this->conf[$this->xargs[$opt][0]] = $value ?? 1;
+					else
+						$this->error("Invalid argument setting for argument $opt, should be [{$this->xargs[$opt][1]}]\n");
+					break;
 			}
 		}
-		
+
 		// set config into environment, this allows
 		// executed tests to find out about the test
 		// configurations.  config file or args overwrite
@@ -690,14 +680,14 @@ class testHarness {
 		$this->env['SSH_AUTH_SOCK']='deleted';
 		$this->env['SSH_TTY']='deleted';
 	}
-	
+
 	function setEnvConfigVar($name)
 	{
 		if (isset($this->env[$name])) {
 			$this->conf[$name] = $this->env[$name];
 		}
 	}
-	
+
 	function initializeConfiguration()
 	{
 		foreach ($this->xargs as $arg=>$arg_info) {
@@ -716,16 +706,16 @@ class testHarness {
 		if (@$this->conf['TEST_PATHS']) {
 			$this->test_dirs = array();
 			if ($this->iswin32) {
-				$paths = split(';',$this->conf['TEST_PATHS']);
+				$paths = explode(';',$this->conf['TEST_PATHS']);
 			} else {
-				$paths = split(':|;',$this->conf['TEST_PATHS']);
+				$paths = explode(':|;',$this->conf['TEST_PATHS']);
 			}
 			foreach($paths as $path) {
 				$this->test_dirs[] = realpath($path);
 			}
 		}
 	}
-	
+
 	function test_sort($a, $b) {
 		$ta = strpos($a, "{$this->cwd}/tests")===0 ? 1 + (strpos($a, "{$this->cwd}/tests/run-test")===0 ? 1 : 0) : 0;
 		$tb = strpos($b, "{$this->cwd}/tests")===0 ? 1 + (strpos($b, "{$this->cwd}/tests/run-test")===0 ? 1 : 0) : 0;
@@ -737,7 +727,7 @@ class testHarness {
 	}
 
 	function checkRequirements() {
-		if (version_compare(phpversion(), "5.0") < 0) {
+		if (version_compare(phpversion(), "5.4") < 0) {
 			$this->writemsg(REQ_PHP_VERSION);
 			exit;
 		}
@@ -754,11 +744,8 @@ class testHarness {
 			$this->writemsg(PCRE_MISSING_ERROR);
 			exit;
 		}
-		if (ini_get('safe_mode')) {
-			$this->writemsg(SAFE_MODE_WARNING);
-		}
 	}
-	
+
 	//
 	// Write test context information.
 	//
@@ -780,12 +767,12 @@ class testHarness {
 		foreach ($this->conf as $k=>$v) {
 			$conf .= sprintf("%-20.s: %s\n",$k,$v);
 		}
-		
+
 		$exeinfo = '';
 		if (!$this->conf['TEST_WEB'])
 			$exeinfo = "CWD                 : {$this->cwd}\n".
-					"PHP                 : {$this->conf['TEST_PHP_EXECUTABLE']}\n";
-		
+				"PHP                 : {$this->conf['TEST_PHP_EXECUTABLE']}\n";
+
 		$this->writemsg("\n$this->ddash\n".
 			"$exeinfo$info\n".
 			"Test Harness Configuration:\n$conf\n".
@@ -793,12 +780,12 @@ class testHarness {
 			"Test Dirs   : $dirs\n".
 			"$this->ddash\n");
 	}
-	
+
 	function loadFileList()
 	{
 		foreach ($this->test_dirs as $dir) {
 			if (is_dir($dir)) {
-				$this->findFilesInDir($dir, ($dir == 'ext'));
+				$this->findFilesInDir($dir, $dir == 'ext');
 			} else {
 				$this->test_files[] = $dir;
 			}
@@ -806,7 +793,7 @@ class testHarness {
 		usort($this->test_files,array($this,"test_sort"));
 		$this->writemsg("found ".count($this->test_files)." files\n");
 	}
-	
+
 	function moveTestFiles()
 	{
 		if (!$this->conf['TEST_BASE_PATH'] ||
@@ -832,7 +819,7 @@ class testHarness {
 		}
 		$this->test_files = $files;
 	}
-	
+
 	function findFilesInDir($dir,$is_ext_dir=FALSE,$ignore=FALSE)
 	{
 		$skip = array('.', '..', 'CVS');
@@ -846,13 +833,13 @@ class testHarness {
 				}
 				$this->findFilesInDir("$dir/$name", FALSE, $ignore || $skip_ext);
 			}
-	
+
 			// Cleanup any left-over tmp files from last run.
 			if (substr($name, -4) == '.tmp') {
 				@unlink("$dir/$name");
 				continue;
 			}
-	
+
 			// Otherwise we're only interested in *.phpt files.
 			if (substr($name, -5) == '.phpt') {
 				if ($ignore) {
@@ -865,7 +852,7 @@ class testHarness {
 		}
 		closedir($o);
 	}
-	
+
 	function runHeader()
 	{
 		$this->writemsg("TIME START " . date('Y-m-d H:i:s', $this->start_time) . "\n".$this->ddash."\n");
@@ -875,14 +862,14 @@ class testHarness {
 			$this->writemsg("Running all test files.\n");
 		}
 	}
-	
+
 	function run()
 	{
 		$this->start_time = time();
 		$this->runHeader();
 		// Run selected tests.
 		if (count($this->test_to_run)) {
-			
+
 			foreach($this->test_to_run as $name=>$runnable) {
 				if(!preg_match("/\.phpt$/", $name))
 					continue;
@@ -904,20 +891,20 @@ class testHarness {
 			$this->writemsg("No tests were run.\n");
 			return;
 		}
-		
+
 		$n_total = count($this->test_results);
 		$n_total += $this->ignored_by_ext;
-		
+
 		$sum_results = array('PASSED'=>0, 'SKIPPED'=>0, 'FAILED'=>0);
 		foreach ($this->test_results as $v) {
 			$sum_results[$v]++;
 		}
 		$sum_results['SKIPPED'] += $this->ignored_by_ext;
 		$percent_results = array();
-		while (list($v,$n) = each($sum_results)) {
+		foreach ($sum_results as $v => $n) {
 			$percent_results[$v] = (100.0 * $n) / $n_total;
 		}
-		
+
 		$this->writemsg("\n".$this->ddash."\n".
 			"TIME END " . date('Y-m-d H:i:s', $this->end_time) . "\n".
 			$this->ddash."\n".
@@ -933,7 +920,7 @@ class testHarness {
 			$this->sdash."\n".
 			"Time taken      : " . sprintf("%4d seconds", $this->end_time - $this->start_time) . "\n".
 			$this->ddash."\n");
-		
+
 		$failed_test_summary = '';
 		if ($this->failed_tests) {
 			$failed_test_summary .= "\n".$this->ddash."\n".
@@ -943,7 +930,7 @@ class testHarness {
 			}
 			$failed_test_summary .=  $this->ddash."\n";
 		}
-		
+
 		if ($failed_test_summary && !$this->conf['NO_PHPTEST_SUMMARY']) {
 			$this->writemsg($failed_test_summary);
 		}
@@ -957,11 +944,11 @@ class testHarness {
 			flush();
 			$user_input = fgets($fp, 10);
 			$just_save_results = (strtolower($user_input[0]) == 's');
-			
+
 			if ($just_save_results || strlen(trim($user_input)) == 0 || strtolower($user_input[0]) == 'y') {
-				/*  
+				/*
 				 * Collect information about the host system for our report
-				 * Fetch phpinfo() output so that we can see the PHP enviroment
+				 * Fetch phpinfo() output so that we can see the PHP environment
 				 * Make an archive of all the failed tests
 				 * Send an email
 				 */
@@ -974,12 +961,12 @@ class testHarness {
 					$user_email = trim(fgets($fp, 1024));
 					$user_email = str_replace("@", " at ", str_replace(".", " dot ", $user_email));
 				}
-		
+
 				$failed_tests_data = '';
 				$sep = "\n" . str_repeat('=', 80) . "\n";
-				
+
 				$failed_tests_data .= $failed_test_summary . "\n";
-				
+
 				if (array_sum($this->failed_tests)) {
 					foreach ($this->failed_tests as $test_info) {
 						$failed_tests_data .= $sep . $test_info['name'];
@@ -991,7 +978,7 @@ class testHarness {
 				} else {
 					$status = "success";
 				}
-				
+
 				$failed_tests_data .= "\n" . $sep . 'BUILD ENVIRONMENT' . $sep;
 				$failed_tests_data .= "OS:\n". PHP_OS. "\n\n";
 				$automake = $autoconf = $libtool = $compiler = 'N/A';
@@ -1012,7 +999,7 @@ class testHarness {
 						}
 					}
 				}
-				
+
 				$failed_tests_data .= "Automake:\n$automake\n";
 				$failed_tests_data .= "Autoconf:\n$autoconf\n";
 				$failed_tests_data .= "Libtool:\n$libtool\n";
@@ -1026,7 +1013,7 @@ class testHarness {
 
 				$failed_tests_data .= $sep . "PHPINFO" . $sep;
 				$failed_tests_data .= shell_exec($this->conf['TEST_PHP_EXECUTABLE'].' -dhtml_errors=0 -i');
-				
+
 				$compression = 0;
 
 				if ($just_save_results ||
@@ -1035,7 +1022,7 @@ class testHarness {
 					$fp = fopen($output_file, "w");
 					fwrite($fp, $failed_tests_data);
 					fclose($fp);
-				
+
 					if (!$just_save_results)
 						echo "\nThe test script was unable to automatically send the report to PHP's QA Team\n";
 					echo "Please send ".$output_file." to ".PHP_QA_EMAIL." manually, thank you.\n";
@@ -1045,7 +1032,7 @@ class testHarness {
 				}
 			}
 		}
-		 
+
 		if($this->conf['REPORT_EXIT_STATUS'] and $sum_results['FAILED']) {
 			exit(1);
 		}
@@ -1054,7 +1041,7 @@ class testHarness {
 	function getINISettings(&$section_text)
 	{
 		$ini_settings = $this->ini_overwrites;
-		// Any special ini settings 
+		// Any special ini settings
 		// these may overwrite the test defaults...
 		if (array_key_exists('INI', $section_text)) {
 			settings2array(preg_split( "/[\n\r]+/", $section_text['INI']), $ini_settings);
@@ -1103,11 +1090,11 @@ class testHarness {
 		// eval fails if no newline
 		return eval("$data\n");
 	}
-	
+
 	function getENVSettings(&$section_text,$testfile)
 	{
 		$env = $this->env;
-		// Any special environment settings 
+		// Any special environment settings
 		// these may overwrite the test defaults...
 		if (array_key_exists('ENV', $section_text)) {
 			$sect = $this->evalSettings($testfile,$section_text['ENV']);
@@ -1120,7 +1107,7 @@ class testHarness {
 	function getEvalTestSettings($section_text,$testfile)
 	{
 		$rq = array();
-		// Any special environment settings 
+		// Any special environment settings
 		// these may overwrite the test defaults...
 		if ($section_text) {
 			$sect = $this->evalSettings($testfile,$section_text);
@@ -1129,7 +1116,7 @@ class testHarness {
 		}
 		return $rq;
 	}
-	
+
 	//
 	// Load the sections of the test file.
 	//
@@ -1144,20 +1131,20 @@ class testHarness {
 			'_FILE'   => $file,
 			'_DIR'    => realpath(dirname($file)),
 		);
-	
+
 		$fp = @fopen($file, "r")
-				or $this->error("Cannot open test file: $file");
-	
+		or $this->error("Cannot open test file: $file");
+
 		$section = '';
 		while (!feof($fp)) {
 			$line = fgets($fp);
 			// Match the beginning of a section.
-			if (ereg('^--([A-Z]+)--',$line,$r)) {
+			if (preg_match('/^--([A-Z]+)--/',$line,$r)) {
 				$section = $r[1];
 				$section_text[$section] = '';
 				continue;
 			}
-			
+
 			// Add to the section text.
 			$section_text[$section] .= $line;
 		}
@@ -1211,14 +1198,14 @@ class testHarness {
 			if (!$output) return NULL;
 			if ($this->conf['TEST_PHP_DETAILED'] > 2)
 				print "SKIPIF: [$output]\n";
-			if (eregi("^skip", $output)){
-			
-				$reason = (ereg("^skip[[:space:]]*(.+)\$", $output)) ? ereg_replace("^skip[[:space:]]*(.+)\$", "\\1", $output) : FALSE;
+			if (preg_match("/^skip/i", $output)){
+
+				$reason = preg_match("/^skip\s*(.+)\$/", $output) ? preg_replace("/^skip\s*(.+)\$/", "\\1", $output) : FALSE;
 				$this->showstatus($section_text['TEST'], 'SKIPPED', $reason);
 				return 'SKIPPED';
 			}
-			if (eregi("^info", $output)) {
-				$reason = (ereg("^info[[:space:]]*(.+)\$", $output)) ? ereg_replace("^info[[:space:]]*(.+)\$", "\\1", $output) : FALSE;
+			if (preg_match("/^info/i", $output)) {
+				$reason = preg_match("/^info\s*(.+)\$/", $output) ? preg_replace("/^info\s*(.+)\$/", "\\1", $output) : FALSE;
 				if ($reason) {
 					$tested .= " (info: $reason)";
 				}
@@ -1234,36 +1221,36 @@ class testHarness {
 	{
 		if ($this->conf['TEST_PHP_DETAILED'])
 			$this->writemsg("\n=================\nTEST $file\n");
-	
+
 		$section_text = $this->getSectionText($file);
-	
+
 		if ($this->iswin32)
 			$shortname = str_replace($this->conf['TEST_BASE_PATH'].'\\', '', $file);
 		else
 			$shortname = str_replace($this->conf['TEST_BASE_PATH'].'/', '', $file);
 		$tested = $section_text['TEST']." [$shortname]";
-	
+
 		if ($this->conf['TEST_WEB']) {
-			$tmp_file   = ereg_replace('\.phpt$','.'.$this->conf['TEST_WEB_EXT'],$file);
+			$tmp_file   = preg_replace('/\.phpt$/','.'.$this->conf['TEST_WEB_EXT'],$file);
 			$uri = $this->conf['TEST_BASE_SCRIPT_NAME'].str_replace($this->conf['TEST_BASE_PATH'], '', $tmp_file);
 			$uri = str_replace('\\', '/', $uri);
 		} else {
-			$tmp_file   = ereg_replace('\.phpt$','.php',$file);
+			$tmp_file   = preg_replace('/\.phpt$/','.php',$file);
 		}
 		@unlink($tmp_file);
-	
-		// unlink old test results	
-		@unlink(ereg_replace('\.phpt$','.diff',$file));
-		@unlink(ereg_replace('\.phpt$','.log',$file));
-		@unlink(ereg_replace('\.phpt$','.exp',$file));
-		@unlink(ereg_replace('\.phpt$','.out',$file));
-	
+
+		// unlink old test results
+		@unlink(preg_replace('/\.phpt$/','.diff',$file));
+		@unlink(preg_replace('/\.phpt$/','.log',$file));
+		@unlink(preg_replace('/\.phpt$/','.exp',$file));
+		@unlink(preg_replace('/\.phpt$/','.out',$file));
+
 		if (!$this->conf['TEST_WEB']) {
 			// Reset environment from any previous test.
 			$env = $this->getENVSettings($section_text,$tmp_file);
 			$ini_overwrites = $this->getINIParams($section_text);
 		}
-		
+
 		// if this is a cgi test, prepare for it
 		$query_string = '';
 		$havepost = array_key_exists('POST', $section_text) && !empty($section_text['POST']);
@@ -1287,9 +1274,9 @@ class testHarness {
 			$request = $this->getEvalTestSettings(@$section_text['REQUEST'],$tmp_file);
 			$headers = $this->getEvalTestSettings(@$section_text['HEADERS'],$tmp_file);
 
-			$method = isset($request['method'])?$request['method']:$havepost?'POST':'GET';
+			$method = $request['method'] ?? $havepost ? 'POST' : 'GET';
 			$query_string = $haveget?$section_text['GET']:'';
-		
+
 			$options = array();
 			$options['method']=$method;
 			if (isset($this->conf['timeout']))    $options['timeout']    = $this->conf['timeout'];
@@ -1297,7 +1284,7 @@ class testHarness {
 			if (isset($this->conf['proxy_port'])) $options['proxy_port'] = $this->conf['proxy_port'];
 			if (isset($this->conf['proxy_user'])) $options['proxy_user'] = $this->conf['proxy_user'];
 			if (isset($this->conf['proxy_pass'])) $options['proxy_pass'] = $this->conf['proxy_pass'];
-			
+
 			$post = $havepost?$section_text['POST']:NULL;
 			$url = $this->conf['TEST_SERVER_URL'];
 			if (isset($request['SCRIPT_NAME']))
@@ -1316,7 +1303,7 @@ class testHarness {
 				$this->writemsg("\nURL  = $url\n");
 		} else if ($do_cgi) {
 			$query_string = $haveget?$section_text['GET']:'';
-			
+
 			if (!array_key_exists('GATEWAY_INTERFACE', $env))
 				$env['GATEWAY_INTERFACE']='CGI/1.1';
 			if (!array_key_exists('SERVER_SOFTWARE', $env))
@@ -1340,7 +1327,7 @@ class testHarness {
 				$env['SCRIPT_NAME']='';
 			if (!array_key_exists('SCRIPT_FILENAME', $env))
 				$env['SCRIPT_FILENAME']='';
-		
+
 			if (array_key_exists('POST', $section_text) && (!$haveget || !empty($section_text['POST']))) {
 				$post = $section_text['POST'];
 				$content_length = strlen($post);
@@ -1359,15 +1346,15 @@ class testHarness {
 					$env['CONTENT_LENGTH']='';
 			}
 			if ($this->conf['TEST_PHP_DETAILED'] > 1)
-				$this->writemsg("\nCONTENT_LENGTH  = " . $env['CONTENT_LENGTH'] . 
-						"\nCONTENT_TYPE    = " . $env['CONTENT_TYPE'] . 
-						"\nPATH_TRANSLATED = " . $env['PATH_TRANSLATED'] . 
-						"\nPATH_INFO       = " . $env['PATH_INFO'] . 
-						"\nQUERY_STRING    = " . $env['QUERY_STRING'] . 
-						"\nREDIRECT_STATUS = " . $env['REDIRECT_STATUS'] . 
-						"\nREQUEST_METHOD  = " . $env['REQUEST_METHOD'] . 
-						"\nSCRIPT_NAME     = " . $env['SCRIPT_NAME'] . 
-						"\nSCRIPT_FILENAME = " . $env['SCRIPT_FILENAME'] . "\n");
+				$this->writemsg("\nCONTENT_LENGTH  = " . $env['CONTENT_LENGTH'] .
+					"\nCONTENT_TYPE    = " . $env['CONTENT_TYPE'] .
+					"\nPATH_TRANSLATED = " . $env['PATH_TRANSLATED'] .
+					"\nPATH_INFO       = " . $env['PATH_INFO'] .
+					"\nQUERY_STRING    = " . $env['QUERY_STRING'] .
+					"\nREDIRECT_STATUS = " . $env['REDIRECT_STATUS'] .
+					"\nREQUEST_METHOD  = " . $env['REQUEST_METHOD'] .
+					"\nSCRIPT_NAME     = " . $env['SCRIPT_NAME'] .
+					"\nSCRIPT_FILENAME = " . $env['SCRIPT_FILENAME'] . "\n");
 			/* not cgi spec to put query string on command line,
 			   but used by a couple tests to catch a security hole
 			   in older php versions.  At least IIS can be configured
@@ -1375,7 +1362,7 @@ class testHarness {
 			$args = $env['QUERY_STRING'];
 			$args = "$ini_overwrites $tmp_file \"$args\" 2>&1";
 		} else {
-			$args = $section_text['ARGS'] ? $section_text['ARGS'] : '';
+			$args = $section_text['ARGS'] ?: '';
 			$args = "$ini_overwrites $tmp_file $args 2>&1";
 		}
 
@@ -1391,7 +1378,7 @@ class testHarness {
 			$out = execute($this->conf['TEST_PHP_EXECUTABLE'],$args,$post,$this->cwd,$env);
 			// if this is a cgi, remove the headers first
 			if ($this->test_executable_iscgi
-				 && preg_match("/^(.*?)\r?\n\r?\n(.*)/s", $out, $match)) {
+				&& preg_match("/^(.*?)\r?\n\r?\n(.*)/s", $out, $match)) {
 				$out = $match[2];
 				$rh = preg_split("/[\n\r]+/",$match[1]);
 				$headers = array();
@@ -1403,14 +1390,14 @@ class testHarness {
 				}
 			}
 		}
-		
+
 		if ($this->conf['TEST_PHP_DETAILED'] > 2) {
 			echo "HEADERS: ";
 			print_r($headers);
 			echo "OUTPUT: \n$out\n";
-			
+
 		}
-			
+
 		// Does the output match what is expected?
 		$output = trim($out);
 		$output = preg_replace('/\r\n/',"\n",$output);
@@ -1425,36 +1412,89 @@ class testHarness {
 			}
 			$wanted_re = preg_replace('/\r\n/',"\n",$wanted);
 			if (isset($section_text['EXPECTF'])) {
-				$wanted_re = preg_quote($wanted_re, '/');
+				// do preg_quote, but miss out any %r delimited sections
+				$temp = "";
+				$r = "%r";
+				$startOffset = 0;
+				$length = strlen($wanted_re);
+				while($startOffset < $length) {
+					$start = strpos($wanted_re, $r, $startOffset);
+					if ($start !== false) {
+						// we have found a start tag
+						$end = strpos($wanted_re, $r, $start+2);
+						if ($end === false) {
+							// unbalanced tag, ignore it.
+							$end = $start = $length;
+						}
+					} else {
+						// no more %r sections
+						$start = $end = $length;
+					}
+					// quote a non re portion of the string
+					$temp .= preg_quote(substr($wanted_re, $startOffset, ($start - $startOffset)), '/');
+					// add the re unquoted.
+					if ($end > $start) {
+						$temp = $temp . '(' . substr($wanted_re, $start+2, $end - $start-2). ')';
+					}
+					$startOffset = $end + 2;
+				}
+				$wanted_re = $temp;
+
+				$wanted_re = str_replace(
+					array('%binary_string_optional%'),
+					'string',
+					$wanted_re
+				);
+				$wanted_re = str_replace(
+					array('%unicode_string_optional%'),
+					'string',
+					$wanted_re
+				);
+				$wanted_re = str_replace(
+					array('%unicode\|string%', '%string\|unicode%'),
+					'string',
+					$wanted_re
+				);
+				$wanted_re = str_replace(
+					array('%u\|b%', '%b\|u%'),
+					'',
+					$wanted_re
+				);
 				// Stick to basics
-				$wanted_re = str_replace("%s", ".+?", $wanted_re); //not greedy
-				$wanted_re = str_replace("%i", "[+\-]?[0-9]+", $wanted_re);
-				$wanted_re = str_replace("%d", "[0-9]+", $wanted_re);
-				$wanted_re = str_replace("%x", "[0-9a-fA-F]+", $wanted_re);
-				$wanted_re = str_replace("%f", "[+\-]?\.?[0-9]+\.?[0-9]*(E-?[0-9]+)?", $wanted_re);
-				$wanted_re = str_replace("%c", ".", $wanted_re);
+				$wanted_re = str_replace('%e', '\\' . DIRECTORY_SEPARATOR, $wanted_re);
+				$wanted_re = str_replace('%s', '[^\r\n]+', $wanted_re);
+				$wanted_re = str_replace('%S', '[^\r\n]*', $wanted_re);
+				$wanted_re = str_replace('%a', '.+', $wanted_re);
+				$wanted_re = str_replace('%A', '.*', $wanted_re);
+				$wanted_re = str_replace('%w', '\s*', $wanted_re);
+				$wanted_re = str_replace('%i', '[+-]?\d+', $wanted_re);
+				$wanted_re = str_replace('%d', '\d+', $wanted_re);
+				$wanted_re = str_replace('%x', '[0-9a-fA-F]+', $wanted_re);
+				$wanted_re = str_replace('%f', '[+-]?\.?\d+\.?\d*(?:[Ee][+-]?\d+)?', $wanted_re);
+				$wanted_re = str_replace('%c', '.', $wanted_re);
 				// %f allows two points "-.0.0" but that is the best *simple* expression
+
 			}
-	/* DEBUG YOUR REGEX HERE
-			var_dump($wanted_re);
-			print(str_repeat('=', 80) . "\n");
-			var_dump($output);
-	*/
+			/* DEBUG YOUR REGEX HERE
+                    var_dump($wanted_re);
+                    print(str_repeat('=', 80) . "\n");
+                    var_dump($output);
+            */
 			$failed = !preg_match("/^$wanted_re\$/s", $output);
 		}
-		
+
 		$skipexpect = false;
 		if (!$failed && $this->conf['TEST_WEB'] && isset($section_text['EXPECTHEADERS'])) {
 			$want = array();
 			$lines = preg_split("/[\n\r]+/",$section_text['EXPECTHEADERS']);
 			$wanted='';
-            foreach ($lines as $line) {
-                if (strpos($line, ':')!==false) {
-                    $line = explode(":", $line, 2);
-                    $want[trim($line[0])] = trim($line[1]);
+			foreach ($lines as $line) {
+				if (strpos($line, ':')!==false) {
+					$line = explode(":", $line, 2);
+					$want[trim($line[0])] = trim($line[1]);
 					$wanted .= trim($line[0]).': '.trim($line[1])."\n";
-                }
-            }
+				}
+			}
 			$output='';
 			foreach ($want as $k=>$v) {
 				$output .= "$k: {$headers[$k]}\n";
@@ -1462,7 +1502,7 @@ class testHarness {
 					$failed = TRUE;
 				}
 			}
-			
+
 			// different servers may do different things on non-200 results
 			// for instance, IIS will deliver it's own error pages, so we
 			// cannot expect to match up the EXPECT section.  We may however,
@@ -1470,57 +1510,57 @@ class testHarness {
 			// need to change later.
 			$skipexpect = isset($headers['Status']) && $headers['Status'] != 200;
 		}
-			
+
 		if (!$failed && !$skipexpect && isset($section_text['EXPECT'])) {
 			$wanted = $section_text['EXPECT'];
 			$wanted = preg_replace('/\r\n/',"\n",$wanted);
 			$failed = (0 != strcmp($output,$wanted));
 		}
-		
+
 		if (!$failed) {
 			@unlink($tmp_file);
 			$this->showstatus($tested, 'PASSED');
 			return 'PASSED';
 		}
-			
+
 		// Test failed so we need to report details.
 		$this->showstatus($tested, 'FAILED');
-	
+
 		$this->failed_tests[] = array(
-							'name' => $file,
-							'test_name' => $tested,
-							'output' => ereg_replace('\.phpt$','.log', $file),
-							'diff'   => ereg_replace('\.phpt$','.diff', $file)
-							);
-	
+			'name' => $file,
+			'test_name' => $tested,
+			'output' => preg_replace('/\.phpt$/','.log', $file),
+			'diff'   => preg_replace('/\.phpt$/','.diff', $file)
+		);
+
 		if ($this->conf['TEST_PHP_DETAILED'])
 			$this->writemsg(generate_diff($wanted,$output)."\n");
-			
+
 		// write .exp
 		if (strpos($this->conf['TEST_PHP_LOG_FORMAT'],'E') !== FALSE) {
-			$logname = ereg_replace('\.phpt$','.exp',$file);
+			$logname = preg_replace('/\.phpt$/','.exp',$file);
 			file_put_contents($logname,$wanted);
 		}
-	
+
 		// write .out
 		if (strpos($this->conf['TEST_PHP_LOG_FORMAT'],'O') !== FALSE) {
-			$logname = ereg_replace('\.phpt$','.out',$file);
+			$logname = preg_replace('/\.phpt$/','.out',$file);
 			file_put_contents($logname,$output);
 		}
-	
+
 		// write .diff
 		if (strpos($this->conf['TEST_PHP_LOG_FORMAT'],'D') !== FALSE) {
-			$logname = ereg_replace('\.phpt$','.diff',$file);
+			$logname = preg_replace('/\.phpt$/','.diff',$file);
 			file_put_contents($logname,generate_diff($wanted,$output));
 		}
-	
+
 		// write .log
 		if (strpos($this->conf['TEST_PHP_LOG_FORMAT'],'L') !== FALSE) {
-			$logname = ereg_replace('\.phpt$','.log',$file);
+			$logname = preg_replace('/\.phpt$/','.log',$file);
 			file_put_contents($logname,
-						"\n---- EXPECTED OUTPUT\n$wanted\n".
-						"---- ACTUAL OUTPUT\n$output\n".
-						"---- FAILED\n");
+				"\n---- EXPECTED OUTPUT\n$wanted\n".
+				"---- ACTUAL OUTPUT\n$output\n".
+				"---- FAILED\n");
 			// display emacs/msvc error output
 			if (strpos($this->conf['TEST_PHP_LOG_FORMAT'],'C') !== FALSE) {
 				$this->error_report($file,$logname,$tested);
@@ -1532,20 +1572,20 @@ class testHarness {
 	//
 	//  Write an error in a format recognizable to Emacs or MSVC.
 	//
-	function error_report($testname,$logname,$tested) 
+	function error_report($testname,$logname,$tested)
 	{
 		$testname = realpath($testname);
 		$logname  = realpath($logname);
 		switch ($this->conf['TEST_PHP_ERROR_STYLE']) {
-		default:
-		case 'MSVC':
-			$this->writemsg($testname . "(1) : $tested\n");
-			$this->writemsg($logname . "(1) :  $tested\n");
-			break;
-		case 'EMACS':
-			$this->writemsg($testname . ":1: $tested\n");
-			$this->writemsg($logname . ":1:  $tested\n");
-			break;
+			default:
+			case 'MSVC':
+				$this->writemsg($testname . "(1) : $tested\n");
+				$this->writemsg($logname . "(1) :  $tested\n");
+				break;
+			case 'EMACS':
+				$this->writemsg($testname . ":1: $tested\n");
+				$this->writemsg($logname . ":1:  $tested\n");
+				break;
 		}
 	}
 

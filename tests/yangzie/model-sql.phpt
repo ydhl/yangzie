@@ -39,12 +39,12 @@ class TestModel extends YZE_Model{
 	const KEY_NAME = "id";
 	const F_ID = "id";
 	const CLASS_NAME = 'yangzie\TestModel';
-	
+
 	const F_TITLE = "title";
 	const F_USER_ID = "user_id";
 	const F_CREATED_ON = "created_on";
 	const F_MODIFIED_ON = "modified_on";
-	
+
 	public static $columns = array(
 			'id'         => array('type' => 'integer', 'null' => false,'length' => '11','default'	=> '',),
 			'title'      => array('type' => 'string', 'null' => false,'length' => '201','default'	=> '',),
@@ -79,9 +79,9 @@ class OrderModel extends YZE_Model{
  * 初始化数据
  */
 
-YZE_DBAImpl::getDBA()->migration(TestModel::CLASS_NAME, true);
-YZE_DBAImpl::getDBA()->migration(OrderModel::CLASS_NAME, true);
-YZE_DBAImpl::getDBA()->migration(UserModel::CLASS_NAME, true);
+YZE_DBAImpl::get_instance()->migration(TestModel::CLASS_NAME, true);
+YZE_DBAImpl::get_instance()->migration(OrderModel::CLASS_NAME, true);
+YZE_DBAImpl::get_instance()->migration(UserModel::CLASS_NAME, true);
 TestModel::truncate();
 OrderModel::truncate();
 UserModel::truncate();
@@ -106,18 +106,18 @@ $order->set(OrderModel::F_ORDER_ID, "112233")
 echo "单表查询:\r\n";
 
 #where调用
-var_dump( TestModel::where("title=:title and (id=3)")->getSingle(array(":title"=>"tes2121t title")));
+var_dump( TestModel::where("title=:title and (id=3)")->get_Single(array(":title"=>"tes2121t title")));
 
-echo TestModel::where("title=:title and (id=1)")->getSingle(array(":title"=>"test title"))->get(TestModel::F_TITLE);
+echo TestModel::where("title=:title and (id=1)")->get_Single(array(":title"=>"test title"))->get(TestModel::F_TITLE);
 #调用方法4
 echo "\r\n";
 echo TestModel::where("t.title=:title")
 	->left_Join("t", UserModel::CLASS_NAME, "u", "t.user_id=u.id")
-	->getSingle(array(":title"=>"test title"),"t")->get(TestModel::F_TITLE);
+	->get_Single(array(":title"=>"test title"),"t")->get(TestModel::F_TITLE);
 echo "\r\n";
 echo( TestModel::where("t.title=:title")
 	->left_Join("t", UserModel::CLASS_NAME, "u", "t.user_id=u.id")
-	->getSingle(array(":title"=>"test title"),"u")->get(UserModel::F_TITLE));
+	->get_Single(array(":title"=>"test title"),"u")->get(UserModel::F_TITLE));
 echo "\r\n";
 $rsts = TestModel::where("t.title=:title")
 	->left_Join("t", UserModel::CLASS_NAME, "u", "t.user_id=u.id")
@@ -137,7 +137,7 @@ echo count($rsts);
 echo "\r\n";
 echo $rsts[0]->get(UserModel::F_TITLE);
 echo "\r\n";
-	
+
 $rsts = TestModel::where("t.title=:title")
 	->left_Join("t", UserModel::CLASS_NAME, "u", "t.user_id=u.id")
 	->limit(5)->order_by(TestModel::F_TITLE,"asc","t")

@@ -3,15 +3,20 @@ namespace yangzie;
 /**
  * 该文件中定义了系统的所有资源及这些资源对应的控制器映射
  */
-class YZE_Router{
+class YZE_Router extends YZE_Object {
 	private static $instance;
-	private $mappings = array(/*"__yze__"=>array(
-			'yze.rpc'	=> array('controller'	=> 'yangzie\yze_default',
-        		'args'	=> array(),
-        	))*/);
+	/**
+	 * [
+	 *   'routers' => [
+	 * 	    'uri地址'=>["controller"=>'控制器名', 'aciton'=>'执行的方法',"args"=>["固定参数名"=>"参数值"]]
+	 *   ]
+	 * ]
+	 * @var array
+	 */
+	private $mappings = array();
 	private function __construct(){}
 	/**
-	 * 
+	 *
 	 *
 	 * @return Router
 	 */
@@ -30,12 +35,12 @@ class YZE_Router{
 	}
 
 	public static function load_routers(){
-		
+
 		foreach(glob(YZE_APP_MODULES_INC."*") as $module){
 			$phar_wrap = is_file($module) ? "phar://" :"";
-			
-			if(@file_exists("{$phar_wrap}{$module}/__module__.php")){
-				include_once "{$phar_wrap}{$module}/__module__.php";
+
+			if(@file_exists("{$phar_wrap}{$module}/__config__.php")){
+				include_once "{$phar_wrap}{$module}/__config__.php";
 				$module_name = strtolower(basename($module));
 				if($phar_wrap) {
 					$module_name = ucfirst(preg_replace('/\.phar$/',"", $module_name));

@@ -1,32 +1,51 @@
 <?php
 namespace yangzie;
+
 /**
- * 判断一个相同文件是否真的存在
- * 
- * @author leeboo
- * 
- * @param unknown $relative_file
- * @return boolean
- * 
- * @return
+ * 通过后缀名判断给定的文件是不是图片
+ *
+ * @param $file
+ * @return bool
  */
-function yze_isfile($relative_file){
-	return is_file(yze_get_abs_path($relative_file));
-}
-
 function yze_isimage($file){
-	$type = array("png","gif","jpeg","jpg","bmp",".ico");
-	return in_array(strtolower(pathinfo($file,PATHINFO_EXTENSION)), $type);
+	$type = array("png","gif","jpeg","jpg","bmp","ico");
+	return in_array(strtolower(pathinfo($file,PATHINFO_EXTENSION) ?: $file), $type);
 }
 
-function yze_get_abs_path($path, $in){
-	return $in.strtr(ltrim($path, "/"), array("/"=>DS));
+/**
+ * this/is/../a/./test/.///is, 格式化成this/a/test/is，但要注意不能有stream wrapper，比如http:// phar://等
+ * //会被处理掉
+ * @param $path
+ * @param string $in
+ * @return string
+ */
+function yze_get_abs_path($path, $in=''){
+    $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $in."/".ltrim($path, "/"));
+    $leftHasSperator = substr($path, 0, 1) == '/' || substr($path, 0) == '\\';
+    $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
+    $absolutes = array();
+    foreach ($parts as $part) {
+        if ('.' == $part) continue;
+        if ('..' == $part) {
+            array_pop($absolutes);
+        } else {
+            $absolutes[] = $part;
+        }
+    }
+    return ($leftHasSperator ? DIRECTORY_SEPARATOR : '').implode(DIRECTORY_SEPARATOR, $absolutes);
 }
 
-function yze_remove_abs_path($path, $in){
+/**
+ * 从路径path中删除need_remove
+ *
+ * @param $path
+ * @param $need_remove
+ * @return string
+ */
+function yze_remove_path($path, $need_remove){
 	$path = strtr($path, array(DS=>"/"));
-	$in =  strtr($in, array(DS=>"/"));
-	return "/".ltrim(strtr($path, array($in=>'')),"/");
+    $need_remove =  strtr($need_remove, array(DS=>"/"));
+	return strtr($path, array($need_remove=>''));
 }
 
 /**
@@ -49,20 +68,20 @@ function yze_move_file($src_file, $dist_dir){
 /**
  * 把src_file 拷贝到 dist_dir 中去, 并返回拷贝成功的一文件路径，如果拷贝失败返回false
  * dist_dir不存在则创建
- * 
+ *
  * @author leeboo
- * 
+ *
  * @param unknown $src_file
  * @param unknown $dist_dir
  * @return unknown|string
- * 
+ *
  * @return
  */
 function yze_copy_file($src_file, $dist_dir){
 	if (!$dist_dir){
 		return false;
 	}
-	
+
 	yze_make_dirs($dist_dir);
 
 	$dist_file = rtrim($dist_dir,DS).DS.basename($src_file);
@@ -70,7 +89,7 @@ function yze_copy_file($src_file, $dist_dir){
 }
 
 /**
- * 
+ *
  * 拷贝目录及其下所有子目录文件到指定目录
  * @param $srcDir
  * @param $destDir
@@ -82,7 +101,7 @@ function yze_copy_dir($srcDir, $destDir) {
         }
     }
     $dir_handle = opendir($srcDir);
-    while ( false !== ( $file = readdir($dir_handle)) ) { 
+    while ( false !== ( $file = readdir($dir_handle)) ) {
         if (( $file != '.' ) && ( $file != '..' )) {
 
             if ( is_dir($srcDir . DS . $file) ) {
@@ -92,22 +111,22 @@ function yze_copy_dir($srcDir, $destDir) {
                     closedir($dir_handle);
                     return false;
                 }
-            }  
-        }   
+            }
+        }
     }
     closedir($dir_handle);
-    
+
     return true;
 }
 
 /**
  *  根据传入的目录路径创建它们, 目录存在不做处理
- * 
+ *
  * @param unknown_type $dirs 绝对地址
  */
 function yze_make_dirs($dirs){
 	if (file_exists($dirs))return;
-	
+    $dir = '';
 	foreach (explode(DS,strtr(rtrim($dirs,DS),array("/"=>DS))) as $d){
 		$dir = @$dir.$d.DS;
 		@mkdir($dir,0777);

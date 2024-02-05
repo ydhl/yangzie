@@ -2,36 +2,36 @@
 namespace yangzie;
 
 class YZE_Object{
+	const VERSION = '3.0.0';
 	private static $loaded_modules = array();
-	
+
 	public static function set_loaded_modules($module_name, $module_info){
 		self::$loaded_modules[strtolower($module_name)] = $module_info;
 	}
-	
+
 	public static function loaded_module($module_name){
 		return @self::$loaded_modules[strtolower($module_name)];
 	}
-	
-	//subclass impl this.
+
 	public function output(){
 
 	}
 
-	
-	
+
+
 	/**
 	 * 取得一个变量的值，该方法主要是增加了默认值处理，如果变量为假值，返回默认值
-	 *
+	 * @return mixed
 	 */
 	public static function the_val($val,$default){
-		return $val ? $val : $default;
+		return $val ?: $default;
 	}
 
 	/**
 	 *
 	 * aa_bb_cc格式化成Aa_Bb_Cc_suffix
-	 * @param unknown_type $class_name
-	 * @param unknown_type $suffix
+	 * @param string $class_name
+	 * @param string $suffix
 	 */
 	public static function format_class_name($class_name,$suffix){
 		foreach(explode("_", trim($class_name)) as $word){
@@ -42,27 +42,13 @@ class YZE_Object{
 
 
 	/**
-	 * 过滤掉html符号
+	 * 转义html符号
 	 *
 	 * @param array $array
 	 * @param $type INPUT_GET, INPUT_POST, INPUT_COOKIE, INPUT_SERVER, INPUT_ENV, INPUT_SESSION, or INPUT_REQUEST.
 	 * @return unknown
 	 */
 	public static function filter_special_chars(array $array=array(),$type){
-        if(php_sapi_name()=="cli"){
-            switch($type){
-                case INPUT_GET: return self::filter_vars($_GET);
-                case INPUT_POST: return self::filter_vars($_POST);
-                case INPUT_COOKIE: return self::filter_vars($_COOKIE);
-                case INPUT_SERVER: return self::filter_vars($_SERVER);
-                case INPUT_SESSION: return self::filter_vars($_SESSION);
-                case INPUT_REQUEST: return self::filter_vars($_REQUEST);
-                case INPUT_ENV: return self::filter_vars($_ENV);
-            }
-            return $array;
-        }
-        
-        //非cli模式下才有$_POST这些全局变量
 		$definition = array();
 		foreach($array as $name=>$value){
 			$definition[$name]['filter'] 	= FILTER_CALLBACK;
@@ -71,20 +57,44 @@ class YZE_Object{
 		return filter_input_array($type, $definition);
 	}
 
+	/**
+	 * 转义$array数组中的html符号
+	 * @param array $array
+	 * @return array|false|null
+	 */
 	public static function filter_vars(array $array){
 		$definition = array();
 		foreach($array as $name=>$value){
 			$definition[$name]['filter'] 	= FILTER_CALLBACK;
-			$definition[$name]['options']	= 'htmlspecialchars';
+			$definition[$name]['options']	= 'htmlentities';
 		}
 		return filter_var_array($array, $definition);
 	}
+
+	/**
+	 * 转义数据中的html符号
+	 * @param $var
+	 * @return mixed
+	 */
 	public static function filter_var($var){
-		return filter_var($var, FILTER_CALLBACK,array('options' => 'htmlspecialchars'));
+		return filter_var($var, FILTER_CALLBACK,array('options' => 'htmlentities')) ?: $var;
 	}
+
+	/**
+	 * 解码数据中的html符号
+	 * @param $var
+	 * @return mixed
+	 */
 	public static function defilter_var($var){
-		return filter_var($var, FILTER_CALLBACK,array('options' => 'htmlspecialchars_decode'));
+		return filter_var($var, FILTER_CALLBACK,array('options' => 'html_entity_decode')) ?: $var;
 	}
+
+	/**
+	 * 中文解码
+	 * @param $str
+	 * @param $charcode
+	 * @return array|false|string
+	 */
 	public static function unescape($str,$charcode="UTF-8"){
 		$text = preg_replace_callback("/[%|\\\\]u(?P<c>[0-9A-Za-z]{4})/",function($matches){
 			$c = '';

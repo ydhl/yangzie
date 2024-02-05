@@ -1,5 +1,5 @@
 --TEST--
-DBA new save Function Tester 
+DBA new save Function Tester
 --FILE--
 <?php
 namespace  yangzie;
@@ -36,7 +36,7 @@ class UserModel extends YZE_Model{
  * 初始化数据
  */
 
-YZE_DBAImpl::getDBA()->migration(UserModel::CLASS_NAME);
+YZE_DBAImpl::get_instance()->migration(UserModel::CLASS_NAME);
 UserModel::truncate();
 
 
@@ -44,7 +44,7 @@ UserModel::truncate();
  * 这里的测试需要配置数据库连接
  */
 
-$db   = \yangzie\YZE_DBAImpl::getDBA();
+$db   = \yangzie\YZE_DBAImpl::get_instance();
 $user = new UserModel();
 
 $user->set("name", "aa");

@@ -8,7 +8,7 @@ class Generate_Controller_Script extends AbstractScript{
 	private $uri;
 	private $uri_args = array();
 
-	
+
 	public function generate(){
 		$argv = $this->args;
 		$this->controller		= $argv['controller'];
@@ -21,17 +21,17 @@ class Generate_Controller_Script extends AbstractScript{
 
 		$this->save_class();
 		$this->save_test();
-		
-		echo __("update __module__ file :\t");
+
+		echo __("update __config__ file :\t");
 		$this->update_module();
 		echo get_colored_text(__("Ok."), "blue","white")."\r\nDone.";
 	}
-	
+
 	private function update_module(){
 		$module = $this->module_name;
 		$path = dirname(dirname(__FILE__))."/app/modules/".$module;
 
-		$module_file = "$path/__module__.php";
+		$module_file = "$path/__config__.php";
 		include_once $module_file;
 		$module_cls = "\\app\\".$this->module_name."\\".$module."_Module";
 		$module = new $module_cls;
@@ -57,8 +57,8 @@ class Generate_Controller_Script extends AbstractScript{
 			file_put_contents($module_file, implode($file_content_arr));
 		}
 	}
-	
-	
+
+
 	private function _arr2str(array $array, $tab, $is_end=true)
 	{
 		$str = "array(\r\n";
@@ -73,8 +73,8 @@ class Generate_Controller_Script extends AbstractScript{
 		$str .= $tab.")".($is_end ? ";" : ",\r\n");
 		return $str;
 	}
-	
-	
+
+
 	private function save_test(){
 		$module = $this->module_name;
 		$controller = $this->controller;
@@ -98,12 +98,12 @@ include \"init.php\";
 --EXPECT--";
 		$this->create_file($class_file_path,$test_file_content);
 	}
-	
-	
-	
+
+
+
 	private function create_controller($controller){
 		$module = $this->module_name;
-	
+
 		$class = YZE_Object::format_class_name($controller,"Controller");
 		$class_file_path = dirname(dirname(__FILE__))
 		."/app/modules/". $module."/controllers/".strtolower($class).".class.php";
@@ -112,7 +112,6 @@ namespace app\\$module;
 use \\yangzie\\YZE_Resource_Controller;
 use \\yangzie\\YZE_Request;
 use \\yangzie\\YZE_Redirect;
-use \\yangzie\\YZE_Session_Context;
 use \\yangzie\\YZE_RuntimeException;
 use \\yangzie\YZE_JSON_View;
 
@@ -128,35 +127,36 @@ class $class extends YZE_Resource_Controller {
         \$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
     }
 
-    public function exception(YZE_RuntimeException \$e){
+    public function exception(\Exception \$e){
         \$request = \$this->request;
         \$this->layout = 'error';
-        //处理中出现了异常，如何处理，没有任何处理将显示500页面
-        //如果想显示get的返回内容可调用 :
-        \$this->post_result_of_json = YZE_JSON_View::error(\$this, \$e->getMessage());
-        //通过request->the_method()判断是那个方法出现的异常
-        //return \$this->wrapResponse(\$this->yourmethod())
+        //Post 请求或者返回json接口时，出错返回json错误结果
+        \$format = \$request->get_output_format();
+        if (!\$request->is_get() || strcasecmp ( \$format, \"json\" )==0){
+        	\$this->layout = '';
+        	return YZE_JSON_View::error(\$this, \$e->getMessage());
+        }
     }
 }
 ?>";
 		echo __("create controller:\t\t");
 		$this->create_file($class_file_path, $class_file_content);
-		
+
 		if($this->view_format){
 			$this->create_view();
 			$this->create_layout();
 		}
 	}
-	
-	
+
+
 	private function save_class(){
 		$module = $this->module_name;
 		$controller = $this->controller;
-	
+
 		//create controller
 		$this->create_controller($controller);
 	}
-	
+
 
 	protected function create_view(){
 		$module = $this->module_name;
@@ -171,7 +171,6 @@ namespace app\\$module;
 use \\yangzie\\YZE_Resource_Controller;
 use \\yangzie\\YZE_Request;
 use \\yangzie\\YZE_Redirect;
-use \\yangzie\\YZE_Session_Context;
 use \\yangzie\\YZE_RuntimeException;
 
 /**
@@ -189,12 +188,12 @@ this is {$controller} view";
 		}
 
 	}
-	
+
 	protected function create_layout(){
 		$module = $this->module_name;
 		$controller = $this->controller;
 		$formats = explode(" ", $this->view_format);
-		
+
 		foreach ($formats as $format){
 			$layout = dirname(dirname(__FILE__))."/app/vendor/layouts/{$format}.layout.php";
 			if(!file_exists($layout)){

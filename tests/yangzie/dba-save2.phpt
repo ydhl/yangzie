@@ -1,5 +1,5 @@
 --TEST--
-DBA new save Function Tester 
+DBA new save Function Tester
 --FILE--
 <?php
 namespace  yangzie;
@@ -36,7 +36,7 @@ class UserModel extends YZE_Model{
  * 初始化数据
  */
 
-YZE_DBAImpl::getDBA()->migration(UserModel::CLASS_NAME);
+YZE_DBAImpl::get_instance()->migration(UserModel::CLASS_NAME);
 UserModel::truncate();
 
 
@@ -44,7 +44,7 @@ UserModel::truncate();
  * 这里的测试需要配置数据库连接
  */
 
-$db   = \yangzie\YZE_DBAImpl::getDBA();
+$db   = \yangzie\YZE_DBAImpl::get_instance();
 $user = new UserModel();
 
 $user->set("name", "aa");
@@ -85,7 +85,7 @@ echo $insert_key + 1 ==$user->get_key() ? "REPLACE true" : "REPLACE false";
 $insert_key +=1;
 
 //测试存在时添加
-$user1 = new UserModel(); 
+$user1 = new UserModel();
 $user1->set("name", "aa");
 $user1->set("register_time", "2015-12-17 17:50:30");
 $sql = new \yangzie\YZE_SQL();
@@ -97,7 +97,7 @@ echo $user1->get_key() && $user1->Get("email")=="1234" ? "INSERT_EXIST true" : "
 $user1->remove();
 
 //测试不存在时添加
-$user2 = new UserModel(); 
+$user2 = new UserModel();
 $user2->set("name", "aa");
 $user2->set("register_time", "2015-12-17 17:50:30");
 $sql = new \yangzie\YZE_SQL();
@@ -109,7 +109,7 @@ echo $user2->get_key() && $user2->Get("email")=="1234" ? "INSERT_NOT_EXIST true"
 $user2->remove();
 
 //测试不存在时添加，存在更新
-$user3 = new UserModel(); 
+$user3 = new UserModel();
 $user3->set("name", "aa");
 $user3->set("register_time", "2015-12-17 17:50:30");
 $sql = new \yangzie\YZE_SQL();
@@ -120,7 +120,7 @@ echo "\r\n";
 echo $user3->get_key() && $user3->Get("email")=="123456" ? "INSERT_NOT_EXIST_OR_UPDATE true" : "INSERT_NOT_EXIST_OR_UPDATE false";
 
 //测试不存在时添加，存在更新
-$user3 = new UserModel(); 
+$user3 = new UserModel();
 $user3->set("name", "aa");
 $user3->set("register_time", "2015-12-17 17:50:30");
 $sql = new \yangzie\YZE_SQL();

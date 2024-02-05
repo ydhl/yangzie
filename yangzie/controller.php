@@ -3,59 +3,99 @@
 namespace yangzie;
 
 /**
- * 资源控制器抽象基类，提供控制器的处理机制，子类控制器映射到具体的uri，具体处理请求的
- * action在子类中定义，该类为post，get，put，delete的请求做预处理，然后调用到对应的action
- * 子类的action如果没有返回YZE_IResponse则这里默认返回对应的Simple_View
- * 为view提供设置view中要使用的数据的方法。
- * 负责对post请求进行验证处理：多人同时修改，重复提交表单
- * 提供get，post，put，delete的hook
- * 定义视图的layout
- * 定义响应是否可以在浏览器上缓存:YZE_HttpCache
+ * 资源控制器抽象基类，提供控制器的处理机制，子类控制器的action映射到具体的uri，具体处理请求<br/>
+ * 同一个url的request method映射到不同的action，<br/>
+ * 比如GET /user 映射到User_Controller:index<br/>
+ * 比如POST /user 映射到User_Controller:post_index<br/>
+ * 比如DELETE /user 映射到User_Controller:delete_index<br/>
+ * 也就是非get请求，则在action前面加上REQUEST_METHOD_<br/>
+ * <br/><br/>
+ * 对于OPTIONS请求，由于OPTIONS不是请求具体的业务逻辑只是对服务器的询问，只需要返回对应的header，任何实际输出内容都会被忽略，
+ * 所以不需要有对应的options_action方法，只需要在request_headers中根据options询问的情况进行应答即可<br/>
+ * 比如Access-Control-Request-Headers: content-type,x-product,<br/>
+ * Access-Control-Request-Method: POST<br/>
+ * 那么只需要返回对应的允许的header即可：Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect, x-product
+ * <br/><br/>
+ * 可通过request->get_from_server()来获取http的头部，但是有所区别，
+ * 比如如果request的headers是Access-Control-Request-Headers: content-type,x-product
+ * 那么则这样取：$request->get_from_server('HTTP_ACCESS_CONTROL_REQUEST_HEADERS')
  *
  * @category Framework
  * @package Yangzie
- * @author liizii, <libol007@gmail.com>
- * @license http://www.php.net/license/3_01.txt PHP License 3.01
+ * @author liizii
  * @link yangzie.yidianhulian.com
  */
 abstract class YZE_Resource_Controller extends YZE_Object {
     protected $view_data = array ();
     protected $layout = 'tpl';
     protected $view = "";
+
     /**
-     * @var YZE_JSON_View
-     */
-    protected $post_result_of_json;
-    
-    /**
-     *
-     * @var YZE_HttpCache
-     */
-    protected $cache_config;
-    protected $session;
-    /**
-     *
      * @var YZE_Request
      */
     protected $request;
     /**
      * 所在模块
-     * 
      * @var YZE_Base_Module
      */
     protected $module;
+    /**
+     * 返回当前请求对响应对象
+     *
+     * @author leeboo
+     * @param string $view_tpl 模板的路径
+     * @param string $format
+     * @return \yangzie\YZE_Simple_View
+     */
+    private function get_Response($view_tpl = null, $format = null) {
+        $request = $this->request;
+        $method  = $request->the_method();
+        if(!$request->is_get()){
+            $method = preg_replace("/[^_]+?_/", "", $method, 1);
+        }
+
+        $view_data  = $this->view_data;
+
+        if (!$view_tpl){
+            $class_name = strtolower ( get_class ( $this ) );
+            $ref  = new \ReflectionObject ( $this );
+            if($this->view){
+                $tpl  = $this->view;
+            }else{
+                $tpl  = substr ( str_replace ( $ref->getNamespaceName () . "\\", "", $class_name ), 0, - 11 ) . "-" . $method;
+            }
+
+            $view = $request->view_path () . "/" . $tpl;
+        }else{
+            $view = $view_tpl;
+        }
+
+        if (! $format) {
+            $format = $request->get_output_format ();
+        }
+        return new YZE_Simple_View ( $view, $view_data, $this, $format );
+    }
+
     public function __construct($request = null) {
-        $this->request = $request ? $request : YZE_Request::get_instance ();
-        $this->session = YZE_Session_Context::get_instance ();
-        $this->module = $this->request->module_obj ();
+        $this->request = $request ?: YZE_Request::get_instance ();
+        $this->module = $this->request->module_instance ();
         // init layout
         if ($this->request->get_output_format ()) {
             $this->layout = $this->request->get_output_format ();
         }
     }
-    public function getRequest() {
+
+    /**
+     * 当前请求实例
+     * @return YZE_Request
+     */
+    public function get_Request() {
         return $this->request;
     }
+    /**
+     * 布局名，比如tpl，则对应对是app/vendor/layouts/tpl.layout.php文件
+     * @return string
+     */
     public function get_Layout() {
         return $this->layout;
     }
@@ -63,290 +103,159 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         $this->view_data [$name] = $value;
         return $this;
     }
-    /**
-     * 取得视图数据
-     */
+
     public function get_View_Data($name) {
-        $datas = $this->get_datas ();
-        return @$datas [$name];
+        return @$this->view_data [$name];
     }
-    
+
+
     /**
-     *
-     * 取得缓存的数据与设置的视图数据
-     *
-     * @return Array array()
+     * 子类重载设置响应头，可根据当前请求的信息做出区别对待
+     * 比如
+     * <pre>
+     * [
+     * "Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect",
+     * "Access-Control-Allow-Methods: GET, POST, PUT,DELETE,OPTIONS,PATCH",
+     * "Access-Control-Allow-Origin: *"
+     * ]
+     * </pre>
      */
-    public function get_datas() {
+    public function response_headers(){
+        return [];
+    }
+
+    /**
+     * 调用映射的action方法并返回响应
+     * @return YZE_Redirect|YZE_Simple_View
+     */
+    public final function handle_request(){
         $request = $this->request;
-        $cache = YZE_Session_Context::get_instance ()->get_controller_datas ( $request->the_uri() );
-        if (! $cache) {
-            return $this->view_data;
-        }
-        return array_merge ( $cache, $this->view_data );
-    }
-    public final function has_response_cache() {
-        $cahce_file = YZE_APP_CACHES_PATH . $this->get_response_guid ();
-        if (file_exists ( $cahce_file ) && $this->get_response_guid ()) {
-            return file_get_contents ( $cahce_file );
-        }
-        return null;
-    }
-    
-    /**
-     * 如果该控制器的输出需要缓存（生成静态文件），该方法返回生成的换成的文件名，该文件名需要唯一，并且是根据所请求
-     * 的信息来生成，保证在形同的请求信息下生成的文件名要一样
-     *
-     * @author leeboo
-     * @return
-     *
-     */
-    public function get_response_guid() {
-        // pass
-    }
-    
-    /**
-     *
-     * @author leeboo
-     *        
-     * @param string $view_tpl
-     *            模板的路径
-     * @param string $format            
-     * @return \yangzie\YZE_Simple_View
-     *
-     * @return
-     *
-     */
-    protected function getResponse($view_tpl = null, $format = null) {
-        $request = $this->request;
-        $method  = $request->the_method();
-        if($request->is_post()){
-        	$method = substr($method, 5);
-        }
-         
-        $view_data  = $this->get_datas ();
-        
-        $class_name = strtolower ( get_class ( $this ) );
-        $ref  = new \ReflectionObject ( $this );
-        if($this->view){
-        	$tpl  = $this->view;
-        }else{
-        	$tpl  = substr ( str_replace ( $ref->getNamespaceName () . "\\", "", $class_name ), 0, - 11 ) . "-" . $method;
-        }
-        
-        $view = $view_tpl ? $view_tpl : $request->view_path () . "/" . $tpl;
-        
-        if (! $format) {
-            $format = $request->get_output_format ();
-        }
-        return new YZE_Simple_View ( $view, $view_data, $this, $format );
-    }
-    
-    /**
-     * 处理get方法.get方法用于显示界面,给出响应，如果该url有异常，则进入exception处理
-     *
-     * @access public
-     * @author liizii, <libol007@gmail.com>
-     * @return YZE_IResponse
-     */
-    public final function do_Get() {
-        $request = $this->request;
-        $session = YZE_Session_Context::get_instance ();
         $method = $request->the_method ();
-        
-        YZE_Session_Context::get_instance ()->set_request_token ( 
-            $request->the_uri(), $request->the_request_token () );
-        
-        return $this->wrapResponse ( $this->$method () );
-    }
-    protected function wrapResponse($response) {
-        $request = $this->request;
-        if (! $response) {
-            $response = $this->getResponse ();
-        }
-        
-        if (is_a ( $response, "YZE_Cacheable" )) {
-            $response->set_cache_config ( $this->cache_config ); // 内容协商的缓存控制
-        }
-        return $response;
-    }
-    
-    /**
-     * post方法.用于处理用户数据提交,提交成功后重定向
-     *
-     * @access public
-     * @author liizii, <libol007@gmail.com>
-     * @return YZE_IResponse
-     */
-    public final function do_Post() {
-        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_POST, $this );
-        
-        $session = YZE_Session_Context::get_instance ();
-        $request = $this->request;
-        
-        $method = $request->the_method ();
-        // 防止表单重复提交
-        $this->check_request_token ();
+        $redirect = new YZE_Redirect ( $request->the_full_uri (), $this, $this->view_data );
+
         $response = $this->$method ();
-        
-        
-        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
+        if (! $response) {
+            $response = $this->get_Response ();
+        }
+
+        $format = $request->get_output_format();
+
+        if (strcasecmp ( $format, "json" ) == 0) {
             $this->layout = "";
-            return $this->post_result_of_json?:$response;
         }
-        
-        if (strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
-            $this->layout = "";
-            $res = $this->post_result_of_json?:$response;
-            return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $res->get_datas() ) . ");</script>", $this );
-        }
-        
-        // 如果控制器中的方法没有return Redirect，默认通过get转到当前的uri
-        if (! $response && !$this->view) {
-            $response = new YZE_Redirect ( $request->the_full_uri (), $this, $this->get_datas () );
-        }else if($this->view){
-        	$response = $this->getResponse();
-        }
-        
-        return $response;
+        return $response?:$redirect;
     }
-    
-    
+
     /**
-     * 更新数据时检查数据是否是最新的
+     * 在action处理过程中出现的异常进入该方法，之类需要重载exception方法做具体的异常处理
      *
-     * @access public
-     * @author liizii, <libol007@gmail.com>
-     * @return YZE_IResponse
+     * @param \Exception $e
+     * @return YZE_IResponse|YZE_JSON_View|YZE_Simple_View
      */
-    public final function check_model() {
-        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_PUT, $this );
+    public final function do_exception(\Exception $e) {
         $request = $this->request;
-        $session = YZE_Session_Context::get_instance ();
-        
-        $yze_model_id = $request->get_from_post ( "yze_model_id" );
-        $yze_modify_version = $request->get_from_post ( "yze_modify_version" );
-        $yze_model_name = $request->get_from_post ( "yze_model_name" );
-        $yze_module_name = $request->get_from_post ( "yze_module_name" );
-        
-        $model = $yze_model_name::find_by_id ( $yze_model_id );
-        
-        if (! $model) {
-            throw new YZE_Resource_Not_Found_Exception ( __ ( "您要修改的内容不存在" ) );
-        }
-        
-        if ($yze_modify_version != $model->get_version_value ()) {
-            throw new YZE_Model_Update_Conflict_Exception ( vsprintf ( __ ( "数据已经在%s被更新了, 你编辑的数据是旧的，请刷新后重试" ), array (
-                    $model->get_version_value () 
-            ) ) );
-        }
-    }
-    
-    public final function do_exception(YZE_RuntimeException $e) {
-        $request = $this->request;
-        $request->setException($e);
-        \yangzie\YZE_Hook::do_hook ( YZE_ACTION_BEFORE_DO_EXCEPTION, $this );
-        
-        $session = YZE_Session_Context::get_instance ();
-        
+        $request->set_Exception($e);
+        \yangzie\YZE_Hook::do_hook ( YZE_HOOK_BEFORE_DO_EXCEPTION, $this );
+        $format = $request->get_output_format();
         $response = $this->exception ( $e );
-        
-        if($request->is_post()){
-        	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "json" ) == 0) { // post直接返回结果
-        		$this->layout = "";
-        		return $this->post_result_of_json;
-        	}
-        	
-        	if (! $response && strcasecmp ( $request->get_from_request ( 'yze_post_context', '' ), "iframe" ) == 0) {
-        		$this->layout = "";
-        		return new YZE_Notpl_View ( "<script>window.parent.yze_iframe_form_submitCallback(" . json_encode ( $this->post_result_of_json->get_datas() ) . ");</script>", $this );
-        	}
+
+        if (strcasecmp ( $format, "json" ) == 0) {
+            $this->layout = "";
+            return YZE_JSON_View::error($this, $e->getMessage(), $e->getCode());
         }else if (! $response) {
             $this->set_View_Data ( "exception", $e );
-            $response = $this->getResponse ( YZE_APP_VIEWS_INC . "500" );
+            $response = $this->get_Response ( YZE_APP_VIEWS_INC . "500" );
         }
-        
+
         return $response;
     }
-    
-    /**
-     * 根据控制器的处理逻辑，清空控制器在会话上下文中保存的数据
-     */
-    public function cleanup() {
-        $request = $this->request;
-        $session = YZE_Session_Context::get_instance ();
-        
-        // clean get cache data
-        if ($request->is_get ()) {
-            $session->clear_controller_datas ( $request->the_uri() );
-            return;
-        }
-        
-        // clean post cache data
-        // 成功处理，清除保存的post数据
-        $session->clear_request_token ( $request->the_uri(), $request->get_from_post ( 'yze_request_token' ) );
 
-        $session->clear_post_datas ( $request->the_uri() );
-    }
     /**
-     * 出现不可恢复的异常后的处理, 如何处理
+     * 子类重载该方法对请求处理过程中出现对异常进行处理
      *
      * @author leeboo
-     *        
-     * @param Exception $e            
-     *
+     * @param Exception $e
      * @return YZE_IResponse
      */
-    public function exception(YZE_RuntimeException $e) {
+    public function exception(\Exception $e) {
     }
-    
-    protected function check_request_token() {
-        $request = $this->request;
-        $post_request_token = $request->get_from_post ( 'yze_request_token' );
-        $session = YZE_Session_Context::get_instance ();
-       
-        $saved_tokens = $session->get_request_token ( $request->the_uri() );
 
-        if( ! $saved_tokens)return;
-        if( $request->the_referer_uri(true) != $request->the_uri()) return;
-        
-        if (! $post_request_token) {
-            throw new YZE_RuntimeException ( __ ( "MISSING_POST_REQUEST_TOKEN" ) );
-        }
-        
-        if ( ! in_array($post_request_token, $saved_tokens )) {
-            throw new YZE_RuntimeException ( __ ( "REQUEST_TOKEN_NOT_MATCH" ) );
+    /**
+     * 获取action上指定注解的值，
+     * <pre>
+     * //@ test testvalue
+     * public function index()
+     * get_Annotation('index', 'test') 将返回testvalue
+     * </pre>
+     * @param string $action 方法名
+     * @param string $annotation 检查对注解
+     */
+    public function get_Annotation($action, $annotation){
+        try{
+            $ref = new \ReflectionObject ($this);
+            $methodRef = $ref->getMethod($action);
+            if (!$methodRef) return null;
+
+            $comment = $methodRef->getDocComment();
+            preg_match("/@{$annotation}\s(?P<name>.+)/i", $comment, $matches);
+            return @$matches['name'] ?: null;
+        }catch (\Exception $e){
+            return null;
         }
     }
+
+    /**
+     * 判断action上是否有指定注解
+     * @param string $action 方法名
+     * @param string $annotation 检查对注解
+     */
+    public function has_Annotation($action, $annotation){
+        try{
+            $ref  = new \ReflectionObject ( $this );
+            $methodRef = $ref->getMethod($action);
+            if (!$methodRef) return false;
+
+            $comment = $methodRef->getDocComment();
+            return preg_match("/@{$annotation}/i", $comment) ? true : false;
+        }catch (\Exception $e) {
+            return false;
+        }
+    }
+
 }
 class Yze_Default_Controller extends YZE_Resource_Controller {
     public function index() {
-        $this->set_View_Data ( "yze_page_title", __ ( "Yangzie 简单的PHP开发框架" ) );
-        return new YZE_Simple_View ( YANGZIE . "/welcome", $this->get_datas (), $this );
+        $this->set_View_Data ( "yze_page_title", __ ( "Yangzie Framework" ) );
+        return new YZE_Simple_View ( YANGZIE . "welcome", $this->view_data, $this );
     }
 }
 class YZE_Exception_Controller extends YZE_Resource_Controller {
     private $exception;
-    
+
     public function index() {
         $this->layout = "error";
         $this->output_status_code ( $this->exception ? $this->exception->getCode () : 0 );
 
         if (! $this->exception) {
             return new YZE_Simple_View ( YZE_APP_VIEWS_INC . "500", array (
-                    "exception" => $this->exception 
+                    "exception" => $this->exception
             ), $this );
         }
-        
-        return new YZE_Simple_View ( YZE_APP_VIEWS_INC . $this->exception->getCode (), array (
-                "exception" => $this->exception 
+
+        $errorCode = $this->exception->getCode ();
+        if (!file_exists(YZE_APP_VIEWS_INC . $errorCode .".tpl.php")){
+            $errorCode = 500;
+        }
+        return new YZE_Simple_View ( YZE_APP_VIEWS_INC . $errorCode, array (
+                "exception" => $this->exception
         ), $this );
     }
-    public function exception(YZE_RuntimeException $e) {
+    public function exception(\Exception $e) {
         $this->exception = $e;
         return $this->index ();
     }
-    
+
+
     private function output_status_code($error_number) {
         switch ($error_number) {
             case 404 :
@@ -355,7 +264,6 @@ class YZE_Exception_Controller extends YZE_Resource_Controller {
             case 500 :
             default:
                 header ( "HTTP/1.0 500 Internal Server Error" );
-                return;
         }
     }
 }

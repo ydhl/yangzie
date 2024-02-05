@@ -1,13 +1,8 @@
 <?php
-// 请求出现错误时使用的布局 
+// 请求出现错误时使用的布局; 修改该页面自定义错误页面
 ?><html>
-<head profile="http://gmpg.org/xfn/11">
+<head >
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="description" content="" />
-<meta name="keywords" content="" />
-<meta name="generator" content="yangzie" />
-<link rel="shortcut icon" href="/themes/default/favicon.ico" />
-
 <title>请求出现了错误</title>
 </head>
 <body>

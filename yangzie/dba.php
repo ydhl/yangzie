@@ -678,7 +678,7 @@ class YZE_DBAImpl extends YZE_Object
             $sql_fields  .= "`" . $f . "`,";
             $sql_values  .= ":" . $f . ",";
             $set  .= "`{$f}`=:{$f},";
-            $values[":" . $f] = $this->quote($v);
+            $values[":" . $f] = $v;
         }
         $sql_fields  = rtrim($sql_fields, ",");
         $sql_values  = rtrim($sql_values, ",");

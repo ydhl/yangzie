@@ -8,7 +8,7 @@ namespace yangzie;
  * @return bool
  */
 function yze_isimage($file){
-	$type = array("png","gif","jpeg","jpg","bmp","ico");
+	$type = array("png","gif","jpeg","jpg","bmp","ico","svg","webp");
 	return in_array(strtolower(pathinfo($file,PATHINFO_EXTENSION) ?: $file), $type);
 }
 

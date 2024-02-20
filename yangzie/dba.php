@@ -110,6 +110,16 @@ class YZE_DBAImpl extends YZE_Object
 	}
 
 	/**
+	 * 重制数据库连接
+	 * @return YZE_DBAImpl
+	 */
+	public function reset(){
+		self::$me = null;
+		$this->conn = null;
+		return $this;
+	}
+
+	/**
 	 * 通过指定的秘钥解密，
 	 * @param string $hexString 加密支付串，通过encrypt加密后对内容
 	 * @param string $key 密钥
@@ -572,7 +582,7 @@ class YZE_DBAImpl extends YZE_Object
             throw new YZE_DBAException("can not prepare sql");
         }
         if($stm->execute($values)){
-            return $stm->fetch(PDO::FETCH_ASSOC)?:null;
+            return $stm->fetch(PDO::FETCH_ASSOC)?:[];
         }
 
         throw new YZE_DBAException(join(",", $stm->errorInfo()));
@@ -596,7 +606,7 @@ class YZE_DBAImpl extends YZE_Object
             throw new YZE_DBAException("can not prepare sql");
         }
         if($stm->execute($values)){
-            return $stm->fetchAll(PDO::FETCH_ASSOC)?:null;
+            return $stm->fetchAll(PDO::FETCH_ASSOC)?:[];
         }
         throw new YZE_DBAException(join(",", $stm->errorInfo()));
     }

@@ -20,6 +20,13 @@ class YZE_I18N extends YZE_Object{
 		}
 		return self::$me;
 	}
+	/**
+	 * 清空加载的i18n
+	 * @return YZE_I18N
+	 */
+	public function clear(){
+		$this->i18n = [];
+	}
 
 	public function getLoadedI18N(){
 		return $this->i18n;

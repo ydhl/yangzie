@@ -10,7 +10,7 @@ use \app\App_Module;
 function yze_autoload($class) {
     $_ = preg_split("{\\\\}", strtolower($class));
 
-    $module_name = $_[1];
+    $module_name = @$_[1];
     $class_name = @$_[2];
     $loaded_module_info = \yangzie\YZE_Object::loaded_module($module_name);
 

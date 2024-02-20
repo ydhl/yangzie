@@ -36,7 +36,7 @@ class Generate_Controller_Script extends AbstractScript{
 		$module_cls = "\\app\\".$this->module_name."\\".$module."_Module";
 		$module = new $module_cls;
 		$ref_cls 	= new \ReflectionClass($module_cls);
-		$method 	= $ref_cls->getMethod("_config");
+		$method 	= $ref_cls->getMethod("config");
 		$method->setAccessible(true);
 		$configs = $method->invoke($module);
 		if($this->uri && !@$configs['routers'][$this->uri]){
@@ -52,7 +52,7 @@ class Generate_Controller_Script extends AbstractScript{
 // 			echo "\tprotected function _config(){\r\n\t\treturn ".$config_str."\r\n\t}\r\n";
 // 			print_r($file_content_arr);die;
 			//Tip 数组的索引从0开始
-			$file_content_arr[$start_line-1] = "\tprotected function _config(){\r\n\t\treturn ".$config_str."\r\n\t}\r\n";
+			$file_content_arr[$start_line-1] = "\tprotected function config(){\r\n\t\treturn ".$config_str."\r\n\t}\r\n";
 			$file_content_arr = array_values($file_content_arr);
 			file_put_contents($module_file, implode($file_content_arr));
 		}

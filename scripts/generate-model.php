@@ -19,8 +19,8 @@ class Generate_Model_Script extends AbstractScript{
 		$this->module_name 	= $argv['module_name'];
 		$this->table_name 		= $argv['table_name'];
 		$this->class_name 		= $argv['class_name'];
-		$this->db_name 		= $argv['db_name'] ?: $app_module->get_module_config("db_name");
-		$this->uuid 		= $argv['uuid'];
+		$this->db_name 		= $argv['db_name'] ?: $app_module->get_module_config("default_db");
+		$this->uuid 		= @$argv['uuid'];
 
 		if(empty($this->db_name) || empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
 			die(YZE_SCRIPT_USAGE);
@@ -125,7 +125,10 @@ trait $class{
 		$uuid = 'uuid';
 
 		$app_module = new \app\App_Module();
-		$db = mysqli_connect($app_module->get_module_config("db_host"), $app_module->get_module_config("db_user"), $app_module->get_module_config("db_psw"), $dbName, $app_module->get_module_config("db_port"));
+
+		$db_connection = $app_module->get_module_config('db_connections')[$dbName];
+
+		$db = mysqli_connect($db_connection["db_host"], $db_connection["db_user"], $db_connection["db_psw"], $dbName, $db_connection["db_port"]);
 
 		$importClass = [];
 		$relation_column = [];
@@ -138,7 +141,7 @@ trait $class{
 		where TABLE_SCHEMA = '".$dbName."' and TABLE_NAME = '{$table}'
 		and referenced_column_name is not NULL");
 		while ($row=mysqli_fetch_assoc($result)) {
-			$col = rtrim($row['COLUMN_NAME'], '_id')."_".$row['REFERENCED_TABLE_NAME'];
+			$col = rtrim($row['COLUMN_NAME'], '_id');
 			$col_class = $this->get_class_of_table($row['REFERENCED_TABLE_NAME']);
 
 			if ($row['REFERENCED_TABLE_NAME'] != $this->table_name){
@@ -151,12 +154,11 @@ trait $class{
 				'target_column'=>$row['REFERENCED_COLUMN_NAME']
 			];
 			$assocFields .= "
-	private \${$col};
-";
+	private \${$col};";
 			$assocFieldFuncs .= "
-	public function get_{$col}(){
+	public function get_{$col}(\$suffix=null){
 		if( ! \$this->{$col}){
-			\$this->{$col} = {$sortClass}::find_by_id(\$this->get(self::F_".strtoupper($row['COLUMN_NAME'])."));
+			\$this->{$col} = {$sortClass}::find_by_id(\$this->get(self::F_".strtoupper($row['COLUMN_NAME'])."), \$this->db, \$suffix);
 		}
 		return \$this->{$col};
 	}
@@ -192,7 +194,7 @@ trait $class{
 
 			if ($currEnums){
 			$enumFunction .= "
-	public function get_{$row['Field']}(){
+	public static function get_{$row['Field']}(){
 		return ['".join("','", array_values($currEnums))."'];
 	}";
 			}

@@ -286,17 +286,25 @@ function display_model_wizard(){
     global $db;
 	clear_terminal();
 
+	$app_module = new \app\App_Module();
+	$db_name = $app_module->get_module_config('default_db');
+
 	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
 
 generate model，%s back:
-1. (1/2)db table name: "), "generate model", get_colored_text(" 0 ", "red", "white")));
+1. (1/3)database name, default is %s: "), "generate model", get_colored_text(" 0 ", "red", "white"), $db_name));
 
-
-	while (!is_validate_table(($table=get_input()))){
-		echo get_colored_text(wrap_output(sprintf(__("\tdb table not exist (%s)，please check:  "), mysqli_error($db))), "red");
+	while (!is_validate_db(($database = get_input()))){
+		echo get_colored_text(wrap_output(sprintf(__("\tdb not exist (%s)，please check:  "), $database)), "red");
 	}
 
-	echo wrap_output(__("2. (2/2)module name:  "));
+	echo wrap_output(__("2. (2/3)table name:  "));
+
+	while (!is_validate_table($database, ($table=get_input()))){
+		echo get_colored_text(wrap_output(sprintf(__("\ttable not exist (%s)，please check:  "), mysqli_error($db))), "red");
+	}
+
+	echo wrap_output(__("3. (3/3)module name:  "));
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\tmodule is invalid, please check:  ")), "red");
 	}
@@ -306,6 +314,7 @@ generate model，%s back:
 		"cmd" => "model",
 		"base"=>"table",
 		"module_name"=>$module,
+		"db_name"=>$database,
 		"class_name"=>$table,
 		"table_name"=>$table,
 	);
@@ -382,17 +391,30 @@ function is_validate_name($input){
 	return preg_match('/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/', $input);
 }
 
-function is_validate_table($table){
+function is_validate_db($db_name){
     global $db;
 	$app_module = new \app\App_Module();
+	$db_name = $db_name ?: $app_module->get_module_config('default_db');
+	$db_connection = $app_module->get_module_config('db_connections')[$db_name];
+
+	if (!$db_connection) return false;
 	$db = mysqli_connect(
-			$app_module->get_module_config("db_host"),
-			$app_module->get_module_config("db_user"),
-			$app_module->get_module_config("db_psw"),
-			$app_module->get_module_config("db_name"),
-			$app_module->get_module_config("db_port")
+		$db_connection["db_host"],
+		$db_connection["db_user"],
+		$db_connection["db_psw"],
+		$db_name,
+		$db_connection["db_port"]
 	);
-	mysqli_select_db($db, $app_module->get_module_config("db_name"));
+	return $db;
+}
+
+
+function is_validate_table($db_name, $table){
+    global $db;
+	$app_module = new \app\App_Module();
+	$db_name = $db_name ?: $app_module->get_module_config('default_db');
+
+	mysqli_select_db($db, $db_name);
 	return mysqli_query($db, "show full columns from `$table`");
 }
 

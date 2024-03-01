@@ -135,7 +135,6 @@ function yze_handle_request() {
 
     try {
         $request = YZE_Request::get_instance ();
-        $dba     = YZE_DBAImpl::get_instance ();
 
         $request->init ();
         $controller = $request->controller_instance ();
@@ -145,19 +144,18 @@ function yze_handle_request() {
         }
 
         $request->auth ();
-        $dba->begin_Transaction();
 
         \yangzie\YZE_Hook::do_hook(YZE_HOOK_BEFORE_DISPATCH);
         $response = $request->dispatch();
         \yangzie\YZE_Hook::do_hook(YZE_HOOK_AFTER_DISPATCH);
 
-        $dba->commit();
-
         $output($request, $controller, $response);
+
+        YZE_DBAImpl::commit_all();
     }catch(\Exception $e){
         $controller = $request->controller_instance ();
         try{
-            if (@$dba) $dba->rollback();
+            YZE_DBAImpl::rollBack_all();
             if( !$controller) $controller = new YZE_Exception_Controller();
             if(is_a($e, "\\yangzie\\YZE_Suspend_Exception")) $controller = new YZE_Exception_Controller();
 

@@ -9,30 +9,6 @@ use function yangzie\yze_js_bundle;
  */
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);
 /**
- * 数据库类型
- */
-define("YZE_DB_TYPE",  "MYSQL");
-/**
- * MYSQL数据库用户名
- */
-define("YZE_DB_USER",  "root");
-/**
- * MYSQL数据库主地址
- */
-define("YZE_DB_HOST_M",  "127.0.0.1");
-/**
- * MYSQL数据库名
- */
-define("YZE_DB_DATABASE",  "inspection");
-/**
- * MYSQL端口
- */
-define("YZE_DB_PORT",  "3306");
-/**
- * MYSQL密码
- */
-define("YZE_DB_PASS",  "12345678");
-/**
  * MYSQL加解密的秘钥
  */
 define("YZE_DB_CRYPT_KEY",  "");
@@ -74,22 +50,17 @@ define("SESSIONLESS", false);
  */
 class App_Module extends \yangzie\YZE_Base_Module{
 
-	//数据库配置
-	public $db_user = YZE_DB_USER;
-	public $db_host= YZE_DB_HOST_M;
-	public $db_name= YZE_DB_DATABASE;
-	public $db_port = YZE_DB_PORT;
-	public $db_psw= YZE_DB_PASS;
-	public $db_charset= 'UTF8';
-
 	/**
 	 * App 访问时做一些检查，比如php的版本；如果有不满足的条件则抛出异常
 	 * @return void
 	 * @throws YZE_FatalException
 	 */
 	public function check(){
-		if( version_compare(PHP_VERSION,'7.3.0','lt')){
-			throw new YZE_FatalException("要求7.3及以上PHP版本");
+		if( version_compare(PHP_VERSION,'7.0.0','lt')){
+			throw new YZE_FatalException("要求7.0及以上8.0以下PHP版本");
+		}
+		if( version_compare(PHP_VERSION,'8.0.0','>=')){
+			throw new YZE_FatalException("要求7.0及以上8.0以下PHP版本");
 		}
 	}
 

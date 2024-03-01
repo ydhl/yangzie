@@ -69,7 +69,20 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * @return array
 	 */
 	protected function config(): array{
-		return [];
+		return [
+//			'default_db' => 'test1', // 默认链接的数据库名，请填写项目实际的数据库名
+//			'db_connections' => [
+//				'test1' => [
+//					'db_type' => 'mysql',
+//					'db_host' => '127.0.0.1',
+//					'db_user' => 'root',
+//					'db_psw'  => '12345678',
+//					'db_port' => '3306',
+//					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
+//					'db_charset'=> 'utf8'
+//				],
+//			]
+		];
 	}
 
 	/**

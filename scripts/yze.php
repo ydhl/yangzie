@@ -238,30 +238,43 @@ function display_mvc_wizard(){
 	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
   
 generate controller and view，%s back:
-1. (1/3)module name:  "), "generate controller", get_colored_text(" 0 ", "red", "white")));
+1. (1/4)module name:  "), "generate controller", get_colored_text(" 0 ", "red", "white")));
 
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\tname is invalid, please type again:  ")), "red");
 	}
 
-	echo wrap_output(__("2. (2/3)controller name:  "));
+	echo wrap_output(__("2. (2/4)controller name:  "));
 	while (!is_validate_name(($controller = get_input()))){
 		echo get_colored_text(wrap_output(__("\tname is invalid, please type again:  ")), "red");
 	}
-	$uri = '';
-	if(($uris = is_controller_exists($controller, $module))){
-		echo wrap_output(__("3. (3/3)controller is exist，it's URI:\n\n"));
-		foreach ($uris as $index => $uri){
-			echo "\t ".($index+1).". {$uri}\n";
+
+	echo wrap_output(__("3. (3/4)action name，default is index:  "));
+	while(true){
+		$action = get_input() ?: 'index';
+		if (!is_validate_name($action)){
+			echo get_colored_text(wrap_output(__("\tname is invalid, please type again:  ")), "red");
+			continue;
 		}
-	}else{
-		echo wrap_output(__("3. (3/3)URI route, default uri is /{$module}/{$controller}:  "));
-		$uri = get_input();
+
+		if(($uris = is_controller_exists($action, $controller, $module))){
+			echo wrap_output(sprintf(__("3. (3/4)%s->%s is exist，it's URI:\n\n"), $controller, $action));
+			foreach ($uris as $index => $uri){
+				echo "\t ".($index+1).". {$uri}\n";
+			}
+			echo wrap_output(__("please reenter:"));
+			continue;
+		}
+		break;
 	}
+
+	echo wrap_output(__("4. (4/4)URI route, default uri is /{$module}/{$controller}/{$action}, you can use regex like foobar/(?P<id>\\d+):  "));
+	$uri = get_input();
 
 	return @array(
 		"cmd" => "controller",
 		"controller"=>$controller,
+		"action"=>$action,
         "uri"=>$uri,
         "module_name"=>$module,
         "view_format"=>"tpl" ,
@@ -271,15 +284,19 @@ generate controller and view，%s back:
 	);
 }
 
-function is_controller_exists($controller, $module){
-	if(file_exists(YZE_APP_MODULES_INC.$module."/__config__.php")){
-		include_once YZE_APP_MODULES_INC.$module."/__config__.php";
-		$class = "\\app\\".$module."\\".ucfirst(strtolower($module))."_Module";
-		$object = new $class();
-		return $object->get_uris_of_controller($controller);
+function is_controller_exists($action, $controller, $module){
+	$controller = strtolower($controller);
+	if(!file_exists(YZE_APP_MODULES_INC.$module."/__config__.php")) return false;
+	if(!file_exists(YZE_APP_MODULES_INC.$module."/controllers/{$controller}_controller.class.php")) return false;
+	include_once YZE_APP_MODULES_INC.$module."/controllers/{$controller}_controller.class.php";
+	$controllerClass = ucfirst($controller).'_Controller';
+	if (!method_exists('app\\user\\'.$controllerClass, $action)) return false;
 
-	}
-	return false;
+	include_once YZE_APP_MODULES_INC.$module."/__config__.php";
+	$class = "\\app\\".$module."\\".ucfirst(strtolower($module))."_Module";
+	$object = new $class();
+	return $object->get_uris_of_controller($controller, $action) ?: ["/{$module}/{$controller}/{$action}"];
+
 }
 
 function display_model_wizard(){

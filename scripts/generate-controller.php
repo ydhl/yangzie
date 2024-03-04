@@ -12,6 +12,7 @@ class Generate_Controller_Script extends AbstractScript{
 	public function generate(){
 		$argv = $this->args;
 		$this->controller		= $argv['controller'];
+		$this->action			= $argv['action'];
 		$this->view_format 		= $argv['view_format'];
 		$this->module_name 		= $argv['module_name'];
 		$this->uri 				= $argv['uri'];
@@ -101,7 +102,7 @@ include \"init.php\";
 
 
 
-	private function create_controller($controller){
+	private function create_controller($controller, $action){
 		$module = $this->module_name;
 
 		$class = YZE_Object::format_class_name($controller,"Controller");
@@ -121,10 +122,10 @@ use \\yangzie\YZE_JSON_View;
 * @package $module
 */
 class $class extends YZE_Resource_Controller {
-    public function index(){
+    public function {$action}(){
         \$request = \$this->request;
         //\$this->layout = 'tpl name';
-        \$this->set_view_data('yze_page_title', 'this is controller ".$this->controller."');
+        \$this->set_view_data('yze_page_title', 'this is {$action} in controller ".$this->controller."');
     }
 
     public function exception(\Exception \$e){
@@ -139,8 +140,27 @@ class $class extends YZE_Resource_Controller {
     }
 }
 ?>";
-		echo __("create controller:\t\t");
-		$this->create_file($class_file_path, $class_file_content);
+		if(file_exists($class_file_path)){
+			echo __("update controller:\t\t");
+
+
+			$file_content_arr = file($class_file_path);
+			for($line=1; $line<count($file_content_arr); $line++){
+				$code = $file_content_arr[$line];
+				if (preg_match("/public\s+function\s+exception\(/", $code)){
+					array_splice($file_content_arr, $line, 0, ["\tpublic function {$action}(){\r\n",
+        "\t\t\$request = \$this->request;\r\n",
+        "\t\t//\$this->layout = 'tpl name';\r\n",
+        "\t\t\$this->set_view_data('yze_page_title', 'this is {$action} in controller ".$this->controller."');\r\n",
+    "\t}\r\n\r\n"]);
+					break;
+				}
+			}
+			file_put_contents($class_file_path, implode($file_content_arr));
+		}else{
+			echo __("create controller:\t\t");
+			$this->create_file($class_file_path, $class_file_content);
+		}
 
 		if($this->view_format){
 			$this->create_view();
@@ -150,22 +170,23 @@ class $class extends YZE_Resource_Controller {
 
 
 	private function save_class(){
-		$module = $this->module_name;
 		$controller = $this->controller;
+		$action = $this->action;
 
 		//create controller
-		$this->create_controller($controller);
+		$this->create_controller($controller, $action);
 	}
 
 
 	protected function create_view(){
 		$module = $this->module_name;
 		$controller = $this->controller;
+		$action = $this->action;
 		$formats = explode(" ", $this->view_format);
 		$this->check_dir(dirname(dirname(__FILE__))."/app/modules/". $module."/views");
 		foreach ($formats as $format){
 			$view_file_path = dirname(dirname(__FILE__))
-			."/app/modules/". $module."/views/{$controller}-index.{$format}.php";
+			."/app/modules/". $module."/views/{$controller}-{$action}.{$format}.php";
 			$view_file_content = "<?php
 namespace app\\$module;
 use \\yangzie\\YZE_Resource_Controller;
@@ -173,16 +194,10 @@ use \\yangzie\\YZE_Request;
 use \\yangzie\\YZE_Redirect;
 use \\yangzie\\YZE_RuntimeException;
 
-/**
- * 视图的描述
- * @param type name optional
- *
- */
- 
-\$data = \$this->get_data('arg_name');
+// \$data = \$this->get_data('arg_name');
 ?>
 
-this is {$controller} view";
+this is {$action} view of {$controller}";
 			echo __("create view {$controller}.{$format}.php:\t\t\t");
 			$this->create_file($view_file_path, $view_file_content);
 		}

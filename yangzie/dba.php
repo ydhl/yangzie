@@ -14,10 +14,12 @@ class YZE_DBAImpl extends YZE_Object
 	private static $conn=[];
 	private $db_name = '';
 
-	public function __construct($db_name){
+	private function connect($db_name, $force=false){
 		$app_module = new App_Module();
 		$db_name = $db_name ?: $app_module->get_module_config('default_db');
 		$this->db_name = $db_name;
+
+		if ($force && @self::$conn[$db_name]) self::$conn[$db_name] = null;
 
 		// 没有数据库，或者数据库链接已经建立
 		if (!$db_name || @self::$conn[$db_name]){
@@ -27,18 +29,46 @@ class YZE_DBAImpl extends YZE_Object
 
 		$db_connection = $app_module->get_module_config('db_connections')[$db_name];
 
-		self::$conn[$db_name] =  new PDO(
-			'mysql:dbname='.$db_name
-			.';port='.$db_connection['db_port']
-			.';host='.$db_connection['db_host'],
-			$db_connection['db_user'],
-			$db_connection['db_psw']
-		);
-		foreach ((array)$db_connection['db_psw'] as $attrName=>$attrValue){
-			self::$conn[$db_name]->setAttribute($attrName, $attrValue);
+		try{
+			self::$conn[$db_name] =  new PDO(
+				'mysql:dbname='.$db_name
+				.';port='.$db_connection['db_port']
+				.';host='.$db_connection['db_host'],
+				$db_connection['db_user'],
+				$db_connection['db_psw'],
+				$db_connection['db_params']
+			);
+		}catch (\PDOException $e){// 封装下，避免链接异常时暴露数据库链接信息
+			throw new YZE_DBAException(join(' ', $e->errorInfo), $e->getCode());
 		}
+		self::$conn[$db_name]->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);// 失败时抛出异常
 		self::$conn[$db_name]->query('SET NAMES '.$db_connection['db_charset']);
 		$this->begin_Transaction();
+	}
+
+	/**
+	 * 如果是MySQL server has gone away错误，则重连数据库并执行传入的方法
+	 * 其他情况抛出异常
+	 * @param $errorCode
+	 * @param $errorInfo
+	 * @param $method
+	 * @param ...$args
+	 * @throws YZE_DBAException
+	 * @return mixed|void
+	 */
+	private function check_connect($errorCode, $errorInfo, $method, ...$args){
+		if(is_array($errorInfo)){
+			$errorInfo = join(' ', $errorInfo);
+		}
+		if (preg_match("/MySQL server has gone away/", $errorInfo, $matches)){ // 2006 server has gone away
+			echo $errorInfo;
+			$this->connect($this->db_name, true);
+			return call_user_func([$this, $method], ...$args);
+		}
+		throw new YZE_DBAException($errorInfo, $errorCode);
+	}
+	public function __construct($db_name){
+		$this->connect($db_name);
 	}
 
 	/**
@@ -60,7 +90,7 @@ class YZE_DBAImpl extends YZE_Object
 		$records = $entity->get_records();
 		foreach ($records as $name => &$value) {
 			if (in_array($name, $entity->encrypt_columns)){
-				$value = YZE_DBAImpl::get_instance()->encrypt($value, YZE_DB_CRYPT_KEY);
+				$value = $this->encrypt($value, YZE_DB_CRYPT_KEY);
 			}
 		}
 		return $records;
@@ -120,7 +150,7 @@ class YZE_DBAImpl extends YZE_Object
 			if (!$entity->has_set_value($field_name)) {
 				$value = self::filter_var($field_value);
 				if (in_array($field_name, $entity->encrypt_columns)){
-					$value = YZE_DBAImpl::get_instance()->decrypt($value, YZE_DB_CRYPT_KEY);
+					$value = $this->decrypt($value, YZE_DB_CRYPT_KEY);
 				}
 				$entity->set( $field_name , $value);#数据库取出来编码
 			}
@@ -260,11 +290,12 @@ class YZE_DBAImpl extends YZE_Object
 	 * @return YZE_PDOStatementWrapper
 	 */
 	public function native_Query($sql){
-	    $pdo = self::$conn[$this->db_name]->query($sql);
-	    if( ! $pdo){
-	        throw new YZE_DBAException("sql error " . $sql . ":" . join(",",self::$conn[$this->db_name]->errorInfo()));
-	    }
-		return new YZE_PDOStatementWrapper($pdo);
+		try {
+			$stm = self::$conn[$this->db_name]->query($sql);
+			return new YZE_PDOStatementWrapper($stm);
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'native_Query', $sql);
+		}
 	}
 
 	/**
@@ -326,18 +357,15 @@ class YZE_DBAImpl extends YZE_Object
 	public function select(YZE_SQL $sql, $params=array(), $index_field=null){
 		$classes = $sql->get_select_classes(true);
 
-		if($params){
-			$statement = self::$conn[$this->db_name]->prepare($sql->__toString());
-			$statement->execute($params);
-		}else{
-			$statement = self::$conn[$this->db_name]->query($sql->__toString());
-		}
-		if(empty($statement)){
-			throw new YZE_DBAException(join(",", self::$conn[$this->db_name]->errorInfo()));
-		}
-
-		if($statement->errorCode()!='00000'){
-			throw new YZE_DBAException(join(",", $statement->errorInfo()));
+		try{
+			if($params){
+				$statement = self::$conn[$this->db_name]->prepare($sql->__toString());
+				$statement->execute($params);
+			}else{
+				$statement = self::$conn[$this->db_name]->query($sql->__toString());
+			}
+		}catch(\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'select', $sql, $params, $index_field);
 		}
 
 		$raw_result = $statement->fetchAll(PDO::FETCH_ASSOC);
@@ -433,11 +461,11 @@ class YZE_DBAImpl extends YZE_Object
 	 */
 	public function exec($sql){
 		if(empty($sql))return false;
-		$affected = self::$conn[$this->db_name]->exec($sql);
-		if ($affected===false) {
-			throw new YZE_DBAException(join(", ", self::$conn[$this->db_name]->errorInfo()));
+		try{
+			return self::$conn[$this->db_name]->exec($sql);
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'exec', $sql);
 		}
-		return $affected;
 	}
 
 	/**
@@ -625,16 +653,14 @@ class YZE_DBAImpl extends YZE_Object
      */
     public function lookup($field, $table, $where, array $values=array()) {
         $sql = "SELECT $field as f FROM `{$table}` WHERE {$where}";
-        $stm = self::$conn[$this->db_name]->prepare($sql);
-
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if($stm->execute($values)){
-            $row = $stm->fetch(PDO::FETCH_ASSOC);
-            return @$row['f'];
-        }
-        throw new YZE_DBAException(join(",", $stm->errorInfo()));
+		try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			$stm->execute($values);
+			$row = $stm->fetch(PDO::FETCH_ASSOC);
+			return @$row['f'];
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'lookup', $field, $table, $where, $values);
+		}
     }
 
     /**
@@ -649,16 +675,13 @@ class YZE_DBAImpl extends YZE_Object
      */
     public function lookup_record($fields, $table, $where="", array $values=array()) {
         $sql = "SELECT {$fields} FROM {$table}".($where ? " WHERE {$where}" :"");
-        $stm = self::$conn[$this->db_name]->prepare($sql);
-
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if($stm->execute($values)){
-            return $stm->fetch(PDO::FETCH_ASSOC)?:[];
-        }
-
-        throw new YZE_DBAException(join(",", $stm->errorInfo()));
+		try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			$stm->execute($values);
+			return $stm->fetch(PDO::FETCH_ASSOC)?:[];
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'lookup_record', $fields, $table, $where, $values);
+		}
     }
 
     /**
@@ -674,14 +697,13 @@ class YZE_DBAImpl extends YZE_Object
     public function lookup_records($fields, $table, $where="", array $values=array()) {
         $sql = "SELECT $fields FROM $table";
         if ($where) $sql .= " WHERE $where";
-        $stm = self::$conn[$this->db_name]->prepare($sql);
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if($stm->execute($values)){
-            return $stm->fetchAll(PDO::FETCH_ASSOC)?:[];
-        }
-        throw new YZE_DBAException(join(",", $stm->errorInfo()));
+		try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			$stm->execute($values);
+			return $stm->fetchAll(PDO::FETCH_ASSOC)?:[];
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'lookup_records', $fields, $table, $where, $values);
+		}
     }
 
     /**
@@ -698,15 +720,12 @@ class YZE_DBAImpl extends YZE_Object
         $sql = "UPDATE $table SET $fields";
         if ($where) $sql .= " WHERE $where";
 
-        $stm = self::$conn[$this->db_name]->prepare($sql);
-
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if( $stm->execute($values) ===false){
-            throw new YZE_DBAException(join(",", $stm->errorInfo()));
-        }
-        return true;
+		try {
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			return $stm->execute($values);
+		}catch(\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'update', $table, $fields, $where, $values);
+		}
     }
 
     /**
@@ -721,15 +740,13 @@ class YZE_DBAImpl extends YZE_Object
     public function deletefrom($table, $where, array $values=array()) {
         $sql = "DELETE FROM $table";
         if ($where) $sql .= " WHERE $where";
-        $stm = self::$conn[$this->db_name]->prepare($sql);
 
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if( $stm->execute($values) ===false){
-            throw new YZE_DBAException(join(",", $stm->errorInfo()));
-        }
-        return true;
+		try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			return $stm->execute($values);
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, 'deletefrom', $table, $where, $values);
+		}
     }
     /**
      * 根据给定的checkSql判断如何插入记录; 成功返回新记录的主键.
@@ -768,28 +785,22 @@ class YZE_DBAImpl extends YZE_Object
         $set         = rtrim($set, ",");
 
         $sql = "INSERT INTO `{$table}` ({$sql_fields}) SELECT {$sql_values} FROM dual WHERE ".($exist?"":"NOT")." EXISTS ({$checkSql})";
-        $stm = self::$conn[$this->db_name]->prepare($sql);
 
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if($stm->execute($values)===false){
-            throw new YZE_DBAException(join(",", $stm->errorInfo()));
-        }
+        try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			$stm->execute($values);
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, "check_Insert", $table, $info, $checkSql, $checkInfo, $exist, $update, $key);
+		}
+
         if ( !  $stm->rowCount()) {
             if( ! $update){
-                throw new YZE_DBAException("not insert");
+                throw new YZE_DBAException("not insert, check record exist");
             }
             $where = preg_replace("/^.+where/", "", $checkSql);
             $sql = "UPDATE `{$table}` SET {$set} WHERE {$where}";
             $stm = self::$conn[$this->db_name]->prepare($sql);
-
-            if( ! $stm){
-                throw new YZE_DBAException("can not prepare sql");
-            }
-            if (! $stm->execute($values) ){
-                throw new YZE_DBAException(join(",", $stm->errorInfo()));
-            }
+			$stm->execute($values);
 
             preg_match_all("/(?P<words>:[^\s]+)/", $where, $matchWheres);
             $lookupValues = [];
@@ -809,7 +820,9 @@ class YZE_DBAImpl extends YZE_Object
      *
      * @param string $table 要插入的表名
      * @param array $info array("field"=>"value"); 要插入的字段及其值
-     * @param array $duplicate_key array("field0","field1"); 指定表的唯一字段，如果指定，则会生成 INSERT_ON_DUPLICATE_KEY_UPDATE 语句，再指定的字段有唯一健冲突时执行更新
+     * @param array $duplicate_key array("field0","field1"); 指定$info中的唯一字段(主键或唯一索引)，如果指定，
+	 * 				则会生成 INSERT_ON_DUPLICATE_KEY_UPDATE 语句，再指定的字段有唯一健冲突时执行更新
+	 * 				info中的字段数量如果少于$duplicate_key中的字段数量，会有sql语法错误
      * @param string $keyname 表主键名称 指定了$duplicate_key一定要设置
 	 * @throws YZE_DBAException
      * @return int
@@ -840,16 +853,14 @@ class YZE_DBAImpl extends YZE_Object
             ".join(",", $update);
         }
 
-        $stm = self::$conn[$this->db_name]->prepare($sql);
+		try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			$stm->execute($values);
+			return self::$conn[$this->db_name]->lastInsertId();
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, "insert", $table, $info, $duplicate_key, $keyname);
+		}
 
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if ( ! $stm->execute($values) ) {
-            throw new YZE_DBAException(join(",", $stm->errorInfo()));
-        }
-
-        return self::$conn[$this->db_name]->lastInsertId();
     }
     /**
      * 插入记录, 在有唯一键冲突时忽略插入，成功返回新记录的主键
@@ -874,16 +885,14 @@ class YZE_DBAImpl extends YZE_Object
 
         $sql = "INSERT IGNORE INTO {$table} ({$sql_fields}) VALUES ({$sql_values})";
 
-        $stm = self::$conn[$this->db_name]->prepare($sql);
+		try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			$stm->execute($values);
+			return self::$conn[$this->db_name]->lastInsertId();
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, "insert_Or_Ignore", $table, $info);
+		}
 
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if ( ! $stm->execute($values) ) {
-            throw new YZE_DBAException(join(",", $stm->errorInfo()));
-        }
-
-        return self::$conn[$this->db_name]->lastInsertId();
     }
 
     /**
@@ -908,15 +917,13 @@ class YZE_DBAImpl extends YZE_Object
 
         $sql = "REPLACE INTO {$table} SET {$sql_fields}";
 
-        $stm = self::$conn[$this->db_name]->prepare($sql);
-        if( ! $stm){
-            throw new YZE_DBAException("can not prepare sql");
-        }
-        if ( ! $stm->execute($values) ) {
-            throw new YZE_DBAException(join(",", $stm->errorInfo()));
-        }
-
-        return self::$conn[$this->db_name]->lastInsertId();
+		try{
+			$stm = self::$conn[$this->db_name]->prepare($sql);
+			$stm->execute($values);
+			return self::$conn[$this->db_name]->lastInsertId();
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, "replace", $table, $info);
+		}
     }
 
 	/**
@@ -926,17 +933,20 @@ class YZE_DBAImpl extends YZE_Object
 	 */
 	public function table_fields($table) {
 	    $sql="show columns from $table";
-	    $stm=self::$conn[$this->db_name]->query($sql);
+
+		try{
+			$stm = self::$conn[$this->db_name]->query($sql);
+		}catch (\PDOException $e){
+			return $this->check_connect($e->getCode(), $e->errorInfo, "table_fields", $table);
+		}
 
 	    $fileds = array();
-	    if($stm){
-	        while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
-	            $fileds[] = $row['Field'];
-	        }
-	    }
-
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$fileds[] = $row['Field'];
+		}
 	    return $fileds;
 	}
+
 }
 class YZE_PDOStatementWrapper extends YZE_Object{
 	/**

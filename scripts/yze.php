@@ -2,7 +2,7 @@
 namespace yangzie;
 define("YZE_SCRIPT_LOGO", "
 ================================================================
-		YANGZIE(V3.0.0) Generate Script
+		YANGZIE(V%s) Generate Script
 		易点互联®
 ================================================================");
 
@@ -55,7 +55,7 @@ if(true){
 
 function display_home_wizard(){
 	clear_terminal();
-	echo wrap_output(YZE_SCRIPT_USAGE);
+	echo wrap_output(sprintf(YZE_SCRIPT_USAGE, YZE_Object::VERSION));
 
 	while(!in_array(($input = fgets(STDIN)), array(0,1, 2, 3, 4, 5, 6))){
 		echo wrap_output(__("please input number to select: "));

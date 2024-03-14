@@ -236,10 +236,6 @@ class $class extends YZE_Model{
 	const UUID_NAME = \"$uuid\";
     const CLASS_NAME = 'app\\$package\\$class';
     /**
-	 * model 所在的数据库名
-	 */
-	const DB_NAME = \"$dbName\";
-    /**
      * @see YZE_Model::\$encrypt_columns 
      */
     public \$encrypt_columns = array();

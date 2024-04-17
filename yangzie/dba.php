@@ -137,17 +137,16 @@ class YZE_DBAImpl extends YZE_Object
 	}
 	private function build_entity(YZE_Model $entity,$raw_datas,$table_alias){
 		foreach ($raw_datas as $field_name => $field_value) {
-			//如果从数据库中取出来的值为null，则不用对相应的对象属性赋值，因为默认他们就是null。
-			//而赋值后再同步到数据库的时候，这些null值会被处理成''，0，如果字段是外键就会出错误，看_quoteValue
-			if (is_null($field_value)) {
-				continue ;
-			}
 			$alias = $table_alias."_";
 			if (substr($field_name, 0, strlen($alias)) !== $alias) {
 				continue;//当前字段不属于$entity
 			}
 			$field_name = substr($field_name, strlen($alias));
 			if (!$entity->has_set_value($field_name)) {
+				if (is_null($field_value)) {
+					$entity->set( $field_name , NULL);
+					continue;
+				}
 				$value = self::filter_var($field_value);
 				if (in_array($field_name, $entity->encrypt_columns)){
 					$value = $this->decrypt($value, YZE_DB_CRYPT_KEY);
@@ -221,10 +220,11 @@ class YZE_DBAImpl extends YZE_Object
 	 * 批量查找class的指定id的对象
 	 * @param array $ids 主键
 	 * @param string $class 类名
+	 * @param string $suffix
 	 * @return array model数组
 	 * @throws YZE_DBAException
 	 */
-	public function find_by(array $ids, $class){
+	public function find_by(array $ids, $class, $suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -235,7 +235,7 @@ class YZE_DBAImpl extends YZE_Object
 		}, $ids);
 
 		$sql = new YZE_SQL();
-		$sql->from(get_class($entity),"a")
+		$sql->from(get_class($entity),"a", $suffix)
 		->where("a",$entity->get_key_name(),YZE_SQL::IN,$ids);
 
 		return $this->select($sql);
@@ -247,10 +247,11 @@ class YZE_DBAImpl extends YZE_Object
 	 *
 	 * @param int $key
 	 * @param string|Model $class
+	 * @param string $suffix
 	 * @throws YZE_DBAException
 	 * @return YZE_Model
 	 */
-	public function find($key,$class){
+	public function find($key,$class,$suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -258,7 +259,7 @@ class YZE_DBAImpl extends YZE_Object
 		$entity = $class instanceof YZE_Model ? $class : new $class;
 
 		$sql = new YZE_SQL();
-		$sql->from(get_class($entity),"a")->limit(1);
+		$sql->from(get_class($entity),"a", $suffix)->limit(1);
 
 		$sql->where("a",$entity->get_key_name(),YZE_SQL::EQ,$key);
 		return $this->get_Single($sql);
@@ -267,16 +268,17 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 查询所有的记录，返回实体数组,键为主键值
 	 * @param string|Model $class
+	 * @param string $suffix
 	 * @throws YZE_DBAException
 	 * @return array
 	 */
-	public function find_All($class){
+	public function find_All($class, $suffix){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
 		$entity = $class instanceof YZE_Model ? $class : new $class;
 		$sql = new YZE_SQL();
-		$sql->from(get_class($entity),"t");
+		$sql->from(get_class($entity),"t", $suffix);
 		return $this->select($sql,[], $entity->get_key_name());
 	}
 
@@ -397,9 +399,9 @@ class YZE_DBAImpl extends YZE_Object
 			foreach ($o as $n => $v) {
 				$key = $index_field ? $v->get($index_field) : $index;
 				if($has_more_class){
-					$objects[$key][$n] = $v && $v->get_records() ? $v : null;
+					$objects[$key][$n] = $v && array_filter($v->get_records()) ? $v : null;
 				}else{
-					$objects[$key] = $v && $v->get_records() ? $v : null;
+					$objects[$key] = $v && array_filter($v->get_records()) ? $v : null;
 				}
 			}
 		}
@@ -503,7 +505,6 @@ class YZE_DBAImpl extends YZE_Object
 		//insert
 		$sql->insert('t',$this->get_entity_record($entity), $type, $extra_info)
 		->from(get_class($entity),"t", $entity->get_suffix());
-
 		$rowCount = $this->execute($sql);
 		$insert_id = self::$conn[$this->db_name]->lastInsertId();
 

@@ -293,6 +293,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @throws YZE_DBAException
 	 */
 	public static function find_by_id($id, $db=null, $suffix=null){
+		if (!$id) return null;
 		return YZE_DBAImpl::get_instance($db)->find($id,get_called_class(), $suffix);
 	}
 
@@ -491,7 +492,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @author leeboo
 	 */
 	public function refresh(){
-		$new = YZE_DBAImpl::get_instance($this->db)->find($this->get_key(), get_class($this));
+		$new = YZE_DBAImpl::get_instance($this->db)->find($this->get_key(), get_class($this), $this->suffix);
 		if($new){
 			foreach ($new->get_records() as $name => $value){
 				$this->set($name, $value);

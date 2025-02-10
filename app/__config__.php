@@ -2,6 +2,7 @@
 namespace  app;
 
 use yangzie\YZE_Exception;
+use yangzie\YZE_FatalException;
 use function yangzie\yze_js_bundle;
 
 /**
@@ -56,11 +57,8 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * @throws YZE_FatalException
 	 */
 	public function check(){
-		if( version_compare(PHP_VERSION,'7.0.0','lt')){
-			throw new YZE_FatalException("要求7.0及以上8.0以下PHP版本");
-		}
-		if( version_compare(PHP_VERSION,'8.0.0','>=')){
-			throw new YZE_FatalException("要求7.0及以上8.0以下PHP版本");
+		if( version_compare(PHP_VERSION,'8.0.0','lt')){
+			throw new YZE_FatalException("要求8.0以上PHP版本");
 		}
 	}
 
@@ -70,18 +68,27 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	protected function config(): array{
 		return [
-//			'default_db' => 'test1', // 默认链接的数据库名，请填写项目实际的数据库名
-//			'db_connections' => [
-//				'test1' => [
-//					'db_type' => 'mysql',
-//					'db_host' => '127.0.0.1',
-//					'db_user' => 'root',
-//					'db_psw'  => '12345678',
-//					'db_port' => '3306',
-//					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
-//					'db_charset'=> 'utf8'
-//				],
-//			]
+			'default_db' => 'test1', // 默认链接的数据库名，请填写项目实际的数据库名
+			'db_connections' => [
+				'test1' => [
+					'db_type' => 'mysql',
+					'db_host' => '127.0.0.1',
+					'db_user' => 'root',
+					'db_psw'  => '12345678',
+					'db_port' => '3306',
+					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
+					'db_charset'=> 'utf8'
+				],
+				'test2' => [
+					'db_type' => 'mysql',
+					'db_host' => '127.0.0.1',
+					'db_user' => 'root',
+					'db_psw'  => '12345678',
+					'db_port' => '3306',
+					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
+					'db_charset'=> 'utf8'
+				],
+			]
 		];
 	}
 
@@ -112,7 +119,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		$config = [
 //			"foo" => ['/js/foo.js']
 		];
-		return $config[$bundle];
+		return @$config[$bundle];
 	}
 	/**
 	 * css资源分组及其包含的文件，在加载时方便直接通过分组名加载;
@@ -124,7 +131,7 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		$config = [
 //			"foo" => ['/css/foo.css']
 		];
-		return $config[$bundle];
+		return @$config[$bundle];
 	}
 }
 ?>

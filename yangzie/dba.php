@@ -23,7 +23,6 @@ class YZE_DBAImpl extends YZE_Object
 
 		// 没有数据库，或者数据库链接已经建立
 		if (!$db_name || @self::$conn[$db_name]){
-			$this->begin_Transaction();
 			return;
 		}
 
@@ -61,7 +60,7 @@ class YZE_DBAImpl extends YZE_Object
 			$errorInfo = join(' ', $errorInfo);
 		}
 		if (preg_match("/MySQL server has gone away/", $errorInfo, $matches)){ // 2006 server has gone away
-			echo $errorInfo;
+//			echo $errorInfo;
 			$this->connect($this->db_name, true);
 			return call_user_func([$this, $method], ...$args);
 		}
@@ -142,6 +141,7 @@ class YZE_DBAImpl extends YZE_Object
 				continue;//当前字段不属于$entity
 			}
 			$field_name = substr($field_name, strlen($alias));
+
 			if (!$entity->has_set_value($field_name)) {
 				if (is_null($field_value)) {
 					$entity->set( $field_name , NULL);
@@ -220,11 +220,10 @@ class YZE_DBAImpl extends YZE_Object
 	 * 批量查找class的指定id的对象
 	 * @param array $ids 主键
 	 * @param string $class 类名
-	 * @param string $suffix
 	 * @return array model数组
 	 * @throws YZE_DBAException
 	 */
-	public function find_by(array $ids, $class, $suffix=null){
+	public function find_by(array $ids, $class, $suffix){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -247,11 +246,10 @@ class YZE_DBAImpl extends YZE_Object
 	 *
 	 * @param int $key
 	 * @param string|Model $class
-	 * @param string $suffix
 	 * @throws YZE_DBAException
 	 * @return YZE_Model
 	 */
-	public function find($key,$class,$suffix=null){
+	public function find($key,$class, $suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -268,17 +266,16 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 查询所有的记录，返回实体数组,键为主键值
 	 * @param string|Model $class
-	 * @param string $suffix
 	 * @throws YZE_DBAException
 	 * @return array
 	 */
-	public function find_All($class, $suffix){
+	public function find_All($class){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
 		$entity = $class instanceof YZE_Model ? $class : new $class;
 		$sql = new YZE_SQL();
-		$sql->from(get_class($entity),"t", $suffix);
+		$sql->from(get_class($entity),"t");
 		return $this->select($sql,[], $entity->get_key_name());
 	}
 
@@ -505,6 +502,7 @@ class YZE_DBAImpl extends YZE_Object
 		//insert
 		$sql->insert('t',$this->get_entity_record($entity), $type, $extra_info)
 		->from(get_class($entity),"t", $entity->get_suffix());
+
 		$rowCount = $this->execute($sql);
 		$insert_id = self::$conn[$this->db_name]->lastInsertId();
 

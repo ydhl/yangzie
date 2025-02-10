@@ -307,6 +307,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return array<YZE_Model>
 	 */
 	public static function find_by_ids($ids, $db=null, $suffix=null){
+		if (!$ids) return [];
 	    $arr = [];
 	    if (is_string($ids)){
 	        $ids = explode(",", $ids);
@@ -348,7 +349,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return YZE_Model
 	 */
 	public static function find_by_uuid($uuid, $db=null, $suffix=null){
-		return static::from('m', $suffix)->in_db($db)->where("uuid=:uuid")->get_Single([":uuid"=>$uuid]);
+		return $uuid ? static::from('m', $suffix)->in_db($db)->where("uuid=:uuid")->get_Single([":uuid"=>$uuid]) : null;
 	}
 	/**
 	 * 删除数据库中指定uuid的记录
@@ -780,8 +781,8 @@ abstract class YZE_Model extends YZE_Object{
 			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
 		}
 		$this->sql->count($alias , $field, "COUNT_ALIAS", $distinct);
-
 		$obj = YZE_DBAImpl::get_instance($this->db)->get_Single($this->sql, $params);
+
 		if ( ! $obj)return 0;
 		$obj = is_array($obj) ? $obj[$alias] : $obj;
 		return intval($obj ? $obj->Get("COUNT_ALIAS") : 0);
@@ -892,6 +893,14 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public function clean_where(){
 		$this->sql->clean_where();
+		return $this;
+	}
+
+	/**
+	 * @return $this
+	 */
+	public function clean_select(){
+		$this->sql->clean_select();
 		return $this;
 	}
 	/**

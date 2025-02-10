@@ -52,7 +52,7 @@ abstract class Search_Model_Helper
      * </ul>
      * @return YZE_Model
      */
-    protected abstract function build_search_model(): YZE_Model;
+    protected abstract function build_search_model(&$countColumn="id", &$alias=''): YZE_Model;
 
     /**
      * 构建where对象，查询参数和count的的字段
@@ -63,7 +63,7 @@ abstract class Search_Model_Helper
      * @param $countColumn
      * @return string
      */
-    protected abstract function build_where_params(&$params=[], &$countColumn="id"): string;
+    protected abstract function build_where_params(&$params=[]): string;
 
     /**
      * 做查询并返回结果数组和总数
@@ -72,11 +72,17 @@ abstract class Search_Model_Helper
      */
     public function search(&$total){
         $params = [];
-        $where = $this->build_where_params($params, $countColumn);
-        $searchModel = $this->build_search_model();
+        $countColumn = 'id';
+        $alias = '';
+        $where = $this->build_where_params($params);
+        if (!$where) $where = '1=1';
+        $searchModel = $this->build_search_model($countColumn, $alias);
         $searchModel = $searchModel->where($where);
-        $total = $searchModel ->count($countColumn, $params);
-        $where .= " limit " . ($this->get_page()-1) * $this->get_page_count() . ", " . $this->get_page_count();
-        return $searchModel->clean_where()->where($where)->select($params);
+        $total = $searchModel->count($countColumn, $params, $alias);
+        $searchModel->clean_select();
+
+        return $searchModel->clean_where()->where($where)
+            ->limit(($this->get_page()-1) * $this->get_page_count(), $this->get_page_count())
+            ->select($params);
     }
 }

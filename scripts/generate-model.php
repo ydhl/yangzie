@@ -141,7 +141,7 @@ trait $class{
 		where TABLE_SCHEMA = '".$dbName."' and TABLE_NAME = '{$table}'
 		and referenced_column_name is not NULL");
 		while ($row=mysqli_fetch_assoc($result)) {
-			$col = rtrim($row['COLUMN_NAME'], '_id');
+			$col = preg_replace('/_id$/','', $row['COLUMN_NAME']);
 			$col_class = $this->get_class_of_table($row['REFERENCED_TABLE_NAME']);
 
 			if ($row['REFERENCED_TABLE_NAME'] != $this->table_name){
@@ -149,7 +149,7 @@ trait $class{
 			}
 			$sortClass = substr($col_class, strripos($col_class, "\\")+1);
 			$relation_column[$row['COLUMN_NAME']] = [
-				'graphql_field'=>rtrim($row['COLUMN_NAME'],'_id'),
+				'graphql_field'=>$col,
 				'target_class'=>$col_class,
 				'target_column'=>$row['REFERENCED_COLUMN_NAME']
 			];

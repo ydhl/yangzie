@@ -20,7 +20,8 @@ class Generate_Model_Script extends AbstractScript{
 		$this->table_name 		= $argv['table_name'];
 		$this->class_name 		= $argv['class_name'];
 		$this->db_name 		= $argv['db_name'] ?: $app_module->get_module_config("default_db");
-		$this->uuid 		= @$argv['uuid'];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		$this->uuid = $argv['uuid'] ?? null;
 
 		if(empty($this->db_name) || empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
 			die(YZE_SCRIPT_USAGE);
@@ -64,6 +65,9 @@ use yangzie\GraphqlSearchNode;
  * @package $package
  */
 trait $class{
+	public function $class(){
+		
+	}
 	/**
 	 * 返回每个字段的描述文本
 	 * @param \$column
@@ -89,7 +93,7 @@ trait $class{
 	 * 当前model是否允许在graphql中进行查询
 	 * @return boolean
 	 */
-	public function is_enable_graphql(){
+	public static function is_enable_graphql(){
 		return true;
 	}
 
@@ -199,9 +203,9 @@ trait $class{
 	}";
 			}
 
-			@$fielddefine .= "      ".str_pad("'".$row['Field']."'", 12," ")." => ['type' => '".$type_info['type']."', 'null' => ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",'length' => '".$type_info['length']."','default'	=> '".$row['Default']."'],
+			$fielddefine = ($fielddefine ?? '') . "      ".str_pad("'".$row['Field']."'", 12," ")." => ['type' => '".$type_info['type']."', 'null' => ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",'length' => '".$type_info['length']."','default'	=> '".$row['Default']."'],
 ";
-			@$properConst .= "
+			$properConst = ($properConst ?? '') . "
     /**
      * {$row['Comment']}
      * @var {$type_info['type']}
@@ -288,7 +292,7 @@ class $class extends YZE_Model{
 		preg_match("/^mediumint/i",$type)||
 		preg_match("/^bigint/i",$type)){
 			if(preg_match("/\((\d+)\)/", $type, $matchs)){
-				$ret['length']=@$matchs[1];
+				$ret['length']=$matchs[1] ?? null;
 			}
 			$ret['type']="integer";
 
@@ -298,7 +302,7 @@ class $class extends YZE_Model{
 		preg_match("/^float/i",$type)||
 		preg_match("/^double/i",$type)){
 			if(preg_match("/\((\d+)\)/", $type, $matchs)){
-				$ret['length']=@$matchs[1];
+				$ret['length']=$matchs[1] ?? null;
 			}
 			$ret['type']="float";
 
@@ -318,7 +322,7 @@ class $class extends YZE_Model{
 		}
 
 		if(preg_match("/\((\d+)\)/", $type, $matchs)){
-			$ret['length']=@$matchs[1];
+			$ret['length']=$matchs[1] ?? null;
 		}
 		$ret['type']="string";
 		return $ret;

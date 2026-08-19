@@ -10,12 +10,14 @@ use \app\App_Module;
 function yze_autoload($class) {
     $_ = preg_split("{\\\\}", strtolower($class));
 
-    $module_name = @$_[1];
-    $class_name = @$_[2];
+    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+    $module_name = $_[1] ?? null;
+    $class_name = $_[2] ?? null;
     $loaded_module_info = \yangzie\YZE_Object::loaded_module($module_name);
 
     $file = "";
-    if(@$loaded_module_info['is_phar']){
+    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+    if(($loaded_module_info['is_phar'] ?? null)){
         $module_name .= ".phar";
         $file = "phar://";
     }
@@ -42,7 +44,8 @@ function yze_autoload($class) {
         $file = YZE_INSTALL_PATH . strtr(strtolower($class), array("\\"=>"/")) . ".trait.php";
     }
 
-    if(@$file && file_exists($file)){
+    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+    if(($file ?? null) && file_exists($file)){
         include $file;
     }else{
         YZE_Hook::do_hook("YZE_HOOK_AUTO_LOAD_CLASS", $class);
@@ -93,7 +96,8 @@ function yze_load_app() {
             $module_name = ucfirst(preg_replace('/\.phar$/', "", $module_name));
         }
 
-        if (@file_exists("{$phar_wrap}{$module}/__config__.php")) {
+        // ai@2026-05-27 去掉冗余 @，file_exists 不会产生错误
+        if (file_exists("{$phar_wrap}{$module}/__config__.php")) {
             require_once "{$phar_wrap}{$module}/__config__.php";
 
             $class = "\\app\\{$module_name}\\" . ucfirst($module_name) . "_Module";

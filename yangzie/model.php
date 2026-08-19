@@ -48,7 +48,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * 如果不配置，开发者也可通过YZE_DBAImpl->encrypt,YZE_DBAImpl->decrypt加解密设置，
 	 * 通过yangzie接口对数据进行读写的都支持加解密处理, 但如果是开发者自己写原生sql，则由开发者自行处理
 	 * <br/><br/>
-	 * 加解密不同的数据库实现会不同，Mysql是通过AES_ENCRYPT、AES_DECRYPT实现的；加解密的秘钥在__config__.php中YZE_DB_CRYPT_KEY
+	 * 加解密不同的数据库实现会不同，Mysql是通过AES_ENCRYPT、AES_DECRYPT实现的；加解密的秘钥在__config__.php中数据库配置CRYPT_KEY指定
 	 * 但要注意加密的内容是二进制格式（blob），或者自行通过bin2hex等转换成字符串存储，所以需要设置合适的字段类型
 	 *
 	 *
@@ -197,7 +197,7 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	/**
-	 * 根据jsonString创建对象, 如果json不是有效的json，返回null
+	 * 根据array创建对象
 	 * @param array $array
 	 * @return YZE_Model
 	 */
@@ -249,7 +249,8 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param unknown $name
 	 */
 	public function get($name){
-		return @$this->records[$name];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return $this->records[$name] ?? null;
 	}
 	/**
 	 * 设值的时候会根据字段的类型对值进行相应的处理：
@@ -271,9 +272,11 @@ abstract class YZE_Model extends YZE_Object{
 			case "float":
 				$value = is_null($value) ? null : floatval($value);
                 break;
-			case "string":
-				$value = $props['length'] && $value ? mb_substr($value, 0, $props['length']) : $value;
-            default:
+		case "string":
+			$value = $props['length'] && $value ? mb_substr($value, 0, $props['length']) : $value;
+			// ai@2026-05-27 修复 PHP 8 兼容：case "string" 缺少 break 会穿透到 default
+			break;
+        default:
                 if (is_null($value)) {
                     $value = null;
                 }
@@ -445,12 +448,11 @@ abstract class YZE_Model extends YZE_Object{
 	 * @param string $type YZE_SQL::INSERT_XX常量
 	 * @param YZE_SQL|null $checkSql 完整的判断查询sql
 	 * @throws YZE_DBAException
-	 * @return YZE_Model
+	 * @return int 插入或更新的记录的主键; 当没有时间更新数据库时，返回0
 	 */
 	public function save($type=YZE_SQL::INSERT_NORMAL, YZE_SQL $checkSql=null){
 		$this->before_Save();
-	    YZE_DBAImpl::get_instance($this->db)->save($this, $type, $checkSql);
-		return $this;
+	    return YZE_DBAImpl::get_instance($this->db)->save($this, $type, $checkSql);
 	}
 
 	/**
@@ -572,14 +574,14 @@ abstract class YZE_Model extends YZE_Object{
 	public function __get($name){
 	    $value = $this->get($name);
 	    if (in_array($name, $this->encrypt_columns)){
-	    	$value = YZE_DBAImpl::get_instance($this->db)->decrypt($value, YZE_DB_CRYPT_KEY);
+	    	$value = YZE_DBAImpl::get_instance($this->db)->decrypt($value);
 		}
 	    return $value;
 	}
 
 	public function __set($name, $value){
 		if (in_array($name, $this->encrypt_columns)){
-			$value = YZE_DBAImpl::get_instance($this->db)->encrypt($value, YZE_DB_CRYPT_KEY);
+			$value = YZE_DBAImpl::get_instance($this->db)->encrypt($value);
 		}
 	    return $this->set($name, $value);
 	}
@@ -929,11 +931,13 @@ abstract class YZE_Model extends YZE_Object{
 
 	private function get_Field_Type($field_name){
 	    $columns = $this->get_columns();
-	    return @$columns[$field_name]['type'];
+	    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+	    return $columns[$field_name]['type'] ?? null;
 	}
 	private function get_Field_props($field_name){
 	    $columns = $this->get_columns();
-	    return @$columns[$field_name];
+	    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+	    return $columns[$field_name] ?? null;
 	}
 
 	/**

@@ -109,6 +109,12 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	public $layout;
 
 	/**
+	 * 响应格式
+	 * @var string
+	 */
+	public $format;
+
+	/**
 	 * 指定视图的容器视图，当前视图的内容将在master view的$this->content_of_view();中输出，<br/>
 	 * master view的内容可以嵌套，最顶级的master view的内容将在layout的$this->content_of_view();输出<br/>
 	 * master也支持content_of_section<br/>
@@ -205,7 +211,8 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 		echo $data;
 	}
 	public function view_sections(){
-	    return @$this->data['content_of_section'];
+	    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+	    return $this->data['content_of_section'] ?? null;
 	}
 	public function begin_section(){
 	    ob_start();
@@ -228,7 +235,8 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	protected abstract function display_self();
 
 	public function get_data($key){
-	   return @$this->data[$key];
+	   // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+	   return $this->data[$key] ?? null;
 	}
 	public function get_datas(){
 	   return  $this->data;
@@ -355,8 +363,9 @@ abstract class YZE_View_Component extends YZE_View_Adapter{
      */
     protected abstract function output_component();
 
-    public function __construct($data, $controller){
+    public function __construct($data, $controller, $format=null){
         parent::__construct( $data, $controller);
+		$this->format 	= $format ?: $controller->get_Request()->get_output_format();
     }
     protected function display_self(){
         $this->output_component();
@@ -512,7 +521,7 @@ class YZE_Layout extends YZE_View_Adapter{
 			$this->layout = $this->view->layout;
 		}
 
-		if(@$_SERVER['HTTP_X_PJAX']){//pjax 请求，不返回layout
+		if(($_SERVER['HTTP_X_PJAX'] ?? null)){//pjax 请求，不返回layout
 			echo "<title>".$this->get_data("yze_page_title")."</title>";//pjax 加载时设置页面标题
 			$this->layout = "";
 		}
@@ -529,7 +538,8 @@ class YZE_Layout extends YZE_View_Adapter{
 		        include $layoutfile;
 		        return;
 		    }
-		    throw new YZE_Resource_Not_Found_Exception(" 布局 {$moblayoutfile} 不存在");
+		    // ai@2026-05-27 修复 PHP 8 兼容：错误消息引用错误变量 $moblayoutfile，应为 $layoutfile
+		    throw new YZE_Resource_Not_Found_Exception(" 布局 {$layoutfile} 不存在");
 		}else{
 			echo $this->data['content_of_view'];
 		}

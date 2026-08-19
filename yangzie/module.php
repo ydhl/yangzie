@@ -44,7 +44,8 @@ abstract class YZE_Base_Module extends YZE_Object {
 	public function get_module_config($name=null){
 		$config = get_class_vars(get_class($this));
 		$config = array_merge($config,$this->config());
-		return $name ? @$config[strtolower($name)] : $config;
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return $name ? ($config[strtolower($name)] ?? null) : $config;
 	}
 
 	/**
@@ -57,7 +58,7 @@ abstract class YZE_Base_Module extends YZE_Object {
 		$config = $this->config();
 		$_ = array();
 		foreach ($config['routers'] as $uri => $mapping){
-			if(strtolower($mapping['controller']) == $controller && $action==strtolower(@$mapping['action'])){
+			if(strtolower($mapping['controller']) == $controller && $action==strtolower(($mapping['action'] ?? null))){
 				$_[] = $uri;
 			}
 		}

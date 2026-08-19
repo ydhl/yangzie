@@ -13,17 +13,20 @@ trait Graphql__Type{
      * @return array
      */
     public function __type($node){
-        $args = (array)@$node->args; // 查询参数, 目前type查询只支持name参数
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? [] 显式处理
+        $args = (array)($node->args ?? []); // 查询参数, 目前type查询只支持name参数
 
         // 确保用户查询的结果中有查询参数名对应的信息，便于和参数进行比对
         // { __type(name:"test") { description } }
         // 查询的字段只有description，但查询的参数名是name（查询的值是test），那么需要在查询的字段中加上name
         $hasArgName = [];
         foreach ($args as $arg) {
-            if (!preg_match("/\"\w+\"/", @$arg->value)) {
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? '' 显式处理
+            if (!preg_match("/\"\w+\"/", ($arg->value ?? ''))) {
                 throw new YZE_FatalException("arg ({$arg->value}) must be a string with double quote");
             }
-            foreach (@$node->sub as $item){
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? [] 显式处理
+            foreach (($node->sub ?? []) as $item){
                 if (strtolower($item->name)==$arg->name){
                     $hasArgName[$arg->name] = true;
                     break;
@@ -34,7 +37,7 @@ trait Graphql__Type{
         // 如果查询字段没有name，则补上
         $addedField = [];
         foreach ($args as $arg) {
-            if ( ! @$hasArgName[$arg->name]){
+            if ( ! ($hasArgName[$arg->name] ?? false)){
                 $addedField[] = $arg->name;
                 $node->sub[] = ['name' => $arg->name];
             }
@@ -42,7 +45,8 @@ trait Graphql__Type{
 
         $match = function($item, $args) {
             foreach ($args as $arg) {
-                if (!preg_match("/\"".@$item[$arg->name]."\"/", @$arg->value)) {
+                // ai@2026-05-27 替换 @ 抑制符，使用 ?? '' 显式处理
+                if (!preg_match("/\"".($item[$arg->name] ?? '')."\"/", ($arg->value ?? ''))) {
                     return false;
                 }
             }

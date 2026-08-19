@@ -33,7 +33,8 @@ class YZE_Session_Context extends YZE_Object {
      * @since 2009-12-10
      */
     public function get($key) {
-        return @$_SESSION ['yze'][$key];
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+        return $_SESSION['yze'][$key] ?? null;
     }
 
     /**
@@ -48,7 +49,8 @@ class YZE_Session_Context extends YZE_Object {
         $_SESSION ['yze'][$key] = $value;
     }
     public function has($key) {
-        return array_key_exists ( $key, @$_SESSION ['yze']);
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? [] 显式处理
+        return array_key_exists($key, $_SESSION['yze'] ?? []);
     }
     /**
      * 删除指定的key，如果不指定key则全部session都将被删除(注意只删除set设置的内容)

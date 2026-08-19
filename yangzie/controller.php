@@ -105,7 +105,8 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     }
 
     public function get_View_Data($name) {
-        return @$this->view_data [$name];
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+        return $this->view_data[$name] ?? null;
     }
 
 
@@ -198,7 +199,8 @@ abstract class YZE_Resource_Controller extends YZE_Object {
 
             $comment = $methodRef->getDocComment();
             preg_match("/@{$annotation}\s(?P<name>.+)/i", $comment, $matches);
-            return @$matches['name'] ?: null;
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            return $matches['name'] ?? null;
         }catch (\Exception $e){
             return null;
         }

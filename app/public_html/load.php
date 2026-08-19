@@ -46,9 +46,9 @@ function create_module($module){
 
 $bundle_files = array();
 $type = strtolower($_GET["t"]);
-$bundle = @$_GET["b"];//load static bundle
-$module = @$_GET["m"];//load module bundle
-$asset  = @$_GET["src"];//load asset
+$bundle = $_GET["b"] ?? null;//load static bundle
+$module = $_GET["m"] ?? null;//load module bundle
+$asset  = $_GET["src"] ?? null;//load asset
 $eTag = '';
 $asset_file_ext = '';
 $asset_file_path = '';
@@ -132,7 +132,7 @@ header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $last_modified_time).' GMT')
 header('Etag:' . $eTag);
 header('Expires:' . gmdate('D, d M Y H:i:s', time()+86400).' GMT');
 
-if (@$_SERVER['HTTP_IF_NONE_MATCH'] == $eTag) {
+if (($_SERVER['HTTP_IF_NONE_MATCH'] ?? '') == $eTag) {
     header("HTTP/1.0 304 Not Modified");
     exit(0);
 }

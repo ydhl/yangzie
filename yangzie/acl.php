@@ -26,14 +26,15 @@ class YZE_ACL extends YZE_Object{
 		$perm = get_user_permissions();
 
 		if(!$perm)return -1;
-		if (is_array(@$perm["deny"])){//配置了拒绝项
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		if (is_array($perm["deny"] ?? null)){//配置了拒绝项
 			$denys = $this->in_array($aconame, $perm["deny"]);//拒绝当前ACO
 			if ($denys){//拒绝当前ACO的所有action
 				return false;
 			}
 		}
 
-		if (is_array(@$perm["allow"])){//允许当前ACO
+		if (is_array($perm["allow"] ?? null)){//允许当前ACO
 			$allow = $this->in_array($aconame, $perm["allow"]);//允许当前ACO
 
 			if ($allow){//允许当前ACO的所有action
@@ -41,8 +42,8 @@ class YZE_ACL extends YZE_Object{
 			}
 		}
 
-		if (@$perm["deny"]=="*")return false;//拒绝优先
-		if (@$perm["allow"]=="*")return true;//允许所有
+		if(($perm["deny"] ?? null)=="*")return false;//拒绝优先
+		if(($perm["allow"] ?? null)=="*")return true;//允许所有
 		return -1;
 	}
 	private function check_role_permission($aroname, $aconame){
@@ -53,23 +54,24 @@ class YZE_ACL extends YZE_Object{
 		if(function_exists("get_permissions")){
 			$perm = get_permissions($aroname);
 
-			if (is_array(@$perm["deny"])){//配置了拒绝项
+			// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+			if (is_array($perm["deny"] ?? null)){//配置了拒绝项
 				$denys = $this->in_array($aconame, $perm["deny"]);//拒绝当前ARO
 				if ($denys){//拒绝当前ACO的所有action
 					return false;
 				}
 			}
 
-			if (is_array(@$perm["allow"])){//允许当前ACO
+			if (is_array($perm["allow"] ?? null)){//允许当前ACO
 				$allow = $this->in_array($aconame, $perm["allow"]);//允许当前ARO
 				if ($allow){//允许当前ACO的所有action
 					return true;
 				}
 			}
 
-			if(@$perm["deny"]=="*")return false;//拒绝优先
+			if(($perm["deny"] ?? null)=="*")return false;//拒绝优先
 
-			if (@$perm["allow"]=="*")return true;//允许所有
+			if(($perm["allow"] ?? null)=="*")return true;//允许所有
 
 			if($aconame=="/") return false;//都没找到
 
@@ -80,26 +82,27 @@ class YZE_ACL extends YZE_Object{
 		}
 
 
-		$perm = @$this->acos_aros[$aconame];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		$perm = $this->acos_aros[$aconame] ?? null;
 
 
-		if (is_array(@$perm["deny"])){//配置了拒绝项
+		if (is_array($perm["deny"] ?? null)){//配置了拒绝项
 			$denys = $this->in_array($aroname, $perm["deny"]);//拒绝当前ARO
 			if ($denys){//拒绝当前ACO的所有action
 				return false;
 			}
 		}
 
-		if (is_array(@$perm["allow"])){//允许当前ACO
+		if (is_array($perm["allow"] ?? null)){//允许当前ACO
 			$allow = $this->in_array($aroname, $perm["allow"]);//允许当前ARO
 			if ($allow){//允许当前ACO的所有action
 				return true;
 			}
 		}
 
-		if(@$perm["deny"]=="*")return false;//拒绝优先
+		if(($perm["deny"] ?? null)=="*")return false;//拒绝优先
 
-		if (@$perm["allow"]=="*")return true;//允许所有
+		if(($perm["allow"] ?? null)=="*")return true;//允许所有
 
 		if($aroname=="/") return false;//都没找到
 
@@ -132,7 +135,8 @@ class YZE_ACL extends YZE_Object{
 				$k .= "/*";
 			}
 			$k = strtr($k, array("*"=>".*"));
-			if (preg_match("{^".$k."$}i", $check)) {
+			// ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null
+		if ($check && preg_match("{^".$k."$}i", $check)) {
 				return true;
 			}
 		}
@@ -175,7 +179,8 @@ class YZE_ACL extends YZE_Object{
 	 * @return void
 	 */
 	public  function end_check_permission($aroname, $aconame){
-		if(@$this->permission_cache[$aroname][$aconame]){
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		if(($this->permission_cache[$aroname][$aconame] ?? null)){
 			ob_end_flush();
 			return;
 		}

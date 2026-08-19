@@ -25,12 +25,10 @@ class YZE_SQL extends YZE_Object{
 	const DESC		= "desc";
 	const ASC		= "asc";
 	/**
-	 * [["alias"	=> $table_alias,"field"	=> $column,"op"	=> $op,"value"	=> $value,"andor"=>"and"]]
+	 * [["alias"	=> $table_alias,"native"=>,"field"	=> $column,"op"	=> $op,"value"	=> $value,"andor"=>"and"]]
 	 * @var array
 	 */
 	private $where = array();
-	private $and_where_group = array();
-	private $or_where_group = array();
 	/**
 	 * like:array('alias1'=>array('select column'))
 	 *
@@ -84,7 +82,7 @@ class YZE_SQL extends YZE_Object{
 	private $has_join = false;
 	private $has_from = false;
 	/**
-	 * 表别名及对于的表后缀
+	 * 表别名及对应的表后缀
 	 * @var array
 	 */
 	private $suffix = [];
@@ -166,28 +164,7 @@ class YZE_SQL extends YZE_Object{
      * @var unknown
      */
     const INSERT_ON_DUPLICATE_KEY_IGNORE  = "insert_on_duplicate_key_ignore";
-	/**
-	 * 构建and where条件段，e.g. where('item','part_no',YZE_SQL::LIKE,'%Good%');
-	 * 该where与上一个where条件是and关系
-	 *
-	 * @param string $table_alias
-	 * @param string $column
-	 * @param string $op
-	 * @param string|bool $value
-	 * @param boolean $is_column 默认情况下value是变量值，某些情况下需要用字段作为值，这时通过传入is_column=true来指定value是一个字段名；
-	 * @return YZE_SQL
-	 */
-	public function where($table_alias,$column,$op,$value=null, $is_column = false){
-		$this->where[] = array(
-			"alias"	=> $table_alias,
-			"field"	=> $column,
-			"op"	=> $op,
-	        "is_column"	=> $is_column,
-			"value"	=> $value,
-			"andor"	=> "AND",
-		);
-		return $this;
-	}
+
 	/**
 	 * 设置 alias表的后缀
 	 * @param $suffix
@@ -203,55 +180,15 @@ class YZE_SQL extends YZE_Object{
 	}
 
 	/**
-	 * 构建原生where条件，native_Where跟where一样根据调用的顺序构建最终的where语句；
-	 * 但native_Where需要考虑如何和上一个where是and还是or，如native_Where("and ....")或native_Where("or ....")
+	 * 构建原生where条件，根据调用的顺序构建最终的where语句；
+	 * 需要考虑如何和上一个where是and还是or，如where("and ....")或where("or ....")
 	 * @param $where
 	 * @return YZE_SQL
 	 */
-	public function native_Where($where){
+	public function where($where){
 			$this->where[] = array(
 			"native"	=> $where
 		);
-		return $this;
-	}
-	/**
-	 * 构建OR where条件段，e.g. or_where('item','part_no',YZE_SQL::LIKE,'%Good%')，与上一个条件是or关系
-	 * @param string $table_alias
-	 * @param string $column
-	 * @param string $op
-	 * @param string $value
-	 * @param boolean $is_column 默认情况下value是变量值，某些情况下需要用字段作为值，这时通过传入is_column=true来指定value是一个字段名；
-	 * @return YZE_SQL
-	 */
-	public function or_where($table_alias,$column,$op,$value=null,$is_column=false){
-		$this->where[] = array(
-			"alias"	=> $table_alias,
-			"field"	=> $column,
-			"op"	=> $op,
-	        "is_column"	=> $is_column,
-			"value"	=> $value,
-			"andor"	=> "OR",
-		);
-		return $this;
-	}
-	/**
-	 * eg.构建分组查询，如( ... AND ...)，分组由()包含
-	 * e.g where_group([new YZE_Where('o','status',YZE_SQL::EQ,'completed'),new  YZE_Where('o','order_time',SQL::EQ,'2010-9-6')])
-	 * @param array $where 里面的值是Where实例
-	 * @return YZE_SQL
-	 */
-	public function where_group(array $where){
-		$this->and_where_group[] = $where;
-		return $this;
-	}
-	/**
-	 * eg.构建分组查询，如( ... and ...) OR (...)，分组由()包含
-	 * e.g or_where_group([new  YZE_Where('o','status',YZE_SQL::EQ,'completed','or'),new  YZE_Where('o','order_time',SQL::EQ,'2010-9-6','or')])
-	 * @param array $where
-	 * @return YZE_SQL
-	 */
-	public function or_where_group(array $where){
-		$this->or_where_group[] = $where;
 		return $this;
 	}
 	/**
@@ -568,8 +505,6 @@ class YZE_SQL extends YZE_Object{
     public function clean_where($alias = null, $column = null) {
         if (!$alias && !$column) {
             $this->where = array();
-            $this->and_where_group = array();
-            $this->or_where_group = array();
         }
         if ($alias && ! $column) {//remove all table where
             $willDeleteItem = [];
@@ -578,20 +513,8 @@ class YZE_SQL extends YZE_Object{
                     $willDeleteItem[] = $index;
             }
 
-            foreach ($this->and_where_group as $index => $item) {
-                if ($item->get_Alias() == $alias)
-                    $willDeleteItem[] = $index;
-            }
-
-            foreach ($this->or_where_group as $index => $item) {
-                if ($item->get_Alias() == $alias)
-                    $willDeleteItem[] = $index;
-            }
-
             foreach ($willDeleteItem as $index) {
                 unset($this->where[$index]);
-                unset($this->and_where_group[$index]);
-                unset($this->or_where_group[$index]);
             }
 
         }
@@ -602,20 +525,8 @@ class YZE_SQL extends YZE_Object{
                     $willDeleteItem[] = $index;
             }
 
-            foreach ($this->and_where_group as $index => $item) {
-                if ($item->get_Alias() == $alias && $item->get_Field()==$column)
-                    $willDeleteItem[] = $index;
-            }
-
-            foreach ($this->or_where_group as $index => $item) {
-                if ($item->get_Alias() == $alias && $item->get_Field()==$column)
-                    $willDeleteItem[] = $index;
-            }
-
             foreach ($willDeleteItem as $index) {
                 unset($this->where[$index]);
-                unset($this->and_where_group[$index]);
-                unset($this->or_where_group[$index]);
             }
         }
         return $this;
@@ -634,8 +545,6 @@ class YZE_SQL extends YZE_Object{
 		$this->order_by 	= array();
 		$this->suffix 	= array();
 
-		$this->and_where_group = array();
-		$this->or_where_group = array();
 		$this->update = array();
 		$this->insert = array();
 		$this->group_by = array();
@@ -726,61 +635,37 @@ class YZE_SQL extends YZE_Object{
 	 */
 	public function get_select_table(){
 		foreach($this->from as $alias => $from_table){
-			$from[$alias] = $from_table['table'].(@$this->suffix[$alias] ?: "");
+			// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+			$from[$alias] = $from_table['table'].(($this->suffix[$alias] ?? null) ?: "");
 		}
 		return $from;
-	}
-
-
-	private function _where_group($groupWhere, $group_and_or="and"){
-		#分组查询
-		$where='';
-		foreach((array)$groupWhere as $w){
-			if(is_array($w)){
-				$where .= " ".$group_and_or." (".$this->_where_group($w).") ";
-			}else{
-				if(@$not_first){#第一个where前不需要and or
-					$where .= " ".$w->get_AndOr()." ".$this->_buildWhere($w->get_where_array());
-				}else{
-					$where .= " ".$this->_buildWhere($w->get_where_array());
-					$not_first = true;
-				}
-			}
-		}
-		return @$where;
 	}
 
 
 	private function _where(){
 		$where = "";
 		foreach((array)$this->where as $wheres){
-			if( @$wheres['native']){
+			if( !empty($wheres['native'])){
 				$where .= $wheres['native'];
 				continue;
 			}
-			if(@$not_first){#第一个where前不需要and or
+			if(!empty($not_first)){#第一个where前不需要and or
 				$where .= " ".$wheres['andor']." ".$this->_buildWhere($wheres);
 			}else{
-				@$where .= $this->_buildWhere($wheres);
+				$where = ($where ?? '') . $this->_buildWhere($wheres);
 				$not_first = true;
 			}
 		}
-		foreach (($this->and_where_group) as $and_where) {
-			$groupWhere = $this->_where_group($and_where, "and");
-	        $where = ($where ? $where." AND " : "")."(".$groupWhere.")";
-		}
-		foreach ($this->or_where_group as $or_where) {
-			$orGroupWhere = $this->_where_group($or_where, "or");
-			$where = ($where ? $where." OR " : "")."(".$orGroupWhere.")";
-		}
-		return @$where;
+
+		return $where;
 	}
 
 	private function _from(){
 		$no_alias = $this->isinsert() || $this->isdelete();//不要别名
 		$from = array();
 		foreach($this->from as $alias => $from_table){
-			$suffix = @$this->suffix[$alias] ?: "";
+			// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+			$suffix = ($this->suffix[$alias] ?? null) ?: "";
 			array_walk($from_table,function(&$item, $key) use($suffix){
 				if($key == "table"){
 					$item = "`{$item}{$suffix}`";
@@ -958,19 +843,21 @@ class YZE_SQL extends YZE_Object{
 
 	private function _group_by(){
 		foreach ($this->group_by as $group_by){
-		    if(@$group_by['function']){
+		    if(!empty($group_by['function'])){
 		        $by[] = $group_by['group_by'];
 		    }else{
 			    $by[] = $group_by['use_alias'] ? $group_by['alias']."_".$group_by['group_by'] : $group_by['alias'].".".$group_by['group_by'];
 		    }
 		}
-		return @$by ? " GROUP BY ".join(',',$by) : "";
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return ($by ?? null) ? " GROUP BY ".join(',',$by) : "";
 	}
 	private function _order_by(){
 		foreach ($this->order_by as $order_by){
 			$by[] = ($order_by['use_alias'] ? $order_by['alias']."_".$order_by['order_by'] : $order_by['alias'].".".$order_by['order_by'])." ".strtoupper($order_by['sort']);
 		}
-		return @$by ? " ORDER BY ".join(',',$by) : "";
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return ($by ?? null) ? " ORDER BY ".join(',',$by) : "";
 	}
 	private function _limit(){
 		if($this->limit_start && $this->limit_end){
@@ -1016,7 +903,7 @@ class YZE_SQL extends YZE_Object{
 	        foreach($value as $index => $v){
 	            $return[$index] = $_($v, self::defilter_var($v));
 	        }
-	        return @$return;
+	        return $return ?? null;
 	    }else{
 	        return $_($value, self::defilter_var($value));
 	    }
@@ -1027,7 +914,7 @@ class YZE_SQL extends YZE_Object{
 	        $column = "`".$wheres['field']."`";
 	    }else{
 	        $column = $wheres['alias'].".".$wheres['field'];
-	        if(@$wheres['field_func']){
+	        if(!empty($wheres['field_func'])){
 	            $column = $wheres['field_func']."( ".$column." )";
 	        }
 	    }
@@ -1066,72 +953,6 @@ class YZE_SQL extends YZE_Object{
 	        default:				$cond = " IS NOT NULL";break;
 	    }
 	    return $column.$cond;
-	}
-}
-/**
- * YZE_Where构建对象，用户构建复杂的where组合
- * @author liizii
- *
- */
-class YZE_Where extends YZE_Object{
-	private $alias;
-	private $field;
-	private $op;
-	private $value;
-	private $andor;
-	private $field_func;
-	private $value_func;
-
-	/**
-	 *
-	 * @param unknown_type $alias 表别名
-	 * @param unknown_type $field 表字段
-	 * @param unknown_type $op 操作符
-	 * @param unknown_type $value 值
-	 * @param unknown_type $andor 该Where条件与前面的where如何拼接，是and还是or
-	 * @param string $value_func 运用在值上的函数
-	 * @param string $field_func 运用在字段的函数
-	 */
-	public function __construct($alias,$field,$op,$value,$andor="AND", $field_func="", $value_func=""){
-		$this->alias 	= $alias;
-		$this->field 	= $field;
-		$this->op 		= $op;
-		$this->value 	= $value;
-		$this->andor 	= $andor;
-		$this->field_func 	= $field_func;
-		$this->value_func 	= $value_func;
-	}
-	public function get_where_array(){
-		return array(
-			"alias"	=> $this->alias,
-			"field"	=> $this->field,
-			"op"	=> $this->op,
-			"value"	=> $this->value,
-			"andor"	=> $this->andor,
-			"field_func" => $this->field_func,
-			"value_func" => $this->value_func,
-		);
-	}
-	public function get_field_func(){
-		return $this->field_func;
-	}
-	public function get_value_func(){
-		return $this->value_func;
-	}
-	public function get_alias(){
-		return $this->alias;
-	}
-	public function get_Field(){
-		return $this->field;
-	}
-	public function get_Op(){
-		return $this->op;
-	}
-	public function get_Value(){
-		return $this->value;
-	}
-	public function get_AndOr(){
-		return $this->andor;
 	}
 }
 ?>

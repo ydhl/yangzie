@@ -13,7 +13,7 @@ define("YZE_METHED_HEADER", "
 define("YZE_SCRIPT_USAGE", YZE_SCRIPT_LOGO."
 
 \t1.  Generate module, controller, view Scaffolding file
-\t2.  Generae model (database to code)	
+\t2.  Generate model (database to code)	
 \t3.  Delete module
 \t4.  Delete controller and view file	
 \t5.  Phar a module
@@ -22,6 +22,43 @@ define("YZE_SCRIPT_USAGE", YZE_SCRIPT_LOGO."
 
 please input number to select: ");
 
+define("YZE_SCRIPT_OPTION", YZE_SCRIPT_LOGO."
+
+1.Usage CLI: php scripts/yze.php [options]
+
+ Generate model (database to code):
+  -m, --model          Generate model mode
+  -d, --db=DB_NAME     Database name
+  -t, --table=TABLE    Table name
+  -M, --module=MODULE  Module name
+
+  Example:
+    php scripts/yze.php --model --table=acl --module=admin
+	
+ Generate module, controller, view Scaffolding file:
+  -c, --mvc				Generate mvc mode
+  -M, --module=MODULE 			Module name
+  -C, --controller=Controller		controller name
+  -a, --action=Action  			action name, default is index
+  -r, --route=Route Url 		you can use regex like foobar/(?P<id>\\d+):
+
+  Example:
+    php scripts/yze.php --mvc -C=index --module=admin
+		
+ Phar a module:
+  -p, --phar        	Phar a module
+  -M, --module=MODULE  	Module name
+  -k, --key=Key file
+
+  Example:
+    php scripts/yze.php --phar --module=admin
+
+ -h, --help           Show this help message
+
+2. Usage Wizard:
+  php scripts/yze.php
+
+");
 
 global $language, $db;
 $language = "zh-cn";
@@ -37,21 +74,137 @@ include_once '../../scripts/generate-controller.php';
 include_once '../../scripts/generate-model.php';
 include_once '../../scripts/generate-module.php';
 
-if(true){
-	clear_terminal();
-	while(($cmds = display_home_wizard())){
+// 解析命令行参数
+$options = getopt("mcpC:a:r:d:t:M:h", ["model","mvc","phar", "controller:", "action:", "route:", "db:", "table:", "module:", "help"]);
+
+// 检查是否请求帮助
+if (isset($options["h"]) || isset($options["help"])) {
+	echo wrap_output(sprintf(YZE_SCRIPT_OPTION, YZE_Object::VERSION));
+	die();
+}
+
+// 检查是否是cli生成模式
+if ($options) {
+	$cmds = get_options($options);
+	if ($cmds){
 		$command = $cmds["cmd"];
 		clear_terminal();
-		echo get_colored_text(wrap_output(__("begin generate...")), "blue", "white")."\r\n";
+		echo get_colored_text(wrap_output(__('begin generate...')), "blue", "white")."\r\n";
 		$class_name = "\yangzie\Generate_".ucfirst(strtolower($command))."_Script";
 		$object = new $class_name($cmds);
 		$object->generate();
-		echo "\r\n".get_colored_text(wrap_output(__("generate done.")), "blue", "white")."\r\n";
+		echo "\r\n".get_colored_text(wrap_output(__('generate done.')), "blue", "white")."\r\n";
 		//fgets(STDIN);
-		die();
 	}
+	die();
 }
 
+// 原有的交互式流程
+clear_terminal();
+while(($cmds = display_home_wizard())){
+	$command = $cmds["cmd"];
+	clear_terminal();
+	echo get_colored_text(wrap_output(__('begin generate...')), "blue", "white")."\r\n";
+	$class_name = "\yangzie\Generate_".ucfirst(strtolower($command))."_Script";
+	$object = new $class_name($cmds);
+	$object->generate();
+	echo "\r\n".get_colored_text(wrap_output(__('generate done.')), "blue", "white")."\r\n";
+	//fgets(STDIN);
+	die();
+}
+
+
+function get_options($options){
+	if (isset($options["model"]) || isset($options["m"])){
+		$database = isset($options["d"]) ? $options["d"] : (isset($options["db"]) ? $options["db"] : "");
+		$table = isset($options["t"]) ? $options["t"] : (isset($options["table"]) ? $options["table"] : "");
+		$module = isset($options["M"]) ? $options["M"] : (isset($options["module"]) ? $options["module"] : "");
+
+		if (empty($table)) {
+			echo wrap_output("Error: Table name is required\n");
+			die(1);
+		}
+
+		if (empty($module)) {
+			echo wrap_output("Error: Module name is required\n");
+			die(1);
+		}
+		if (!is_validate_name($module)) {
+			echo get_colored_text(wrap_output(__("module name is invalid, please try again\n")), "red");
+			die(1);
+		}
+
+		// 验证数据库
+		if (!is_validate_db($database)) {
+			echo wrap_output("Error: Invalid database\n");
+			die(1);
+		}
+
+		// 验证表
+		if (!is_validate_table($database, $table)) {
+			echo wrap_output("Error: Invalid table\n");
+			die(1);
+		}
+
+		// 构建命令参数
+		return array(
+			"cmd" => "model",
+			"base" => "table",
+			"module_name" => $module,
+			"db_name" => $database,
+			"class_name" => $table,
+			"table_name" => $table,
+		);
+	}
+	if (isset($options["mvc"]) || isset($options["c"])){
+		$uri = isset($options["r"]) ? $options["r"] : (isset($options["route"]) ? $options["route"] : "");
+		$action = isset($options["a"]) ? $options["a"] : (isset($options["action"]) ? $options["action"] : "");
+		$controller = isset($options["C"]) ? $options["C"] : (isset($options["controller"]) ? $options["controller"] : "");
+		$module = isset($options["M"]) ? $options["M"] : (isset($options["module"]) ? $options["module"] : "");
+
+		if (empty($controller)) {
+			echo wrap_output("Error: controller name is required\n");
+			die(1);
+		}
+		if (!is_validate_name($controller)){
+			echo get_colored_text(wrap_output(__("controller name is invalid, please try again\n")), "red");
+            die(1);
+		}
+		if (empty($module)) {
+			echo wrap_output("Error: Module name is required\n");
+			die(1);
+		}
+
+		if ($action && !is_validate_name($action)) {
+			echo get_colored_text(wrap_output(__("action name is invalid, please try again\n")), "red");
+			die(1);
+		}
+		if (!is_validate_name($module)) {
+			echo get_colored_text(wrap_output(__("module name is invalid, please try again\n")), "red");
+			die(1);
+		}
+		return array(
+			"cmd" => "controller",
+			"controller"=>$controller,
+			"action"=>$action?:'index',
+			"uri"=>$uri,
+			"module_name"=>$module,
+			"view_format"=>"tpl"
+		);
+	}
+	if (isset($options["phar"]) || isset($options["p"])){
+		$module = isset($options["M"]) ? $options["M"] : (isset($options["module"]) ? $options["module"] : "");
+		$key_path = isset($options["k"]) ? $options["k"] : (isset($options["key"]) ? $options["key"] : "");
+
+		if (!is_validate_name($module)) {
+			echo get_colored_text(wrap_output(__("module name is invalid, please try again")), "red");
+			die(1);
+		}
+		phar_module($module, $key_path);
+		return array();
+	}
+	return array();
+}
 
 function display_home_wizard(){
 	clear_terminal();
@@ -151,14 +304,7 @@ if not need signature please press enter
 	}
 
 	phar_module($module, $key_path);
-	@unlink(YZE_APP_PATH."modules/{$module}.phar");
-	yze_move_file(YZE_INSTALL_PATH."tmp/{$module}.phar", YZE_APP_PATH."modules");
-	echo wrap_output(sprintf(__("phar saved at modules/%s.phar\r\n"),$module));
-	if($key_path){
-		$key_name = pathinfo(basename($key_path), PATHINFO_FILENAME);
-		copy(YZE_INSTALL_PATH."tmp/{$key_name}.pub", YZE_APP_PATH."modules/{$module}.phar.pubkey");
-		echo wrap_output(sprintf(__("%s.phar.pubkey saved at modules/%s.phar.pubkey\r\n"),$module,$module), 'green');
-	}
+
 	return array();
 }
 
@@ -179,6 +325,15 @@ function phar_module($module, $key_path){
 		$pkey = '';
 		openssl_pkey_export($private, $pkey);
 		$phar->setSignatureAlgorithm(\Phar::OPENSSL, $pkey);
+	}
+
+	@unlink(YZE_APP_PATH."modules/{$module}.phar");
+	yze_move_file(YZE_INSTALL_PATH."tmp/{$module}.phar", YZE_APP_PATH."modules");
+	echo wrap_output(sprintf(__("phar saved at modules/%s.phar\r\n"),$module));
+	if($key_path){
+		$key_name = pathinfo(basename($key_path), PATHINFO_FILENAME);
+		copy(YZE_INSTALL_PATH."tmp/{$key_name}.pub", YZE_APP_PATH."modules/{$module}.phar.pubkey");
+		echo wrap_output(sprintf(__("%s.phar.pubkey saved at modules/%s.phar.pubkey\r\n"),$module,$module), 'green');
 	}
 }
 
@@ -271,7 +426,8 @@ generate controller and view，%s back:
 	echo wrap_output(__("4. (4/4)URI route, default uri is /{$module}/{$controller}/{$action}, you can use regex like foobar/(?P<id>\\d+):  "));
 	$uri = get_input();
 
-	return @array(
+	// ai@2026-05-27 去掉冗余 @，array() 不会产生错误
+	return array(
 		"cmd" => "controller",
 		"controller"=>$controller,
 		"action"=>$action,

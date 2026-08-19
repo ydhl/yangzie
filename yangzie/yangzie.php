@@ -10,7 +10,8 @@ class YZE_Object{
 	}
 
 	public static function loaded_module($module_name){
-		return @self::$loaded_modules[strtolower($module_name)];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return self::$loaded_modules[strtolower($module_name)] ?? null;
 	}
 
 	public function output(){

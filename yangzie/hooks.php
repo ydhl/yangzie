@@ -150,7 +150,8 @@ final class YZE_Hook extends YZE_Object {
             $modules = explode(",", $module);
             $funcs = array();
             foreach ($modules as $module){
-                foreach ((array)@self::$listeners [$filterName][$module] as $func){
+                // ai@2026-05-27 替换 @ 抑制符，使用 ?? [] 显式处理
+                foreach ((array)(self::$listeners[$filterName][$module] ?? []) as $func){
                     $funcs[] = $func;
                 }
             }
@@ -158,7 +159,8 @@ final class YZE_Hook extends YZE_Object {
         }
 
         $funcs = array();
-        foreach ((array)@self::$listeners [$filterName] as $m=>$_funcs){
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? [] 显式处理
+        foreach ((array)(self::$listeners[$filterName] ?? []) as $m=>$_funcs){
             foreach ((array)$_funcs as $func){
                 $funcs[] = $func;
             }

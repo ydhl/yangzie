@@ -52,7 +52,8 @@ class YZE_Request extends YZE_Object {
      */
     public function get($name)
     {
-        return @$this->context[$name];
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+        return $this->context[$name] ?? null;
     }
 
     /**
@@ -103,7 +104,8 @@ class YZE_Request extends YZE_Object {
      */
     public function get_from_server($name, $default=null) {
         if (array_key_exists ( $name, $this->server )) {
-            return @$this->server [$name];
+            // ai@2026-05-27 去掉冗余 @，前面已有 array_key_exists 检查
+            return $this->server[$name];
         }
         return $default;
     }
@@ -116,7 +118,8 @@ class YZE_Request extends YZE_Object {
      */
     public function get_from_cookie($name, $default = null) {
         if (array_key_exists ( $name, $this->cookie )) {
-            return @$this->cookie [$name];
+            // ai@2026-05-27 去掉冗余 @，前面已有 array_key_exists 检查
+            return $this->cookie[$name];
         }
         return $default;
     }
@@ -129,7 +132,8 @@ class YZE_Request extends YZE_Object {
      */
     public function get_from_get($name, $default = null) {
         if (array_key_exists ( $name, $this->get )) {
-            return @$this->get [$name];
+            // ai@2026-05-27 去掉冗余 @，前面已有 array_key_exists 检查
+            return $this->get[$name];
         }
         return $default;
     }
@@ -239,7 +243,8 @@ class YZE_Request extends YZE_Object {
         if (! $newUri) {
             $this->uri = parse_url ( $_SERVER ['REQUEST_URI'], PHP_URL_PATH );
             $this->full_uri = $_SERVER ['REQUEST_URI'];
-            $this->queryString = @$_SERVER ['QUERY_STRING'];
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? '' 显式处理
+            $this->queryString = $_SERVER['QUERY_STRING'] ?? '';
         } else {
             $this->uri = parse_url ( $newUri, PHP_URL_PATH );
             $this->full_uri = $newUri;
@@ -287,16 +292,18 @@ class YZE_Request extends YZE_Object {
 
         $curr_module = null;
         if ($config_args) {
-            $controller_name = @$config_args ['controller_name'];
-            $curr_module = @$config_args ['module'];
-            $curr_action = @$config_args ['action'];
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            $controller_name = $config_args['controller_name'] ?? null;
+            $curr_module = $config_args['module'] ?? null;
+            $curr_action = $config_args['action'] ?? null;
         }
 
         $action = self::the_val($action ?: $curr_action, "index");
         $method = ($this->is_get() ? "" : $this->request_method."_") . str_replace("-", "_", $action);
         $this->set_method ( $method );
 
-        if (@$curr_module && $controller_name) {
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+        if (($curr_module ?? null) && $controller_name) {
             $this->set_module ( $curr_module )->set_controller_name ( $controller_name );
         } else{
             $this->controller_name = "yze_default";
@@ -340,7 +347,8 @@ class YZE_Request extends YZE_Object {
      * @param string $just_path 如果为true只显示uri的path部分
      */
     public function the_referer_uri($just_path = false) {
-        $referer = @$_SERVER ['HTTP_REFERER'];
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? '' 显式处理
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
         if (! $just_path) {
             return $referer;
         }
@@ -405,7 +413,8 @@ class YZE_Request extends YZE_Object {
      * @return false
      */
     public function is_mobile_client() {
-        return preg_match ( "/android|iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] );
+        // ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null，使用 ?? '' 兜底
+        return preg_match ( "/android|iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] ?? '' );
     }
 
     /**
@@ -413,7 +422,8 @@ class YZE_Request extends YZE_Object {
      * @return false
      */
     public function is_In_IOS(){
-        return preg_match ( "/iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] );
+        // ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null，使用 ?? '' 兜底
+        return preg_match ( "/iphone|ipad/i", $_SERVER ['HTTP_USER_AGENT'] ?? '' );
     }
 
     /**
@@ -421,7 +431,8 @@ class YZE_Request extends YZE_Object {
      * @return false
      */
     public function is_In_Android(){
-        return preg_match ( "/android/i", $_SERVER ['HTTP_USER_AGENT'] );
+        // ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null，使用 ?? '' 兜底
+        return preg_match ( "/android/i", $_SERVER ['HTTP_USER_AGENT'] ?? '' );
     }
 
     /**
@@ -453,7 +464,8 @@ class YZE_Request extends YZE_Object {
     public function get_var($key, $default = null) {
         $vars = $this->vars;
         if (!$vars) return $default;
-        return @array_key_exists ( $key, $vars ) ? $vars [$key] : $default;
+        // ai@2026-05-27 去掉冗余 @，array_key_exists 对数组不会产生错误
+        return array_key_exists ( $key, $vars ) ? $vars [$key] : $default;
     }
     /**
      * 当前的请求是否需要认证
@@ -477,13 +489,13 @@ class YZE_Request extends YZE_Object {
         if (!$this->module_instance ()) return null;
         if ($type == "need") {
             $auths = (array)$this->module_instance ()->auths;
-            $auth_methods = @$auths [$controller_name];
+            $auth_methods = $auths[$controller_name] ?? null;
             if ($auth_methods) return $auth_methods;
 
             if ($auths == ['*']) return '*';
         } elseif ($type == "noneed") {
             $no_auths = (array)$this->module_instance ()->no_auths;
-            $auth_methods = @$no_auths [$controller_name];
+            $auth_methods = $no_auths[$controller_name] ?? null;
             if ($auth_methods) return $auth_methods;
 
             if ($no_auths == ['*']) return '*';
@@ -507,12 +519,12 @@ class YZE_Request extends YZE_Object {
                 if (preg_match ( "#^/{$router}\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches ) || preg_match ( "#^/{$router}/?$#i", $uri, $matches )) {
                     $_ ['controller_name'] = strtolower ( $acontroller ['controller'] );
                     $_ ['module'] = $module;
-                    $_ ['action'] = @$acontroller ['action'];
+                    $_ ['action'] = $acontroller['action'] ?? null;
                     $config_args = $matches;
-                    foreach ( ( array ) @$acontroller ['args'] as $name => $value ) {
+                    foreach ( ( array ) ($acontroller['args'] ?? []) as $name => $value ) {
                         $config_args [$name] = $value;
                     }
-                    $_ ['args'] = @$config_args;
+                    $_ ['args'] = $config_args ?? null;
 
                     return $_;
                 }
@@ -530,7 +542,7 @@ class YZE_Request extends YZE_Object {
         }
 
         // 把controller-name 转换成controller_name
-        if (@$uri_split [1]) {
+        if (($uri_split[1] ?? null)) {
             $path = self::the_val ( str_replace ( "-", "_", $uri_split [1] ), "index" );
             $_ ['controller_name'] = pathinfo ( $path, PATHINFO_FILENAME );
             $_ ['module'] = strtolower ( $uri_split [0] );
@@ -686,7 +698,8 @@ class YZE_Request extends YZE_Object {
      * @return string
      */
     public function get_Accept_Language(){
-        preg_match("/(?P<lang>[^,]+),/",@$_SERVER['HTTP_ACCEPT_LANGUAGE'], $matchs);
+        // ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null，使用 ?? '' 兜底
+        preg_match("/(?P<lang>[^,]+),/", $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '', $matchs);
         return $matchs ? strtolower($matchs['lang']) : '';
     }
 }

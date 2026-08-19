@@ -399,7 +399,8 @@ class GraphqlQueryWhere{
         }
         $_ = [];
         foreach ($wheres as $where){
-            $_[] = new GraphqlQueryWhere(@$where['column'], @$where['op'], @$where['value'], @$where['andor']?:'and');
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            $_[] = new GraphqlQueryWhere($where['column'] ?? null, $where['op'] ?? null, $where['value'] ?? null, ($where['andor'] ?? null) ?: 'and');
         }
         return $_;
     }
@@ -446,7 +447,8 @@ class GraphqlQueryClause{
     }
 
     public static function build(array $clause){
-        return new GraphqlQueryClause(@$clause['orderBy']?:"",@$clause['groupBy']?:"",@$clause['sort']?:"DESC",@$clause['page']?:1,@$clause['limit']?:10);
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+        return new GraphqlQueryClause(($clause['orderBy'] ?? null) ?: "",($clause['groupBy'] ?? null) ?: "",($clause['sort'] ?? null) ?: "DESC",($clause['page'] ?? null) ?: 1,($clause['limit'] ?? null) ?: 10);
     }
 }
 
@@ -530,7 +532,8 @@ class GraphqlIntrospection{
     public function pick(GraphqlSearchNode $searchNode, array $valueInfo): array{
         $rst = [];
         $queryName = $searchNode->name;
-        $value = @$valueInfo[$queryName];
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+        $value = $valueInfo[$queryName] ?? null;
 
         if (is_array($value) && $value){ // 下面还有内容
             if (is_array(reset($value))){// 值是数组构成的数组
@@ -551,7 +554,8 @@ class GraphqlIntrospectionValues extends GraphqlIntrospection {
         $rsts = [];
         foreach ($this->_valueInfo as $value){
             $rst = [];
-            foreach ((array)@$this->_searchNode->sub as $sub) {
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? [] 显式处理
+            foreach ((array)($this->_searchNode->sub ?? []) as $sub) {
                 $rst = array_merge($rst, $this->pick($sub, $value));
             }
             $rsts[] = $rst;

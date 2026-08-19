@@ -119,13 +119,13 @@ trait Graphql_Query{
 
         if (!class_exists($class)) throw new YZE_FatalException("field '{$node->name}' not exist");
         $modelObject = new $class();
-        $columnConfig = $modelObject::get_columns();
+        $columnConfig = $modelObject->get_columns();
 
-        foreach($class::get_relation_columns() as $column => $config){
+        foreach($modelObject->get_relation_columns() as $column => $config){
             $config['column'] = $column;
             $relationConfig[$config['graphql_field']] = $config;
         }
-        $custom_fields = array_keys($class::custom_graphql_fields());
+        $custom_fields = array_keys($modelObject->custom_graphql_fields());
         $queryCustomFields = [];
 
         $aliasMap = [];// 查询的field和别名映射
@@ -137,9 +137,11 @@ trait Graphql_Query{
                 $result[$sub->name] = null;
                 $queryCustomFields[$sub->name] = $sub;
             }elseif (!$sub->sub ){// 直接查询的字段
-                if (!@$columnConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
+                // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+                if (!($columnConfig[$sub->name] ?? null)) throw new YZE_FatalException("field '{$sub->name}' not exist");
                 $result[$sub->name] = null;
-            }else if (@$relationConfig[$sub->name]){ // 查询的关联表
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            }else if (($relationConfig[$sub->name] ?? null)){ // 查询的关联表
                 $result[$sub->name] = null;
                 $searchAssocTables[$sub->name] = $relationConfig[$sub->name];
                 $searchAssocTables[$sub->name]['node'] = $sub;
@@ -159,7 +161,8 @@ trait Graphql_Query{
             }
         }else if ($wheres){
             foreach ($wheres as $index => $_where){
-                if (!@$columnConfig[$_where->column]){
+                // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+                if (!($columnConfig[$_where->column] ?? null)){
                     throw new YZE_FatalException("field '".$_where->column."' not exist");
                 }
                 $op = self::get_op($_where->op);
@@ -178,15 +181,17 @@ trait Graphql_Query{
         $orderby = '';
         if ($clause){
 
-            if (@$clause->orderby){
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            if (($clause->orderby ?? null)){
                 $sorts = ['ASC'=>'ASC','DESC'=>'DESC',''=>'ASC'];
-                if (!$columnConfig[@$clause->orderby]) throw new YZE_FatalException("orderBy field '{$clause->orderby}' not exist");
-                $sort = @$sorts[strtoupper(@$clause->sort?:"")];
+                if (!($columnConfig[$clause->orderby] ?? null)) throw new YZE_FatalException("orderBy field '{$clause->orderby}' not exist");
+                $sort = $sorts[strtoupper(($clause->sort ?? null) ?: "")] ?? null;
                 if (!$sort) throw new YZE_FatalException("sort type '{$clause->sort}' not support");
                 $orderby .= ' order by `'.$clause->orderby.'` '.$sort;
             }
 
-            if (@$clause->groupby){
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            if (($clause->groupby ?? null)){
                 if (!$columnConfig[$clause->groupby]) throw new YZE_FatalException("groupBy field '{$clause->groupby}' not exist");
                 $orderby .= ' group by `'.$clause->groupby."`";
             }
@@ -263,7 +268,7 @@ trait Graphql_Query{
 
             foreach($assocTableRecords as $fieldName => $data){
                 $myColumn = $searchAssocTables[$fieldName]['column'];
-                $item[$fieldName] = @$data[$item[$myColumn]] ?: null;
+                $item[$fieldName] = ($data[$item[$myColumn]] ?? null) ?: null;
             }
             // 移出因为关联查询而临时添加的字段
             return array_intersect_key($item,$result);
@@ -297,13 +302,13 @@ trait Graphql_Query{
          */
         $relationConfig = [];
 
-        $columnConfig = $this::get_columns();
+        $columnConfig = $this->get_columns();
 
-        foreach(static::get_relation_columns() as $column => $config){
+        foreach($this->get_relation_columns() as $column => $config){
             $config['column'] = $column;
             $relationConfig[$config['graphql_field']] = $config;
         }
-        $custom_fields = array_keys(static::custom_graphql_fields());
+        $custom_fields = array_keys($this->custom_graphql_fields());
         $queryCustomFields = [];
 
         $aliasMap = [];// 查询的field和别名映射
@@ -315,9 +320,11 @@ trait Graphql_Query{
                 $result[$sub->name] = null;
                 $queryCustomFields[$sub->name] = $sub;
             }elseif (!$sub->sub ){// 直接查询的字段
-                if (!@$columnConfig[$sub->name]) throw new YZE_FatalException("field '{$sub->name}' not exist");
+                // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+                if (!($columnConfig[$sub->name] ?? null)) throw new YZE_FatalException("field '{$sub->name}' not exist");
                 $result[$sub->name] = null;
-            }else if (@$relationConfig[$sub->name]){ // 查询的关联表
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            }else if (($relationConfig[$sub->name] ?? null)){ // 查询的关联表
                 $result[$sub->name] = null;
                 $searchAssocTables[$sub->name] = $relationConfig[$sub->name];
                 $searchAssocTables[$sub->name]['node'] = $sub;

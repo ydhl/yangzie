@@ -128,7 +128,8 @@ function yze_make_dirs($dirs){
 	if (file_exists($dirs))return;
     $dir = '';
 	foreach (explode(DS,strtr(rtrim($dirs,DS),array("/"=>DS))) as $d){
-		$dir = @$dir.$d.DS;
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? '' 显式处理
+		$dir = ($dir ?? '') . $d . DS;
 		@mkdir($dir,0777);
 	}
 }

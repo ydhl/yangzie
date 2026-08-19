@@ -9,10 +9,7 @@ use function yangzie\yze_js_bundle;
  * 指定上传目录
  */
 define("YZE_UPLOAD_PATH", YZE_APP_PATH. "public_html".DS."upload".DS);
-/**
- * MYSQL加解密的秘钥
- */
-define("YZE_DB_CRYPT_KEY",  "");
+
 /**
  * 网站地址
  */
@@ -68,16 +65,17 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	protected function config(): array{
 		return [
-			'default_db' => 'test1', // 默认链接的数据库名，请填写项目实际的数据库名
+			'default_db' => 'yangai', // 默认链接的数据库名，请填写项目实际的数据库名
 			'db_connections' => [
-				'test1' => [
+				'yangai' => [
 					'db_type' => 'mysql',
 					'db_host' => '127.0.0.1',
 					'db_user' => 'root',
 					'db_psw'  => '12345678',
 					'db_port' => '3306',
 					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
-					'db_charset'=> 'utf8'
+					'db_charset'=> 'utf8',
+					'crypt_key'=> '',
 				],
 				'test2' => [
 					'db_type' => 'mysql',
@@ -86,7 +84,8 @@ class App_Module extends \yangzie\YZE_Base_Module{
 					'db_psw'  => '12345678',
 					'db_port' => '3306',
 					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
-					'db_charset'=> 'utf8'
+					'db_charset'=> 'utf8',
+					'crypt_key'=> ''
 				],
 			]
 		];
@@ -119,9 +118,11 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		$config = [
 //			"foo" => ['/js/foo.js']
 		];
-		return @$config[$bundle];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return $config[$bundle] ?? null;
 	}
 	/**
+
 	 * css资源分组及其包含的文件，在加载时方便直接通过分组名加载;
 	 * 资源路径以web 绝对路径/开始，/指的上public_html目录
 	 * 在layouts中通过接口yze_css_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
@@ -131,7 +132,8 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		$config = [
 //			"foo" => ['/css/foo.css']
 		];
-		return @$config[$bundle];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return $config[$bundle] ?? null;
 	}
 }
 ?>

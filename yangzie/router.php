@@ -39,7 +39,8 @@ class YZE_Router extends YZE_Object {
 		foreach(glob(YZE_APP_MODULES_INC."*") as $module){
 			$phar_wrap = is_file($module) ? "phar://" :"";
 
-			if(@file_exists("{$phar_wrap}{$module}/__config__.php")){
+			// ai@2026-05-27 去掉冗余 @，file_exists 不会产生错误
+			if(file_exists("{$phar_wrap}{$module}/__config__.php")){
 				include_once "{$phar_wrap}{$module}/__config__.php";
 				$module_name = strtolower(basename($module));
 				if($phar_wrap) {

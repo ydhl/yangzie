@@ -18,7 +18,8 @@ use \yangzie\YZE_Hook;
 // 返回当前登录的用户信息，具体返回什么，由开发者定义，可以是用户对象，也可以是用户的标识ID，
 // 通过YZE_HOOK_GET_LOGIN_USER设置
 YZE_Hook::add_hook ( YZE_HOOK_GET_LOGIN_USER, function  () {
-	$loginUser = @$_SESSION [ 'admin' ];
+	// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+	$loginUser = $_SESSION['admin'] ?? null;
 	if( ! $loginUser)return null;
 
 	return $loginUser;
@@ -31,7 +32,8 @@ YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function  ( &$data ) {
 
 //获取当前登录用户的ARO
 YZE_Hook::add_hook ( YZE_HOOK_GET_USER_ARO_NAME, function  ( ) {
-	if ( !@$_SESSION [ 'admin' ] )return "/";
+	// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+	if ( !($_SESSION['admin'] ?? null) )return "/";
 	return "TODO your ARO NAME";
 } );
 

@@ -15,5 +15,7 @@ namespace yangzie;
     </head>
     <body>
         <?php echo $this->content_of_view();?>
+        <hr/>
+        <?php echo $this->content_of_section('section1');?>
     </body>
 </html>

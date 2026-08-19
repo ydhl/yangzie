@@ -10,7 +10,8 @@ namespace app;
 function yze_get_aco_desc($aconame) {
     foreach ( ( array ) yze_get_acos_aros () as $aco => $desc ) {
         if (preg_match ( "{^" . $aco . "}", $aconame )) {
-            return @$desc ['desc'];
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            return $desc['desc'] ?? null;
         }
     }
     return '';

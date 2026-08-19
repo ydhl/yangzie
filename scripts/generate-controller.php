@@ -40,7 +40,8 @@ class Generate_Controller_Script extends AbstractScript{
 		$method 	= $ref_cls->getMethod("config");
 		$method->setAccessible(true);
 		$configs = $method->invoke($module);
-		if($this->uri && !@$configs['routers'][$this->uri]){
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		if($this->uri && !($configs['routers'][$this->uri] ?? null)){
 			$configs['routers'][$this->uri] = array("controller"=>$this->controller, "args"=>$this->uri_args);
 			$config_str = $this->_arr2str($configs, "\t\t");
 			$start_line = $method->getStartLine();

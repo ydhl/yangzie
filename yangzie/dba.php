@@ -11,18 +11,29 @@ use \app\App_Module;
  */
 class YZE_DBAImpl extends YZE_Object
 {
+	/**
+	 * @var array[PDO]
+	 */
 	private static $conn=[];
 	private $db_name = '';
+
+	private function get_crypt_key(){
+		$app_module = new App_Module();
+		$db_name = $this->get_db_name();
+		$db_connection = $app_module->get_module_config('db_connections')[$db_name];
+		return $db_connection['crypt_key']?:'';
+	}
 
 	private function connect($db_name, $force=false){
 		$app_module = new App_Module();
 		$db_name = $db_name ?: $app_module->get_module_config('default_db');
 		$this->db_name = $db_name;
 
-		if ($force && @self::$conn[$db_name]) self::$conn[$db_name] = null;
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		if ($force && (self::$conn[$db_name] ?? null)) self::$conn[$db_name] = null;
 
 		// 没有数据库，或者数据库链接已经建立
-		if (!$db_name || @self::$conn[$db_name]){
+		if (!$db_name || (self::$conn[$db_name] ?? null)){
 			return;
 		}
 
@@ -59,7 +70,8 @@ class YZE_DBAImpl extends YZE_Object
 		if(is_array($errorInfo)){
 			$errorInfo = join(' ', $errorInfo);
 		}
-		if (preg_match("/MySQL server has gone away/", $errorInfo, $matches)){ // 2006 server has gone away
+		// ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null
+		if ($errorInfo && preg_match("/MySQL server has gone away/", $errorInfo, $matches)){ // 2006 server has gone away
 //			echo $errorInfo;
 			$this->connect($this->db_name, true);
 			return call_user_func([$this, $method], ...$args);
@@ -89,7 +101,7 @@ class YZE_DBAImpl extends YZE_Object
 		$records = $entity->get_records();
 		foreach ($records as $name => &$value) {
 			if (in_array($name, $entity->encrypt_columns)){
-				$value = $this->encrypt($value, YZE_DB_CRYPT_KEY);
+				$value = $this->encrypt($value);
 			}
 		}
 		return $records;
@@ -149,7 +161,7 @@ class YZE_DBAImpl extends YZE_Object
 				}
 				$value = self::filter_var($field_value);
 				if (in_array($field_name, $entity->encrypt_columns)){
-					$value = $this->decrypt($value, YZE_DB_CRYPT_KEY);
+					$value = $this->decrypt($value);
 				}
 				$entity->set( $field_name , $value);#数据库取出来编码
 			}
@@ -183,11 +195,15 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 通过指定的秘钥解密，
 	 * @param string $hexString 加密支付串，通过encrypt加密后对内容
-	 * @param string $key 密钥
 	 * @return mixed
 	 * @throws YZE_DBAException
 	 */
-	public function decrypt($hexString, $key){
+	public function decrypt($hexString){
+		// ai@2026-05-27 修复 PHP 8 兼容：hex2bin(null) 会抛出 ValueError
+		if (is_null($hexString)) {
+			return null;
+		}
+		$key = $this->get_crypt_key();
 		$rst = $this->native_Query("select AES_DECRYPT(".$this->quote(hex2bin($hexString)).",".$this->quote($key).") as var");
 		$rst->next();
 		return $rst->f('var');
@@ -196,14 +212,14 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 通过指定的秘钥加密, 返回hex格式的字符串
 	 * @param string $value 要加密对内容
-	 * @param string $key 加密密钥
 	 * @return mixed|string
 	 * @throws YZE_DBAException
 	 */
-	public function encrypt($value, $key){
+	public function encrypt($value){
+		$key = $this->get_crypt_key();
 		$rst = $this->native_Query("select AES_ENCRYPT(".$this->quote($value).",".$this->quote($key).") as var");
 		$rst->next();
-		$value = $rst->f('var');;
+		$value = $rst->f('var');
 		return $value ? bin2hex($value) : $value;
 	}
 
@@ -269,13 +285,13 @@ class YZE_DBAImpl extends YZE_Object
 	 * @throws YZE_DBAException
 	 * @return array
 	 */
-	public function find_All($class){
+	public function find_All($class, $suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
 		$entity = $class instanceof YZE_Model ? $class : new $class;
 		$sql = new YZE_SQL();
-		$sql->from(get_class($entity),"t");
+		$sql->from(get_class($entity),"t", $suffix);
 		return $this->select($sql,[], $entity->get_key_name());
 	}
 
@@ -288,10 +304,16 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param string $sql
 	 * @return YZE_PDOStatementWrapper
 	 */
-	public function native_Query($sql){
+	public function native_Query($sql, $params=null){
 		try {
-			$stm = self::$conn[$this->db_name]->query($sql);
-			return new YZE_PDOStatementWrapper($stm);
+			if($params){
+				$statement = self::$conn[$this->db_name]->prepare($sql);
+				$statement->execute($params);
+				return new YZE_PDOStatementWrapper($statement);
+			}else{
+				$statement = self::$conn[$this->db_name]->query($sql);
+				return new YZE_PDOStatementWrapper($statement);
+			}
 		}catch (\PDOException $e){
 			return $this->check_connect($e->getCode(), $e->errorInfo, 'native_Query', $sql);
 		}
@@ -330,7 +352,8 @@ class YZE_DBAImpl extends YZE_Object
 	public function get_Single(YZE_SQL $sql, $params=array()){
 		$sql->limit(1);
 		$result = $this->select($sql, $params);
-		return @$result[0];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return $result[0] ?? null;
 	}
 
 	/**
@@ -369,7 +392,7 @@ class YZE_DBAImpl extends YZE_Object
 
 		$raw_result = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-		$num_rows = $statement->rowCount();
+		$num_rows = count($raw_result);
 		$entity_objects = array();
 
 		//多表查询, 对每一行数据中的每一个entity, 构建好entity
@@ -441,11 +464,12 @@ class YZE_DBAImpl extends YZE_Object
 	 * 隐式提交后，如果数据库被设置成自动提交模式，将恢复自动提交模式。
 	 *
 	 * @param YZE_SQL $sql
+	 * @param array $params
 	 * @throws YZE_DBAException
 	 * @return integer
 	 */
-	public function execute(YZE_SQL $sql){
-		return $this->exec($sql->__toString());
+	public function execute(YZE_SQL $sql, $params=[]){
+		return $this->exec($sql->__toString(), $params);
 	}
 
 	/**
@@ -455,13 +479,15 @@ class YZE_DBAImpl extends YZE_Object
 	 * 隐式提交后，如果数据库被设置成自动提交模式，将恢复自动提交模式。
 	 *
 	 * @param string $sql
+	 * @param array $params
 	 * @throws YZE_DBAException
 	 * @return integer
 	 */
-	public function exec($sql){
+	public function exec($sql, $params=[]){
 		if(empty($sql))return false;
 		try{
-			return self::$conn[$this->db_name]->exec($sql);
+			$stat = self::$conn[$this->db_name]->prepare($sql);
+			return $stat->execute($sql, $params);
 		}catch (\PDOException $e){
 			return $this->check_connect($e->getCode(), $e->errorInfo, 'exec', $sql);
 		}
@@ -487,7 +513,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param string $type YZE_SQL::INSERT_XX常量
 	 * @param YZE_SQL $checkSql 完整的判断查询sql
 	 * @throws YZE_DBAException
-	 * @return int 插入或更新的记录的主键
+	 * @return int 插入或更新的记录的主键; 当没有时间更新数据库时，返回0
 	 */
 	public function save(YZE_Model $entity, $type=YZE_SQL::INSERT_NORMAL, YZE_SQL $checkSql=null){
 		if(empty($entity)){
@@ -507,22 +533,19 @@ class YZE_DBAImpl extends YZE_Object
 		$insert_id = self::$conn[$this->db_name]->lastInsertId();
 
 		if($type == YZE_SQL::INSERT_EXIST || $type == YZE_SQL::INSERT_NOT_EXIST){
-		    if( !$rowCount ){
-		      	//这种情况下last insert id 得不到?
-				// 这种情况下只会查一个表
-				$check_table = $checkSql->get_select_table();
-				$checkSql->clean_select()->select(array_key_first($check_table), [$entity->get_key_name()]);
-				$checkRst = $this->get_Single($checkSql);
-				$insert_id = $checkRst->get($entity->get_key_name());
+			if( ! $rowCount ){
+				$insert_id = 0;
 			}
 		}elseif($type == YZE_SQL::INSERT_NOT_EXIST_OR_UPDATE){
 		    if( ! $rowCount ){
 		        $alias = $checkSql->get_alias($entity->get_table());
+				$checkSql->select($alias, array($entity->get_key_name()));
+				$obj = $this->get_Single($checkSql);
+				$insert_id = $obj->get_key();
+
 		        $checkSql->update($alias, $this->get_entity_record($entity));
 		        $this->execute($checkSql);
-		        $checkSql->select($alias, array($entity->get_key_name()));
-		        $obj = $this->get_Single($checkSql);
-		        $insert_id = $obj->get_key();
+
 		    }
 		}else if($type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_UPDATE){
 		    //0 not modified, 1 insert, 2 update
@@ -577,7 +600,7 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 提交所有链接数据库的事务
 	 *
-	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用start_transaction</strong>
+	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用begin_transaction</strong>
 	 *
 	 * @return void
 	 */
@@ -594,7 +617,7 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 提交事务，请求正常响应后，框架会提交事务
 	 *
-	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用start_transaction</strong>
+	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用begin_transaction</strong>
 	 *
 	 * @return void
 	 */
@@ -611,7 +634,7 @@ class YZE_DBAImpl extends YZE_Object
 	 *
 	 * 包括 MySQL 在内的一些数据库， 当在一个事务内有类似删除或创建数据表等 DLL 语句时，会自动导致一个隐式地提交。隐式地提交将无法回滚此事务范围内的任何更改。
 	 *
-	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用start_transaction</strong>
+	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用begin_transaction</strong>
 	 *
 	 * @return void
 	 */
@@ -629,7 +652,7 @@ class YZE_DBAImpl extends YZE_Object
 	 *
 	 * 包括 MySQL 在内的一些数据库， 当在一个事务内有类似删除或创建数据表等 DLL 语句时，会自动导致一个隐式地提交。隐式地提交将无法回滚此事务范围内的任何更改。
 	 *
-	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用start_transaction</strong>
+	 * <strong>如果数据库被设置成自动提交模式，此函数（方法）之后将恢复自动提交模式。如果要开启新事务，重新get_instance或者调用begin_transaction</strong>
 	 *
 	 * @return void
 	 */
@@ -656,7 +679,8 @@ class YZE_DBAImpl extends YZE_Object
 			$stm = self::$conn[$this->db_name]->prepare($sql);
 			$stm->execute($values);
 			$row = $stm->fetch(PDO::FETCH_ASSOC);
-			return @$row['f'];
+			// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return $row['f'] ?? null;
 		}catch (\PDOException $e){
 			return $this->check_connect($e->getCode(), $e->errorInfo, 'lookup', $field, $table, $where, $values);
 		}
@@ -963,7 +987,8 @@ class YZE_PDOStatementWrapper extends YZE_Object{
 	}
 	public function next(){
 		$this->index +=1;
-		return @$this->result[$this->index];
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return $this->result[$this->index] ?? null;
 	}
 	public function get_results(){
 		return $this->result;
@@ -974,7 +999,8 @@ class YZE_PDOStatementWrapper extends YZE_Object{
 	 * @param unknown $table_alias
 	 */
 	public function f($name,$table_alias=null){
-		return self::filter_var(@$this->result[$this->index][$table_alias ? "{$table_alias}_{$name}" : $name]);#数据库取出来编码
+		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+		return self::filter_var($this->result[$this->index][$table_alias ? "{$table_alias}_{$name}" : $name] ?? null);#数据库取出来编码
 	}
 
 

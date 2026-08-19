@@ -87,9 +87,11 @@ class Graphql_Controller extends YZE_Resource_Controller {
     private function fetch_Request() {
         $request = $this->request;
 
-        if (strcmp(@$_SERVER['CONTENT_TYPE'], 'application/json') === 0 ){
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? '' 显式处理
+        if (strcmp($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') === 0 ){
             $content = json_decode(trim(file_get_contents("php://input")), true);
-            return [@$content['query'],@$content['variables'],@$content['operationName']];
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            return [$content['query'] ?? null, $content['variables'] ?? null, $content['operationName'] ?? null];
         }
 
         return[
@@ -357,7 +359,8 @@ class Graphql_Controller extends YZE_Resource_Controller {
         $args = [];
         $index = 0;
         while (true) {
-            $act = @$acts[$index++];
+            // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+            $act = $acts[$index++] ?? null;
             // 解析完了
             if ($act == $end || $index > count($acts)) {
                 $fetchedLength = $index;
@@ -451,7 +454,8 @@ class Graphql_Controller extends YZE_Resource_Controller {
             return null;
         }
 
-        $class = @$models[$table];
+        // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
+        $class = $models[$table] ?? null;
         if ($class) return $this->model_query($class, $node, $total);
         // 自定义字段的查询
         $data = ['search'=>$node, 'rsts'=>[], 'total'=>0];

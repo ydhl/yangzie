@@ -97,13 +97,6 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	public function module_include_files() {
         return [
-			"app/vendor/pomo/translation_entry.class.php",
-			"app/vendor/pomo/pomo_stringreader.class.php",
-			"app/vendor/pomo/pomo_cachedfilereader.class.php",
-			"app/vendor/pomo/pomo_cachedIntfilereader.class.php",
-			"app/vendor/pomo/translations.class.php",
-			"app/vendor/pomo/gettext_translations.class.php",
-			"app/vendor/pomo/mo.class.php",
 			"vendor/autoload.php",
 		];
 	}

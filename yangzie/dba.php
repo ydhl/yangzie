@@ -487,7 +487,7 @@ class YZE_DBAImpl extends YZE_Object
 		if(empty($sql))return false;
 		try{
 			$stat = self::$conn[$this->db_name]->prepare($sql);
-			return $stat->execute($sql, $params);
+			return $stat->execute($params);
 		}catch (\PDOException $e){
 			return $this->check_connect($e->getCode(), $e->errorInfo, 'exec', $sql);
 		}

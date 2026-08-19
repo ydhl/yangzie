@@ -1,60 +1,26 @@
 <?php
+namespace app\vendor\pomo;
+
 /**
- * Allows reading integers from a file.
+ * Contains POMO_CachedIntFileReader class
+ *
+ * Based on the classes from Danilo Segan <danilo@kvota.net>
+ *
+ * @version $Id: streams.php 1157 2015-11-20 04:30:11Z dd32 $
+ * @package pomo
+ * @subpackage streams
  */
-class POMO_CachedIntFileReader extends POMO_CachedFileReader {
 
-	var $endian = 'little';
-
+if ( ! class_exists( __NAMESPACE__ . '\POMO_CachedIntFileReader', false ) ) :
 	/**
-	 * Opens a file and caches it.
-	 *
-	 * @param $filename string name of the file to be opened
-	 * @param $endian string endianness of the words in the file, allowed
-	 * 	values are 'little' or 'big'. Default value is 'little'
+	 * Reads the contents of the file in the beginning.
 	 */
-	public function __construct($filename, $endian = 'little') {
-		$this->endian = $endian;
-		parent::__construct($filename);
+	class POMO_CachedIntFileReader extends POMO_CachedFileReader {
+		/**
+		 * PHP5 constructor.
+		 */
+		public function __construct( $filename ) {
+			parent::__construct( $filename );
+		}
 	}
-
-	/**
-	 * Sets the endianness of the file.
-	 *
-	 * @param $endian string 'big' or 'little'
-	 */
-	function setEndian($endian) {
-		$this->endian = $endian;
-	}
-
-	/**
-	 * Reads a 32bit Integer from the Stream
-	 *
-	 * @return mixed The integer, corresponding to the next 32 bits from
-	 * 	the stream of false if there are not enough bytes or on error
-	 */
-	function readint32() {
-		$bytes = $this->read(4);
-		if (4 != $this->_strlen($bytes))
-			return false;
-		$endian_letter = ('big' == $this->endian)? 'N' : 'V';
-		$int = unpack($endian_letter, $bytes);
-		return array_shift($int);
-	}
-
-	/**
-	 * Reads an array of 32-bit Integers from the Stream
-	 *
-	 * @param integer count How many elements should be read
-	 * @return mixed Array of integers or false if there isn't
-	 * 	enough data or on error
-	 */
-	function readint32array($count) {
-		$bytes = $this->read(4 * $count);
-		if (4*$count != $this->_strlen($bytes))
-			return false;
-		$endian_letter = ('big' == $this->endian)? 'N' : 'V';
-		return unpack($endian_letter.$count, $bytes);
-	}
-}
-?>
+endif;

@@ -1,68 +1,71 @@
 <?php
+namespace app\vendor\pomo;
 
 /**
- * Classes, which help reading streams of data from files.
+ * Contains POMO_StringReader class
+ *
  * Based on the classes from Danilo Segan <danilo@kvota.net>
  *
- * @version $Id: class.POMO_StringReader.php 259 2010-02-21 14:03:48Z liizii $
+ * @version $Id: streams.php 1157 2015-11-20 04:30:11Z dd32 $
  * @package pomo
  * @subpackage streams
  */
 
-/**
- * Provides file-like methods for manipulating a string instead
- * of a physical file.
- */
-class POMO_StringReader {
+if ( ! class_exists( __NAMESPACE__ . '\POMO_StringReader', false ) ) :
+	/**
+	 * Provides file-like methods for manipulating a string instead
+	 * of a physical file.
+	 */
+	class POMO_StringReader extends POMO_Reader {
 
-    protected $_pos;
-    protected $_str;
+		public $_str = '';
 
-    public function __construct($str = '') {
-        $this->_str = $str;
-        $this->_pos = 0;
-        $this->is_overloaded = ((ini_get("mbstring.func_overload") & 2) != 0) && function_exists('mb_substr');
-    }
+		/**
+		 * PHP5 constructor.
+		 */
+		public function __construct( $str = '' ) {
+			parent::__construct();
+			$this->_str = $str;
+			$this->_pos = 0;
+		}
 
-    function _substr($string, $start, $length) {
-        if ($this->is_overloaded) {
-            return mb_substr($string, $start, $length, 'ascii');
-        } else {
-            return substr($string, $start, $length);
-        }
-    }
+		/**
+		 * @param string $bytes
+		 * @return string
+		 */
+		public function read( $bytes ) {
+			$data        = $this->substr( $this->_str, $this->_pos, $bytes );
+			$this->_pos += $bytes;
+			if ( $this->strlen( $this->_str ) < $this->_pos ) {
+				$this->_pos = $this->strlen( $this->_str );
+			}
+			return $data;
+		}
 
-    function _strlen($string) {
-        if ($this->is_overloaded) {
-            return mb_strlen($string, 'ascii');
-        } else {
-            return strlen($string);
-        }
-    }
+		/**
+		 * @param int $pos
+		 * @return int
+		 */
+		public function seekto( $pos ) {
+			$this->_pos = $pos;
+			if ( $this->strlen( $this->_str ) < $this->_pos ) {
+				$this->_pos = $this->strlen( $this->_str );
+			}
+			return $this->_pos;
+		}
 
-    function read($bytes) {
-        $data = $this->_substr($this->_str, $this->_pos, $bytes);
-        $this->_pos += $bytes;
-        if ($this->_strlen($this->_str) < $this->_pos)
-            $this->_pos = $this->_strlen($this->_str);
-        return $data;
-    }
+		/**
+		 * @return int
+		 */
+		public function length() {
+			return $this->strlen( $this->_str );
+		}
 
-    function seekto($pos) {
-        $this->_pos = $pos;
-        if ($this->_strlen($this->_str) < $this->_pos)
-            $this->_pos = $this->_strlen($this->_str);
-        return $this->_pos;
-    }
-
-    function pos() {
-        return $this->_pos;
-    }
-
-    function length() {
-        return $this->_strlen($this->_str);
-    }
-
-}
-
-?>
+		/**
+		 * @return string
+		 */
+		public function read_all() {
+			return $this->substr( $this->_str, $this->_pos, $this->strlen( $this->_str ) );
+		}
+	}
+endif;

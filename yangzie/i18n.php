@@ -1,8 +1,8 @@
 <?php
 namespace yangzie;
 
-use MO;
-use Translations;
+use app\vendor\pomo\MO;
+use app\vendor\pomo\Translations;
 class YZE_I18N extends YZE_Object{
 	private $i18n = [];
 	private static $me;
@@ -37,7 +37,7 @@ class YZE_I18N extends YZE_Object{
 }
 
 function translate( $text, $domain = 'default' ) {
-	if(!class_exists("Translations"))return $text;
+	if(!class_exists("app\\vendor\\pomo\\Translations"))return $text;
 
 	$l10n = YZE_I18N::get_instance()->getLoadedI18N();
 	$empty = new Translations();

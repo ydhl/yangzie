@@ -1,70 +1,112 @@
 <?php
+namespace app\vendor\pomo;
+
 /**
  * Contains Translation_Entry class
  *
- * @version $Id: class.Translation_Entry.php 259 2010-02-21 14:03:48Z liizii $
+ * @version $Id: entry.php 1157 2015-11-20 04:30:11Z dd32 $
  * @package pomo
  * @subpackage entry
  */
 
-
 /**
- * Translation_Entry class encapsulates a translatable string
+ * Translation_Entry class encapsulates a translatable string.
+ *
+ * @since 2.8.0
  */
+#[AllowDynamicProperties]
 class Translation_Entry {
 
 	/**
-	 * Whether the entry contains a string and its plural form, default is false
+	 * Whether the entry contains a string and its plural form, default is false.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
-	var $is_plural = false;
+	public $is_plural = false;
 
-	var $context = null;
-	var $singular = null;
-	var $plural = null;
-	var $translations = array();
-	var $translator_comments = '';
-	var $extracted_comments = '';
-	var $references = array();
-	var $flags = array();
+	public $context             = null;
+	public $singular            = null;
+	public $plural              = null;
+	public $translations        = array();
+	public $translator_comments = '';
+	public $extracted_comments  = '';
+	public $references          = array();
+	public $flags               = array();
 
 	/**
-	 * @param array $args associative array, support following keys:
-	 * 	- singular (string) -- the string to translate, if omitted and empty entry will be created
-	 * 	- plural (string) -- the plural form of the string, setting this will set {@link $is_plural} to true
-	 * 	- translations (array) -- translations of the string and possibly -- its plural forms
-	 * 	- context (string) -- a string differentiating two equal strings used in different contexts
-	 * 	- translator_comments (string) -- comments left by translators
-	 * 	- extracted_comments (string) -- comments left by developers
-	 * 	- references (array) -- places in the code this strings is used, in relative_to_root_path/file.php:linenum form
-	 * 	- flags (array) -- flags like php-format
+	 * @param array $args {
+	 *     Arguments array, supports the following keys:
+	 *
+	 *     @type string $singular            The string to translate, if omitted an
+	 *                                       empty entry will be created.
+	 *     @type string $plural              The plural form of the string, setting
+	 *                                       this will set `$is_plural` to true.
+	 *     @type array  $translations        Translations of the string and possibly
+	 *                                       its plural forms.
+	 *     @type string $context             A string differentiating two equal strings
+	 *                                       used in different contexts.
+	 *     @type string $translator_comments Comments left by translators.
+	 *     @type string $extracted_comments  Comments left by developers.
+	 *     @type array  $references          Places in the code this string is used, in
+	 *                                       relative_to_root_path/file.php:linenum form.
+	 *     @type array  $flags               Flags like php-format.
+	 * }
 	 */
-	public function __construct($args=array()) {
-		// if no singular -- empty object
-		if (!isset($args['singular'])) {
+	public function __construct( $args = array() ) {
+		// If no singular -- empty object.
+		if ( ! isset( $args['singular'] ) ) {
 			return;
 		}
-		// get member variable values from args hash
-		$object_varnames = array_keys(get_object_vars($this));
-		foreach ($args as $varname => $value) {
+		// Get member variable values from args hash.
+		foreach ( $args as $varname => $value ) {
 			$this->$varname = $value;
 		}
-		if (isset($args['plural'])) $this->is_plural = true;
-		if (!is_array($this->translations)) $this->translations = array();
-		if (!is_array($this->references)) $this->references = array();
-		if (!is_array($this->flags)) $this->flags = array();
+		if ( isset( $args['plural'] ) && $args['plural'] ) {
+			$this->is_plural = true;
+		}
+		if ( ! is_array( $this->translations ) ) {
+			$this->translations = array();
+		}
+		if ( ! is_array( $this->references ) ) {
+			$this->references = array();
+		}
+		if ( ! is_array( $this->flags ) ) {
+			$this->flags = array();
+		}
 	}
 
 	/**
-	 * Generates a unique key for this entry
+	 * Generates a unique key for this entry.
 	 *
-	 * @return string|bool the key or false if the entry is empty
+	 * @since 2.8.0
+	 *
+	 * @return string|false The key or false if the entry is null.
 	 */
-	function key() {
-		if (is_null($this->singular)) return false;
-		// prepend context and EOT, like in MO files
-		return is_null($this->context)? $this->singular : $this->context.chr(4).$this->singular;
+	public function key() {
+		if ( null === $this->singular ) {
+			return false;
+		}
+
+		// Prepend context and EOT, like in MO files.
+		$key = ! $this->context ? $this->singular : $this->context . "\4" . $this->singular;
+		// Standardize on \n line endings.
+		$key = str_replace( array( "\r\n", "\r" ), "\n", $key );
+
+		return $key;
+	}
+
+	/**
+	 * Merges another translation entry with the current one.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param Translation_Entry $other Other translation entry.
+	 */
+	public function merge_with( &$other ) {
+		$this->flags      = array_unique( array_merge( $this->flags, $other->flags ) );
+		$this->references = array_unique( array_merge( $this->references, $other->references ) );
+		if ( $this->extracted_comments !== $other->extracted_comments ) {
+			$this->extracted_comments .= $other->extracted_comments;
+		}
 	}
 }
-?>

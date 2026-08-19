@@ -89,31 +89,6 @@ class YZE_Object{
 	public static function defilter_var($var){
 		return filter_var($var, FILTER_CALLBACK,array('options' => 'html_entity_decode')) ?: $var;
 	}
-
-	/**
-	 * 中文解码
-	 * @param $str
-	 * @param $charcode
-	 * @return array|false|string
-	 */
-	public static function unescape($str,$charcode="UTF-8"){
-		$text = preg_replace_callback("/[%|\\\\]u(?P<c>[0-9A-Za-z]{4})/",function($matches){
-			$c = '';
-			$val = intval($matches['c'],16);
-			if($val < 0x7F){        // 0000-007F
-				$c .= chr($val);
-			}elseif($val < 0x800) { // 0080-0800
-				$c .= chr(0xC0 | ($val / 64));
-				$c .= chr(0x80 | ($val % 64));
-			}else{                // 0800-FFFF
-				$c .= chr(0xE0 | (($val / 64) / 64));
-				$c .= chr(0x80 | (($val / 64) % 64));
-				$c .= chr(0x80 | ($val % 64));
-			}
-			return $c;
-		},$str);
-		return mb_convert_encoding($text, $charcode, 'utf-8');
-	}
 }
 
 ?>

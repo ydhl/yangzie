@@ -1,3 +1,2 @@
-tests
-app/modules/test
 vendor/composer
+/.env

@@ -571,12 +571,13 @@ function is_validate_db($db_name){
 	$db_connection = $app_module->get_module_config('db_connections')[$db_name];
 
 	if (!$db_connection) return false;
+
 	$db = mysqli_connect(
 		$db_connection["db_host"],
 		$db_connection["db_user"],
 		$db_connection["db_psw"],
 		$db_name,
-		$db_connection["db_port"]
+		intval($db_connection["db_port"])
 	);
 	return $db;
 }

@@ -94,7 +94,7 @@ trait $class{
 	 * @return boolean
 	 */
 	public static function is_enable_graphql(){
-		return true;
+		return false;
 	}
 
 	/**

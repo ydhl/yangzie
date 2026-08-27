@@ -65,39 +65,35 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	protected function config(): array{
 		return [
-			'default_db' => 'yangai', // 默认链接的数据库名，请填写项目实际的数据库名
+			'default_db' => 'yangai_20260821', // 默认链接的数据库名，请填写项目实际的数据库名
 			'db_connections' => [
-				'yangai' => [
-					'db_type' => 'mysql',
-					'db_host' => '127.0.0.1',
-					'db_user' => 'root',
-					'db_psw'  => '12345678',
-					'db_port' => '3306',
+				'yangai_20260821' => [
+					'db_type' => $this->env('yangai_20260821.db_type', 'mysql'),
+					'db_host' => $this->env('yangai_20260821.db_host', ''),
+					'db_user' => $this->env('yangai_20260821.db_user', ''),
+					'db_psw'  => $this->env('yangai_20260821.db_psw', ''),
+					'db_port' => $this->env('yangai_20260821.db_port', '3306'),
+					'db_charset'=> $this->env('yangai_20260821.db_charset', 'utf8'),
+					'crypt_key'=> $this->env('yangai_20260821.crypt_key', ''),
 					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
-					'db_charset'=> 'utf8',
-					'crypt_key'=> '',
 				],
 				'test2' => [
-					'db_type' => 'mysql',
-					'db_host' => '127.0.0.1',
-					'db_user' => 'root',
-					'db_psw'  => '12345678',
-					'db_port' => '3306',
+					'db_type' => $this->env('test2.db_type', 'mysql'),
+					'db_host' => $this->env('test2.db_host', '127.0.0.1'),
+					'db_user' => $this->env('test2.db_user', ''),
+					'db_psw'  => $this->env('test2.db_psw', ''),
+					'db_port' => $this->env('test2.db_port', ''),
+					'db_charset'=> $this->env('test2.db_charset', ''),
+					'crypt_key'=> $this->env('test2.crypt_key', ''),
 					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
-					'db_charset'=> 'utf8',
-					'crypt_key'=> ''
 				],
+			],
+			/**
+			 * 应用启动时需要加载的文件，如果指定目录，则自动包含里面的所有文件, 但要注意是按文件名排序顺序包含的，如果被包含的文件之间有依赖关系，这会导致代码错误，这种情况请手动添加包含的文件
+			 */
+			'include_files'=>[
+				"vendor/autoload.php"
 			]
-		];
-	}
-
-	/**
-	 * 应用启动时需要加载的文件，如果指定目录，则自动包含里面的所有文件,
-	 * 但要注意是按文件名排序顺序包含的，如果被包含的文件之间有依赖关系，这会导致代码错误，这种情况请手动添加包含的文件
-	 */
-	public function module_include_files() {
-        return [
-			"vendor/autoload.php",
 		];
 	}
 

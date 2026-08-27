@@ -90,7 +90,7 @@ trait Graphql_Query{
      */
     public static function model_query($class, GraphqlSearchNode $node, &$total=0, $wheres=[], GraphqlQueryClause $clause=null, $id=null){
         $table = $class::TABLE;
-        $dba = YZE_DBAImpl::get_instance($class::DB_NAME);
+        $dba = YZE_DBAImpl::get_instance();
         // 提取缺省的model的wheres，clause，id三个参数形参实参，对于自定义的字段，这些参数其实并没有用到。
         foreach ((array)$node->args as $arg){
             if ($arg->name == 'wheres' && !$wheres){
@@ -207,7 +207,7 @@ trait Graphql_Query{
         $totalRst = $dba->native_Query("select count(*) as t from `{$table}` ".($where ? "where {$where}" : "").$orderby);
         $totalRst->next();
         $total = intval($totalRst->f('t'));
-        $rsts = $dba->native_Query("select `".join('`,`', array_keys($modelObject::get_columns()))
+        $rsts = $dba->native_Query("select `".join('`,`', array_keys($modelObject->get_columns()))
             ."` from `{$table}` ".($where ? "where {$where}" : "").$orderby.$pagination);
 
         $rsts = $rsts->get_results();

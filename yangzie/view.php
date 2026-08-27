@@ -145,7 +145,7 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 
 
 	public function content_of_section($section){
-		return $this->data["content_of_section"][$section];
+		return $this->data["content_of_section"][$section] ?? null;
 	}
 
 	public function content_of_view(){

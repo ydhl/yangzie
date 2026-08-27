@@ -18,7 +18,7 @@ class YZE_Router extends YZE_Object {
 	/**
 	 *
 	 *
-	 * @return Router
+	 * @return YZE_Router
 	 */
 	public static function get_Instance(){
 		if (!isset(self::$instance)) {
@@ -52,7 +52,12 @@ class YZE_Router extends YZE_Object {
 				if($mappings){
 					YZE_Router::get_Instance()->set_Routers($module_name,$mappings);
 				}
+
+				\yangzie\YZE_Object::set_loaded_modules($module_name, array(
+					"is_phar" => $phar_wrap ? true : false
+				));
 			}
+			YZE_Hook::include_hooks($module_name, "{$phar_wrap}{$module}/hooks");
 		}
 	}
 }

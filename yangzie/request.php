@@ -11,27 +11,158 @@ namespace yangzie;
  * @link yangzie.yidianhulian.com
  */
 class YZE_Request extends YZE_Object {
+    /**
+     * 映射到的控制器方法名，如 post_index、index
+     *
+     * @var string
+     */
     private $method;
+
+    /**
+     * 当前请求的 http 方法，如 get、post、delete、put
+     *
+     * @var string
+     */
     private $request_method;
+
+    /**
+     * 请求变量集合（含路由命名参数与请求参数），结构：[name=>value]
+     *
+     * @var array
+     */
     private $vars;
+
+    /**
+     * 请求的 post 数据
+     *
+     * @var array
+     */
     private $post = array ();
+
+    /**
+     * 请求的 get 数据
+     *
+     * @var array
+     */
     private $get = array ();
+
+    /**
+     * 请求的 cookie 数据
+     *
+     * @var array
+     */
     private $cookie = array ();
+
+    /**
+     * 请求的 server 数据
+     *
+     * @var array
+     */
     private $server = array ();
+
+    /**
+     * 请求的环境变量数据
+     *
+     * @var array
+     */
     private $env = array ();
+
+    /**
+     * 控制器短名，如 index
+     *
+     * @var string
+     */
     private $controller_name;
+
+    /**
+     * 控制器类名，如 Index_Controller
+     *
+     * @var string
+     */
     private $controller_class;
+
+    /**
+     * 控制器实例
+     *
+     * @var YZE_Resource_Controller|null
+     */
     private $controller;
+
+    /**
+     * 模块类名，如 Admin_Module
+     *
+     * @var string
+     */
     private $module_class;
+
+    /**
+     * 模块实例
+     *
+     * @var YZE_Base_Module|null
+     */
     private $module_obj;
+
+    /**
+     * 当前请求的模块名
+     *
+     * @var string
+     */
     private $module;
+
+    /**
+     * 模块的 views 目录路径
+     *
+     * @var string
+     */
     private $view_path;
+
+    /**
+     * 请求的 URI（仅路径部分，已 urldecode）
+     *
+     * @var string
+     */
     private $uri;
+
+    /**
+     * 请求的完整 URI（含 query string，未 urldecode）
+     *
+     * @var string
+     */
     private $full_uri;
+
+    /**
+     * 请求的 query string
+     *
+     * @var string
+     */
     private $queryString;
+
+    /**
+     * 本次请求的唯一标识
+     *
+     * @var string
+     */
     private $uuid;
+
+    /**
+     * 请求处理过程中抛出的异常
+     *
+     * @var \Exception|null
+     */
     private $exception;
+
+    /**
+     * 单例实例
+     *
+     * @var YZE_Request|null
+     */
     private static $me;
+
+    /**
+     * 请求上下文数据，key=>value 形式，使用 set()/get() 存取
+     *
+     * @var array
+     */
     private $context;
 
     /**
@@ -200,7 +331,9 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
-     * 请求的scheme，如http，https
+     * 请求的 scheme，如 http、https
+     *
+     * @return string 请求协议，http 或 https
      */
     public function get_Scheme() {
         $scheme = 'http';
@@ -343,8 +476,10 @@ class YZE_Request extends YZE_Object {
         return strcasecmp ( $this->request_method, "get" ) === 0;
     }
     /**
-     * 访问当前请求的来源地址
-     * @param string $just_path 如果为true只显示uri的path部分
+     * 获取当前请求的来源地址（HTTP_REFERER）
+     *
+     * @param bool $just_path 为 true 时只返回 uri 的 path 部分
+     * @return string 来源地址或空字符串
      */
     public function the_referer_uri($just_path = false) {
         // ai@2026-05-27 替换 @ 抑制符，使用 ?? '' 显式处理
@@ -409,8 +544,9 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
-     * 是否是移动端，user agent包含android|iphone|ipad的看作移动端
-     * @return false
+     * 是否是移动端，user agent 包含 android|iphone|ipad 的看作移动端
+     *
+     * @return int 匹配返回 1，不匹配返回 0
      */
     public function is_mobile_client() {
         // ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null，使用 ?? '' 兜底
@@ -418,8 +554,9 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
-     * 是否是ios环境，user agent包含iphone|ipad的看作ios环境
-     * @return false
+     * 是否是 ios 环境，user agent 包含 iphone|ipad 的看作 ios 环境
+     *
+     * @return int 匹配返回 1，不匹配返回 0
      */
     public function is_In_IOS(){
         // ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null，使用 ?? '' 兜底
@@ -427,8 +564,9 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
-     * 是否是ios环境，user agent包含android的看作android环境
-     * @return false
+     * 是否是 android 环境，user agent 包含 android 的看作 android 环境
+     *
+     * @return int 匹配返回 1，不匹配返回 0
      */
     public function is_In_Android(){
         // ai@2026-05-27 修复 PHP 8 兼容：preg_match subject 不能为 null，使用 ?? '' 兜底
@@ -436,19 +574,41 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
-     * 把data_str 格式化成GMT格式
-     * @param $date_str
-     * @return string
+     * 把 data_str 格式化成 GMT 格式
+     *
+     * @param string $date_str 日期字符串
+     * @return string GMT 格式的日期，如 D, d M Y H:i:s GMT
      */
     public static function format_gmdate($date_str) {
         return gmdate ( 'D, d M Y H:i:s', strtotime ( $date_str ) ) . " GMT";
     }
+    /**
+     * 设置映射的控制器方法名
+     *
+     * @param string $method 方法名
+     * @return string 设置后的方法名
+     */
     private function set_method($method) {
         return $this->method = $method;
     }
+
+    /**
+     * 设置请求变量集合
+     *
+     * @param array $vars 变量集合
+     * @return array 设置后的变量集合
+     */
     private function set_vars($vars) {
         return $this->vars = $vars;
     }
+
+    /**
+     * 设置单个请求变量
+     *
+     * @param string $name 变量名
+     * @param mixed  $val  变量值
+     * @return YZE_Request 返回当前请求对象，支持链式调用
+     */
     public function set_var($name, $val) {
         $this->vars [$name] = $val;
         return $this;
@@ -468,8 +628,11 @@ class YZE_Request extends YZE_Object {
         return array_key_exists ( $key, $vars ) ? $vars [$key] : $default;
     }
     /**
-     * 当前的请求是否需要认证
-     * @return bool true
+     * 判断当前请求的方法是否需要认证
+     *
+     * 根据模块配置的 auths（需要认证）与 no_auths（不需要认证）列表判断
+     *
+     * @return bool 需要认证返回 true，否则返回 false
      */
     private function need_auth() {
         $req_method = $this->the_method();
@@ -485,6 +648,13 @@ class YZE_Request extends YZE_Object {
         }
         return false;
     }
+    /**
+     * 从模块配置中获取指定控制器需要/不需要认证的方法列表
+     *
+     * @param string $controller_name 控制器名
+     * @param string $type            need（需要认证）或 noneed（不需要认证）
+     * @return string|null 方法匹配规则（支持 * 通配符），未配置返回 null
+     */
     private function get_auth_methods($controller_name, $type) {
         if (!$this->module_instance ()) return null;
         if ($type == "need") {
@@ -582,6 +752,12 @@ class YZE_Request extends YZE_Object {
 
         return $controller->handle_request();
     }
+    /**
+     * 设置当前请求的控制器并实例化控制器对象
+     *
+     * @param string $controller 控制器短名
+     * @return YZE_Request 返回当前请求对象，支持链式调用
+     */
     private function set_controller_name($controller) {
         $this->controller_class = self::format_class_name ( $controller, "Controller" );
         $this->controller_name = $controller;
@@ -631,6 +807,12 @@ class YZE_Request extends YZE_Object {
     public function controller_instance() {
         return $this->controller;
     }
+    /**
+     * 设置当前请求的模块并实例化模块对象
+     *
+     * @param string $module 模块名
+     * @return YZE_Request 返回当前请求对象，支持链式调用
+     */
     public function set_module($module) {
         $this->module = $module;
         $this->module_class = YZE_Object::format_class_name ( $module, "Module" );
@@ -683,12 +865,20 @@ class YZE_Request extends YZE_Object {
     }
 
     /**
+     * 获取请求处理过程中保存的异常
      *
-     * @return \Exception
+     * @return \Exception|null 异常对象，没有异常时返回 null
      */
     public function get_exception(){
     	return $this->exception;
     }
+
+    /**
+     * 设置请求处理过程中保存的异常
+     *
+     * @param \Exception $exception 异常对象
+     * @return void
+     */
     public function set_Exception(\Exception $exception){
     	$this->exception = $exception;
     }

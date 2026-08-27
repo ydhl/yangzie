@@ -30,20 +30,59 @@ interface YZE_IResponse {
  *
  */
 class YZE_Response_304_NotModified extends YZE_Object implements YZE_IResponse {
+    /**
+     * 需要输出的 http 响应头集合，key 为头部名，value 为头部值
+     *
+     * @var array
+     */
     private $headers;
+
+    /**
+     * @var YZE_Resource_Controller
+     */
+    private $controller;
+
+    /**
+     * 构造函数
+     *
+     * @param array                   $headers    要输出的 http 响应头
+     * @param YZE_Resource_Controller $controller 发起响应的控制器
+     */
     public function __construct($headers, YZE_Resource_Controller $controller) {
         $this->headers = $headers;
         $this->controller = $controller;
     }
+
+    /**
+     * 输出 304 状态码及配置的响应头
+     *
+     * @param bool $return 忽略，304 响应始终直接输出
+     * @return void
+     */
     public function output($return = false) {
         header ( "HTTP/1.1 304 Not Modified" );
         foreach ( ( array ) $this->headers as $name => $value ) {
             header ( "{$name}: {$value}" );
         }
     }
+
+    /**
+     * 增加一个响应头
+     *
+     * @param string $header_name  响应头名称
+     * @param string $header_value 响应头值
+     * @return void
+     */
     public function add_header($header_name, $header_value) {
         $this->headers [$header_name] = $header_value;
     }
+
+    /**
+     * 获取指定响应头的值
+     *
+     * @param string $key 响应头名称
+     * @return mixed 响应头值
+     */
     public function get_data($key) {
         return $this->headers [$key];
     }
@@ -58,7 +97,18 @@ class YZE_Response_304_NotModified extends YZE_Object implements YZE_IResponse {
  *
  */
 class YZE_Redirect extends YZE_Object implements YZE_IResponse {
+    /**
+     * 重定向的目标 url
+     *
+     * @var string
+     */
     private $destinationURI;
+
+    /**
+     * 发起重定向的控制器
+     *
+     * @var YZE_Resource_Controller
+     */
 	private $sourceController;
 
     /**
@@ -74,6 +124,12 @@ class YZE_Redirect extends YZE_Object implements YZE_IResponse {
         $this->destinationURI = $destination_uri;
     }
 
+    /**
+     * 输出重定向响应
+     *
+     * @param bool $return 为 true 时返回目标 url 而不输出 header
+     * @return string|null $return 为 true 时返回目标 url，否则输出 Location header 并返回 null
+     */
     public function output($return=false){
 		if ( ! $return ){
 			header("Location: $this->destinationURI");
@@ -82,10 +138,21 @@ class YZE_Redirect extends YZE_Object implements YZE_IResponse {
 		return $this->destinationURI;
     }
 
+    /**
+     * 获取重定向的目标 url
+     *
+     * @return string 目标 url
+     */
     public function destinationURI(){
         return $this->destinationURI;
     }
 
+    /**
+     * 重定向响应无视图数据，始终返回空字符串
+     *
+     * @param string $key 数据键名
+     * @return string 空字符串
+     */
     public function get_data($key){
         return '';
     }
@@ -132,8 +199,9 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	public $master_view;
 
 	/**
-	 * 调用check master后找到的master view的绝对路径
-	 * @var unknown
+	 * 调用 check_master 后找到的 master view 的绝对路径
+	 *
+	 * @var string
 	 */
 	protected $master_view_path;
 
@@ -144,10 +212,21 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	protected $controller;
 
 
+	/**
+	 * 获取指定 section 的内容
+	 *
+	 * @param string $section section 名
+	 * @return mixed section 的内容
+	 */
 	public function content_of_section($section){
 		return $this->data["content_of_section"][$section];
 	}
 
+	/**
+	 * 获取当前视图的内容（content_of_view）
+	 *
+	 * @return mixed 当前视图的输出内容
+	 */
 	public function content_of_view(){
 		return $this->data["content_of_view"];
 	}
@@ -163,19 +242,34 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 		$this->controller = $controller;
 	}
 
+	/**
+	 * 获取视图所属的控制器
+	 *
+	 * @return YZE_Resource_Controller 控制器对象
+	 */
 	public function get_controller(){
 		return $this->controller;
 	}
 
 	/**
-	 * 没有设置master view，返回false；设置了master view但不存在，抛异常；存在master view，如果存在返回true
-	 * master view可以放在模块的views下面或者vender的views下面
+	 * 检查 master view 是否存在
+	 *
+	 * 没有设置 master view，返回 false；设置了 master view 但不存在，抛异常；存在 master view 返回 true
+	 * master view 可以放在模块的 views 下面或者 vendor 的 views 下面
+	 *
+	 * @return bool|void 存在返回 true，未设置返回 false，不存在时抛异常
 	 */
 	protected function check_master(){
 		//stub
 	}
 
-
+	/**
+	 * 输出 master view，将当前视图的内容与 section 传入 master view 渲染
+	 *
+	 * @param mixed $data   当前视图的输出内容
+	 * @param bool  $return 为 true 时返回输出内容而不是直接输出
+	 * @return string|null $return 为 true 时返回渲染内容，否则直接输出
+	 */
 	protected function output_master($data, $return=false){
 		$datas = $this->get_datas();
 
@@ -197,6 +291,12 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 		}
 	}
 
+	/**
+	 * 输出视图响应（含 master view 渲染）
+	 *
+	 * @param bool $return 为 true 时返回输出内容而不是直接输出
+	 * @return string|null $return 为 true 时返回渲染内容，否则直接输出
+	 */
 	public final function output($return=false){
 		ob_start();
 
@@ -210,19 +310,40 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 		if($return)return $data;
 		echo $data;
 	}
+
+	/**
+	 * 获取当前视图收集的所有 section 内容
+	 *
+	 * @return array|null section 集合，未收集时返回 null
+	 */
 	public function view_sections(){
 	    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 	    return $this->data['content_of_section'] ?? null;
 	}
+
+	/**
+	 * 开始收集一个 section，配合 end_section 使用
+	 *
+	 * @return void
+	 */
 	public function begin_section(){
 	    ob_start();
 	}
+
+	/**
+	 * 结束 section 收集并保存到指定 section 名
+	 *
+	 * @param string $section section 名
+	 * @return void
+	 */
 	public function end_section($section){
 	    $this->data['content_of_section'][$section] = ob_get_clean();
 	}
 
 	/**
 	 * 取得视图的输出内容
+	 *
+	 * @return string 视图渲染后的内容
 	 */
 	public function get_output(){
     	return $this->output(true);
@@ -234,23 +355,52 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	 */
 	protected abstract function display_self();
 
+	/**
+	 * 获取视图的单个数据
+	 *
+	 * @param string $key 数据键名
+	 * @return mixed 数据值，不存在时返回 null
+	 */
 	public function get_data($key){
 	   // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 	   return $this->data[$key] ?? null;
 	}
+
+	/**
+	 * 获取视图的全部数据
+	 *
+	 * @return array 视图数据集合
+	 */
 	public function get_datas(){
 	   return  $this->data;
 	}
+
+	/**
+	 * 设置视图的单个数据
+	 *
+	 * @param string $key  数据键名
+	 * @param mixed  $data 数据值
+	 * @return void
+	 */
 	public function set_data($key, $data){
 	    $this->data[$key] = $data;
 	}
+
+	/**
+	 * 批量设置视图数据（覆盖全部现有数据）
+	 *
+	 * @param array $datas 数据集合
+	 * @return YZE_View_Adapter 返回当前视图对象，支持链式调用
+	 */
 	public function set_datas(array $datas){
 	    $this->data = $datas;
 	    return $this;
 	}
 
 	/**
-	 * 检查模板文件是否存在
+	 * 检查模板文件是否存在，不存在时由子类决定是否抛异常
+	 *
+	 * @return bool 模板存在返回 true
 	 */
 	public function check_view()
 	{
@@ -258,11 +408,14 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
 	}
 
 	/**
+	 * 根据请求的响应格式构建对应的响应视图
 	 *
-	 * @param YZE_Resource_Controller $controller
-	 * @param string $format
-	 * @param array $data
-	 * @return YZE_IResponse
+	 * json 返回 YZE_JSON_View，xml 返回 YZE_XML_View，其他格式返回 YZE_Notpl_View
+	 *
+	 * @param YZE_Resource_Controller $controller 控制器对象
+	 * @param string                  $format     响应格式，json / xml / 其他
+	 * @param array                   $data       视图数据
+	 * @return YZE_IResponse 对应的响应视图对象
 	 */
 	public static function build_view(YZE_Resource_Controller $controller, $format, $data){
 		if($format=="json") return new YZE_JSON_View($controller, $data);
@@ -281,13 +434,20 @@ abstract class YZE_View_Adapter extends YZE_Object implements YZE_IResponse{
  */
 class YZE_Simple_View extends YZE_View_Adapter {
 
+	/**
+	 * 视图模板名（不含格式后缀），框架会按 {$tpl}.{$format}.php 查找模板文件
+	 *
+	 * @var string
+	 */
+	private $tpl;
 
 	/**
 	 * 通过模板、数据构建视图输出
-	 * @param string $tpl_name 模板的路径全名。
-	 * @param array $data
-	 * @param YZE_Resource_Controller $controller
-	 * @param string $format
+	 *
+	 * @param string                   $tpl_name  模板的路径全名（不含格式后缀）
+	 * @param array                    $data      视图数据
+	 * @param YZE_Resource_Controller  $controller 控制器对象
+	 * @param string|null              $format    响应格式，为 null 时取请求的输出格式
 	 */
 	public function __construct($tpl_name, $data, YZE_Resource_Controller $controller, $format=null){
 		parent::__construct($data,$controller);
@@ -359,10 +519,19 @@ class YZE_Simple_View extends YZE_View_Adapter {
  */
 abstract class YZE_View_Component extends YZE_View_Adapter{
     /**
-     * 输出组件内容
+     * 输出组件内容，由子类实现具体的组件渲染逻辑
+     *
+     * @return void
      */
     protected abstract function output_component();
 
+    /**
+     * 构造函数
+     *
+     * @param array                    $data       组件数据
+     * @param YZE_Resource_Controller  $controller 控制器对象
+     * @param string|null              $format     响应格式，为 null 时取请求的输出格式
+     */
     public function __construct($data, $controller, $format=null){
         parent::__construct( $data, $controller);
 		$this->format 	= $format ?: $controller->get_Request()->get_output_format();
@@ -376,14 +545,38 @@ abstract class YZE_View_Component extends YZE_View_Adapter{
  *
  */
 class YZE_Notpl_View extends YZE_View_Adapter {
+	/**
+	 * 需要直接输出的字符串内容
+	 *
+	 * @var string
+	 */
 	private $html;
+
+	/**
+	 * 构造函数
+	 *
+	 * @param string                   $html       需要直接输出的字符串
+	 * @param YZE_Resource_Controller  $controller 控制器对象
+	 */
 	public function __construct($html, YZE_Resource_Controller $controller){
 		parent::__construct(array(),$controller);
 		$this->html = $html;
 	}
+
+	/**
+	 * 直接输出字符串内容
+	 *
+	 * @return void
+	 */
 	protected function display_self(){
 		echo $this->html;
 	}
+
+	/**
+	 * 返回要输出的字符串内容
+	 *
+	 * @return string 字符串内容
+	 */
 	public function return_html(){
 		return $this->html;
 	}
@@ -410,6 +603,15 @@ class YZE_JSON_View extends YZE_View_Adapter {
 	}
 
 
+	/**
+	 * 构建一个失败响应的 json 视图，输出格式 {success:false, data, code, msg}
+	 *
+	 * @param YZE_Resource_Controller $controller 控制器对象
+	 * @param string|null             $message    错误消息
+	 * @param int|null                $code       错误码
+	 * @param mixed                   $data       附带数据
+	 * @return YZE_JSON_View 失败响应的 json 视图
+	 */
 	public static function error($controller, $message =null, $code =null, $data=null) {
 	    return new YZE_JSON_View($controller,  array (
 	            'success' => false,
@@ -418,6 +620,14 @@ class YZE_JSON_View extends YZE_View_Adapter {
 	            "msg" => $message
 	    ) );
 	}
+
+	/**
+	 * 构建一个成功响应的 json 视图，输出格式 {success:true, data, msg:null}
+	 *
+	 * @param YZE_Resource_Controller $controller 控制器对象
+	 * @param mixed                   $data       返回数据
+	 * @return YZE_JSON_View 成功响应的 json 视图
+	 */
 	public static function success($controller, $data = null) {
 	    return new YZE_JSON_View($controller,  array (
 	            'success' => true,
@@ -449,6 +659,15 @@ class YZE_XML_View extends YZE_View_Adapter {
 		echo $xml->asXML();
 	}
 
+	/**
+	 * 将数组数据递归转换为 xml 节点
+	 *
+	 * 数值键会转换成 item0、item1 等节点名，非数组值直接作为节点内容
+	 *
+	 * @param array              $data 需要转换的数据数组
+	 * @param SimpleXMLElement   $xml  目标 xml 节点（引用传递）
+	 * @return void
+	 */
 	private function array_to_xml($data, &$xml) {
 		foreach($data as $key => $value) {
 			if(is_array($value)) {
@@ -467,6 +686,14 @@ class YZE_XML_View extends YZE_View_Adapter {
 		}
 	}
 
+	/**
+	 * 构建一个失败响应的 xml 视图，输出 <success>0</success> 等节点
+	 *
+	 * @param YZE_Resource_Controller $controller 控制器对象
+	 * @param string|null             $message    错误消息
+	 * @param int|null                $code       错误码
+	 * @return YZE_XML_View 失败响应的 xml 视图
+	 */
 	public static function error($controller, $message =null, $code =null) {
 	    return new YZE_XML_View($controller, array (
 	            'success' => false,
@@ -475,6 +702,14 @@ class YZE_XML_View extends YZE_View_Adapter {
 	            "msg" => $message
 	    ) );
 	}
+
+	/**
+	 * 构建一个成功响应的 xml 视图，输出 <success>1</success> 等节点
+	 *
+	 * @param YZE_Resource_Controller $controller 控制器对象
+	 * @param mixed                   $data       返回数据
+	 * @return YZE_XML_View 成功响应的 xml 视图
+	 */
 	public static function success($controller, $data = null) {
 	    return new YZE_XML_View($controller, array (
 	            'success' => true,
@@ -500,11 +735,19 @@ class YZE_XML_View extends YZE_View_Adapter {
  */
 class YZE_Layout extends YZE_View_Adapter{
   	/**
+  	 * 需要被布局包裹的视图对象
   	 *
   	 * @var YZE_View_Adapter
   	 */
 	private $view;
 
+	/**
+	 * 构造函数
+	 *
+	 * @param string                   $layout     布局名，对应 app/vendor/layouts/{layout}.layout.php
+	 * @param YZE_View_Adapter         $view       需要被布局包裹的视图对象
+	 * @param YZE_Resource_Controller  $controller 控制器对象
+	 */
 	public function __construct($layout,YZE_View_Adapter $view,  YZE_Resource_Controller $controller){
 		parent::__construct($view->get_datas(),$controller);
 		$this->view 	= $view;

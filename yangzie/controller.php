@@ -26,16 +26,37 @@ namespace yangzie;
  * @link yangzie.yidianhulian.com
  */
 abstract class YZE_Resource_Controller extends YZE_Object {
+    /**
+     * 视图数据集合，key 为变量名，value 为变量值
+     *
+     * @var array
+     */
     protected $view_data = array ();
+
+    /**
+     * 布局名，如 tpl、mob、json，对应对 app/vendor/layouts/{layout}.layout.php 文件
+     *
+     * @var string
+     */
     protected $layout = 'tpl';
+
+    /**
+     * 视图模板名，非空时优先使用该模板而非默认模板
+     *
+     * @var string
+     */
     protected $view = "";
 
     /**
+     * 当前请求实例
+     *
      * @var YZE_Request
      */
     protected $request;
+
     /**
-     * 所在模块
+     * 当前请求所在模块
+     *
      * @var YZE_Base_Module
      */
     protected $module;
@@ -76,6 +97,11 @@ abstract class YZE_Resource_Controller extends YZE_Object {
         return new YZE_Simple_View ( $view, $view_data, $this, $format );
     }
 
+    /**
+     * 构造函数，初始化请求与模块实例，并根据请求输出格式设置布局
+     *
+     * @param YZE_Request|null $request 请求实例，为 null 时取全局请求实例
+     */
     public function __construct($request = null) {
         $this->request = $request ?: YZE_Request::get_instance ();
         $this->module = $this->request->module_instance ();
@@ -89,21 +115,42 @@ abstract class YZE_Resource_Controller extends YZE_Object {
      * 当前请求实例
      * @return YZE_Request
      */
+    /**
+     * 获取当前请求实例
+     *
+     * @return YZE_Request 当前请求对象
+     */
     public function get_Request() {
         return $this->request;
     }
+
     /**
-     * 布局名，比如tpl，则对应对是app/vendor/layouts/tpl.layout.php文件
-     * @return string
+     * 获取布局名，比如 tpl，则对应的是 app/vendor/layouts/tpl.layout.php 文件
+     *
+     * @return string 布局名
      */
     public function get_Layout() {
         return $this->layout;
     }
+
+    /**
+     * 设置视图数据
+     *
+     * @param string $name  视图变量名
+     * @param mixed  $value 视图变量值
+     * @return YZE_Resource_Controller 返回当前控制器对象，支持链式调用
+     */
     public function set_View_Data($name, $value) {
         $this->view_data [$name] = $value;
         return $this;
     }
 
+    /**
+     * 获取视图数据
+     *
+     * @param string $name 视图变量名
+     * @return mixed 视图变量值，不存在时返回 null
+     */
     public function get_View_Data($name) {
         // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
         return $this->view_data[$name] ?? null;
@@ -182,14 +229,15 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     }
 
     /**
-     * 获取action上指定注解的值，
+     * 获取 action 上指定注解的值
      * <pre>
      * //@ test testvalue
      * public function index()
-     * get_Annotation('index', 'test') 将返回testvalue
+     * get_Annotation('index', 'test') 将返回 testvalue
      * </pre>
-     * @param string $action 方法名
-     * @param string $annotation 检查对注解
+     * @param string $action     方法名
+     * @param string $annotation 要检查的注解名
+     * @return string|null 注解值，方法不存在或没有该注解时返回 null
      */
     public function get_Annotation($action, $annotation){
         try{
@@ -207,9 +255,11 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     }
 
     /**
-     * 判断action上是否有指定注解
-     * @param string $action 方法名
-     * @param string $annotation 检查对注解
+     * 判断 action 上是否有指定注解
+     *
+     * @param string $action     方法名
+     * @param string $annotation 要检查的注解名
+     * @return bool 存在该注解返回 true，否则返回 false
      */
     public function has_Annotation($action, $annotation){
         try{
@@ -225,15 +275,41 @@ abstract class YZE_Resource_Controller extends YZE_Object {
     }
 
 }
+/**
+ * 默认控制器，当请求无法匹配到任何模块与控制器时使用
+ *
+ * @package yangzie
+ */
 class Yze_Default_Controller extends YZE_Resource_Controller {
+    /**
+     * 显示框架欢迎页
+     *
+     * @return YZE_Simple_View 欢迎页视图
+     */
     public function index() {
         $this->set_View_Data ( "yze_page_title", __ ( "Yangzie Framework" ) );
         return new YZE_Simple_View ( YANGZIE . "welcome", $this->view_data, $this );
     }
 }
+
+/**
+ * 异常控制器，用于统一处理请求过程中的异常并输出对应的错误页面
+ *
+ * @package yangzie
+ */
 class YZE_Exception_Controller extends YZE_Resource_Controller {
+    /**
+     * 需要展示的异常对象
+     *
+     * @var \Exception|null
+     */
     private $exception;
 
+    /**
+     * 根据异常错误码输出对应的错误页面
+     *
+     * @return YZE_Simple_View 错误页面视图
+     */
     public function index() {
         $this->layout = "error";
         $this->output_status_code ( $this->exception ? $this->exception->getCode () : 0 );
@@ -252,12 +328,23 @@ class YZE_Exception_Controller extends YZE_Resource_Controller {
                 "exception" => $this->exception
         ), $this );
     }
+    /**
+     * 保存异常并输出错误页面
+     *
+     * @param \Exception $e 异常对象
+     * @return YZE_Simple_View 错误页面视图
+     */
     public function exception(\Exception $e) {
         $this->exception = $e;
         return $this->index ();
     }
 
-
+    /**
+     * 根据错误码输出对应的 http 状态码响应头
+     *
+     * @param int $error_number 错误码，404 或 500
+     * @return void
+     */
     private function output_status_code($error_number) {
         switch ($error_number) {
             case 404 :

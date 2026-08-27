@@ -31,15 +31,17 @@ abstract class YZE_Base_Module extends YZE_Object {
 	public $auths = array();
 
 	/**
-	 * 同auths，定义不需要认证的action，优先级比auths高
+	 * 同 auths，定义不需要认证的 action，优先级比 auths 高
 	 *
+	 * @var array
 	 */
 	public $no_auths = array();
 
 	/**
-	 * 获取指定的模块配置，模块的配置包含了对象属性及通过config方法返回的内容
-	 * @param $name
-	 * @return array|mixed
+	 * 获取指定的模块配置，模块的配置包含了对象属性及通过 config 方法返回的内容
+	 *
+	 * @param string|null $name 配置名，为 null 时返回全部配置
+	 * @return array|mixed 指定配置名的值或全部配置数组
 	 */
 	public function get_module_config($name=null){
 		$config = get_class_vars(get_class($this));
@@ -49,9 +51,11 @@ abstract class YZE_Base_Module extends YZE_Object {
 	}
 
 	/**
-	 * 返回指定控制器上映射的url列表
-	 * @param $controller
-	 * @return array
+	 * 返回指定控制器上映射的 url 列表
+	 *
+	 * @param string $controller 控制器名（可带 _controller 后缀）
+	 * @param string $action     action 名，默认 index
+	 * @return array 匹配的 url 列表
 	 */
 	public function get_uris_of_controller($controller, $action='index'){
 		$controller = rtrim(strtolower($controller), "_controller");
@@ -73,46 +77,52 @@ abstract class YZE_Base_Module extends YZE_Object {
 	public function check(){
 	}
 	/**
-	 * 初始化一些配置项的值，返回数组，键为配置名;
-	 * module通过config返回路由映射：
+	 * 初始化一些配置项的值，返回数组，键为配置名
+	 *
+	 * module 通过 config 返回路由映射，格式：
 	 * <pre>
-	 * 格式:
 	 * [
 	 *   'routers' => [
-	 * 	    'uri地址'=>["controller"=>'控制器名', 'aciton'=>'执行的方法',"args"=>["固定参数名"=>"参数值"]]
+	 * 	    'uri地址'=>["controller"=>'控制器名', 'action'=>'执行的方法', "args"=>["固定参数名"=>"参数值"]]
 	 *   ]
 	 * ]
-	 * 如['/something/(?P<id>\d+)'=>["controller"=>'quote',"args"=>[]]]
-	 * uri地址支持正则，并且可命名正则匹配值, 比如上面的id，则可以通过$request->get_var('id')获取地址上的值
-	 * 控制器名是不包含controller的，比如quote_controller中的quote
-	 * args是固定传入action的参数，也是通过$request->get_var('参数名')获取
-	 *
+	 * 如 ['/something/(?P<id>\d+)'=>["controller"=>'quote',"args"=>[]]]
+	 * uri 地址支持正则，并且可命名正则匹配值，比如上面的 id，则可以通过 $request->get_var('id') 获取地址上的值
+	 * 控制器名是不包含 controller 的，比如 quote_controller 中的 quote
+	 * args 是固定传入 action 的参数，也是通过 $request->get_var('参数名') 获取
 	 * </pre>
-	 * @return array
+	 *
+	 * @return array 模块配置数组
 	 */
 	protected abstract function config();
     /**
-     * js资源分组，在加载时方便直接通过分组名一次性加载所有文件，并支持http缓存机制;<br/><br/>
-     * 如果是项目级的资源：<br/>
-     *   路径以web 绝对路径/开始，/指的上public_html目录
-     *   在layouts中通过接口yze_js_bundle("foo,bar")一次打包加载这里指定的资源<br/><br/>
-     * 如果是模块的资源：<br/>
-     *   路径以web 绝对路径/开始，/指的上模块下的public_html目录
-     *   在layouts中通过接口yze_module_js_bundle("foo,bar")一次打包加载这里指定的资源<br/><br/>
-	 * 实现该函数决定如何返回要打包下载的资源
-     * @return array(资源路径1，资源路径2)
+     * js 资源分组，在加载时方便直接通过分组名一次性加载所有文件，并支持 http 缓存机制
+     *
+     * 如果是项目级的资源：路径以 web 绝对路径 / 开始，/ 指的是 public_html 目录，
+     * 在 layouts 中通过接口 yze_js_bundle("foo,bar") 一次打包加载这里指定的资源
+     *
+     * 如果是模块的资源：路径以 web 绝对路径 / 开始，/ 指的是模块下的 public_html 目录，
+     * 在 layouts 中通过接口 yze_module_js_bundle("foo,bar") 一次打包加载这里指定的资源
+     *
+     * 实现该函数决定如何返回要打包下载的资源
+     *
+     * @param string $bundle 资源分组名
+     * @return array 资源路径列表，如 array(资源路径1，资源路径2)
      */
     public abstract function js_bundle($bundle);
     /**
-     * css资源分组，在加载时方便直接通过分组名一次性加载所有文件，并支持http缓存机制;<br/><br/>
-     * 如果是项目级的资源：<br/>
-     * 资源路径以web 绝对路径/开始，/指的上public_html目录
-     * 在layouts中通过接口yze_css_bundle("yangzie,foo,bar")一次打包加载这里指定的资源<br/><br/>
-     * 如果是模块的资源：<br/>
-     *   路径以web 绝对路径/开始，/指的上模块下的public_html目录
-     *   在layouts中通过接口yze_module_css_bundle("yangzie,foo,bar")一次打包加载这里指定的资源<br/><br/>
+     * css 资源分组，在加载时方便直接通过分组名一次性加载所有文件，并支持 http 缓存机制
+     *
+     * 如果是项目级的资源：资源路径以 web 绝对路径 / 开始，/ 指的是 public_html 目录，
+     * 在 layouts 中通过接口 yze_css_bundle("yangzie,foo,bar") 一次打包加载这里指定的资源
+     *
+     * 如果是模块的资源：路径以 web 绝对路径 / 开始，/ 指的是模块下的 public_html 目录，
+     * 在 layouts 中通过接口 yze_module_css_bundle("yangzie,foo,bar") 一次打包加载这里指定的资源
+     *
      * 实现该函数决定如何返回要打包下载的资源
-     * @return array(资源路径1，资源路径2)
+     *
+     * @param string $bundle 资源分组名
+     * @return array 资源路径列表，如 array(资源路径1，资源路径2)
      */
 	public abstract function css_bundle($bundle);
 }

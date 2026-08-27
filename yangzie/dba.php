@@ -12,11 +12,24 @@ use \app\App_Module;
 class YZE_DBAImpl extends YZE_Object
 {
 	/**
+	 * 各数据库的连接对象集合，key 为数据库名
+	 *
 	 * @var array[PDO]
 	 */
 	private static $conn=[];
+
+	/**
+	 * 当前实例使用的数据库名
+	 *
+	 * @var string
+	 */
 	private $db_name = '';
 
+	/**
+	 * 获取当前数据库配置的加密秘钥（crypt_key）
+	 *
+	 * @return string 加密秘钥，未配置时返回空字符串
+	 */
 	private function get_crypt_key(){
 		$app_module = new App_Module();
 		$db_name = $this->get_db_name();
@@ -24,6 +37,14 @@ class YZE_DBAImpl extends YZE_Object
 		return $db_connection['crypt_key']?:'';
 	}
 
+	/**
+	 * 建立（或复用）指定数据库的 PDO 连接，并开启事务
+	 *
+	 * @param string $db_name 数据库名，为空时使用默认库
+	 * @param bool   $force   为 true 时强制重建连接（用于连接断开后的重连）
+	 * @return void
+	 * @throws YZE_DBAException 数据库连接失败时抛出
+	 */
 	private function connect($db_name, $force=false){
 		$app_module = new App_Module();
 		$db_name = $db_name ?: $app_module->get_module_config('default_db');
@@ -78,6 +99,11 @@ class YZE_DBAImpl extends YZE_Object
 		}
 		throw new YZE_DBAException($errorInfo, $errorCode);
 	}
+	/**
+	 * 构造函数，建立指定数据库的连接
+	 *
+	 * @param string $db_name 数据库名
+	 */
 	public function __construct($db_name){
 		$this->connect($db_name);
 	}
@@ -93,10 +119,21 @@ class YZE_DBAImpl extends YZE_Object
 	public static function get_instance($db_name=null){
 		return new static($db_name);
 	}
+	/**
+	 * 返回当前实例使用的数据库名
+	 *
+	 * @return string 数据库名
+	 */
 	public function get_db_name(){
 		return $this->db_name;
 	}
 
+	/**
+	 * 获取 model 的完整记录数据，其中加密字段进行加密处理
+	 *
+	 * @param YZE_Model $entity model 对象
+	 * @return array 加密后的字段值集合
+	 */
 	private function get_entity_record(YZE_Model $entity){
 		$records = $entity->get_records();
 		foreach ($records as $name => &$value) {
@@ -106,6 +143,12 @@ class YZE_DBAImpl extends YZE_Object
 		}
 		return $records;
 	}
+	/**
+	 * 根据主键更新 model 对应的记录，并触发 YZE_HOOK_MODEL_UPDATE hook
+	 *
+	 * @param YZE_Model $entity 需要更新的 model
+	 * @return int|string 更新记录的主键
+	 */
 	private function save_update(YZE_Model $entity){
 		$sql = new YZE_SQL();
 
@@ -116,6 +159,13 @@ class YZE_DBAImpl extends YZE_Object
 		\yangzie\YZE_Hook::do_hook(YZE_HOOK_MODEL_UPDATE, $entity);
 		return $entity->get_key();
 	}
+	/**
+	 * 校验 model 记录的字段：非空、长度、枚举、日期类型合法性
+	 *
+	 * @param YZE_Model $entity 需要校验的 model
+	 * @return void
+	 * @throws YZE_DBAException 字段校验不通过时抛出
+	 */
 	private function valid_entity(YZE_Model  $entity) {
 		$records = $entity->get_records();
 		foreach ($entity->get_columns() as $column => $columnInfo) {
@@ -146,6 +196,14 @@ class YZE_DBAImpl extends YZE_Object
 			}
 		}
 	}
+	/**
+	 * 根据查询结果的原始行数据构建 model 的字段值（过滤 html 符号、解密加密字段）
+	 *
+	 * @param YZE_Model $entity     目标 model
+	 * @param array     $raw_datas  查询结果的原始行数据
+	 * @param string    $table_alias 表别名，用于匹配原始数据中该 model 的字段
+	 * @return void
+	 */
 	private function build_entity(YZE_Model $entity,$raw_datas,$table_alias){
 		foreach ($raw_datas as $field_name => $field_value) {
 			$alias = $table_alias."_";
@@ -179,6 +237,11 @@ class YZE_DBAImpl extends YZE_Object
 
 		return self::$conn[$db_name];
 	}
+	/**
+	 * 返回所有已建立的数据库连接对象
+	 *
+	 * @return array 数据库名=>PDO 对象 集合
+	 */
 	public function get_all_Conn(){
 		return self::$conn;
 	}
@@ -570,8 +633,10 @@ class YZE_DBAImpl extends YZE_Object
 	}
 
 	/**
-	 * 是否开启自动提交
-	 * @param boolean $boolean
+	 * 设置当前数据库连接是否开启自动提交
+	 *
+	 * @param bool $boolean true 开启自动提交，false 关闭自动提交
+	 * @return void
 	 */
 	public function auto_Commit($boolean){
 	    if(self::$conn[$this->db_name]){
@@ -971,39 +1036,94 @@ class YZE_DBAImpl extends YZE_Object
 	}
 
 }
+/**
+ * PDOStatement 结果集包装类
+ *
+ * 在构造时一次性取回所有结果行，通过游标（index）逐行访问，
+ * 对字段值统一进行 html 符号过滤（filter_var）。
+ *
+ * @package yangzie
+ */
 class YZE_PDOStatementWrapper extends YZE_Object{
 	/**
+	 * 原始的 PDOStatement 对象
+	 *
 	 * @var PDOStatement
 	 */
 	private $db;
+
+	/**
+	 * 取回的所有结果行，结构：[行号=>[字段名=>值]]
+	 *
+	 * @var array
+	 */
 	private $result;
+
+	/**
+	 * 当前游标位置（当前读取的行号）
+	 *
+	 * @var int
+	 */
 	private $index = -1;
+
+	/**
+	 * 构造函数，取回语句的所有结果
+	 *
+	 * @param PDOStatement $db_mysql PDOStatement 对象
+	 */
 	public function __construct(PDOStatement $db_mysql){
 		$this->db = $db_mysql;
 		$this->result = $this->db->fetchAll(PDO::FETCH_ASSOC);
 	}
+
+	/**
+	 * 将游标重置到起始位置（-1）
+	 *
+	 * @return void
+	 */
 	public function reset(){
 		$this->index = -1;
 	}
+
+	/**
+	 * 游标下移一行并返回该行数据
+	 *
+	 * @return array|null 当前行数据，越界时返回 null
+	 */
 	public function next(){
 		$this->index +=1;
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 		return $this->result[$this->index] ?? null;
 	}
+
+	/**
+	 * 返回全部结果行
+	 *
+	 * @return array 全部结果行
+	 */
 	public function get_results(){
 		return $this->result;
 	}
+
 	/**
-	 * 如果提供了alias,则会已{$table_alias}_{$name}为字段名查找
-	 * @param unknown $name
-	 * @param unknown $table_alias
+	 * 返回当前行的指定字段值，如果提供了 $table_alias，则以 {$table_alias}_{$name} 为字段名查找
+	 *
+	 * @param string      $name        字段名
+	 * @param string|null $table_alias 表别名，为 null 时不带前缀
+	 * @return mixed 字段值（已过滤 html 符号），字段不存在时返回 null
 	 */
 	public function f($name,$table_alias=null){
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 		return self::filter_var($this->result[$this->index][$table_alias ? "{$table_alias}_{$name}" : $name] ?? null);#数据库取出来编码
 	}
 
-
+	/**
+	 * 用当前行的数据填充 model 的所有字段并返回该 model
+	 *
+	 * @param YZE_Model $entity 需要填充的 model
+	 * @param string    $alias  表别名，为 null 时按字段名直接匹配
+	 * @return YZE_Model 填充数据后的 model
+	 */
 	public function getEntity(YZE_Model $entity, $alias=""){
 	   foreach (array_keys($entity->get_columns()) as $field_name) {
             $field_value = $this->f($field_name, $alias);

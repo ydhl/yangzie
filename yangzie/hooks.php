@@ -96,15 +96,30 @@ define ( 'YZE_HOOK_AUTO_LOAD_CLASS', 'YZE_HOOK_AUTO_LOAD_CLASS' );
  */
 define('YZE_HOOK_GET_LOCALE', 'YZE_HOOK_GET_LOCALE');
 final class YZE_Hook extends YZE_Object {
+    /**
+     * hook 监听器注册表
+     * 结构：listeners[事件名][模块名][] = ["function"=>回调函数, "object"=>对象]
+     *
+     * @var array
+     */
     private static $listeners = array ();
+
+    /**
+     * 当前正在加载 hook 文件的模块名
+     *
+     * @var string
+     */
     private static $currModule;
 
     /**
-     * 增加hook， 如果有多个注册回调，则返回的是最后一个回调函数的返回结果，如果想把所有回调的数据汇总，则可以通过修改引用参数的方式返回；
-     * 具体如何做，需要针对具体的$filterName说明清楚
-     * @param $event
-     * @param $funcName 参数必须是引用，需要加&
-     * @param $object
+     * 增加 hook 回调
+     *
+     * 如果有多个注册回调，则返回的是最后一个回调函数的返回结果，如果想把所有回调的数据汇总，则可以通过修改引用参数的方式返回；
+     * 具体如何做，需要针对具体的 $filterName 说明清楚
+     *
+     * @param string $event     hook 事件名，使用 YZE_HOOK_* 常量
+     * @param string $funcName  回调函数名（或对象方法名），对象方法需在 $object 中指定对象
+     * @param object|null $object 回调函数所在的对象，为 null 时按普通函数调用
      * @return void
      */
     public static function add_hook($event, $funcName, $object = null) {
@@ -113,15 +128,16 @@ final class YZE_Hook extends YZE_Object {
     }
 
     /**
-     * 如果没有hook注册，返回null;
+     * 触发指定 hook 事件，依次调用注册的所有回调
      *
-     * 如果有多个注册回调，则返回的是最后一个回调函数的返回结果，如果想把所有回调的数据汇总，则可以通过修改引用参数的方式返回;
-     * 具体如何做，需要针对具体的$filterName说明清楚
+     * 如果没有 hook 注册，返回 null；
+     * 如果有多个注册回调，则返回的是最后一个回调函数的返回结果，如果想把所有回调的数据汇总，则可以通过修改引用参数的方式返回；
+     * 具体如何做，需要针对具体的 $filterName 说明清楚
      *
-     * @param string $filterName
-     * @param unknown $data 传递给回调函数的data，如果修改了data的内容，会影响后续的回调，
-     * @param unknown $module 指定则只调用该module下面的hook，多个可用,分隔，依次调用其中的module
-     * @return unknown|mixed
+     * @param string $filterName hook 事件名
+     * @param mixed  $data       传递给回调函数的数据（引用传递），回调中修改 $data 会影响后续的回调
+     * @param string|null $module 指定则只调用该 module 下面的 hook，多个用逗号分隔，依次调用其中的 module
+     * @return mixed|null 最后一个回调函数的返回结果，没有 hook 注册时返回 null
      */
     public static function do_hook($filterName, &$data=null, $module=null) {
         $listeners = self::get_hook ( $filterName, $module );
@@ -139,11 +155,11 @@ final class YZE_Hook extends YZE_Object {
     }
 
     /**
-     * 返回指定注册在filterName下面的hook函数
+     * 返回指定注册在 filterName 下面的 hook 回调函数列表
      *
-     * @param $filterName
-     * @param $module
-     * @return array
+     * @param string $filterName hook 事件名
+     * @param string|null $module 模块名，多个用逗号分隔；为 null 时返回所有模块的注册回调
+     * @return array 回调函数列表，结构：[["function"=>..., "object"=>...], ...]
      */
     public static function get_hook($filterName, $module=null) {
         if($module){
@@ -169,10 +185,10 @@ final class YZE_Hook extends YZE_Object {
     }
 
     /**
-     * 包含module模块下dir目录下面的hook文件
+     * 递归包含 module 模块下 dir 目录下面的所有 hook 文件
      *
-     * @param $module
-     * @param $dir
+     * @param string $module 模块名，作为该模块 hook 回调的注册归属
+     * @param string $dir    要遍历的目录路径
      * @return void
      */
     public static function include_hooks($module, $dir){

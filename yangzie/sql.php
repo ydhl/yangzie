@@ -77,9 +77,33 @@ class YZE_SQL extends YZE_Object{
 	 * @var array
 	 */
 	private $from = array();
+
+	/**
+	 * limit 起点
+	 *
+	 * @var int|null
+	 */
 	private $limit_start;
+
+	/**
+	 * limit 结束
+	 *
+	 * @var int|null
+	 */
 	private $limit_end;
+
+	/**
+	 * 构建的查询是否包含 join 连接
+	 *
+	 * @var bool
+	 */
 	private $has_join = false;
+
+	/**
+	 * 构建的查询是否包含 from
+	 *
+	 * @var bool
+	 */
 	private $has_from = false;
 	/**
 	 * 表别名及对应的表后缀
@@ -175,6 +199,11 @@ class YZE_SQL extends YZE_Object{
 		$this->suffix[$table_alias?: 'm'] = $suffix;
 		return $this;
 	}
+	/**
+	 * 获取各表别名对应的表后缀
+	 *
+	 * @return array 别名=>后缀 集合
+	 */
 	public function get_suffixs(){
 		return $this->suffix;
 	}
@@ -604,6 +633,11 @@ class YZE_SQL extends YZE_Object{
 		}
 		return $classes;
 	}
+	/**
+	 * 构建并返回完整的 sql 语句
+	 *
+	 * @return string 根据 action 构建的 sql 语句
+	 */
 	public function __toString(){
 		switch($this->action){
 			case "select":return $this->_select();
@@ -642,6 +676,11 @@ class YZE_SQL extends YZE_Object{
 	}
 
 
+	/**
+	 * 构建 where 子句
+	 *
+	 * @return string where 子句内容，无条件时返回空字符串
+	 */
 	private function _where(){
 		$where = "";
 		foreach((array)$this->where as $wheres){
@@ -660,6 +699,11 @@ class YZE_SQL extends YZE_Object{
 		return $where;
 	}
 
+	/**
+	 * 构建 from / join 子句
+	 *
+	 * @return string from 与 join 拼接的 sql 片段
+	 */
 	private function _from(){
 		$no_alias = $this->isinsert() || $this->isdelete();//不要别名
 		$from = array();
@@ -705,6 +749,11 @@ class YZE_SQL extends YZE_Object{
 		return join(" ",$from);
 	}
 
+	/**
+	 * 构建 select 查询语句
+	 *
+	 * @return string select 完整 sql 语句
+	 */
 	private function _select(){
 		$select = [];
 		#处理distinct查询字段
@@ -777,11 +826,22 @@ class YZE_SQL extends YZE_Object{
 				.$this->_order_by()
 				.$this->_limit();
 	}
+	/**
+	 * 构建 delete 删除语句
+	 *
+	 * @return string delete 完整 sql 语句
+	 */
 	private function _delete(){
 		$where = $this->_where();
 		return "DELETE FROM ".$this->_from()
 				.($where  ? " \r\nWHERE ".$where : "");
 	}
+
+	/**
+	 * 构建 insert 插入语句，根据 insert_type 生成不同的插入/更新/忽略逻辑
+	 *
+	 * @return string insert 完整 sql 语句
+	 */
 	private function _insert(){
 	    $update = array();
 		$insert_column = [];
@@ -829,6 +889,11 @@ class YZE_SQL extends YZE_Object{
 		}
 
 	}
+	/**
+	 * 构建 update 更新语句
+	 *
+	 * @return string update 完整 sql 语句
+	 */
 	private function _update(){
 		foreach($this->update as $alias => $updateDatas){
 			foreach((array)$updateDatas as $field => $value){
@@ -841,6 +906,11 @@ class YZE_SQL extends YZE_Object{
 				.($where  ? " \r\nWHERE ".$where : "");
 	}
 
+	/**
+	 * 构建 group by 子句
+	 *
+	 * @return string group by 子句，无分组条件时返回空字符串
+	 */
 	private function _group_by(){
 		foreach ($this->group_by as $group_by){
 		    if(!empty($group_by['function'])){
@@ -852,6 +922,11 @@ class YZE_SQL extends YZE_Object{
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 		return ($by ?? null) ? " GROUP BY ".join(',',$by) : "";
 	}
+	/**
+	 * 构建 order by 子句
+	 *
+	 * @return string order by 子句，无排序条件时返回空字符串
+	 */
 	private function _order_by(){
 		foreach ($this->order_by as $order_by){
 			$by[] = ($order_by['use_alias'] ? $order_by['alias']."_".$order_by['order_by'] : $order_by['alias'].".".$order_by['order_by'])." ".strtoupper($order_by['sort']);
@@ -859,6 +934,11 @@ class YZE_SQL extends YZE_Object{
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 		return ($by ?? null) ? " ORDER BY ".join(',',$by) : "";
 	}
+	/**
+	 * 构建 limit 子句
+	 *
+	 * @return string limit 子句，无条件时返回空字符串
+	 */
 	private function _limit(){
 		if($this->limit_start && $this->limit_end){
 			return " LIMIT ".(int)$this->limit_start." , ".(int)$this->limit_end;
@@ -871,15 +951,28 @@ class YZE_SQL extends YZE_Object{
 		}
 	}
 
+	/**
+	 * 当前构建的 sql 是否是插入语句
+	 *
+	 * @return bool 是插入语句返回 true
+	 */
 	public function isinsert(){
 		return strcasecmp($this->action,"insert")==0;
 	}
+
+	/**
+	 * 当前构建的 sql 是否是删除语句
+	 *
+	 * @return bool 是删除语句返回 true
+	 */
 	public function isdelete(){
 		return strcasecmp($this->action,"delete")==0;
 	}
 	/**
-	 * 构建格式正确的sql,转义。
-	 * @param unknown_type $value
+	 * 构建格式正确的 sql 值，转义特殊字符，数组递归处理
+	 *
+	 * @param mixed $value 需要转义的值
+	 * @return mixed 转义后的值或值数组
 	 */
 	private function _quoteValue($value){
 	    ///mysql_escape_string 把\转换成\\
@@ -909,6 +1002,12 @@ class YZE_SQL extends YZE_Object{
 	    }
 	}
 
+	/**
+	 * 构建单条 where 条件，支持子查询、字段比较、各类操作符
+	 *
+	 * @param array $wheres 条件配置，含 alias、field、op、value、is_column、andor、field_func 等键
+	 * @return string 单条 where 条件 sql 片段
+	 */
 	private function _buildWhere($wheres){
 	    if($this->isinsert() || $this->isdelete()){
 	        $column = "`".$wheres['field']."`";

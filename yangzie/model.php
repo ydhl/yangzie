@@ -23,11 +23,31 @@ use app\App_Module;
 abstract class YZE_Model extends YZE_Object{
 	use Graphql_Query;
 	/**
+	 * Model Query 链式调用使用的查询对象
+	 *
 	 * @var YZE_SQL
 	 */
 	private $sql;
+
+	/**
+	 * 分表查询时使用的表后缀
+	 *
+	 * @var string|null
+	 */
 	private $suffix;
+
+	/**
+	 * 当前 Model 使用的数据库名，为 null 时使用默认库
+	 *
+	 * @var string|null
+	 */
 	private $db;
+
+	/**
+	 * 当前 Model 的记录数据集合，key 为字段名，value 为字段值
+	 *
+	 * @var array
+	 */
 	protected $records = array();
 	/**
 	 * 映射：
@@ -55,6 +75,12 @@ abstract class YZE_Model extends YZE_Object{
 	 * @var array
 	 */
 	public $encrypt_columns = array();
+
+	/**
+	 * 缓存的数据集合（预留）
+	 *
+	 * @var array
+	 */
 	private $cache = array();
 	/**
 	 * 如果在INSERT插入行后会导致在一个UNIQUE索引或PRIMARY KEY中出现重复值，
@@ -76,6 +102,11 @@ abstract class YZE_Model extends YZE_Object{
 	protected $relation_column = array();
 
 
+	/**
+	 * 返回该 model 的唯一键字段集合
+	 *
+	 * @return array 唯一键字段名列表
+	 */
 	public function get_unique_key(){
 		return $this->unique_key;
 	}
@@ -99,6 +130,11 @@ abstract class YZE_Model extends YZE_Object{
 	public function get_key_name(){
 		return $this::KEY_NAME;
 	}
+	/**
+	 * 返回 uuid 字段名
+	 *
+	 * @return string uuid 字段名
+	 */
 	public function get_uuid_name(){
 		return $this::UUID_NAME;
 	}
@@ -136,11 +172,11 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	/**
-	 * 获取Graphql字段的类型
+	 * 获取 Graphql 字段的类型
 	 *
-	 * @param $columnConfig
-	 * @param $columnName
-	 * @return GraphqlType
+	 * @param array  $columnConfig 字段配置，含 type 键
+	 * @param string $columnName   字段名
+	 * @return GraphqlType 字段的 Graphql 类型对象
 	 */
 	public function get_Model_Field_Type($columnConfig, $columnName)
 	{
@@ -151,6 +187,11 @@ abstract class YZE_Model extends YZE_Object{
 			$columnConfig['type'] == 'enum' ? 'ENUM' : 'SCALAR');
 	}
 
+	/**
+	 * 返回当前 Model 所在的模块名
+	 *
+	 * @return string 模块名
+	 */
 	public function get_module_name(){
 		return $this::MODULE_NAME;
 	}
@@ -230,6 +271,13 @@ abstract class YZE_Model extends YZE_Object{
 	 * 对于时间字段，去掉datetime后面的时间部分，只留日期部分
 	 * @param unknown_type $name
 	 */
+	/**
+	 * 对于时间字段，去掉 datetime 后面的时间部分，只留日期部分
+	 *
+	 * @param string $name   时间字段名
+	 * @param string $format 日期格式，默认 y年m月d日
+	 * @return string 格式化后的日期字符串，字段为空或为 0000-00-00 00:00:00 时返回空字符串
+	 */
 	public function get_date_val($name, $format="y年m月d日"){
 		if (!$this->get($name) || $this->get($name)=="0000-00-00 00:00:00"){
 			return "";
@@ -245,8 +293,10 @@ abstract class YZE_Model extends YZE_Object{
 		return $this->records;
 	}
 	/**
-	 * 获取指定字段的值
-	 * @param unknown $name
+	 * 获取字段值（不含加密字段的解密处理，如需解密请使用 __get 或直接读取属性）
+	 *
+	 * @param string $name 字段名
+	 * @return mixed 字段值，字段不存在时返回 null
 	 */
 	public function get($name){
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
@@ -260,8 +310,9 @@ abstract class YZE_Model extends YZE_Object{
 	 * <li>3. 其他不变</li>
 	 * <li>4. 对于有长度限制的字符串类型，会按照长度进行截取，超过部分忽略</li>
 	 * </ul>
-	 * @param unknown_type $name
-	 * @param unknown_type $value
+	 * @param string $name  字段名
+	 * @param mixed  $value 字段值
+	 * @return YZE_Model 返回当前 model 对象，支持链式调用
 	 */
 	public function set($name, $value){
 		$props = $this->get_Field_props($name);
@@ -571,6 +622,12 @@ abstract class YZE_Model extends YZE_Object{
 		return $this->save($type, $checkSql);
 	}
 
+	/**
+	 * 魔术方法：读取字段值，配置为加密字段时自动解密
+	 *
+	 * @param string $name 字段名
+	 * @return mixed 字段值（加密字段为解密后的值），字段不存在时返回 null
+	 */
 	public function __get($name){
 	    $value = $this->get($name);
 	    if (in_array($name, $this->encrypt_columns)){
@@ -579,6 +636,13 @@ abstract class YZE_Model extends YZE_Object{
 	    return $value;
 	}
 
+	/**
+	 * 魔术方法：写入字段值，配置为加密字段时自动加密
+	 *
+	 * @param string $name  字段名
+	 * @param mixed  $value 字段值
+	 * @return YZE_Model 返回当前 model 对象，支持链式调用
+	 */
 	public function __set($name, $value){
 		if (in_array($name, $this->encrypt_columns)){
 			$value = YZE_DBAImpl::get_instance($this->db)->encrypt($value);
@@ -622,10 +686,22 @@ abstract class YZE_Model extends YZE_Object{
 		$this->db = $db;
 		return $this;
 	}
+	/**
+	 * 设置分表查询时使用的表后缀
+	 *
+	 * @param string $suffix 表后缀
+	 * @return YZE_Model 返回当前 model 对象，支持链式调用
+	 */
 	public function suffix($suffix){
 		$this->suffix = $suffix;
 		return $this;
 	}
+
+	/**
+	 * 获取分表查询时使用的表后缀
+	 *
+	 * @return string|null 表后缀
+	 */
 	public function get_suffix(){
 		return $this->suffix;
 	}
@@ -917,10 +993,20 @@ abstract class YZE_Model extends YZE_Object{
 		YZE_DBAImpl::get_instance($db)->exec($sql);
 	}
 
+	/**
+	 * 获取当前 Model Query 的查询对象
+	 *
+	 * @return YZE_SQL 查询对象
+	 */
 	public function get_Sql(){
 		return $this->sql;
 	}
 
+	/**
+	 * 初始化 Model Query 的查询对象（懒加载）
+	 *
+	 * @return YZE_SQL 查询对象
+	 */
 	private function init_Sql() {
 		if ($this->sql == null){
 			$this->sql = new YZE_SQL();
@@ -929,11 +1015,24 @@ abstract class YZE_Model extends YZE_Object{
 		return $this->sql;
 	}
 
+	/**
+	 * 获取指定字段的类型（integer、float、string、date 等）
+	 *
+	 * @param string $field_name 字段名
+	 * @return string|null 字段类型，字段不存在时返回 null
+	 */
 	private function get_Field_Type($field_name){
 	    $columns = $this->get_columns();
 	    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 	    return $columns[$field_name]['type'] ?? null;
 	}
+
+	/**
+	 * 获取指定字段的完整配置
+	 *
+	 * @param string $field_name 字段名
+	 * @return array|null 字段配置数组（含 type、length 等），字段不存在时返回 null
+	 */
 	private function get_Field_props($field_name){
 	    $columns = $this->get_columns();
 	    // ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理

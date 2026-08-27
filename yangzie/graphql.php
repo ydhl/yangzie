@@ -10,23 +10,67 @@ namespace yangzie;
  * @author liizii
  * @link yangzie.yidianhulian.com
  */
+/**
+ * Graphql 处理控制器
+ *
+ * 负责解析请求中的 graphql 查询语句，验证字段并执行数据查询，
+ * 支持 query 与 mutation 两类操作，同时实现内省（introspection）查询。
+ *
+ * @category Framework
+ * @package Yangzie
+ * @author liizii
+ * @link yangzie.yidianhulian.com
+ */
 class Graphql_Controller extends YZE_Resource_Controller {
     use Graphql__Schema, Graphql__Type, Graphql__Typename, Graphql_Query, Graphql_Mutation;
-    private $operationType = 'query';
-    private $operationName;
+
     /**
-     * 变量
-     * @var
+     * 当前请求的操作类型：query 或 mutation
+     *
+     * @var string
+     */
+    private $operationType = 'query';
+
+    /**
+     * 当前请求的操作名称（operationName）
+     *
+     * @var string|null
+     */
+    private $operationName;
+
+    /**
+     * 请求传入的变量集合
+     *
+     * @var array
      */
     private $vars;
+
     /**
      * 变量的默认值
+     *
      * @var array
      */
     private $varDefault;
 
+    /**
+     * 用于拆分 graphql 查询语句的正则
+     *
+     * @var string
+     */
     private $fetchActRegx = "/:|\{|\}|\(.+?\)|\w+|\.{1,3}|\\$|\#[^\\n]*/miu";
+
+    /**
+     * 所有 model 的类型缓存，key 为表名
+     *
+     * @var array
+     */
     private $allModelTypes;
+
+    /**
+     * 返回允许跨域访问的响应头
+     *
+     * @return array 响应头列表
+     */
     public function response_headers(){
         return [
             "Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, token, Redirect",
@@ -34,9 +78,24 @@ class Graphql_Controller extends YZE_Resource_Controller {
             "Access-Control-Allow-Origin: *"
             ];
     }
+
+    /**
+     * post 请求处理入口，直接调用 index 处理
+     *
+     * @return GraphqlResult graphql 查询结果
+     */
     public function post_index() {
         return $this->index();
     }
+
+    /**
+     * graphql 请求处理入口
+     *
+     * 依次完成：解析请求数据、解析语法结构、执行查询/变更、返回结果；
+     * 处理过程中的异常统一转为 GraphqlResult::error 返回
+     *
+     * @return GraphqlResult graphql 查询结果
+     */
     public function index() {
         $this->layout = '';
         try{
@@ -152,6 +211,12 @@ class Graphql_Controller extends YZE_Resource_Controller {
         return $this->fetch_Node(array_slice($acts, 1));
     }
 
+    /**
+     * 解析请求中变量的默认值（预留实现）
+     *
+     * @param array $args 变量声明部分的结构
+     * @return void
+     */
     private function parse_var_default($args){
         // 处理默认值
     }
@@ -160,6 +225,13 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * 提取指定的fragment
      * @param $acts
      * @return array<GraphqlSearchNode>
+     */
+    /**
+     * 提取指定的 fragment 定义的节点结构
+     *
+     * @param array  $acts        查询拆分后的 token 数组
+     * @param string $fragmentName fragment 名称
+     * @return array<GraphqlSearchNode> 该 fragment 下的查询节点列表，未找到返回空数组
      */
     private function fetch_Fragment($acts, $fragmentName) {
         $fragmentIndex = -1;
@@ -185,6 +257,15 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * @param $acts
      * @param int $fetchedLength
      * @return array<GraphqlSearchNode>
+     */
+    /**
+     * 遍历拆分的 token，解析出查询节点结构
+     *
+     * 传入的数据中不需要头的 {
+     *
+     * @param array $acts          拆分的 token 数组
+     * @param int   $fetchedLength 本次解析消费的 token 数量（引用返回）
+     * @return array<GraphqlSearchNode> 解析出的节点列表
      */
     private function fetch_Node ($acts, &$fetchedLength=0) {
         $nodes = [];
@@ -350,11 +431,25 @@ class Graphql_Controller extends YZE_Resource_Controller {
         return $acts;
     }
 
+    /**
+     * 返回数组最后一个键名
+     *
+     * @param array $array 数组
+     * @return mixed 最后一个键名，空数组时返回 false
+     */
     private function array_key_last($array){
         $keys = array_keys($array);
         return end($keys);
     }
 
+    /**
+     * 解析参数中的数组/对象结构（嵌套的 {} 或 [] 内容），返回关联数组
+     *
+     * @param string $end           结束元字符，] 或 }
+     * @param array  $acts          参数 token 数组
+     * @param int    $fetchedLength 本次解析消费的 token 数量（引用返回）
+     * @return array 解析后的关联数组
+     */
     private function fetch_Args_array ($end, $acts, &$fetchedLength=0) {
         $args = [];
         $index = 0;
@@ -396,6 +491,12 @@ class Graphql_Controller extends YZE_Resource_Controller {
      * 提取查询字符串中的参数部分
      * @param $argString
      * @return array
+     */
+    /**
+     * 提取查询字符串中的参数部分
+     *
+     * @param array $acts 参数 token 数组
+     * @return array<GraphqlSearchArg> 解析出的参数列表
      */
     private function fetch_Args ($acts) {
         $args = [];
@@ -464,6 +565,11 @@ class Graphql_Controller extends YZE_Resource_Controller {
         return $data["rsts"];
     }
 
+    /**
+     * 返回 graphql 的基础标量类型定义
+     *
+     * @return array 类型名=>["description"=>类型说明] 集合
+     */
     private function basic_types() {
         return [
             'Int'=>['description'=>''],

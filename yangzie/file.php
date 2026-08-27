@@ -4,8 +4,8 @@ namespace yangzie;
 /**
  * 通过后缀名判断给定的文件是不是图片
  *
- * @param $file
- * @return bool
+ * @param string $file 文件名或文件路径
+ * @return bool 是图片返回 true，否则返回 false
  */
 function yze_isimage($file){
 	$type = array("png","gif","jpeg","jpg","bmp","ico","svg","webp");
@@ -13,11 +13,13 @@ function yze_isimage($file){
 }
 
 /**
- * this/is/../a/./test/.///is, 格式化成this/a/test/is，但要注意不能有stream wrapper，比如http:// phar://等
- * //会被处理掉
- * @param $path
- * @param string $in
- * @return string
+ * 将路径格式化为绝对路径，去除 . 和 .. 部分
+ *
+ * this/is/../a/./test/.///is 格式化成 this/a/test/is，但要注意不能有 stream wrapper（如 http:// phar:// 等），// 会被处理掉
+ *
+ * @param string $path 需要格式化的路径
+ * @param string $in   前置路径，拼接在 $path 之前
+ * @return string 格式化后的绝对路径
  */
 function yze_get_abs_path($path, $in=''){
     $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $in."/".ltrim($path, "/"));
@@ -36,11 +38,11 @@ function yze_get_abs_path($path, $in=''){
 }
 
 /**
- * 从路径path中删除need_remove
+ * 从路径 path 中删除 need_remove 部分
  *
- * @param $path
- * @param $need_remove
- * @return string
+ * @param string $path        原始路径
+ * @param string $need_remove 需要从路径中删除的子串
+ * @return string 删除后的路径
  */
 function yze_remove_path($path, $need_remove){
 	$path = strtr($path, array(DS=>"/"));
@@ -49,11 +51,11 @@ function yze_remove_path($path, $need_remove){
 }
 
 /**
+ * 把文件移到指定目录中去，并返回移动成功后的目标文件路径，移动失败则返回 false
  *
- * 把文件移到指定目录中去, 并返回移动成功后的目标文件路径，移动失败则返回false
- *
- * @param unknown_type $src_file 绝对路径
- * @param unknown_type $dist_dir 绝对路径
+ * @param string $src_file 源文件绝对路径
+ * @param string $dist_dir 目标目录绝对路径
+ * @return string|false 移动成功返回目标文件路径，失败返回 false
  */
 function yze_move_file($src_file, $dist_dir){
 	$dist_file = yze_copy_file($src_file, $dist_dir);
@@ -66,16 +68,14 @@ function yze_move_file($src_file, $dist_dir){
 }
 
 /**
- * 把src_file 拷贝到 dist_dir 中去, 并返回拷贝成功的一文件路径，如果拷贝失败返回false
- * dist_dir不存在则创建
+ * 把 src_file 拷贝到 dist_dir 中去，并返回拷贝成功的文件路径，如果拷贝失败返回 false
+ * dist_dir 不存在则自动创建
  *
  * @author leeboo
  *
- * @param unknown $src_file
- * @param unknown $dist_dir
- * @return unknown|string
- *
- * @return
+ * @param string $src_file 源文件绝对路径
+ * @param string $dist_dir 目标目录绝对路径
+ * @return string|false 拷贝成功返回目标文件路径，失败返回 false
  */
 function yze_copy_file($src_file, $dist_dir){
 	if (!$dist_dir){
@@ -89,10 +89,11 @@ function yze_copy_file($src_file, $dist_dir){
 }
 
 /**
- *
  * 拷贝目录及其下所有子目录文件到指定目录
- * @param $srcDir
- * @param $destDir
+ *
+ * @param string $srcDir  源目录绝对路径
+ * @param string $destDir 目标目录绝对路径
+ * @return bool 拷贝成功返回 true，失败返回 false
  */
 function yze_copy_dir($srcDir, $destDir) {
     if ( ! file_exists($destDir) ) {
@@ -120,9 +121,10 @@ function yze_copy_dir($srcDir, $destDir) {
 }
 
 /**
- *  根据传入的目录路径创建它们, 目录存在不做处理
+ * 根据传入的目录路径递归创建目录，目录已存在则不做处理
  *
- * @param unknown_type $dirs 绝对地址
+ * @param string $dirs 需要创建的目录绝对路径
+ * @return void
  */
 function yze_make_dirs($dirs){
 	if (file_exists($dirs))return;

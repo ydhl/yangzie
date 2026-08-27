@@ -5,7 +5,13 @@ namespace yangzie;
 use \app\App_Module;
 
 /**
- * 自动加载文件处理
+ * 自动加载类文件
+ *
+ * 根据类名命名规则（如 Foo_Controller、Foo_Model、Foo_Module、Foo_View 等）
+ * 定位到对应模块下的类文件并加载，支持 phar 模块；找不到文件时触发 YZE_HOOK_AUTO_LOAD_CLASS hook
+ *
+ * @param string $class 需要加载的完整类名（含命名空间，如 \app\admin\Index_Controller）
+ * @return void
  */
 function yze_autoload($class) {
     $_ = preg_split("{\\\\}", strtolower($class));
@@ -57,7 +63,11 @@ spl_autoload_register("\yangzie\yze_autoload");
 
 
 /**
- * 加载所有的模块，初始化配置
+ * 加载应用及所有模块，初始化配置
+ *
+ * 加载 app 配置、模块包含文件、hooks，并注册各模块的路由
+ *
+ * @return void
  */
 function yze_load_app() {
     // 加载app配置
@@ -87,9 +97,13 @@ function yze_load_app() {
 }
 
 /**
- * yangzie处理入口
- * 开始处理请求，如果没有指定uri，默认处理当前的uri请求,
- * @return string
+ * yangzie 处理入口
+ *
+ * 开始处理请求，如果没有指定 uri，默认处理当前的 uri 请求。
+ * 依次执行请求初始化、控制器加载、认证、分发调度，并在最后提交所有事务；
+ * 处理过程中抛出的异常会回滚事务并交由异常控制器输出错误页面
+ *
+ * @return void
  */
 function yze_handle_request() {
     $output = function($request, $controller, $response) {

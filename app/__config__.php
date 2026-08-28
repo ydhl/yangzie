@@ -103,12 +103,12 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * 在layouts中通过接口yze_js_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)
 	 */
-	public function js_bundle($bundle){
+	public function js_bundle(string $bundle): array{
 		$config = [
 //			"foo" => ['/js/foo.js']
 		];
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
-		return $config[$bundle] ?? null;
+		return $config[$bundle] ?? [];
 	}
 	/**
 
@@ -117,12 +117,12 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 * 在layouts中通过接口yze_css_bundle("yangzie,foo,bar")一次打包加载这里指定的资源
 	 * @return array(资源路径1，资源路径2)
 	 */
-	public function css_bundle($bundle){
+	public function css_bundle(string $bundle): array{
 		$config = [
 //			"foo" => ['/css/foo.css']
 		];
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
-		return $config[$bundle] ?? null;
+		return $config[$bundle] ?? [];
 	}
 }
 ?>

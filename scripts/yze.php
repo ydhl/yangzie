@@ -353,14 +353,14 @@ delete controller and view，%s back
 		echo get_colored_text(wrap_output(__("\tcontroller not found:  ")), "red");
 	}
 
-	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}_controller.class.php")){
+	if( ! file_exists(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}.controller.php")){
 		echo wrap_output(__("controller not found"));
 	}else{
-		unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}_controller.class.php");
+		unlink(dirname(dirname(__FILE__))."/app/modules/{$module}/controllers/{$controller}.controller.php");
 		foreach (glob(dirname(dirname(__FILE__))."/app/modules/{$module}/views/{$controller}.*") as $file){
 			unlink($file);
 		}
-		unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}_controller.class.phpt");
+		unlink(dirname(dirname(__FILE__))."/tests/{$module}/{$controller}.controller.phpt");
 		echo wrap_output(__("deleted"));
 	}
 
@@ -443,8 +443,8 @@ generate controller and view，%s back:
 function is_controller_exists($action, $controller, $module){
 	$controller = strtolower($controller);
 	if(!file_exists(YZE_APP_MODULES_INC.$module."/__config__.php")) return false;
-	if(!file_exists(YZE_APP_MODULES_INC.$module."/controllers/{$controller}_controller.class.php")) return false;
-	include_once YZE_APP_MODULES_INC.$module."/controllers/{$controller}_controller.class.php";
+	if(!file_exists(YZE_APP_MODULES_INC.$module."/controllers/{$controller}.controller.php")) return false;
+	include_once YZE_APP_MODULES_INC.$module."/controllers/{$controller}.controller.php";
 	$controllerClass = ucfirst($controller).'_Controller';
 	if (!method_exists('app\\user\\'.$controllerClass, $action)) return false;
 

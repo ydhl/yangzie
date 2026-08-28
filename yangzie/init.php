@@ -12,6 +12,7 @@ require_once 'acl.php';
 require_once 'module.php';
 require_once 'router.php';
 require_once 'startup.php';
+require_once 'column.php';//model字段元数据注解
 require_once 'model.php';
 require_once 'error.php';
 require_once 'html.php';

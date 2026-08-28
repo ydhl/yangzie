@@ -8,22 +8,22 @@ use \yangzie\YZE_Base_Module as YZE_Base_Module;
  * @package Graphql
  */
 class Graphql_Module extends YZE_Base_Module{
-    public $auths = [];
-    public $no_auths = array();
-    protected function config(){
+    public array $auths = [];
+    public array $no_auths = [];
+    protected function config(): array{
         return [
             'name'=>'Graphql',
             'routers' => []
         ];
     }
-    public function js_bundle($bundle)
+    public function js_bundle(string $bundle): array
     {
-        // TODO: Implement js_bundle() method.
+        return [];
     }
 
-    public function css_bundle($bundle)
+    public function css_bundle(string $bundle): array
     {
-        // TODO: Implement css_bundle() method.
+        return [];
     }
 }
 ?>

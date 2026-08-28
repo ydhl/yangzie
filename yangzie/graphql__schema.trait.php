@@ -413,9 +413,10 @@ trait Graphql__Schema
     {
         if (!$model || !$node->has_value()) return [];
         $result = [];
-        $method = "get_{$columnName}";
-        if (!method_exists($model, $method)) return [];
-        foreach ($model->$method() as $enum) {
+        $enum = "app\\".$model::MODULE_NAME."\\".YZE_Object::format_class_name($model::TABLE.'_'.$columnName, 'Enum');
+
+        if (!class_exists($enum)) return [];
+        foreach ($enum::cases() as $enum) {
             $result[] = new GraphqlEnumValue($enum);
         }
         return $result;

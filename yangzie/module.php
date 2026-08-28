@@ -11,7 +11,7 @@ abstract class YZE_Base_Module extends YZE_Object {
 	 * 模块的名字
 	 * @var string
 	 */
-	public $name = "";
+	public string $name = "";
 
 
 	/**
@@ -28,26 +28,26 @@ abstract class YZE_Base_Module extends YZE_Object {
 	 * 需要认证的资源在访问时，框架会调用hook YZE_HOOK_GET_LOGIN_USER，该hook返回非假则表示已经登录，假值则抛出YZE_Need_Signin_Exception异常，并进入YZE_HOOK_YZE_EXCEPTION处理
 	 * @var array
 	 */
-	public $auths = array();
+	public array $auths = array();
 
 	/**
 	 * 同 auths，定义不需要认证的 action，优先级比 auths 高
 	 *
 	 * @var array
 	 */
-	public $no_auths = array();
+	public array $no_auths = array();
 
 	/**
 	 * 获取指定的模块配置，模块的配置包含了对象属性及通过 config 方法返回的内容
 	 *
 	 * @param string|null $name 配置名，为 null 时返回全部配置
-	 * @return array|mixed 指定配置名的值或全部配置数组
+	 * @return array|string 指定配置名的值或全部配置数组
 	 */
-	public function get_module_config($name=null){
+	public function get_module_config($name=null): array|string{
 		$config = get_class_vars(get_class($this));
 		$config = array_merge($config,$this->config());
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
-		return $name ? ($config[strtolower($name)] ?? null) : $config;
+		return $name ? ($config[strtolower($name)] ?? []) : $config;
 	}
 
 	/**
@@ -94,7 +94,7 @@ abstract class YZE_Base_Module extends YZE_Object {
 	 *
 	 * @return array 模块配置数组
 	 */
-	protected abstract function config();
+	protected abstract function config(): array;
     /**
      * js 资源分组，在加载时方便直接通过分组名一次性加载所有文件，并支持 http 缓存机制
      *
@@ -109,7 +109,7 @@ abstract class YZE_Base_Module extends YZE_Object {
      * @param string $bundle 资源分组名
      * @return array 资源路径列表，如 array(资源路径1，资源路径2)
      */
-    public abstract function js_bundle($bundle);
+    public abstract function js_bundle(string $bundle): array;
     /**
      * css 资源分组，在加载时方便直接通过分组名一次性加载所有文件，并支持 http 缓存机制
      *
@@ -124,6 +124,6 @@ abstract class YZE_Base_Module extends YZE_Object {
      * @param string $bundle 资源分组名
      * @return array 资源路径列表，如 array(资源路径1，资源路径2)
      */
-	public abstract function css_bundle($bundle);
+	public abstract function css_bundle(string $bundle): array;
 }
 ?>

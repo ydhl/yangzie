@@ -62,15 +62,12 @@ trait Graphql_Query{
         $models = [];
         foreach (glob(YZE_APP_MODULES_INC . '*') as $module) {
             $moduleName = basename($module);
-            foreach (glob($module . '/models/*.class.php') as $model) {
-                $basename = explode("_", basename($model, '.class.php'));
-                $basename = array_map(function ($item) {
-                    return ucfirst($item);
-                }, $basename);
-                $basename = 'app\\' . $moduleName . '\\' . join("_", $basename);
-                require_once $model;
+            foreach (glob($module . '/models/*.model.php') as $model) {
+                $basename = basename($model, '.model.php');
+                $basename = YZE_Object::format_class_name($basename, 'Model');
+                $basename = 'app\\' . $moduleName . '\\' . $basename;
                 if (method_exists($basename,"is_enable_graphql") && $basename::is_enable_graphql()){
-                    $models[$basename::TABLE] = $basename::CLASS_NAME;
+                    $models[$basename::TABLE] = $basename;
                 }
             }
         }

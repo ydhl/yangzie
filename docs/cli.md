@@ -40,9 +40,9 @@ php scripts/yze.php -m -t user -M user -d test
 ```
 
 生成产物：
-- `app/modules/<module>/models/<table>_model.class.php`（Model 类，含表字段常量、关联字段）
-- `app/modules/<module>/models/<table>_model_method.trait.php`（业务方法 trait）
-- `tests/<module>/<table>_model.class.phpt`（测试骨架）
+- `app/modules/<module>/models/<table>.model.php`（Model 类，含表字段常量、关联字段）
+- `app/modules/<module>/models/<table>.method.php`（业务方法 trait）
+- `tests/<module>/<table>.model.phpt`（测试骨架）
 - 若模块不存在，自动创建模块脚手架
 
 ### 2. 生成 Module / Controller / View 脚手架
@@ -70,10 +70,10 @@ php scripts/yze.php --mvc -M admin -C user -a edit -r 'user/(?P<id>\d+)'
 
 生成产物：
 - `app/modules/<module>/`（模块完整目录：controllers/ views/ models/ layouts/ 及 `__config__.php`）
-- `app/modules/<module>/controllers/<controller>_controller.class.php`（controller 类，已存在则追加新 action 方法）
+- `app/modules/<module>/controllers/<controller>.controller.php`（controller 类，已存在则追加新 action 方法）
 - `app/modules/<module>/views/<controller>-<action>.tpl.php`（视图文件）
 - `app/vendor/layouts/tpl.layout.php`（tpl 布局，不存在时创建）
-- `tests/<module>/<controller>_controller.class.phpt`
+- `tests/<module>/<controller>.controller.phpt`
 - 显式传入 `--route` 时，会把路由写入 `__config__.php` 的 `routers` 配置；不传则默认 URI 为 `/{module}/{controller}/{action}` 但不会写入配置。
 
 ### 3. Phar 打包模块

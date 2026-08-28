@@ -529,7 +529,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param YZE_SQL $sql
 	 * @param array $params
 	 * @throws YZE_DBAException
-	 * @return integer
+	 * @return int
 	 */
 	public function execute(YZE_SQL $sql, $params=[]){
 		return $this->exec($sql->__toString(), $params);
@@ -544,7 +544,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @param string $sql
 	 * @param array $params
 	 * @throws YZE_DBAException
-	 * @return integer
+	 * @return int
 	 */
 	public function exec($sql, $params=[]){
 		if(empty($sql))return false;

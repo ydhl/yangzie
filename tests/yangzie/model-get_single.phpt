@@ -37,7 +37,7 @@ class TestModel extends YZE_Model{
 	const F_MODIFIED_ON = "modified_on";
 
 	public static $columns = array(
-			'id'         => array('type' => 'integer', 'null' => false,'length' => '11','default'	=> '',),
+			'id'         => array('type' => 'int', 'null' => false,'length' => '11','default'	=> '',),
 			'title'      => array('type' => 'string', 'null' => false,'length' => '201','default'	=> '',),
 			'created_on' => array('type' => 'date', 'null' => false,'length' => '','default'	=> '',),
 			'modified_on' => array('type' => 'TIMESTAMP', 'null' => false,'length' => '','default'	=> 'CURRENT_TIMESTAMP',),

@@ -22,9 +22,9 @@ class Save_Model_Helper
 {
     /**
      * 需要处理的class及其对应的别名，这些别名也是表单提交上来的数据的字段前缀，比如：<br/><br/>
-     * ["a"=>User_Model::CLASS_NAME,]
+     * ["a"=>User_Model::class,]
      *<br/><br/>
-     * 如果只有一个Model处理，可以不用指定别名，比如[User_Model::CLASS_NAME]或者 User_Model::CLASS_NAME
+     * 如果只有一个Model处理，可以不用指定别名，比如[User_Model::class]或者 User_Model::class
      * @var array
      */
     public $alias_classes =[];

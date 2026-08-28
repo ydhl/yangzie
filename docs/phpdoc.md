@@ -2,7 +2,7 @@
 
 > 本文档根据 `yangzie/` 目录下的源代码及代码注释自动整理生成。
 >
-> 命名空间：`yangzie` ｜ 框架版本：`YZE_Object::VERSION = 3.0.1`
+> 命名空间：`yangzie` ｜ 框架版本：`YZE_Object::VERSION = 4.0.0`
 
 ---
 

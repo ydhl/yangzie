@@ -86,7 +86,7 @@ class Generate_Controller_Script extends AbstractScript{
 		echo __("create controller phpt file:\t");
 		$class = YZE_Object::format_class_name($controller,"Controller");
 		$class_file_path = dirname(dirname(__FILE__))
-		."/tests/". $module."/" ."".strtolower($class).".class.phpt";
+		."/tests/". $module."/" ."".strtolower($controller).".controller.phpt";
 		$test_file_content = "--TEST--
 		$class class Controller Unit Test
 --FILE--
@@ -108,7 +108,7 @@ include \"init.php\";
 
 		$class = YZE_Object::format_class_name($controller,"Controller");
 		$class_file_path = dirname(dirname(__FILE__))
-		."/app/modules/". $module."/controllers/".strtolower($class).".class.php";
+		."/app/modules/". $module."/controllers/".strtolower($controller).".controller.php";
 		$class_file_content = "<?php
 namespace app\\$module;
 use \\yangzie\\YZE_Resource_Controller;

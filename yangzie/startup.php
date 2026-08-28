@@ -30,11 +30,13 @@ function yze_autoload($class) {
     $file .= YZE_INSTALL_PATH . "app" . DS . "modules" . DS . $module_name . DS ;
 
     if(preg_match("{_controller$}i", $class)){
-        $file .= "controllers" . DS . $class_name . ".class.php";
+        $file .= "controllers" . DS . preg_replace("{_controller$}i", "", $class_name) . ".controller.php";
     }else if(preg_match("{_model$}i", $class)){
-        $file .= "models" . DS . $class_name . ".class.php";
+        $file .= "models" . DS . preg_replace("{_model$}i", "", $class_name) . ".model.php";
     }else if(preg_match("{_method$}i", $class)){//model meta define
-        $file .= "models" . DS . $class_name . ".trait.php";
+        $file .= "models" . DS . preg_replace("{_method$}i", "", $class_name) . ".method.php";
+    }else if(preg_match("{_enum$}i", $class)){//enum
+        $file .= "models" . DS . preg_replace("{_enum$}i", "", $class_name) . ".enum.php";
     }else if(preg_match("{_module$}i", $class)){
         $file .= "__config__.php";
     }else if(preg_match("{_view$}i", $class)){

@@ -48,7 +48,7 @@ abstract class Search_Model_Helper
      * 返回要查询的model对象，比如：
      * <ul>
      * <li>return Foo_Model::from("o")</li>
-     * <li>return Foo_Model::from("o")->left_join(Bar_Model::CLASS_NAME, 'bar', 'bar.oid=o.id')</li>
+     * <li>return Foo_Model::from("o")->left_join(Bar_Model::class, 'bar', 'bar.oid=o.id')</li>
      * </ul>
      * @return YZE_Model
      */

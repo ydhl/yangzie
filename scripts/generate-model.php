@@ -31,16 +31,22 @@ class Generate_Model_Script extends AbstractScript{
 		$generate_module->generate();
 		//Model
 		$model_class = YZE_Object::format_class_name($this->class_name,"Model");
-        $method_class = $model_class."_Method";
+		$method_class = YZE_Object::format_class_name($this->class_name,"Method");
 
-		$column_mean = [];
-		$handleResult = $this->create_model_code($model_class, $method_class, $column_mean);
+		$handleResult = $this->create_model_code($model_class, $method_class);
 		echo __("create model {$model_class} :");
-		$this->save_class($handleResult, $model_class, $this->module_name);
+		$this->save_class($handleResult, $this->class_name, $this->module_name, 'model');
 
-		$code = $this->create_method_code($method_class, $column_mean);
+		// ai@2026-08-27 为每个 enum 字段生成 PHP enum 类型文件（类型名/文件名均为小写）
+		foreach ($this->enum_fields as $enum_field => $enum_values) {
+			$enum_type = YZE_Object::format_class_name($this->class_name . "_" . $enum_field, "");
+			echo __("create enum {$enum_type}_Enum :");
+			$this->save_class($this->create_enum_code("{$enum_type}_Enum", $enum_values), $enum_type, $this->module_name, 'enum');
+		}
+
+		$code = $this->create_method_code($method_class);
 		echo __("create model method {$method_class} ");
-		$this->save_class($code, $method_class, $this->module_name, 'trait', false);
+		$this->save_class($code, $this->class_name, $this->module_name, 'method', false);
 
 		echo __("create model {$model_class} phpt file :");
 		$this->save_test($handleResult, $model_class, $this->module_name);
@@ -48,7 +54,7 @@ class Generate_Model_Script extends AbstractScript{
 		echo __("Done!\n");
 	}
 
-    public function create_method_code($class, $column_mean){
+    public function create_method_code($class){
         $package=$this->module_name;
 
         return "<?php
@@ -68,18 +74,7 @@ trait $class{
 	public function $class(){
 		
 	}
-	/**
-	 * 返回每个字段的描述文本
-	 * @param \$column
-	 * @return mixed
-	 */
-    public function get_column_mean(\$column){
-    	switch (\$column){
-    	".join("\r\n\t\t",$column_mean)."
-    	default: return \$column;
-    	}
-		return \$column;
-	}
+	
     /**
 	 * 返回表的描述
 	 * @param \$column
@@ -93,7 +88,7 @@ trait $class{
 	 * 当前model是否允许在graphql中进行查询
 	 * @return boolean
 	 */
-	public static function is_enable_graphql(){
+	public static function is_enable_graphql():bool{
 		return false;
 	}
 
@@ -105,7 +100,7 @@ trait $class{
 	 * 具体如何查询，需要在query_graphql_fields中实现
 	 * @return array<GraphqlField>
 	 */
-	public function custom_graphql_fields(){
+	public function custom_graphql_fields(): array{
 		return [];
 	}
 	
@@ -114,7 +109,7 @@ trait $class{
 	 * @param \$graphqlSearchNode 查询的内容结构体
 	 * @return array<GraphqlField>
 	 */
-	public function query_graphql_fields(GraphqlSearchNode \$searchNode){
+	public function query_graphql_fields(GraphqlSearchNode \$searchNode): array|null{
 		return [];
 	}
     // 这里实现model的业务方法 
@@ -122,7 +117,7 @@ trait $class{
     }
 
 
-	public function create_model_code($class, $method_class, &$column_mean){
+	public function create_model_code($class, $method_class){
 		$table = $this->table_name;
 		$package=$this->module_name;
 		$dbName = $this->db_name;
@@ -138,7 +133,8 @@ trait $class{
 		$relation_column = [];
 		$assocFields = "";
 		$assocFieldFuncs = "";
-		$enumFunction = "";
+		// ai@2026-08-27 收集 enum 字段及其取值，用于生成 PHP enum 类型
+		$enum_fields = array();
 		mysqli_select_db($db, "INFORMATION_SCHEMA");
 		$result = mysqli_query($db, "select COLUMN_NAME,CONSTRAINT_NAME,
 		REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME from KEY_COLUMN_USAGE
@@ -158,11 +154,11 @@ trait $class{
 				'target_column'=>$row['REFERENCED_COLUMN_NAME']
 			];
 			$assocFields .= "
-	private \${$col};";
+	private {$sortClass} \${$col};";
 			$assocFieldFuncs .= "
-	public function get_{$col}(\$suffix=null){
+	public function get_{$col}(\$suffix=null): {$sortClass}{
 		if( ! \$this->{$col}){
-			\$this->{$col} = {$sortClass}::find_by_id(\$this->get(self::F_".strtoupper($row['COLUMN_NAME'])."), \$this->db, \$suffix);
+			\$this->{$col} = {$sortClass}::find_by_id(\$this->".$row['COLUMN_NAME'].", \$this->db, \$suffix);
 		}
 		return \$this->{$col};
 	}
@@ -187,38 +183,49 @@ trait $class{
 		while ($row=mysqli_fetch_assoc($result)) {
 		    $unique_key[$row['Column_name']] = $row['Key_name'];
 		}
-		$constant   = array();
 
 		$result = mysqli_query($db, "show full columns from `$table`");
 		while ($row=mysqli_fetch_assoc($result)) {
 			$row['Key']=="PRI" ? $key = $row['Field'] : null;
 			$type_info = $this->get_type_info($row['Type']);
 			$currEnums = (array)$this->getEnumConstant($row['Field'], $row['Type']);
-			$constant = array_merge((array)$constant, $currEnums);
 
+			// ai@2026-08-27 不再生成 get_{field}() 方法，改由生成的 PHP enum 类型的 cases() 提供
 			if ($currEnums){
-			$enumFunction .= "
-	public static function get_{$row['Field']}(){
-		return ['".join("','", array_values($currEnums))."'];
-	}";
+				$enum_fields[$row['Field']] = array_values($currEnums);
 			}
 
-			$fielddefine = ($fielddefine ?? '') . "      ".str_pad("'".$row['Field']."'", 12," ")." => ['type' => '".$type_info['type']."', 'null' => ".(strcasecmp($row['Null'],"YES") ? "false" : "true").",'length' => '".$type_info['length']."','default'	=> '".$row['Default']."'],
-";
-			$properConst = ($properConst ?? '') . "
+			// ai@2026-08-27 字段属性使用 Column 注解声明元数据
+			// ai@2026-08-27 enum 类型使用生成的 PHP enum 类（类型名全小写）；原逻辑会得到 "enum" 关键字，作为类型声明是非法的
+			if ($type_info['type'] == 'enum') {
+				$php_type = YZE_Object::format_class_name($this->class_name . "_" . $row['Field'], "Enum");
+			} else {
+				$php_type = $type_info['type'] == 'date' ? 'string' : $type_info['type'];
+			}
+			$is_nullable = strcasecmp($row['Null'],"YES") ? false : true;
+			$comment = str_replace(array('*/', "\r", "\n"), array('* /', '', ''), (string)($row['Comment'] ?? ''));
+			$attr_args = "type: '".$type_info['type']."', nullable: ".($is_nullable ? 'true' : 'false');
+			if (($type_info['length'] ?? '') !== '') {
+				$attr_args .= ", length: ".intval($type_info['length']);
+			}
+			if (($row['Default'] ?? null) !== null && $row['Default'] !== '') {
+				$attr_args .= ", default: '".addslashes($row['Default'])."'";
+			}
+			$attributeFields = ($attributeFields ?? '') . "
     /**
-     * {$row['Comment']}
-     * @var {$type_info['type']}
+     * {$comment}
+     * @var {$php_type}
      */
-    const F_".strtoupper($row['Field'])." = \"{$row['Field']}\";";
-			$column_mean[] = "case self::F_".strtoupper($row['Field']).": return \"".($row['Comment']?:$row['Field'])."\";";
+    #[Column({$attr_args})]
+    private ".($is_nullable ? '?' : '')."{$php_type} \${$row['Field']};";
+			$propertyDoc = ($propertyDoc ?? '') . " * @property ".($is_nullable ? '?' : '')."{$php_type} \${$row['Field']} ".trim($comment)."
+";
+			// ai@2026-08-27 不再生成 F_ 字段常量，get_column_mean 直接使用字段名
+			$column_mean[] = "case \"".$row['Field']."\": return \"".($row['Comment']?:$row['Field'])."\";";
 		}
 
-		$constantdefine = '';
-		foreach($constant as $v=>$c){
-		    $constantdefine .= "
-    const $v = '$c';";
-		}
+		// ai@2026-08-27 供 generate() 生成 enum 类型文件使用
+		$this->enum_fields = $enum_fields;
 
 		return "<?php
 namespace app\\$package;
@@ -226,27 +233,21 @@ use \yangzie\YZE_Model;
 use \yangzie\YZE_SQL;
 use \yangzie\YZE_DBAException;
 use \yangzie\YZE_DBAImpl;
+use \yangzie\Column;
 ".join("\r\n",array_unique($importClass))."
 /** 
  * DO NOT EDIT THIS FILE
  * @package $package
- */
+".rtrim($propertyDoc)." */
 class $class extends YZE_Model{
     use $method_class;
-    $constantdefine
+
     const TABLE= \"$table\";
     const MODULE_NAME = \"$package\";
     const KEY_NAME = \"$key\";
 	const UUID_NAME = \"$uuid\";
-    const CLASS_NAME = 'app\\$package\\$class';
-    /**
-     * @see YZE_Model::\$encrypt_columns 
-     */
-    public \$encrypt_columns = array();
-    $properConst
-    public static \$columns = [
-    ".trim($fielddefine)."
-    ];
+
+    $attributeFields
     /**
      * @see YZE_Model::\$unique_key
      */
@@ -259,9 +260,43 @@ class $class extends YZE_Model{
     		
     {$assocFields}
 	{$assocFieldFuncs}
-	{$enumFunction}
-
+	
+	/**
+	 * 返回每个字段的描述文本
+	 * @param \$column
+	 * @return mixed
+	 */
+    public function get_column_mean(\$column){
+    	switch (\$column){
+    	".join("\r\n\t\t",$column_mean)."
+    	default: return \$column;
+    	}
+		return \$column;
+	}
 }?>";
+	}
+
+	/**
+	 * 生成 MySQL enum 字段对应的 PHP enum 类型代码
+	 *
+	 * @param string $enum_type 类型名（全小写）
+	 * @param array  $values    MySQL enum 取值列表
+	 * @return string
+	 */
+	public function create_enum_code($enum_type, $values){
+		$cases = '';
+		foreach ($values as $v) {
+			// ai@2026-08-27 case 名与值均为 MySQL enum 值
+			$cases .= "    case ".strtoupper($v)." = '{$v}';\n";
+		}
+		return "<?php
+namespace app\\{$this->module_name};
+/**
+ * DO NOT EDIT THIS FILE
+ * @package {$this->module_name}
+ */
+enum {$enum_type}: string{
+{$cases}}";
 	}
 
 	protected function getEnumConstant($name, $type){
@@ -278,12 +313,10 @@ class $class extends YZE_Model{
 	 *
 	 * @author leeboo
 	 *
-	 * @param unknown_type $type
-	 * @return string
-	 *
+	 * @param string $type
 	 * @return array('type','length')
 	 */
-	protected function get_type_info($type){
+	protected function get_type_info(string $type){
 		$ret = array("type"=>"","length"=>"");
 
 		if(preg_match("/^int/i",$type)||
@@ -294,7 +327,7 @@ class $class extends YZE_Model{
 			if(preg_match("/\((\d+)\)/", $type, $matchs)){
 				$ret['length']=$matchs[1] ?? null;
 			}
-			$ret['type']="integer";
+			$ret['type']="int";
 
 			return $ret;
 		}
@@ -335,7 +368,7 @@ class $class extends YZE_Model{
 		$this->check_dir($path);
 
 		$class_file_path = dirname(dirname(__FILE__))
-			."/tests/". $package."/" ."{$class}.class.phpt";
+			."/tests/". $package."/" ."{$class}.model.phpt";
 
 		$test_file_content = "--TEST--
 	$class class Model Unit Test

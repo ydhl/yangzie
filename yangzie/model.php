@@ -77,6 +77,18 @@ abstract class YZE_Model extends YZE_Object{
 	public $encrypt_columns = array();
 
 	/**
+	 * 实体对应的字段配置，格式：array('column'=>array('type'=>,'null'=>,'length'=>,'default'=>))
+	 * 子类可显式声明该属性（兼容旧模型）；未声明时由 get_columns() 反射解析子类属性上的 Column 注解
+	 * @var array
+	 */
+	public static $columns = array();
+
+	/**
+	 * 反射解析 Column 注解得到的字段配置缓存，key 为模型类名
+	 * @var array|null
+	 */
+	private static $attribute_columns_cache = null;
+	/**
 	 * 缓存的数据集合（预留）
 	 *
 	 * @var array
@@ -143,7 +155,49 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return array
 	 */
 	public function get_columns(){
-		return static::$columns;
+		// ai@2026-08-27 子类显式声明了 static::$columns 则直接使用（兼容旧模型）
+		if (static::$columns) {
+			return static::$columns;
+		}
+		$class = get_called_class();
+		// ai@2026-08-27 首次使用时初始化缓存
+		if (self::$attribute_columns_cache === null) {
+			self::$attribute_columns_cache = array();
+		}
+		// ai@2026-08-27 反射解析结果按模型类名缓存，避免重复解析
+		if ( ! array_key_exists($class, self::$attribute_columns_cache)) {
+			self::$attribute_columns_cache[$class] = $this->parse_columns_from_attributes();
+		}
+		return self::$attribute_columns_cache[$class];
+	}
+
+	/**
+	 * 通过反射解析子类属性上的 Column 注解，生成与 static::$columns 相同格式的字段配置
+	 *
+	 * @return array 字段配置数组，格式 array('column'=>array('type'=>,'null'=>,'length'=>,'default'=>))
+	 */
+	private function parse_columns_from_attributes(){
+		$columns = array();
+		// ai@2026-08-27 Column 注解类未加载时静默跳过，避免反射失败
+		if ( ! class_exists(Column::class)) {
+			return $columns;
+		}
+		$rc = new \ReflectionClass(static::class);
+		foreach ($rc->getProperties() as $prop) {
+			$attrs = $prop->getAttributes(Column::class);
+			if ( ! $attrs) {
+				continue;
+			}
+			$conf = $attrs[0]->newInstance();
+			$columns[$prop->getName()] = array(
+				'type'    => $conf->type,
+				'null'    => $conf->nullable,
+				'length'  => (string)$conf->length,
+				'default' => (string)($conf->default ?? ''),
+				'encrypt' => $conf->encrypt,
+			);
+		}
+		return $columns;
 	}
 
 	/**
@@ -180,7 +234,7 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public function get_Model_Field_Type($columnConfig, $columnName)
 	{
-		$map = ['integer' => 'Int', 'date' => 'Date', 'string' => 'String', 'float' => 'Float'];
+		$map = ['int' => 'Int', 'date' => 'Date', 'string' => 'String', 'float' => 'Float'];
 		return new GraphqlType(
 			$columnConfig['type'] == 'enum' ? $this->get_table() . '_' . $columnName : $map[$columnConfig['type']],
 			null,
@@ -211,7 +265,8 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return bool
 	 */
 	public function has_column($column){
-		return array_key_exists($column,static::$columns);
+		// ai@2026-08-27 统一走 get_columns()，兼容反射解析的字段配置
+		return array_key_exists($column,$this->get_columns());
 	}
 
 	/**
@@ -305,7 +360,7 @@ abstract class YZE_Model extends YZE_Object{
 	/**
 	 * 设值的时候会根据字段的类型对值进行相应的处理：
 	 * <ul>
-	 * <li>1. 如果是integer型，把值转型为int后再设值</li>
+	 * <li>1. 如果是int型，把值转型为int后再设值</li>
 	 * <li>2. 如果是float型，把值转型为float后再设值</li>
 	 * <li>3. 其他不变</li>
 	 * <li>4. 对于有长度限制的字符串类型，会按照长度进行截取，超过部分忽略</li>
@@ -317,7 +372,7 @@ abstract class YZE_Model extends YZE_Object{
 	public function set($name, $value){
 		$props = $this->get_Field_props($name);
 		switch ($this->get_Field_Type($name)) {
-			case "integer":
+			case "int":
 				$value = is_null($value) ? null : intval($value);
 				break;
 			case "float":
@@ -521,7 +576,7 @@ abstract class YZE_Model extends YZE_Object{
 	    }
 
 	    $sql = new YZE_SQL();
-	    $sql->from($this::CLASS_NAME, "__mine__");
+	    $sql->from($this::class, "__mine__");
 	    foreach ($checkFields as $field){
 	       $sql->where("__mine__", $field, YZE_SQL::EQ, $this->get($field));
 	    }
@@ -630,10 +685,24 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public function __get($name){
 	    $value = $this->get($name);
-	    if (in_array($name, $this->encrypt_columns)){
+	    if ($this->is_encrypt_column($name)){
 	    	$value = YZE_DBAImpl::get_instance($this->db)->decrypt($value);
 		}
 	    return $value;
+	}
+
+	/**
+	 * 判断字段是否为加密字段：
+	 * 1. 显式声明在 $encrypt_columns 中的字段（兼容旧模型）；
+	 * 2. 通过 Column 注解 encrypt: true 声明的字段（新模型）
+	 *
+	 * @param string $name 字段名
+	 * @return bool
+	 */
+	private function is_encrypt_column($name){
+		// ai@2026-08-27 新模型：Column 注解中的 encrypt 配置
+		$columns = $this->get_columns();
+		return isset($columns[$name]['encrypt']) && $columns[$name]['encrypt'];
 	}
 
 	/**
@@ -644,7 +713,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return YZE_Model 返回当前 model 对象，支持链式调用
 	 */
 	public function __set($name, $value){
-		if (in_array($name, $this->encrypt_columns)){
+		if ($this->is_encrypt_column($name)){
 			$value = YZE_DBAImpl::get_instance($this->db)->encrypt($value);
 		}
 	    return $this->set($name, $value);
@@ -672,7 +741,7 @@ abstract class YZE_Model extends YZE_Object{
 		$obj->suffix = $suffix;
 		$obj->init_Sql ();
 		if ( ! $obj->sql->has_from()){
-			$obj->sql->from(static::CLASS_NAME, $myAlias ?: "m", $suffix);
+			$obj->sql->from(static::class, $myAlias ?: "m", $suffix);
 		}
 		return $obj;
 	}
@@ -809,7 +878,7 @@ abstract class YZE_Model extends YZE_Object{
 	public function select(array $params=array(), $alias=null){
 		$this->init_Sql ();
 		if ( ! $this->sql->has_from()){
-			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
+			$this->sql->from(static::class, $alias ?: "m", $this->suffix);
 		}
 		if ($alias){
 			$this->sql->select($alias);
@@ -831,7 +900,7 @@ abstract class YZE_Model extends YZE_Object{
 		$this->init_Sql ();
 
 		if ( ! $this->sql->has_from()){
-			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
+			$this->sql->from(static::class, $alias ?: "m", $this->suffix);
 		}
 		if ($alias){
 			$this->sql->select($alias);
@@ -856,7 +925,7 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		if ( ! $this->sql->has_from()){
-			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
+			$this->sql->from(static::class, $alias ?: "m", $this->suffix);
 		}
 		$this->sql->count($alias , $field, "COUNT_ALIAS", $distinct);
 		$obj = YZE_DBAImpl::get_instance($this->db)->get_Single($this->sql, $params);
@@ -878,7 +947,7 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		if ( ! $this->sql->has_from()){
-			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
+			$this->sql->from(static::class, $alias ?: "m", $this->suffix);
 		}
 		$this->sql->sum($alias, $field, "SUM_ALIAS");
 
@@ -900,7 +969,7 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		if ( ! $this->sql->has_from()){
-			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
+			$this->sql->from(static::class, $alias ?: "m", $this->suffix);
 		}
 		$this->sql->max($alias, $field, "MAX_ALIAS");
 
@@ -922,7 +991,7 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		if ( ! $this->sql->has_from()){
-			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
+			$this->sql->from(static::class, $alias ?: "m", $this->suffix);
 		}
 		$this->sql->min($alias, $field, "MIN_ALIAS");
 
@@ -947,7 +1016,7 @@ abstract class YZE_Model extends YZE_Object{
 			$alias = "m";
 		}
 		if ( ! $this->sql->has_from()){
-			$this->sql->from(static::CLASS_NAME, $alias ?: "m", $this->suffix);
+			$this->sql->from(static::class, $alias ?: "m", $this->suffix);
 		}
 		$statement = YZE_DBAImpl::get_instance($this->db)->get_Conn()->prepare($this->sql->delete()->__toString());
 		if(! $statement->execute($params) ){
@@ -1016,7 +1085,7 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	/**
-	 * 获取指定字段的类型（integer、float、string、date 等）
+	 * 获取指定字段的类型（int、float、string、date 等）
 	 *
 	 * @param string $field_name 字段名
 	 * @return string|null 字段类型，字段不存在时返回 null

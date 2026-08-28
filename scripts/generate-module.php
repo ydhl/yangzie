@@ -37,9 +37,9 @@ use \yangzie\YZE_Base_Module as YZE_Base_Module;
  * @package $module
  */
 class {$module}_Module extends YZE_Base_Module{
-    public \$auths = array();
-    public \$no_auths = array();
-    protected function config(){
+    public array \$auths = array();
+    public array \$no_auths = array();
+    protected function config(): array{
         return [
         'name'=>'{$module}',
         'routers' => [
@@ -54,12 +54,12 @@ class {$module}_Module extends YZE_Base_Module{
         	]
         ];
     }
-    public function js_bundle(\$bundle)
+    public function js_bundle(string \$bundle): array
     {
         // TODO: Implement js_bundle() method.
     }
 
-    public function css_bundle(\$bundle)
+    public function css_bundle(string \$bundle): array
     {
         // TODO: Implement css_bundle() method.
     }

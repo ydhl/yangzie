@@ -75,7 +75,8 @@ include_once '../../scripts/generate-model.php';
 include_once '../../scripts/generate-module.php';
 
 // 解析命令行参数
-$options = getopt("mcpC:a:r:d:t:M:h", ["model","mvc","phar", "controller:", "action:", "route:", "db:", "table:", "module:", "help"]);
+// ai@2026-08-28 注册 k:/key: 短长选项，使 CLI 模式支持 phar 签名 key
+$options = getopt("mcpk:C:a:r:d:t:M:h", ["model","mvc","phar", "key:", "controller:", "action:", "route:", "db:", "table:", "module:", "help"]);
 
 // 检查是否请求帮助
 if (isset($options["h"]) || isset($options["help"])) {
@@ -199,6 +200,16 @@ function get_options($options){
 		if (!is_validate_name($module)) {
 			echo get_colored_text(wrap_output(__("module name is invalid, please try again")), "red");
 			die(1);
+		}
+		// ai@2026-08-28 解析 key 路径：兼容完整路径与 tmp 目录下文件名两种写法，文件不存在时报错退出
+		if ($key_path){
+			if ( ! file_exists($key_path)) {
+				$key_path = YZE_INSTALL_PATH."tmp/".$key_path;
+			}
+			if ( ! file_exists($key_path)) {
+				echo get_colored_text(wrap_output(sprintf(__("\t%s file not exist:  "), $key_path)), "red");
+				die(1);
+			}
 		}
 		phar_module($module, $key_path);
 		return array();

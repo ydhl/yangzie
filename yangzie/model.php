@@ -49,17 +49,7 @@ abstract class YZE_Model extends YZE_Object{
 	 * @var array
 	 */
 	protected $records = array();
-	/**
-	 * 映射：
-	 * <pre>
-	 * [
-	 * "attr1"=>["from"=>"id","to"=>"id","class"=>"","type"=>"one-one"],
-	 * "attr2"=>["from"=>"id","to"=>"id","class"=>"","type"=>"one-many"]
-	 * ]
-	 * </pre>
-	 * 获取：$this->attr1;
-	 */
-	protected $objects = array();
+
 	/**
 	 * 需要进行加密的字段名，
 	 *
@@ -76,12 +66,6 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public $encrypt_columns = array();
 
-	/**
-	 * 实体对应的字段配置，格式：array('column'=>array('type'=>,'null'=>,'length'=>,'default'=>))
-	 * 子类可显式声明该属性（兼容旧模型）；未声明时由 get_columns() 反射解析子类属性上的 Column 注解
-	 * @var array
-	 */
-	public static $columns = array();
 
 	/**
 	 * 反射解析 Column 注解得到的字段配置缓存，key 为模型类名
@@ -155,10 +139,6 @@ abstract class YZE_Model extends YZE_Object{
 	 * @return array
 	 */
 	public function get_columns(){
-		// ai@2026-08-27 子类显式声明了 static::$columns 则直接使用（兼容旧模型）
-		if (static::$columns) {
-			return static::$columns;
-		}
 		$class = get_called_class();
 		// ai@2026-08-27 首次使用时初始化缓存
 		if (self::$attribute_columns_cache === null) {
@@ -172,7 +152,7 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	/**
-	 * 通过反射解析子类属性上的 Column 注解，生成与 static::$columns 相同格式的字段配置
+	 * 通过反射解析子类属性上的 Column 注解
 	 *
 	 * @return array 字段配置数组，格式 array('column'=>array('type'=>,'null'=>,'length'=>,'default'=>))
 	 */
@@ -782,7 +762,7 @@ abstract class YZE_Model extends YZE_Object{
 	 */
 	public function where($where){
 		$this->init_Sql();
-		$this->sql->native_Where($where);
+		$this->sql->where($where);
 		return $this;
 	}
 

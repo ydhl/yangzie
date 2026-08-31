@@ -4,7 +4,7 @@ use Attribute;
 
 /**
  * 模型字段元数据注解，标注在 YZE_Model 子类的字段属性上，
- * 用于声明字段的类型、是否可空、长度及默认值，替代 static::$columns 中的字段配置
+ * 用于声明字段的类型、是否可空、长度及默认值
  *
  * 用法：
  * <pre>
@@ -13,7 +13,6 @@ use Attribute;
  * </pre>
  *
  * 框架在 YZE_Model::get_columns() 中通过反射读取该注解生成字段配置；
- * 子类显式声明 static::$columns 时优先使用 $columns（兼容旧模型）。
  *
  * @package yangzie
  */

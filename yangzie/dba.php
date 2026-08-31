@@ -38,6 +38,20 @@ class YZE_DBAImpl extends YZE_Object
 	}
 
 	/**
+	 * 获取当前数据库配置的数据库类型（db_type），
+	 * 供 YZE_SQL 生成对应方言的标识符引用符号
+	 *
+	 * @return string 数据库类型，未配置时默认 mysql
+	 */
+	private function get_db_type(){
+		$app_module = new App_Module();
+		$db_name = $this->get_db_name();
+		$db_connection = $app_module->get_module_config('db_connections')[$db_name];
+		// ai@2026-08-28 未配置 db_type 时默认 mysql
+		return $db_connection['db_type'] ?: YZE_SQL::DB_TYPE_MYSQL;
+	}
+
+	/**
 	 * 建立（或复用）指定数据库的 PDO 连接，并开启事务
 	 *
 	 * @param string $db_name 数据库名，为空时使用默认库
@@ -440,6 +454,8 @@ class YZE_DBAImpl extends YZE_Object
 	 * @return array
 	 */
 	public function select(YZE_SQL $sql, $params=array(), $index_field=null){
+		// ai@2026-08-28 按当前数据库配置设置 sql 的数据库类型，生成对应方言的标识符引用
+		$sql->set_db_type($this->get_db_type());
 		$classes = $sql->get_select_classes(true);
 
 		try{
@@ -532,6 +548,8 @@ class YZE_DBAImpl extends YZE_Object
 	 * @return int
 	 */
 	public function execute(YZE_SQL $sql, $params=[]){
+		// ai@2026-08-28 按当前数据库配置设置 sql 的数据库类型，生成对应方言的标识符引用
+		$sql->set_db_type($this->get_db_type());
 		return $this->exec($sql->__toString(), $params);
 	}
 
@@ -546,11 +564,15 @@ class YZE_DBAImpl extends YZE_Object
 	 * @throws YZE_DBAException
 	 * @return int
 	 */
-	public function exec($sql, $params=[]){
+	public function exec($sql, $params = []){
 		if(empty($sql))return false;
 		try{
-			$stat = self::$conn[$this->db_name]->prepare($sql);
-			return $stat->execute($params);
+			if ($params){
+				$statement = self::$conn[$this->db_name]->prepare($sql);
+				$statement->execute($params);
+				return $statement->rowCount();
+			}
+			return self::$conn[$this->db_name]->exec($sql);
 		}catch (\PDOException $e){
 			return $this->check_connect($e->getCode(), $e->errorInfo, 'exec', $sql);
 		}

@@ -1,72 +1,146 @@
 --TEST--
-YZE_SQL 测试（各种联合查询）
+YZE_SQL join/分表suffix/order_by/group_by/limit/辅助方法
 --FILE--
 <?php
-namespace  yangzie;
+ini_set("display_errors",0);
 chdir(dirname(dirname(dirname(__FILE__)))."/app/public_html");
 include "init.php";
+include dirname(__FILE__)."/sql_test_models.php";
 
+use yangzie\YZE_SQL;
+use yangzie\T_User;
+use yangzie\T_Order;
 
-class TestModel extends YZE_Model{
-	const TABLE= "tests";
-	const VERSION = 'modified_on';
-	const MODULE_NAME = "test";
-	const KEY_NAME = "id";
-	const F_ID = "id";
-	const CLASS_NAME = 'yangzie\TestModel';
+function s($sql){ return str_replace("\r\n","\n",(string)$sql); }
 
-	const F_TITLE = "title";
-	const F_CREATED_ON = "created_on";
-	const F_MODIFIED_ON = "modified_on";
+// 1. left join
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')
+    ->left_join(T_Order::class,'o','o.user_id=m.id')
+    ->select('m',array('id'))->select('o',array('amount'));
+echo s($sql),"\n";
 
-	public static $columns = array(
-			'id'         => array('type' => 'int', 'null' => false,'length' => '11','default'	=> '',),
-			'title'      => array('type' => 'string', 'null' => false,'length' => '201','default'	=> '',),
-			'created_on' => array('type' => 'date', 'null' => false,'length' => '','default'	=> '',),
-			'modified_on' => array('type' => 'TIMESTAMP', 'null' => false,'length' => '','default'	=> 'CURRENT_TIMESTAMP',),
-	);
-}
-class TestItemModel extends YZE_Model{
-	const TABLE= "test_item";
-	const VERSION = 'modified_on';
-	const MODULE_NAME = "test";
-	const KEY_NAME = "id";
-	const F_ID = "id";
-	const CLASS_NAME = 'yangzie\TestItemModel';
+// 2. right join
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')
+    ->right_join(T_Order::class,'o','o.user_id=m.id')
+    ->select('m',array('id'))->select('o',array('amount'));
+echo s($sql),"\n";
 
-	const F_TITLE = "title";
-	const F_CREATED_ON = "created_on";
-	const F_MODIFIED_ON = "modified_on";
+// 3. inner join
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')
+    ->join(T_Order::class,'o','o.user_id=m.id')
+    ->select('m',array('id'))->select('o',array('amount'));
+echo s($sql),"\n";
 
-	public static $columns = array(
-			'id'         => array('type' => 'integer', 'null' => false,'length' => '11','default'	=> '',),
-			'title'      => array('type' => 'string', 'null' => false,'length' => '201','default'	=> '',),
-			'test_id'      => array('type' => 'integer', 'null' => false,'length' => '11','default'	=> '',),
-			'created_on' => array('type' => 'date', 'null' => false,'length' => '','default'	=> '',),
-			'modified_on' => array('type' => 'TIMESTAMP', 'null' => false,'length' => '','default'	=> 'CURRENT_TIMESTAMP',),
-	);
-    protected $unique_key = array (
-      'id' => 'PRIMARY',
-      'test_id' => 'fk_test1_idx'
-    );
-}
+// 4. 三种 join 混合
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')
+    ->left_join(T_Order::class,'o','o.user_id=m.id')
+    ->right_join(T_User::class,'u','u.id=o.user_id')
+    ->select('m',array('id'))->select('o',array('amount'));
+echo s($sql),"\n";
 
-$sql = new \yangzie\YZE_SQL();
-$sql->clean()->from(TestModel::class, 'a')->left_join(TestItemModel::class, 'b', 'a.id = b.test_id');
-echo $sql,"\r\n";
+// 5. 单表 suffix 分表
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m','2023')->select('m',array('id'));
+echo s($sql),"\n";
 
-$sql->clean()->from(TestModel::class, 'a')->right_join(TestItemModel::class, 'b', 'a.id = b.test_id');
-echo $sql,"\r\n";
+// 6. join 表 suffix 分表
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m','2023')
+    ->left_join(T_Order::class,'o','o.user_id=m.id','2023')
+    ->select('m',array('id'))->select('o',array('user_id'));
+echo s($sql),"\n";
 
-$sql->clean()->from(TestModel::class, 'a')->join(TestItemModel::class, 'b', 'a.id = b.test_id');
-echo $sql,"\r\n";
+// 7. get_suffixs
+echo json_encode($sql->get_suffixs()),"\n";
 
-$sql->clean()->from(TestModel::class, 'a', '_2012')->join(TestItemModel::class, 'b', 'a.id = b.test_id', '_2013');
-echo $sql,"\r\n";
+// 8. order_by 显式升序（sort 参数必填）
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))->order_by('m','id','asc');
+echo s($sql),"\n";
 
+// 9. order_by 显式 desc
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))->order_by('m','id','desc');
+echo s($sql),"\n";
+
+// 10. order_by use_alias
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))->order_by('m','id','asc',true);
+echo s($sql),"\n";
+
+// 11. 多 order_by
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))
+    ->order_by('m','id','desc')->order_by('m','price','asc');
+echo s($sql),"\n";
+
+// 12. group_by
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('role'))->group_by('m','role');
+echo s($sql),"\n";
+
+// 13. group_by use_alias
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('role'))->group_by('m','role',true);
+echo s($sql),"\n";
+
+// 14. group_by_function
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('created_on'))->group_by_function("DATE(m.created_on)");
+echo s($sql),"\n";
+
+// 15. limit(10)
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))->limit(10);
+echo s($sql),"\n";
+
+// 16. limit(0,10)
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))->limit(0,10);
+echo s($sql),"\n";
+
+// 17. limit(20,10)
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))->limit(20,10);
+echo s($sql),"\n";
+
+// 18. limit(0) 不生成 limit
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->select('m',array('id'))->limit(0);
+echo s($sql),"\n";
+
+// 19. get_alias
+// ai@2026-08-28 from 仅能调用一次，多表场景需配合 join
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')
+    ->join(T_Order::class,'o','o.user_id=m.id');
+echo $sql->get_alias('users'),"\n";
+var_export($sql->get_alias('not_exists')); echo "\n";
+
+// 20. get_select_table（含 suffix）
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m','2023')->left_join(T_Order::class,'o','o.user_id=m.id','2023');
+echo json_encode($sql->get_select_table()),"\n";
+
+// 21. has_join / has_from
+$sql = YZE_SQL::new_SQL()->from(T_User::class,'m')->left_join(T_Order::class,'o','o.user_id=m.id');
+var_export($sql->has_join()); echo "\n";
+var_export($sql->has_from()); echo "\n";
+$sql2 = YZE_SQL::new_SQL()->from(T_User::class,'m');
+var_export($sql2->has_join()); echo "\n";
+var_export($sql2->has_from()); echo "\n";
+$sql3 = YZE_SQL::new_SQL();
+var_export($sql3->has_from()); echo "\n";
 ?>
 --EXPECT--
-SELECT a.id AS a_id,a.title AS a_title,a.created_on AS a_created_on,a.modified_on AS a_modified_on,b.id AS b_id,b.title AS b_title,b.test_id AS b_test_id,b.created_on AS b_created_on,b.modified_on AS b_modified_on FROM `tests` AS a LEFT JOIN `test_item` AS b ON a.id = b.test_id
-SELECT a.id AS a_id,a.title AS a_title,a.created_on AS a_created_on,a.modified_on AS a_modified_on,b.id AS b_id,b.title AS b_title,b.test_id AS b_test_id,b.created_on AS b_created_on,b.modified_on AS b_modified_on FROM `tests` AS a RIGHT JOIN `test_item` AS b ON a.id = b.test_id
-SELECT a.id AS a_id,a.title AS a_title,a.created_on AS a_created_on,a.modified_on AS a_modified_on,b.id AS b_id,b.title AS b_title,b.test_id AS b_test_id,b.created_on AS b_created_on,b.modified_on AS b_modified_on FROM `tests` AS a INNER JOIN `test_item` AS b ON a.id = b.test_id
-SELECT a.id AS a_id,a.title AS a_title,a.created_on AS a_created_on,a.modified_on AS a_modified_on,b.id AS b_id,b.title AS b_title,b.test_id AS b_test_id,b.created_on AS b_created_on,b.modified_on AS b_modified_on FROM `tests_2012` AS a INNER JOIN `test_item_2013` AS b ON a.id = b.test_id
+SELECT `m`.`id` AS `m_id`,`o`.`amount` AS `o_amount` FROM `users` AS `m` LEFT JOIN `orders` AS `o` ON o.user_id=m.id
+SELECT `m`.`id` AS `m_id`,`o`.`amount` AS `o_amount` FROM `users` AS `m` RIGHT JOIN `orders` AS `o` ON o.user_id=m.id
+SELECT `m`.`id` AS `m_id`,`o`.`amount` AS `o_amount` FROM `users` AS `m` INNER JOIN `orders` AS `o` ON o.user_id=m.id
+SELECT `m`.`id` AS `m_id`,`o`.`amount` AS `o_amount` FROM `users` AS `m` LEFT JOIN `orders` AS `o` ON o.user_id=m.id RIGHT JOIN `users` AS `u` ON u.id=o.user_id
+SELECT `m`.`id` AS `m_id` FROM `users2023` AS `m`
+SELECT `m`.`id` AS `m_id`,`o`.`user_id` AS `o_user_id` FROM `users2023` AS `m` LEFT JOIN `orders2023` AS `o` ON o.user_id=m.id
+{"m":"2023","o":"2023"}
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m` ORDER BY `m`.`id` ASC
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m` ORDER BY `m`.`id` DESC
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m` ORDER BY `m_id` ASC
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m` ORDER BY `m`.`id` DESC,`m`.`price` ASC
+SELECT `m`.`role` AS `m_role` FROM `users` AS `m` GROUP BY `m`.`role`
+SELECT `m`.`role` AS `m_role` FROM `users` AS `m` GROUP BY `m_role`
+SELECT `m`.`created_on` AS `m_created_on` FROM `users` AS `m` GROUP BY DATE(m.created_on)
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m` LIMIT 10
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m` LIMIT 0 , 10
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m` LIMIT 20 , 10
+SELECT `m`.`id` AS `m_id` FROM `users` AS `m`
+m
+false
+{"m":"`users2023`","o":"`orders2023`"}
+true
+true
+false
+true
+false

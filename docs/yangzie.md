@@ -86,6 +86,7 @@ Yangzie 是基于 MVC 的后端 PHP 开发框架，采用 PHP 8 以上版本开�
     - models 是所有的 model 文件，model 是与数据库的表对应的类，这将在 Model-数据处理中说明。
     - views 是控制器的方法对应的输出视图，这将在视图系统中进行介绍。
     - hooks 是该模块下的 hooks 文件。
+    - public_html 是模块使用的相关资源文件，由于单入口的原因，这里面的文件，前端无法访问，要访问这里的js，css，img等资源需要通过 yze_module_asset_url 接口
     - \_\_config\_\_.php 是模块的配置文件，格式跟 app/\_\_config\_\_.php 一样（app 本身也是一个 module），但这里只做 module 的配置。
   - public_html 是系统访问的入口目录，里面的目录可以自由组织存放。
     - public_html/index.php 就是入口文件。
@@ -633,6 +634,11 @@ Yangzie 支持把每个 module 进行 phar 打包（类似于 jar）。打包后
 
 如果看到 disabled by the php.ini setting phar.readonly 的提示，则需要修改 php.ini，把 phar.readonly 设为 0 即可。
 
+
+### 第六节 模块下public_html的资源访问
+
+模块下的 yze_module_asset_url
+
 ## 第四章 控制器
 
 控制器的功能是处理请求，并决定怎么响应请求。控制器主要包含与 URI 对应的 action 方法，以及 public function exception(YZE_RuntimeException $e) 异常处理方法。action 中可以通过 \$this->request 获取请求中的所有内容，它是 YZE_Request 对象，也是一个单例实例，在一个请求的处理进程中是唯一存在的。根据扬子鳄的原则——代码要么成功，要么异常，action 也一样，如果出现任何非预期的问题，都抛出 YZE_FatalException。而 exception 方法就是控制器集中处理自己控制器中的异常的地方，在异常最终反馈给用户前，这里可以给开发者做最后的处理。
@@ -900,8 +906,8 @@ CLI: php scripts/yze.php --model -d=数据库名 -t=表名 -M=模块名。
 
 在介绍 model 之前需要说明一下 Yangzie 对 model 的一些约定：
 
-1. 每个表必须有一个且只有一个字增的主键字段。
-2. 需要有一个uuid字段
+1. 每个表必须有一个且只有一个自增的主键字段。
+2. 需要有一个 uuid 字段（生成 model 时可通过 `--uuid` 参数指定，默认字段名为 `uuid`）
 
 Model 类是对数据库表的映射，database to code 的方式，需要事先创建好数据库表，再通过 scripts/yze.php 生成。每个表映射会生成两个文件：`[数据库表名].model.php` 和 `[数据库表名].method.php`。前者是表的映射信息，该文件由框架维护，开发者不要进行修改；后者提供给开发者编写 model 相关的业务方法。
 
@@ -909,29 +915,34 @@ Model 类是对数据库表的映射，database to code 的方式，需要事先
 
 生成的 model 类的名称是 [数据库表名]_Model，并继承自 YZE_Model，映射的内容包含：
 
-1. 所有 enum 字段的值，采用 `[字段名称]_[enum值]` 的方式定义成 php 的类常量，常量值就是 enum 值
-2. 所有的表字段采用 `F_[字段名]` 的方式定义成类常量，值就是字段的名字
-3. 静态变量 $columns 中对字段做映射，格式如下：
+1. 每个 enum 字段会额外生成一个独立的 PHP enum 类型文件（类型名 `[模型名]_[字段名]_Enum`，文件名为小写），case 名与值均为 MySQL enum 值；生成代码中不再定义 `[字段名称]_[enum值]` 类常量，取枚举值直接使用生成的 enum 类型的 `cases()`
+2. 所有的表字段声明为带 `#[Column(...)]` 属性注解的私有属性，框架通过反射读取注解生成字段配置，格式如下：
 
     ```php
-    [
-    "字段名"=>[
-    "type"=>"字段数据类型：integer，date，string，enum",
-    "null"=>"是否允许为null：true/false",
-    "length"=>"string integer的长度",
-    "default"=>"默认值",
-    ]
-    ]
+    #[Column(type: 'string', nullable: false, length: 45, default: '')]
+    private string $name;
     ```
 
-4. 如果表和其他表之间有关联关系，会自动生成相关的 get、set 函数，方法名就是关联字段名去掉_id的部分
-5. 加密字段设置：encrypt_columns，见字段加密
+    Column 注解参数说明：
+
+    | 参数 | 说明 |
+    |---|---|
+    | `type` | 字段数据类型：int，float，string，date，enum |
+    | `nullable` | 是否允许为 null：true/false |
+    | `length` | string、int 等的长度，0 表示无限制 |
+    | `default` | 默认值 |
+    | `encrypt` | 字段是否加密存储（见字段加密） |
+
+3. 表常量：`TABLE`（表名）、`MODULE_NAME`（模块名）、`KEY_NAME`（主键字段名）、`UUID_NAME`（uuid 字段名）
+4. `unique_key`：唯一键字段映射（字段名 => 键名）；`relation_column`：外键关联映射
+5. 如果表和其他表之间有关联关系，会自动生成相关的 get、set 函数，方法名就是关联字段名去掉_id的部分
+6. 加密字段设置：字段可通过 Column 注解 `encrypt: true` 声明为加密字段（旧模型也可在类中定义 `$encrypt_columns` 数组），见字段加密
 
 #### [数据库表名].method.php
 
 该文件采用 PHP trait 的方式，让开发者编写自定义的业务方法，默认 trait 中有如下几个方法：
 
-1. get_column_mean：返回字段的含义，默认情况下会返回数据库字段注释
+1. get_column_mean：返回字段的含义，生成的 model 默认会返回数据库字段注释（没有注释时返回字段名），未生成该方法时基类默认返回字段名
 2. get_description：返回表描述
 3. is_enable_graphql、custom_graphql_fields、query_graphql_fields 是 GraphQL 相关字段，在 GraphQL 章节中说明
 
@@ -991,13 +1002,13 @@ Model::from($alias)->Where Statement->Execute Statement();
 3. `count($field, $params, $alias, $distinct)`：field 为要计数的字段，params 和 alias 同上，distinct 表示是否去重
 4. `sum($field, $params, $alias)`：field 为要合计的字段，params 和 alias 同上
 5. `max($field, $params, $alias)`：field 为要取最大值的字段，params 和 alias 同上
-6. `min($field, $params, $alias, $distinct)`：field 为取最小值的字段，params 和 alias 同上
+6. `min($field, $params, $alias)`：field 为取最小值的字段，params 和 alias 同上
 
 其他聚合函数：
 
 1. `limit($start, $limit)`：分页
 2. `order_by($column, $sort, $alias)`：排序
-3. `group_by($column, $sort)`：分组
+3. `group_by($column, $alias)`：分组
 
 Model 查询必须以 ::From() 开始、以 Execute Statement 结束，中间的条件和联合可任意顺序调用，支持链式调用，比如：
 
@@ -1012,6 +1023,8 @@ if ($condition){
 
 要保存数据只需要调用 Model 的 save 方法。调用 model 的 set 方法给字段赋值后，调用 save，框架会根据 model 的主键判断是执行 insert 还是 update：如果设置了主键字段的值则 update，否则 insert。
 
+> 注意：当前版本 model 的 save 更新分支（主键已有值时）存在缺陷，会生成错误的 SQL，暂不可用；有主键的更新请改用原生 `update()`（见第四节）或 `YZE_SQL::update() + execute`。插入（无主键）与下述各保存策略不受影响。
+
 ```php
 save($type=YZE_SQL::INSERT_NORMAL, YZE_SQL $checkSql=null)
 ```
@@ -1022,7 +1035,7 @@ Yangzie 支持按条件保存，这通过 save 的第一个参数来指定，分
 2. `INSERT_NOT_EXIST`：指定的 `$checkSql` 条件查询不出数据时才插入。如果插入、更新成功，会返回主键值；如果插入失败会返回 0，这时的 `$entity->get_key()` 返回 0
 3. `INSERT_NOT_EXIST_OR_UPDATE`：指定的 `$checkSql` 条件查询不出数据时才插入，查询出数据则更新这条数据。如果插入、更新成功，会返回主键值；如果插入失败会返回 0，这时的 `$entity->get_key()` 返回 0
 4. `INSERT_EXIST`：指定的 `$checkSql` 条件查询出数据时才插入。如果插入、更新成功，会返回主键值；如果插入失败会返回 0，这时的 `$entity->get_key()` 返回 0
-5. `INSERT_ON_DUPLICATE_KEY_UPDATE`：有唯一键冲突时更新其它字段，这时不用传入 checkSQL，框架会自动获取 model 的主键字段和值
+5. `INSERT_ON_DUPLICATE_KEY_UPDATE`：有唯一键冲突时更新其它字段，这时不用传入 checkSQL，框架会用 model 的字段值生成 `ON DUPLICATE KEY UPDATE` 语句（冲突键由数据库唯一索引判断）
 6. `INSERT_ON_DUPLICATE_KEY_REPLACE`：有唯一键冲突时先删除原来的，然后再插入
 7. `INSERT_ON_DUPLICATE_KEY_IGNORE`：有唯一键冲突时忽略，不抛异常
 
@@ -1032,16 +1045,19 @@ Yangzie 支持按条件保存，这通过 save 的第一个参数来指定，分
 
 删除某条数据，可以调用 model 的 `remove` 对象方法；如果要批量删除数据，可以调用静态方法 `delete($params, $alias)`，删除满足条件的记录，params 和 alias 同上；如果要清空所有数据，可以调用 `truncate` 方法。
 
+> 注意：`remove` 对象方法当前存在缺陷（依赖的底层删除接口暂不可用），删除单条记录请改用原生 `deletefrom()`（见第四节）或先查询出主键再按主键删除。
+
 #### Model 其他方法
 
-1. `find_by_id` 根据主键查找一条数据
-2. `find_by_ids` 根据多个主键查找一组数据
-3. `from_array` 根据数组创建对象
-4. `from_json` 根据 json 对象字符串创建对象
+1. `find_by_id` 根据主键查找一条数据（当前存在缺陷，暂不可用，请改用 `YZE_SQL + get_Single` 查询）
+2. `find_by_ids` 根据多个主键查找一组数据（当前存在缺陷，暂不可用，请改用 `YZE_SQL where ... IN ... + select` 查询）
+3. `from_Array` 根据数组创建对象
+4. `from_Json` 根据 json 对象字符串创建对象
 5. `Get/set` 设置对象的字段值，也可以直接调用 `$model->field` 或者 `$model->field=""` 赋值
-6. `insert_Or_Update` 对 `INSERT_NOT_EXIST_OR_UPDATE` 的封装：对传入的一组字段进行判断，如果这些字段的值在数据库中找不到则插入，否则更新
-7. `Update_by_id($id, $attrs, $db, $suffix)` 根据主键更新一条数据
+6. `insert_Or_Update` 对 `INSERT_NOT_EXIST_OR_UPDATE` 的封装：对传入的一组字段进行判断，如果这些字段的值在数据库中找不到则插入，否则更新（当前存在缺陷，暂不可用）
+7. `Update_by_id($id, $attrs, $db, $suffix)` 根据主键更新一条数据（当前存在缺陷，暂不可用，请改用原生 `update()`）
 8. `save_from_data($posts, $prefix, $type, $checkSql)` 助手方法，把 post 的数据赋值给 model，再调用 save 方法
+9. `find_by_uuid` / `find_all` / `remove_all` 等辅助方法：`find_all` 查询全部、`remove_all` 清空全部可用；`find_by_uuid` 当前存在缺陷
 
 ### 第二节 SQL 类
 
@@ -1049,7 +1065,7 @@ Yangzie 支持按条件保存，这通过 save 的第一个参数来指定，分
 
 1. 创建一个 `YZE_SQL` 对象：`$sql = new YZE_SQL()`;
 2. 跟 SQL 语法一样，指定要操作的表：`$sql->from("表对应的Model的Class name", "别名")`。如果是单表查询，别名不用指定；如果是多表查询，则必须指定：`$sql->from("主表的Class Name", "主表别名")->left_join("联合查询的表class name", "别名", "联合查询的on条件")`
-3. 通过 `where` 或者 `nativeWhere`、`where_group` 等方法拼接查询条件
+3. 通过 `where($whereStatement)` 拼接查询条件，写法同 Model 的 where（原生条件字符串 + 命名占位符），多条件时以 `or ` 前缀区分：`->where("a.column=:a")->where("or b.column=:b")`
 4. 指定 SQL 要做的操作：`select`、`update`、`delete`、`insert`
 
 `YZE_SQL` 只是负责封装并生成 SQL，该 SQL 必须得由 `YZE_DBAImpl` 类执行。
@@ -1075,18 +1091,18 @@ YZE_SQL 的各方法之间可以任意根据情况组合调用，顺序不限制
 where 用法同 Model 的 where。
 查询的结果和 Model 的查询方法一样，这里不再重复描述。
 
-其他查询方法有：
+其他查询方法有（签名中的参数均为表别名、字段名和统计结果的别名，与 Model 层的用法不同）：
 
-1. `count($field, $params, $alias, $distinct)`：field 为要计数的字段，params 和 alias 同上，distinct 表示是否去重
-2. `sum($field, $params, $alias)`：field 为要合计的字段，params 和 alias 同上
-3. `max($field, $params, $alias)`：field 为要取最大值的字段，params 和 alias 同上
-4. `min($field, $params, $alias, $distinct)`：field 为取最小值的字段，params 和 alias 同上
+1. `count($table_alias, $field, $count_alias, $distinct=false)`：统计指定表的字段数量，distinct 表示是否去重
+2. `sum($table_alias, $field, $sum_alias)`：合计指定表的字段
+3. `max($table_alias, $field, $max_alias)`：取指定表字段的最大值
+4. `min($table_alias, $field, $min_alias)`：取指定表字段的最小值
 5. `distinct($alias, $field)`：指定按哪个表的哪个字段去重
 
 #### SQL 保存数据
 
 1. `Insert($alias, $datas, $insert_type, $extra_info)`：alias 是插入表的别名，datas 是要插入的数据，key 是字段名，value 是字段值；insert_type 和 extra_info 见 model 的 save 方法的 type 和 check_sql 说明，这里不再重复描述。
-   但有个例外情况是：当 insert_type=INSERT_ON_DUPLICATE_KEY_UPDATE 时，extra_info 需要传入所操作对象的唯一键和值组成的数组；其他情况如果不传入 extra_info 时，框架会使用 sql 中的 where 作为检查条件。
+   但有个例外情况是：当 insert_type=INSERT_ON_DUPLICATE_KEY_UPDATE 时，extra_info 需要传入唯一键字段名组成的数组（如 `['email']`），冲突时更新其它字段；其他情况如果不传入 extra_info 时，框架会使用 sql 中的 where 作为检查条件。
 2. `Update($alias, $datas)`：alias 是更新表的别名，datas 是要更新的数据
 
 #### SQL 删除数据
@@ -1097,7 +1113,7 @@ YZE_SQL 只是生成最终的 SQL 语句，它并不能操作数据库，操作�
 
 ### 第三节 YZE_DBAImpl 类
 
-`YZE_DBAImpl` 的职责是执行 YZE_SQL，并把执行的结果封装返回。该类是一个单例，通过 `YZE_DBAImpl::get_instance($dbname)` 获取实例，然后根据 sql 的操作类型来调用具体的方法：
+`YZE_DBAImpl` 的职责是执行 YZE_SQL，并把执行的结果封装返回。同一个数据库只建立一个 PDO 连接并复用，通过 `YZE_DBAImpl::get_instance($dbname)` 获取实例，然后根据 sql 的操作类型来调用具体的方法：
 
 #### YZE_DBAImpl 查询数据
 
@@ -1135,7 +1151,7 @@ While($wrapper->next()) {
 
 Exec 执行后返回的是执行的 sql 所影响的行数。
 
-> 注意：如果执行了 DDL，MySQL 会隐式地提交事务，但 PDO 是无感的，在 PDO 看来事务还未提交，这个时候如果 rollback 则不会起作用；隐式提交后，如果数据库被设置成自动提交模式，将恢复自动提交模式。
+> 注意：如果执行了 DDL（如 CREATE/DROP/ALTER TABLE），MySQL 会隐式地提交事务，此时 PDO 的事务状态会同步刷新（`in_transaction()` 返回 false），之后调用 `commit()`/`rollBack()` 均无效（无活动事务）；如需继续事务操作，必须重新调用 `begin_Transaction()` 开启新事务。
 
 ### 第五节 多数据库支持
 
@@ -1146,7 +1162,7 @@ Yangzie 可同时支持多数据库的访问，在 app/\_\_config\_\_.php 的 co
 YZE_DBAImpl 在调用 get_instance 方法时，需要明确指定数据库名（不指定就是默认数据库）；
 对于 model 操作，需要调用 in_db() 来设置数据库名；对于某些助手接口，可以直接在接口参数中指定 db。
 
-请注意，由于YZE_DBAImpl是单体，在多数据库时用 model 操作和 YZE_SQL 会导致YZE_DBAImpl中的数据库连接改变，所以每次数据库操作必须明确的调用in_db或者在相关的参数中指定数据库名。
+请注意，YZE_DBAImpl 的连接按数据库名复用，多数据库时用 model 操作和 YZE_SQL 会切换当前实例所使用的数据库，所以每次数据库操作必须明确的调用 in_db 或者在相关的参数中指定数据库名。
 
 ### 第六节 分表处理
 
@@ -1160,7 +1176,7 @@ Yangzie 支持分表，但只支持按后缀来区分表。后缀怎么命名由
 
 ### 第七节 事务
 
-Yangzie 框架默认在请求开始前就通过 `YZE_DBAImpl` 开启了事务，在请求正确处理后提交事务，在出现异常后回滚事务。在多数据库的情况下，所有事务都是同时提交或者回滚的。
+Yangzie 在建立数据库连接（首次 `get_instance`）时就会自动开启事务；Web 请求在正确处理后框架会调用 `commit_all()` 统一提交所有连接的事务，出现异常时调用 `rollBack_all()` 统一回滚。在多数据库的情况下，所有事务都是同时提交或者回滚的。CLI 脚本环境下没有请求流程，事务需要开发者自行 `commit()`/`rollBack()` 处理（连接关闭时未提交的事务会被回滚）。
 
 包括 MySQL 在内的一些数据库，当在一个事务内有类似删除或创建数据表等 DDL 语句时，会自动导致一次隐式提交。隐式提交将无法回滚此事务范围内的任何更改。
 
@@ -1175,7 +1191,7 @@ Yangzie 框架默认在请求开始前就通过 `YZE_DBAImpl` 开启了事务，
 
 ### 第八节 字段加密
 
-Yangzie 支持数据库表字段的加密存储：存储到表中的字段内容是经过加密的，然后从数据库中读取字段时框架自动解密，这对用户操作数据库时是透明无感知的。要实现加密解密，办法是在 model 对应的 trait 的构造函数内，给 `$encrypt_columns` 数组设置值，定义要加密的字段的列表，并且在 app/\_\_config\_\_.php 的数据库配置中给 `crypt_key` 设置加密密钥即可。扬子鳄框架会在对 encrypt_columns 配置的字段保存时自动加密，获取时自动解密。
+Yangzie 支持数据库表字段的加密存储：存储到表中的字段内容是经过加密的，然后从数据库中读取字段时框架自动解密，这对用户操作数据库时是透明无感知的。要实现加密解密，需要在 model 类中把字段声明为加密字段（推荐在字段的 `#[Column(...)]` 注解上设置 `encrypt: true`，旧模型也可在类中定义 `protected $encrypt_columns = ['字段名', ...]` 数组），并且在 app/\_\_config\_\_.php 的数据库配置中给 `crypt_key` 设置加密密钥。配置了加密字段后，框架在保存字段时自动加密、读取字段时自动解密。
 
 ### 第九节 连接重试
 

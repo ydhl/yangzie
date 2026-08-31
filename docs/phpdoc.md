@@ -34,6 +34,7 @@
   - [YZE_Redirect](#yze_redirect)
 - [4. 模型与数据库](#4-模型与数据库)
   - [YZE_Model](#yze_model)
+  - [YZE_Column](#yze_column)
   - [YZE_SQL](#yze_sql)
   - [YZE_DBAImpl](#yze_dbaimpl)
   - [YZE_PDOStatementWrapper](#yze_pdostatementwrapper)
@@ -79,7 +80,7 @@
 
 | 成员 | 类型/说明 |
 | --- | --- |
-| `VERSION` | `const string` 框架版本号 `'3.0.1'` |
+| `VERSION` | `const string` 框架版本号 `'4.0.0'` |
 | `$loaded_modules` | `private static array` 已加载模块注册表，key 为小写模块名 |
 
 **方法**
@@ -90,6 +91,7 @@
 | `loaded_module($module_name)` | `static` 根据模块名获取已加载的模块信息，未加载返回 `null` |
 | `output()` | 输出方法，子类可重写定义自身输出行为 |
 | `the_val($val, $default)` | `static` 变量为假值时返回默认值 |
+| `env($name, $default = null)` | 读取根目录 `.env` 文件中的配置（首次调用时解析并缓存），未找到时返回 `$default` |
 | `format_class_name($class_name, $suffix)` | `static` 将 `aa_bb_cc` 格式化成 `Aa_Bb_Cc_suffix` |
 | `filter_special_chars($array, $type)` | `static` 按指定输入来源转义 html 符号 |
 | `filter_vars(array $array)` | `static` 转义数组中的 html 符号 |
@@ -371,7 +373,7 @@
 
 | 方法 | 说明 |
 | --- | --- |
-| `get_module_config($name = null)` | 获取指定的模块配置（对象属性 + config 返回内容） |
+| `get_module_config($name = null)` | 获取指定的模块配置（对象属性 + config 返回内容），返回 `array\|string` |
 | `get_uris_of_controller($controller, $action='index')` | 返回指定控制器上映射的 url 列表 |
 | `check()` | 加载模块之前做检查，出错则抛异常 |
 | `config()` | `protected abstract` 初始化配置项的值，返回配置数组（含 `routers`） |
@@ -601,6 +603,8 @@
 > model 基类，封装基本的表与 model 的映射、操作。约定表必须包含自增主键，建议有版本字段与 uuid 字段（提供给前端使用），不支持复合主键。
 >
 > 使用 `Graphql_Query` trait，支持 Model Query 链式调用。
+>
+> 注意：Model 的 `where()` 链式查询依赖 `YZE_SQL::native_Where()`，该方法当前不存在（`sql.php` 的 `where()` 仅接受原生条件字符串），Model Query 链式调用暂不可用，请改用 `YZE_SQL + YZE_DBAImpl` 方式查询。
 
 | 成员 | 类型/说明 |
 | --- | --- |
@@ -608,7 +612,6 @@
 | `$suffix` | `private string|null` 分表查询时使用的表后缀 |
 | `$db` | `private string|null` 当前 Model 使用的数据库名 |
 | `$records` | `protected array` 记录数据集合，key 为字段名 |
-| `$objects` | `protected array` 对象映射关系 |
 | `$encrypt_columns` | `public array` 需要进行加密的字段名（读写自动加解密） |
 | `$cache` | `private array` 缓存数据集合（预留） |
 | `$unique_key` | `protected array` 唯一键配置 |
@@ -665,6 +668,33 @@
 
 ---
 
+### YZE_Column
+
+> 文件：`column.php`
+>
+> 模型字段元数据注解类（`#[Attribute(Attribute::TARGET_PROPERTY)]`），标注在 `YZE_Model` 子类的字段属性上，用于声明字段的类型、是否可空、长度及默认值。框架在 `YZE_Model::get_columns()` 中通过反射读取该注解生成字段配置。
+>
+> 用法：
+>
+> ```php
+> #[Column(type: 'string', nullable: false, length: 45, default: '')]
+> private string $name;
+> ```
+>
+> 注解参数通过构造函数命名参数传入。
+
+**成员**
+
+| 成员 | 类型/说明 |
+| --- | --- |
+| `$type` | `public string` 字段类型：int、float、string、date、enum，默认 `'string'` |
+| `$nullable` | `public bool` 是否允许为空，对应数据库字段的 null 属性，默认 `true` |
+| `$length` | `public int` 字段最大长度，0 表示无限制，默认 `0` |
+| `$default` | `public mixed` 字段默认值 |
+| `$encrypt` | `public bool` 字段是否加密存储（保存时自动加密、读取时自动解密），默认 `false` |
+
+---
+
 ### YZE_SQL
 
 > 文件：`sql.php`
@@ -687,6 +717,7 @@
 | `INSERT_ON_DUPLICATE_KEY_UPDATE` | `insert_on_duplicate_key_update` 唯一键冲突更新 |
 | `INSERT_ON_DUPLICATE_KEY_REPLACE` | `insert_on_duplicate_key_replace` 唯一键冲突先删后插 |
 | `INSERT_ON_DUPLICATE_KEY_IGNORE` | `insert_on_duplicate_key_ignore` 唯一键冲突忽略 |
+| `DB_TYPE_MYSQL` / `DB_TYPE_SQLSERVER` / `DB_TYPE_ORACLE` / `DB_TYPE_DM` | `mysql` / `sqlserver` / `oracle` / `dm` 数据库类型标识 |
 
 **主要成员**
 
@@ -719,6 +750,7 @@
 | `order_by($table_alias, $order_by, $sort, $use_alias)` | 构建 order by |
 | `group_by($table_alias, $group_by, $use_alias)` / `group_by_function($group_by)` | 构建 group by |
 | `new_SQL()` | `static` 返回新 YZE_SQL 对象 |
+| `set_db_type($db_type)` | 设置 SQL 构建使用的数据库类型（`DB_TYPE_*`），影响标识符引用符 |
 | `clean_where($alias, $column)` | 清空 where 条件（支持按表 / 字段） |
 | `clean()` / `clean_groupby()` / `clean_limit()` / `clean_select()` | 清除已构造的查询 |
 | `get_select_classes($just_select)` | 返回要查询的对象类名 |
@@ -1343,4 +1375,4 @@
 
 ---
 
-*文档生成时间：2026-08-22 ｜ 基于 yangzie v3.0.1 源码与注释自动整理*
+*文档生成时间：2026-08-31 ｜ 基于 yangzie v4.0.0 源码与注释自动整理*

@@ -39,11 +39,18 @@ php scripts/yze.php --model --table=acl --module=admin
 php scripts/yze.php -m -t user -M user -d test
 ```
 
+<!-- ai@2026-08-28 更新：字段元数据改为 Column 注解；补充 enum 类型产物；修正 phpt 文件名 -->
 生成产物：
-- `app/modules/<module>/models/<table>.model.php`（Model 类，含表字段常量、关联字段）
+- `app/modules/<module>/models/<table>.model.php`（Model 类：字段元数据用 `#[Column]` 注解声明，类 docblock 生成 `@property` 提示；enum 字段的属性类型为生成的 PHP enum 类）
+- `app/modules/<module>/models/<table>_<field>.enum.php`（MySQL enum 字段对应的 PHP enum 类型，每个 enum 字段生成一个文件）
 - `app/modules/<module>/models/<table>.method.php`（业务方法 trait）
 - `tests/<module>/<table>.model.phpt`（测试骨架）
 - 若模块不存在，自动创建模块脚手架
+
+enum 字段说明（PHP 8.1+）：
+- 枚举类型名 `{Table}_{Field}_Enum`（如 `Users_Role_Enum`），文件 `<table>_<field>.enum.php`
+- case 名为大写的 MySQL enum 值，值为原始字符串：`case ADMIN = 'admin'`
+- 用 `{Enum}::cases()` 获取全部取值、`{Enum}::from($v)` 按值取实例
 
 ### 2. 生成 Module / Controller / View 脚手架
 
@@ -69,7 +76,8 @@ php scripts/yze.php --mvc -M admin -C user -a edit -r 'user/(?P<id>\d+)'
 ```
 
 生成产物：
-- `app/modules/<module>/`（模块完整目录：controllers/ views/ models/ layouts/ 及 `__config__.php`）
+<!-- ai@2026-08-28 修正：模块目录为 controllers/ models/ views/ hooks/ public_html/，无 layouts/ -->
+- `app/modules/<module>/`（模块完整目录：controllers/ models/ views/ hooks/ public_html/ 及 `__config__.php`）
 - `app/modules/<module>/controllers/<controller>.controller.php`（controller 类，已存在则追加新 action 方法）
 - `app/modules/<module>/views/<controller>-<action>.tpl.php`（视图文件）
 - `app/vendor/layouts/tpl.layout.php`（tpl 布局，不存在时创建）
@@ -86,16 +94,21 @@ php scripts/yze.php --phar --module=MODULE [--key=KEY_FILE]
 |---|---|---|---|
 | `--phar` | `-p` | 是 | Phar 打包模式 |
 | `--module=MODULE` | `-M` | 是 | 要打包的模块名 |
-| `--key=KEY_FILE` | `-k` | 否 | OpenSSL 签名私钥（tmp 目录下的 pem 文件） |
+| `--key=KEY_FILE` | `-k` | 否 | OpenSSL 签名私钥（pem 文件，可传完整路径，或 tmp 目录下的文件名，如 `mykey.pem`） |
 
 示例：
 ```bash
+# 未签名
 php scripts/yze.php --phar --module=admin
+
+# 带 OpenSSL 签名（key 为 tmp 目录下的 pem 文件名，或完整路径）
+php scripts/yze.php --phar --module=admin --key=mykey.pem
+php scripts/yze.php -p -M admin -k /path/to/mykey.pem
 ```
 
 产物：`app/modules/<module>.phar`（有签名时附带 `<module>.phar.pubkey`）。
 
-> ⚠️ **已知问题**：`-k/--key` 未注册进 `getopt()`（`getopt("mcpC:a:r:d:t:M:h", [...])` 中没有 `k:`/`key:`），所以 CLI 模式下签名 key 参数实际传不进去，只会生成未签名 phar。如需带签名，请走交互向导选项 5。
+> 说明：key 文件不存在时（`tmp/` 下也找不到）会红字提示并终止，不会静默生成未签名 phar。
 
 ### 4. 查看帮助
 

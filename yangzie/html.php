@@ -39,7 +39,6 @@ function yze_controller_error($begin_tag = null, $end_tag = null) {
  * @return string 合并参数后的 url
  */
 function yze_merge_query_string($url, $args = array(), $format=null){
-    $path   = parse_url($url, PHP_URL_PATH);
     $query  = parse_url($url, PHP_URL_QUERY);
     $get    = array_merge($_GET, $args);
     if($query && parse_str($query, $newArgs)){
@@ -50,7 +49,7 @@ function yze_merge_query_string($url, $args = array(), $format=null){
         $url = (strrpos($url, ".")===false ? $url : substr($url, 0, strrpos($url, "."))).".{$format}";
     }
 
-    return $url."?".http_build_query($get);
+    return $url.($get ? "?".http_build_query($get) : "");
 }
 
 /**

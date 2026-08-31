@@ -49,7 +49,7 @@ class Generate_Model_Script extends AbstractScript{
 		$this->save_class($code, $this->class_name, $this->module_name, 'method', false);
 
 		echo __("create model {$model_class} phpt file :");
-		$this->save_test($handleResult, $model_class, $this->module_name);
+		$this->save_test($handleResult, $this->class_name, $this->module_name);
 
 		echo __("Done!\n");
 	}

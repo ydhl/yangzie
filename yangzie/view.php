@@ -653,7 +653,8 @@ class YZE_XML_View extends YZE_View_Adapter {
 		parent::__construct($data, $controller);
 	}
 	protected function display_self(){
-		$xml = new SimpleXMLElement("<?xml version=\"1.0\"?><root></root>");
+		// ai@2026-08-29 修复 PHP 8 兼容：命名空间内裸用 SimpleXMLElement 会解析为 yangzie\SimpleXMLElement 导致 Class not found
+		$xml = new \SimpleXMLElement("<?xml version=\"1.0\"?><root></root>");
 		$this->array_to_xml($this->data,$xml);
 
 		echo $xml->asXML();

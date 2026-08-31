@@ -110,13 +110,6 @@ class YZE_Request extends YZE_Object {
     private $module;
 
     /**
-     * 模块的 views 目录路径
-     *
-     * @var string
-     */
-    private $view_path;
-
-    /**
      * 请求的 URI（仅路径部分，已 urldecode）
      *
      * @var string

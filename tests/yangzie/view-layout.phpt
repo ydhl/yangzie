@@ -72,7 +72,7 @@ try {
     $layout5->get_output();
     echo "NO_EXCEPTION\n";
 } catch (YZE_Resource_Not_Found_Exception $e) {
-    echo "LAYOUT_EX:",s(substr($e->getMessage(), 0, 20)),"\n";
+    echo "LAYOUT_EX:",s(strpos($e->getMessage(), "app/vendor/layouts/no_such.layout.php")!==false?"no_such.layout.php":""),"\n";
 }
 ?>
 --EXPECT--
@@ -88,4 +88,4 @@ try {
 'inner2'
 '<title>标题</title>pjax-body'
 'mob-body'
-LAYOUT_EX:' 布局 /Users/ydhle'
+LAYOUT_EX:'no_such.layout.php'

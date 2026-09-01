@@ -10,6 +10,7 @@ class Generate_Model_Script extends AbstractScript{
 	protected $class_name;
 	protected $db_name;
 	protected $uuid;
+	private $enum_fields = [];
 	static $chain_tables = [];
 
 	public function generate(){

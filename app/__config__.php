@@ -65,16 +65,16 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	protected function config(): array{
 		return [
-			'default_db' => 'yangai_20260821', // 默认链接的数据库名，请填写项目实际的数据库名
+			'default_db' => 'lighttable', // 默认链接的数据库名，请填写项目实际的数据库名
 			'db_connections' => [
-				'yangai_20260821' => [
-					'db_type' => $this->env('yangai_20260821.db_type', 'mysql'),
-					'db_host' => $this->env('yangai_20260821.db_host', ''),
-					'db_user' => $this->env('yangai_20260821.db_user', ''),
-					'db_psw'  => $this->env('yangai_20260821.db_psw', ''),
-					'db_port' => $this->env('yangai_20260821.db_port', '3306'),
-					'db_charset'=> $this->env('yangai_20260821.db_charset', 'utf8'),
-					'crypt_key'=> $this->env('yangai_20260821.crypt_key', ''),
+				'lighttable' => [
+					'db_type' => $this->env('lighttable.db_type', 'mysql'),
+					'db_host' => $this->env('lighttable.db_host', ''),
+					'db_user' => $this->env('lighttable.db_user', ''),
+					'db_psw'  => $this->env('lighttable.db_psw', ''),
+					'db_port' => $this->env('lighttable.db_port', '3306'),
+					'db_charset'=> $this->env('lighttable.db_charset', 'utf8'),
+					'crypt_key'=> $this->env('lighttable.crypt_key', ''),
 					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
 				],
 				'test2' => [

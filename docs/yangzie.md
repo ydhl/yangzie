@@ -37,7 +37,8 @@ Yangzie 是基于 MVC 的后端 PHP 开发框架，采用 PHP 8 以上版本开�
 │  │  │  ├─ hooks/
 │  │  │  ├─ models/
 │  │  │  │  ├─ [模型名].model.php
-│  │  │  │  └─ [模型名].method.php
+│  │  │  │  ├─ [模型名].method.php
+│  │  │  │  └─ [模型名]_[字段名].enum.php
 │  │  │  ├─ public_html/
 │  │  │  └─ views/
 │  │  │     └─ index-index.tpl.php
@@ -262,7 +263,7 @@ Module 是扬子鳄的业务功能模块单元。在设计上，扬子鳄的理�
     业务逻辑文件是数据模型对象的业务逻辑处理，开发者写的业务逻辑方法都在该文件中，业务逻辑文件采用php的trait机制，文件的命名规则是[数据对象名].method.php。类名是[数据对象名]_Method。
     文件名都小写；对象名按驼峰命名法首字母大写，但单词之间用下划线分割
 
-- views 放置 controller 的视图，每一个 action 对应一个 view 文件，文件名规则是：[控制器名]_[action名].[view format].php，默认的 view format 是 tpl，详细见视图部分
+- views 放置 controller 的视图，每一个 action 对应一个 view 文件，文件名规则是：[控制器名]-[action名].[view format].php（控制器名与 action 名之间用连字符），默认的 view format 是 tpl，详细见视图部分
 - hooks 放置模块下面的 hook 文件，下面的文件是自包含的，在对应的 hook 被触发时调用里面注册的钩子函数
 - \_\_config\_\_.php 是模块的配置文件，主要配置 URL 映射和是否需要登录认证
 
@@ -907,15 +908,15 @@ CLI: php scripts/yze.php --model -d=数据库名 -t=表名 -M=模块名。
 在介绍 model 之前需要说明一下 Yangzie 对 model 的一些约定：
 
 1. 每个表必须有一个且只有一个自增的主键字段。
-2. 需要有一个 uuid 字段（生成 model 时可通过 `--uuid` 参数指定，默认字段名为 `uuid`）
+2. 需要有一个 uuid 字段（生成 model 时固定以 `uuid` 作为该字段名，生成的 model 通过 `UUID_NAME` 常量引用，提供给前端使用）
 
-Model 类是对数据库表的映射，database to code 的方式，需要事先创建好数据库表，再通过 scripts/yze.php 生成。每个表映射会生成两个文件：`[数据库表名].model.php` 和 `[数据库表名].method.php`。前者是表的映射信息，该文件由框架维护，开发者不要进行修改；后者提供给开发者编写 model 相关的业务方法。
+Model 类是对数据库表的映射，database to code 的方式，需要事先创建好数据库表，再通过 scripts/yze.php 生成。默认以表名作为数据对象名，每个表会生成 model 定义文件 `[数据对象名].model.php` 和业务 trait 文件 `[数据对象名].method.php`；如果表中有 MySQL enum 类型的字段，还会为每个 enum 字段额外生成一个 `[数据对象名]_[字段名].enum.php` 的 PHP enum 类型文件。model 定义文件由框架维护，开发者不要进行修改；method 文件提供给开发者编写 model 相关的业务方法。
 
-#### [数据库表名].model.php
+#### [数据对象名].model.php
 
-生成的 model 类的名称是 [数据库表名]_Model，并继承自 YZE_Model，映射的内容包含：
+生成的 model 类的名称是 [数据对象名]_Model，并继承自 YZE_Model，映射的内容包含：
 
-1. 每个 enum 字段会额外生成一个独立的 PHP enum 类型文件（类型名 `[模型名]_[字段名]_Enum`，文件名为小写），case 名与值均为 MySQL enum 值；生成代码中不再定义 `[字段名称]_[enum值]` 类常量，取枚举值直接使用生成的 enum 类型的 `cases()`
+1. 每个 enum 字段会额外生成一个独立的 PHP enum 类型文件（类型名 `[模型名]_[字段名]_Enum`，文件名为小写），case 名是枚举值的大写形式，case 值即 MySQL 的原始枚举值；生成代码中不再定义 `[字段名称]_[enum值]` 类常量，取枚举值直接使用生成的 enum 类型的 `cases()`
 2. 所有的表字段声明为带 `#[Column(...)]` 属性注解的私有属性，框架通过反射读取注解生成字段配置，格式如下：
 
     ```php
@@ -938,7 +939,7 @@ Model 类是对数据库表的映射，database to code 的方式，需要事先
 5. 如果表和其他表之间有关联关系，会自动生成相关的 get、set 函数，方法名就是关联字段名去掉_id的部分
 6. 加密字段设置：字段可通过 Column 注解 `encrypt: true` 声明为加密字段（旧模型也可在类中定义 `$encrypt_columns` 数组），见字段加密
 
-#### [数据库表名].method.php
+#### [数据对象名].method.php
 
 该文件采用 PHP trait 的方式，让开发者编写自定义的业务方法，默认 trait 中有如下几个方法：
 
@@ -2023,9 +2024,11 @@ Tests passed    :    4 ( 80.0%) --------
 
 框架组成部分的类命名是：
 
-- **model**命名是 [数据库表]_Model；对应的业务 trait 是 [数据库表]_Model_Method
-- **控制器**命名是 [控制器名]_Controller
-- **自定义View**命名 [视图名]_View
+- **model**：类名是 [数据对象名]_Model，对应文件是 models/[数据对象名].model.php
+- **model 业务 trait**：类名是 [数据对象名]_Method（不再带 Model 前缀），对应文件是 models/[数据对象名].method.php，model 类中通过 use 引入
+- **enum 类型**：表中有 MySQL enum 字段时生成，类名是 [数据对象名]_[字段名]_Enum，对应文件是 models/[数据对象名]_[字段名].enum.php
+- **控制器**：类名是 [控制器名]_Controller，对应文件是 controllers/[控制器名].controller.php
+- **自定义 View**：类名是 [视图名]_View
 
 #### 文件命名约定
 

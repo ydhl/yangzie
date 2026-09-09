@@ -602,6 +602,8 @@
 >
 > model 基类，封装基本的表与 model 的映射、操作。约定表必须包含自增主键，建议有版本字段与 uuid 字段（提供给前端使用），不支持复合主键。
 >
+> 字段映射方式：`YZE_Model` 子类的每个数据库字段声明为一个带 `#[Column]` 注解的字段属性（注解携带类型、可空、长度、默认值、是否加密等元数据），由 `get_columns()` 通过反射解析并生成字段配置，详见 `YZE_Column`。
+>
 > 使用 `Graphql_Query` trait，支持 Model Query 链式调用。
 >
 > 注意：Model 的 `where()` 链式查询依赖 `YZE_SQL::native_Where()`，该方法当前不存在（`sql.php` 的 `where()` 仅接受原生条件字符串），Model Query 链式调用暂不可用，请改用 `YZE_SQL + YZE_DBAImpl` 方式查询。
@@ -624,7 +626,7 @@
 | `get_unique_key()` | 返回该 model 的唯一键字段集合 |
 | `get_relation_columns()` | 返回关联关系 |
 | `get_table()` / `get_key_name()` / `get_uuid_name()` | 返回表名 / 主键字段名 / uuid 字段名 |
-| `get_columns()` | 返回实体对应的字段配置 `array('column'=>array(type,nullable))` |
+| `get_columns()` | 返回字段配置：反射解析子类属性上的 `Column` 注解生成并按模型类缓存，格式 `array('字段名'=>array('type'=>,'null'=>,'length'=>,'default'=>,'encrypt'=>))` |
 | `get_graphql_column()` | 获取前端可见的 column（可重载做字段级权限控制） |
 | `get_graphql_fields()` | 把 model 字段封装成 `GraphqlField` 返回 |
 | `get_Model_Field_Type($columnConfig, $columnName)` | 获取 Graphql 字段的类型 |

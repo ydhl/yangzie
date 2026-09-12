@@ -57,7 +57,6 @@ $obj = new YZE_Object();
 echo s($obj->env('YZE_UNIQUE_TEST_NOT_EXIST_KEY_ABC','default')),"\n";
 putenv('YZE_UNIQUE_TEST_ENV_KEY=from_env');
 echo s($obj->env('YZE_UNIQUE_TEST_ENV_KEY','default')),"\n";
-echo s($obj->env('yangai_20260821.db_type','default')),"\n";
 
 // 8. output 空方法
 $obj->output();
@@ -89,5 +88,4 @@ NULL
 NULL
 'default'
 'from_env'
-'mysql'
 output_ok

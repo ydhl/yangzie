@@ -1,3 +1,4 @@
 vendor/composer
 /.env
 composer.lock
+.codebuddy

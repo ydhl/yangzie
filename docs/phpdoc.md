@@ -606,7 +606,9 @@
 >
 > 使用 `Graphql_Query` trait，支持 Model Query 链式调用。
 >
-> 注意：Model 的 `where()` 链式查询依赖 `YZE_SQL::native_Where()`，该方法当前不存在（`sql.php` 的 `where()` 仅接受原生条件字符串），Model Query 链式调用暂不可用，请改用 `YZE_SQL + YZE_DBAImpl` 方式查询。
+> `where()` 链式条件会透传给内部 `YZE_SQL` 对象：`YZE_Model::where()` 只接受原生条件字符串（命名占位符形式），链式调用中的 `where()` 不参与结构化条件构造；结构化条件请直接调用 `YZE_SQL::where($alias, $field, $op, $value)`，详见 `YZE_SQL` 一节。
+
+<!-- ai@2026-09-13 订正：原“Model 的 where() 依赖不存在的 YZE_SQL::native_Where()，Model Query 链式调用暂不可用”的说法与代码不符（YZE_Model::from()->where('m.id=5')->get_Sql() 可生成合法 SQL），已移除该不可用结论 -->
 
 | 成员 | 类型/说明 |
 | --- | --- |
@@ -656,7 +658,7 @@
 | `__get($name)` / `__set($name, $value)` | 魔术方法：加密字段自动解密 / 加密 |
 | `from($myAlias, $suffix)` | `static` 开启 Model Query 链式调用 |
 | `in_db($db)` / `suffix($suffix)` / `get_suffix()` | 设置 / 获取数据库名、分表后缀 |
-| `where($where)` / `order_By(...)` / `group_By(...)` / `limit(...)` | 查询条件、排序、分组、分页 |
+| `where($where)` / `order_By(...)` / `group_By(...)` / `limit(...)` | 查询条件（仅原生条件字符串，结构化条件用 `YZE_SQL::where()`）、排序、分组、分页 |
 | `left_join(...)` / `right_join(...)` / `join(...)` | 左连接 / 右连接 / 内连接 |
 | `select($params, $alias)` / `get_Single($params, $alias)` | 查询多条 / 单条 |
 | `count($field, $params, $alias, $distinct)` / `sum` / `max` / `min` | 聚合查询 |
@@ -739,7 +741,7 @@
 
 | 方法 | 说明 |
 | --- | --- |
-| `where($where)` | 构建原生 where 条件 |
+| `where($alias, $field, $op, $value)` | 构建 where 条件：只传 1 个参数时按原生条件字符串拼接（多条件需自行书写 `and` / `or` 连接符）；传 2 个及以上参数时构建结构化条件，与前一条件按 `andor`（默认 `and`）连接，`$value` 为数组时用于 `IN` / `NOT IN` / `BETWEEN`，也可传入 `YZE_SQL` 对象作为子查询 |
 | `select($alias, array $select)` | 查询字段 |
 | `distinct($alias, $field)` | distinct 查询 |
 | `count($table_alias, $field, $count_alias, $distinct)` | count 聚合 |
@@ -1351,22 +1353,23 @@
 
 > 文件：`hooks.php`
 
-| 常量 | 说明 |
-| --- | --- |
-| `YZE_HOOK_BEFORE_DISPATCH` | 在开始执行具体 action 前调用 |
-| `YZE_HOOK_AFTER_DISPATCH` | 在执行具体 action 后调用 |
-| `YZE_HOOK_MODEL_UPDATE` | 实际更新数据库之后调用，传入更新的 model |
-| `YZE_HOOK_MODEL_INSERT` | 实际插入数据库之后调用，传入 model |
-| `YZE_HOOK_MODEL_DELETE` | 实际删除数据库之后调用，传入 model |
-| `YZE_HOOK_MODEL_SELECT` | 查询回调，传入查询出来的 model 数组 |
-| `YZE_HOOK_BEFORE_DO_EXCEPTION` | 处理流程出现异常，在执行控制器 exception 前调用 |
-| `YZE_HOOK_YZE_EXCEPTION` | 框架处理出现异常的 hook，传入 `["exception"=>, "controller"=>, "response"=>]` |
-| `YZE_HOOK_GET_USER_ARO_NAME` | 获取登录用户的 aro |
-| `YZE_HOOK_FILTER_URI` | 解析地址得到请求 url，uri 过滤 |
-| `YZE_HOOK_GET_LOGIN_USER` | 取得登录的用户 |
-| `YZE_HOOK_SET_LOGIN_USER` | 设置登录的用户 |
-| `YZE_HOOK_AUTO_LOAD_CLASS` | 自动加载类无法找到时触发，传入类名 |
-| `YZE_HOOK_GET_LOCALE` | 获取当前语言设置 |
+| 常量                             | 说明                                                                                   |
+|--------------------------------|--------------------------------------------------------------------------------------|
+| `YZE_HOOK_BEFORE_DISPATCH`     | 在开始执行具体 action 前调用                                                                   |
+| `YZE_HOOK_AFTER_DISPATCH`      | 在执行具体 action 后调用                                                                     |
+| `YZE_HOOK_MODEL_UPDATE`        | 实际更新数据库之后调用，传入更新的 model                                                              |
+| `YZE_HOOK_MODEL_INSERT`        | 实际插入数据库之后调用，传入 model                                                                 |
+| `YZE_HOOK_MODEL_DELETE`        | 实际删除数据库之后调用，传入 model                                                                 |
+| `YZE_HOOK_MODEL_SELECT`        | 查询回调，传入查询出来的 model 数组                                                                |
+| `YZE_HOOK_BEFORE_DO_EXCEPTION` | 处理流程出现异常，在执行控制器 exception 前调用                                                        |
+| `YZE_HOOK_YZE_EXCEPTION`       | 框架处理出现异常的 hook，传入 `["exception"=>, "controller"=>, "response"=>]`                    |
+| `YZE_HOOK_NEED_SIGN`           | 需要登录的 hook，传入 `["exception"=>, "controller"=>, "response"=>]`，该hook中修改response返回登录地址 |
+| `YZE_HOOK_GET_USER_ARO_NAME`   | 获取登录用户的 aro                                                                          |
+| `YZE_HOOK_FILTER_URI`          | 解析地址得到请求 url，uri 过滤                                                                  |
+| `YZE_HOOK_GET_LOGIN_USER`      | 取得登录的用户                                                                              |
+| `YZE_HOOK_SET_LOGIN_USER`      | 设置登录的用户                                                                              |
+| `YZE_HOOK_AUTO_LOAD_CLASS`     | 自动加载类无法找到时触发，传入类名                                                                    |
+| `YZE_HOOK_GET_LOCALE`          | 获取当前语言设置                                                                             |
 
 > 文件：`graphql_model.php`
 

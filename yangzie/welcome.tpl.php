@@ -11,5 +11,5 @@ namespace yangzie;
 </ol>
 文档：
 <ol>
-    <li><a target="_blank" href="http://yangzie.yidianhulian.com">yangzie.yidianhulian.com</a></li>
+    <li>docs目录/yangzie.md</li>
 </ol>

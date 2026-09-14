@@ -31,9 +31,11 @@ define("YZE_SCRIPT_OPTION", YZE_SCRIPT_LOGO."
   -d, --db=DB_NAME     Database name
   -t, --table=TABLE    Table name
   -M, --module=MODULE  Module name
+  -e, --encrypt=FIELDS Encrypt fields, comma separated, the field will be marked with encrypt in Column property
 
   Example:
     php scripts/yze.php --model --table=acl --module=admin
+    php scripts/yze.php --model --table=acl --module=admin --encrypt=password,mobile
 	
  Generate module, controller, view Scaffolding file:
   -c, --mvc				Generate mvc mode
@@ -76,7 +78,8 @@ include_once '../../scripts/generate-module.php';
 
 // 解析命令行参数
 // ai@2026-08-28 注册 k:/key: 短长选项，使 CLI 模式支持 phar 签名 key
-$options = getopt("mcpk:C:a:r:d:t:M:h", ["model","mvc","phar", "key:", "controller:", "action:", "route:", "db:", "table:", "module:", "help"]);
+// ai@2026-09-13 注册 e:/encrypt: 短长选项，使 CLI 模式支持指定需要加密存储的字段
+$options = getopt("mcpk:C:a:r:d:t:M:e:h", ["model","mvc","phar", "key:", "controller:", "action:", "route:", "db:", "table:", "module:", "encrypt:", "help"]);
 
 // 检查是否请求帮助
 if (isset($options["h"]) || isset($options["help"])) {
@@ -147,6 +150,10 @@ function get_options($options){
 			die(1);
 		}
 
+		// ai@2026-09-13 解析需要加密存储的字段，字段在表中不存在时报错退出
+		$encrypt = isset($options["e"]) ? $options["e"] : (isset($options["encrypt"]) ? $options["encrypt"] : "");
+		$encrypt_fields = parse_encrypt_fields($database, $table, $encrypt);
+
 		// 构建命令参数
 		return array(
 			"cmd" => "model",
@@ -155,6 +162,7 @@ function get_options($options){
 			"db_name" => $database,
 			"class_name" => $table,
 			"table_name" => $table,
+			"encrypt_fields" => $encrypt_fields,
 		);
 	}
 	if (isset($options["mvc"]) || isset($options["c"])){
@@ -476,23 +484,26 @@ function display_model_wizard(){
 	echo wrap_output(sprintf(__( YZE_METHED_HEADER."
 
 generate model，%s back:
-1. (1/3)database name, default is %s: "), "generate model", get_colored_text(" 0 ", "red", "white"), $db_name));
+1. (1/4)database name, default is %s: "), "generate model", get_colored_text(" 0 ", "red", "white"), $db_name));
 
 	while (!is_validate_db(($database = get_input()))){
 		echo get_colored_text(wrap_output(sprintf(__("\tdb not exist (%s)，please check:  "), $database)), "red");
 	}
 
-	echo wrap_output(__("2. (2/3)table name:  "));
+	echo wrap_output(__("2. (2/4)table name:  "));
 
 	while (!is_validate_table($database, ($table=get_input()))){
 		echo get_colored_text(wrap_output(sprintf(__("\ttable not exist (%s)，please check:  "), mysqli_error($db))), "red");
 	}
 
-	echo wrap_output(__("3. (3/3)module name:  "));
+	echo wrap_output(__("3. (3/4)module name:  "));
 	while (!is_validate_name(($module = get_input()))){
 		echo get_colored_text(wrap_output(__("\tmodule is invalid, please check:  ")), "red");
 	}
 
+	// ai@2026-09-13 第 4 步询问需要加密存储的字段，逗号分隔，直接回车表示不需要加密字段
+	echo wrap_output(__("4. (4/4)encrypt fields, comma separated, press enter to skip:  "));
+	$encrypt_fields = parse_encrypt_fields($database, $table, get_input());
 
 	return array(
 		"cmd" => "model",
@@ -501,6 +512,7 @@ generate model，%s back:
 		"db_name"=>$database,
 		"class_name"=>$table,
 		"table_name"=>$table,
+		"encrypt_fields"=>$encrypt_fields,
 	);
 }
 
@@ -601,6 +613,40 @@ function is_validate_table($db_name, $table){
 
 	mysqli_select_db($db, $db_name);
 	return mysqli_query($db, "show full columns from `$table`");
+}
+
+
+// ai@2026-09-13 判断字段是否存在于表中，供加密字段的校验使用
+function is_validate_column($db_name, $table, $column){
+    global $db;
+	$app_module = new \app\App_Module();
+	$db_name = $db_name ?: $app_module->get_module_config('default_db');
+
+	mysqli_select_db($db, $db_name);
+	$result = mysqli_query($db, "show full columns from `$table`");
+	while ($result && $row = mysqli_fetch_assoc($result)){
+		if ($row['Field'] === $column) return true;
+	}
+	return false;
+}
+
+// ai@2026-09-13 解析加密字段列表（逗号分隔，CLI 与交互向导共用），字段在表中不存在时报错退出
+function parse_encrypt_fields($db_name, $table, $input){
+	$encrypt_fields = array();
+	// getopt 对重复出现的选项返回数组，这里统一成逗号分隔的字符串
+	if (is_array($input)) $input = join(",", $input);
+
+	foreach (explode(",", (string)$input) as $field){
+		$field = trim($field);
+		if ($field === "") continue;
+
+		if ( ! is_validate_column($db_name, $table, $field)){
+			echo wrap_output(sprintf("Error: encrypt field \"%s\" not found in table \"%s\"\n", $field, $table));
+			die(1);
+		}
+		$encrypt_fields[] = $field;
+	}
+	return $encrypt_fields;
 }
 
 

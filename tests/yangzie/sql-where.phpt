@@ -13,7 +13,8 @@ use yangzie\T_Order;
 
 function s($sql){ return str_replace("\r\n","\n",(string)$sql); }
 
-// ai@2026-08-28 结构化 where 无公开构造入口（where() 仅收原生串），通过反射注入测试 _buildWhere
+// ai@2026-09-13 结构化 where 现可由 where($alias,$field,$op,$value) 公开构造（见 sql-where-args.phpt）；
+//            此处仍用反射注入，便于脱离 SQL 构造入口逐一覆盖 _buildWhere 的各分支（is_column/field_func 等）
 function inject_wheres($sql, $wheres){
     $rp = new ReflectionProperty('yangzie\YZE_SQL','where');
     $rp->setAccessible(true);

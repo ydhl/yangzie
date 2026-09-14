@@ -10,6 +10,8 @@ class Generate_Model_Script extends AbstractScript{
 	protected $class_name;
 	protected $db_name;
 	protected $uuid;
+	// ai@2026-09-13 需要加密存储的字段名列表，由 --encrypt 或交互向导指定，不作用于关联表
+	protected $encrypt_fields = array();
 	private $enum_fields = [];
 	static $chain_tables = [];
 
@@ -23,6 +25,8 @@ class Generate_Model_Script extends AbstractScript{
 		$this->db_name 		= $argv['db_name'] ?: $app_module->get_module_config("default_db");
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 		$this->uuid = $argv['uuid'] ?? null;
+		// ai@2026-09-13 未指定加密字段时默认为空数组
+		$this->encrypt_fields = $argv['encrypt_fields'] ?? array();
 
 		if(empty($this->db_name) || empty($this->module_name) || empty($this->table_name)  || empty($this->class_name) ){
 			die(YZE_SCRIPT_USAGE);
@@ -211,6 +215,10 @@ trait $class{
 			}
 			if (($row['Default'] ?? null) !== null && $row['Default'] !== '') {
 				$attr_args .= ", default: '".addslashes($row['Default'])."'";
+			}
+			// ai@2026-09-13 加密字段在 Column 注解中声明 encrypt: true
+			if (in_array($row['Field'], $this->encrypt_fields)) {
+				$attr_args .= ", encrypt: true";
 			}
 			$attributeFields = ($attributeFields ?? '') . "
     /**

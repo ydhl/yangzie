@@ -79,30 +79,30 @@ Yangzie 是基于 MVC 的后端 PHP 开发框架，采用 PHP 8 以上版本开�
 - /tests 是单元测试文件目录，通过 CLI 方式生成的代码都会在该目录下生成对应的单元测试文件，并可以通过 CLI 的方式运行单元测试。
 - /tmp 是其他一些临时目录，比如 SSH 的 key 等。
 - /app 是功能代码目录，我们编写的功能代码都在其中。
-  - \_\_aros_acos\_\_.php 该文件是 ACL 控制配置文件，这将在 ACL 控制中详细说明。
-  - \_\_config\_\_.php 是系统的配置文件，包含数据库配置、资源打包绑定、文件自动包含等。
-  - hooks 是系统级别的 Hook 注册文件放置目录，这部分会在后面的 Hook 章节中详细说明。
-  - modules 是功能模块目录，所有的业务功能代码都会以 modules 的方式放置在这里面，这部分会在 Module 章节中说明。
-    - controllers 是所有控制器类文件。
-    - models 是所有的 model 文件，model 是与数据库的表对应的类，这将在 Model-数据处理中说明。
-    - views 是控制器的方法对应的输出视图，这将在视图系统中进行介绍。
-    - hooks 是该模块下的 hooks 文件。
-    - public_html 是模块使用的相关资源文件，由于单入口的原因，这里面的文件，前端无法访问，要访问这里的js，css，img等资源需要通过 yze_module_asset_url 接口
-    - \_\_config\_\_.php 是模块的配置文件，格式跟 app/\_\_config\_\_.php 一样（app 本身也是一个 module），但这里只做 module 的配置。
-  - public_html 是系统访问的入口目录，里面的目录可以自由组织存放。
-    - public_html/index.php 就是入口文件。
-  - vendor 是其他第三方库、layout、views 等系统公共部分的放置路径。
-    - vendor/layout 存放的是系统的布局文件。
-    - vendor/views 存放的是公共视图。
+    - \_\_aros_acos\_\_.php 该文件是 ACL 控制配置文件，这将在 ACL 控制中详细说明。
+    - \_\_config\_\_.php 是系统的配置文件，包含数据库配置、资源打包绑定、文件自动包含等。
+    - hooks 是系统级别的 Hook 注册文件放置目录，这部分会在后面的 Hook 章节中详细说明。
+    - modules 是功能模块目录，所有的业务功能代码都会以 modules 的方式放置在这里面，这部分会在 Module 章节中说明。
+        - controllers 是所有控制器类文件。
+        - models 是所有的 model 文件，model 是与数据库的表对应的类，这将在 Model-数据处理中说明。
+        - views 是控制器的方法对应的输出视图，这将在视图系统中进行介绍。
+        - hooks 是该模块下的 hooks 文件。
+        - public_html 是模块使用的相关资源文件，由于单入口的原因，这里面的文件，前端无法访问，要访问这里的js，css，img等资源需要通过 yze_module_asset_url 接口
+        - \_\_config\_\_.php 是模块的配置文件，格式跟 app/\_\_config\_\_.php 一样（app 本身也是一个 module），但这里只做 module 的配置。
+    - public_html 是系统访问的入口目录，里面的目录可以自由组织存放。
+        - public_html/index.php 就是入口文件。
+    - vendor 是其他第三方库、layout、views 等系统公共部分的放置路径。
+        - vendor/layout 存放的是系统的布局文件。
+        - vendor/views 存放的是公共视图。
 - /vendor 是 composer 安装的包。
 
 ## 第三章 如何开始写代码
 
-开始用 Yangzie 开发系统时，首先需要从 Yangzie 的 git 库中下载最新版本的代码，git 地址是：<https://github.com/ydhl/yangzie>。
+开始用 Yangzie 开发系统时，首先需要从 Yangzie 的 git 库中下载最新版本的代码，git 地址是：<https://github.com/ydhl/yangzie>, 版本是4.0。
 
 Yangzie 是基于 PHP 8+ 开发的快速开发框架。使用 Yangzie 开发，必须先在本地安装好 WEB 运行环境，你可以选择你喜欢的任意一个 WEB 环境，比如 Apache、Nginx 等，也可以用 PHP 内置 Web Server。你只需要三步即可开始进行开发：
 
-1. cd 进入到项目的 public_html 目录
+1. cd 进入到项目的 app/public_html 目录
 2. 运行 `php -S localhost:8080` 启动 PHP 内置 Web Server
 3. 直接访问 localhost:8080 即可
 
@@ -111,8 +111,8 @@ Yangzie 是基于 PHP 8+ 开发的快速开发框架。使用 Yangzie 开发，�
 1. Yangzie 是单入口框架，必须开启 `rewrite` 或同等功能的配置支持，
 2. 配置 index.php 为默认主页
 3. 本地环境需要配置虚拟域名，比如 yangzie.local.com，并把域名指向你本地 Yangzie 的 public_html 目录。
-   1. 在本地 host 加上路由设置，让 yangzie.local.com 指向 127.0.0.1
-   2. 在你的 Web Server 上配置虚拟域名指向 public_html
+    1. 在本地 host 加上路由设置，让 yangzie.local.com 指向 127.0.0.1
+    2. 在你的 Web Server 上配置虚拟域名指向 public_html
 4. 访问你的虚拟域名
 
 开发环境就搭建好了，接下来要做的就是通过 Yangzie CLI 生成你的代码，开始你的系统开发。
@@ -219,14 +219,14 @@ protected function config(): array{
     return [
         'default_db' => 'test1', // 默认链接的数据库名，请填写项目实际的数据库名
         'db_connections' => [
-            'yangai' => [
-                'db_type' => $this->env('yangai.db_type', 'mysql'),
-                'db_host' => $this->env('yangai.db_host', '127.0.0.1'),
-                'db_user' => $this->env('yangai.db_user', ''),
-                'db_psw'  => $this->env('yangai.db_psw', ''),
-                'db_port' => $this->env('yangai.db_port', ''),
-                'db_charset'=> $this->env('yangai.db_charset', ''),
-                'crypt_key'=> $this->env('yangai.crypt_key', ''),
+            'test1' => [
+                'db_type' => $this->env('test1.db_type', 'mysql'),
+                'db_host' => $this->env('test1.db_host', '127.0.0.1'),
+                'db_user' => $this->env('test1.db_user', ''),
+                'db_psw'  => $this->env('test1.db_psw', ''),
+                'db_port' => $this->env('test1.db_port', ''),
+                'db_charset'=> $this->env('test1.db_charset', ''),
+                'crypt_key'=> $this->env('test1.crypt_key', ''),
                 'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
             ],
             'test2' => [
@@ -244,7 +244,7 @@ protected function config(): array{
 }
 ```
 
-数据库配置信息配置在项目根目录的.env文件中或者系统环境变量里，配置的名字可自行处理，见.env部分说明，当然也可以直接配置在代码中。
+数据库配置信息配置在项目根目录的.env文件中或者系统环境变量里，配置项目的名字可自行处理，见.env部分说明，当然也可以直接配置在代码中。
 Yangzie 的数据库处理，支持分库分表，支持数据库字段的存储加密和读取解密，支持数据库的读写分离，这些都是 Yangzie 框架自带的功能，无需开发者处理，只需要配置好即可。这里只简单做个数据库的配置了解，后面数据库处理中再做详细介绍。
 
 接下来我们将详细介绍 Yangzie MVC 框架的各个组成部分。
@@ -258,10 +258,10 @@ Module 是扬子鳄的业务功能模块单元。在设计上，扬子鳄的理�
 - controllers 里面放置控制器类代码，每个控制器是一个独立的文件，文件命名规则是：[控制器名].controller.php，并且都是小写的；类名是[控制器名]_Controller，控制器名按驼峰命名法首字母大写，但单词之间用下划线分割。
 - models 放置该模块的数据模型对象，每个数据模型对象对应一个数据库表
 
-    文件命名是[数据对象名].model.php；类名是[数据对象名]_Model。
-    数据文件分成模型定义文件和业务逻辑文件，模型定义文件是数据模型对象的定义，由框架生成，所以开发者不要修改里面的内容。
-    业务逻辑文件是数据模型对象的业务逻辑处理，开发者写的业务逻辑方法都在该文件中，业务逻辑文件采用php的trait机制，文件的命名规则是[数据对象名].method.php。类名是[数据对象名]_Method。
-    文件名都小写；对象名按驼峰命名法首字母大写，但单词之间用下划线分割
+  文件命名是[数据对象名].model.php；类名是[数据对象名]_Model。
+  数据文件分成模型定义文件和业务逻辑文件，模型定义文件是数据模型对象的定义，由框架生成，所以开发者不要修改里面的内容。
+  业务逻辑文件是数据模型对象的业务逻辑处理，开发者写的业务逻辑方法都在该文件中，业务逻辑文件采用php的trait机制，文件的命名规则是[数据对象名].method.php。类名是[数据对象名]_Method。
+  文件名都小写；对象名按驼峰命名法首字母大写，但单词之间用下划线分割
 
 - views 放置 controller 的视图，每一个 action 对应一个 view 文件，文件名规则是：[控制器名]-[action名].[view format].php（控制器名与 action 名之间用连字符），默认的 view format 是 tpl，详细见视图部分
 - hooks 放置模块下面的 hook 文件，下面的文件是自包含的，在对应的 hook 被触发时调用里面注册的钩子函数
@@ -272,10 +272,14 @@ Module 是扬子鳄的业务功能模块单元。在设计上，扬子鳄的理�
 App 目录及其每个 module 目录中都有该文件，本质上 app 也是一个 module。该文件的目的是配置相关常量、在系统启动处理流程前做必要的检查、进行静态资源打包等。app/\_\_config\_\_.php 用来对整个项目进行配置和设置，模块下的是对模块进行配置，他们都继承`YZE_Base_Module`，提供了如下四个方法
 
 1. check 启动前做系统检查、环境检查等工作:
-    方法是系统启动时会最先调用的方法，可以用来检测系统必须要的配置、必须加载的 PHP module 等，有问题则抛出异常。可以在 app/\_\_config\_\_.php 中实现；如果是个可重用的 module，也可以在 module 自己的 \_\_config\_\_.php 的 check 中做好相关的检查
+   方法是系统启动时会最先调用的方法，可以用来检测系统必须要的配置、必须加载的 PHP module 等，有问题则抛出异常。可以在 app/\_\_config\_\_.php 中实现；如果是个可重用的 module，也可以在 module 自己的 \_\_config\_\_.php 的 check 中做好相关的检查
 2. config 返回配置项数组:
-    在 app/\_\_config\_\_.php 中返回系统级配置，比如数据库配置，见数据库配置部分；
-    include_files 配置项部分配置系统自动加载的文件数组，这些文件无法按照yangzie 命名约定实现自动加载，需要手工配置，配置的文件以xiangzie的跟目录做为相对路径，可以时目录也可以时具体的文件，如果指定目录，则自动包含里面的所有文件, 但要注意是按文件名排序顺序包含的，如果被包含的文件之间有依赖关系，这会导致代码错误，这种情况请手动添加包含的文件。默认的设置是加载composer的autoload.php
+
+   **app/\_\_config\_\_.php**：
+
+   在 app/\_\_config\_\_.php 中返回系统级配置,包含`default_db`、`db_connections`、`include_files`，数据库配置，见数据库配置部分；
+
+   include_files 配置项部分配置系统自动加载的文件数组，这些文件无法按照yangzie 命名约定实现自动加载，需要手工配置，配置的文件以yangzie的根目录做为相对路径，可以是目录也可以是具体的文件，如果指定目录，则自动包含里面的所有文件, 但要注意是按文件名排序顺序包含的，如果被包含的文件之间有依赖关系，这会导致代码错误，这种情况请手动添加包含的文件。默认的设置是加载composer的autoload.php
 
     ```php
     'include_files'=>[
@@ -283,9 +287,11 @@ App 目录及其每个 module 目录中都有该文件，本质上 app 也是一
     ]
     ```
 
-    当通过composer安装的所有文件，yangzie都无需做任何设置即可自动包含
+   当通过composer安装的所有文件，yangzie都无需做任何设置即可自动包含。
 
-    在 module 的 \_\_config\_\_.php 中则返回该模块的 url 映射配置，通过 CLI 在创建代码时指定的 url route 就记录在这里，格式如下：
+   **module 的 \_\_config\_\_.php**：
+
+   在 module 的 \_\_config\_\_.php 中config方法则返回该模块的 url 映射配置，通过 CLI 在创建代码时指定的 url route 就记录在这里，格式如下：
 
     ```php
     protected function config(){
@@ -313,7 +319,7 @@ app/\_\_config\_\_.php中可以用来定义系统常量，默认有如下几个�
 
 - YZE_UPLOAD_PATH：设置上传的本地保存目录，可以是本地目录和任何支持 PHP Stream 的目录；
 - SITE_URI 是网站的网址
-- UPLOAD_SITE_URI 是 YZE_UPLOAD_PATH 中上传文件的访问地址，Yangzie 建议数据库中的文件存放相对地址，然后通过加上该域名进行访问
+- UPLOAD_SITE_URI 是 YZE_UPLOAD_PATH 中上传文件的访问地址，比如CDN地址，Yangzie 建议数据库中的文件存放相对地址，然后通过加上该域名进行访问
 - 其他系统的常量都建议定义在该配置文件中。
 
 每个模块下的 \_\_config\_\_.php 也可以定义常量，为了避免名称冲突，建议模块中的常量以模块名开头。
@@ -368,7 +374,7 @@ URL 路由由 YZE_Router 负责，这是一个全局单例对象，在一个请�
 
 映射 URL 不能以 / 开头或结尾，并且只需填写域名中的路径部分，比如 http:\/\/yangzie.local.com/test/1234/edit 中的 test/1234/edit。从上图可以看出，映射的 URL 支持正则匹配，你可以完全自定义、设计你的地址，让地址更具有可读性。上图中的 (?P\<id\>\d+) 就是匹配地址中的数字部分，并把匹配的数字放到以 id 命名的"path参数"中，这是一种动态获取地址数据的方法；而 args 中的数组则是静态传入控制器的参数，也就是程序写死的。当某些不同的 URL 映射到同一个 action，但 action 中的代码需要区分来源时，设置静态传入参数是一种可选项。
 
-控制器获取地址上映射的Path参数，或者路由配置写死，则通过 `$this->get_var("参数名")` 获取。
+控制器获取地址上映射的Path参数，或者路由配置写死的参数，则通过 `$this->get_var("参数名")` 获取。
 
 路由映射配置并不是必须的。如果没有配置路由，当用户访问一个网址时，扬子鳄会默认按照 module/controller/action 的方式去解析地址并寻找对应的 action。比如当用户访问 http:\/\/yangzie.local.com/test 时，扬子鳄会把 /test 部分按照 module/controller/action 的方式去解析，没有指定则默认使用 index，所以解析结果就是：
 
@@ -376,7 +382,7 @@ URL 路由由 YZE_Router 负责，这是一个全局单例对象，在一个请�
 2. /test/foo/bar：模块 test，控制器是 foo，action 是 bar
 3. /test/foo：模块 test，控制器是 foo，action 是 index
 
-如果对应的 module、controller、action 找不到，Yangzie 会报错并进入错误处理页面。
+如果对应的 module、controller、action 不存在，Yangzie 会报错并进入错误处理页面。
 
 #### 默认主页
 
@@ -410,7 +416,7 @@ protected function _config() {
 
 1. public $auths：该配置设置模块中哪些 action 需要登录认证
 2. public $no_auths = array ()：该配置设置模块中哪些 action 不需要登录认证
-3. no_auths 优先级最高 auths
+3. no_auths 优先级高于 auths
 
 注意这里的配置仅仅是做是否登录的验证，而不是权限的验证，权限验证见权限控制部分，大概有如下几种情况：
 
@@ -418,18 +424,18 @@ protected function _config() {
 2. `$auths="*"` 表示所有请求都需要做身份认证
 3. `$auths=['controller name'=>"*"]` 指定的控制器名下的所有处理都需要登录认证，其他控制器则不需要
 4. `$auths=['controller name'=>'action名或正则表达式']` 指定的控制器名下满足条件的 action 都需要登录认证，其他控制器则不需要
-5. `$no_auths` 的配置规则同 `auths`，并且它的优先级高于 `auths`，表示满足条件的 action 不需要登录认证
+5. `$no_auths` 的配置规则同 `auths`，并且它的优先级高于 `auths`，如果配置了，则表示满足条件的 action 不需要登录认证
 
 #### 开发者通过 hook 处理自己系统的登录逻辑
 
 **设置或获取登录用户：**：
 
-1. `YZE_HOOK_GET_LOGIN_USER`：该 hook 用于返回当前登录"用户"，确切地说是返回一个表示当前用户已登录的标识。一般这个标识都是存储在 SESSION 中的，可能是一个 ID，也可能是一个对象，这由开发者决定，只要不返回假值，yangzie 就认为当前会话用户是登录状态，允许访问 URI。如果系统有多种登录情况，也在这个 hook 中进行处理，比如通过会话获取用户，或者根据 HTTP 的头部信息获取登录用户等。
-2. `YZE_HOOK_SET_LOGIN_USER` 设置登录用户信息，登录用户信息可以是任何能唯一标识用户的内容，该内容可在 YZE_HOOK_GET_LOGIN_USER 中返回用户信息
+1. `YZE_HOOK_GET_LOGIN_USER`：该 hook 用于返回当前登录"用户"，确切地说是返回一个表示当前用户已登录的标识。对于传统用会话跟踪的系统，一般这个标识都是存储在 SESSION 中的，跟Cookie的session id关联；对于Sessionless那么就需要每次请求都带上相关的token，服务端通过token获取用户标识，标识可能是一个 ID，也可能是一个对象，这由开发者决定，只要不返回假值，yangzie 就认为当前会话用户是登录状态，允许访问 URI。如果系统有多种登录情况，也在这个 hook 中进行处理，比如通过会话获取用户，或者根据 HTTP 的头部信息获取登录用户等。
+2. `YZE_HOOK_SET_LOGIN_USER`：在某个存储中比如"会话中"设置登录用户信息，在用户登录成功时调用，登录用户信息同`YZE_HOOK_GET_LOGIN_USER`对应，该内容就是在 YZE_HOOK_GET_LOGIN_USER 中返回用户信息
 
 **什么情况下进入登录页面：**：
 
-yangzie框架通过hook不能获取登录用户时，就会抛出`YZE_Need_Signin_Exception`异常并触发YZE_FILTER_YZE_EXCEPTION Hook，可以在该 hook 处理函数中判断是否是登录异常，从而跳转到登录页面。开发者需要在这个 hook 注册函数中进行处理，hook 传入的参数是一个数组，内容包含 ["exception"=>$e, "controller"=>$controller, "response"=>$response]。开发者需要判断 exception 的实例类型，如果是 \yangzie\YZE_Need_Signin_Exception 则需要进行处理，通常是跳转到一个登录地址去，而跳转其实就是把传入参数中的 response 修改为一个重定向即可。该 hook 是一个 FILTER（过滤器），也就是说 hook 注册函数必须返回传入的参数，同时不能修改传入的数组的格式。
+yangzie框架通过hook不能获取登录用户时，就会抛出`YZE_Need_Signin_Exception`异常并触发YZE_HOOK_NEED_SIGNIN Hook，开发者需要在这个 hook 注册函数中进行处理，hook 传入的参数是一个数组，内容包含```php ["exception"=>$e, "controller"=>$controller, "response"=>$response]```。通常是跳转到一个登录地址去，而跳转其实就是把传入参数中的 response 修改为一个重定向即可。该 hook 是一个 FILTER（过滤器），也就是说 hook 注册函数必须返回传入的参数，同时不能修改传入的数组的格式。
 
 这几个系统的 hook 处理函数放在 app/hooks/auth.php 文件中，下面是示例：
 
@@ -437,7 +443,7 @@ yangzie框架通过hook不能获取登录用户时，就会抛出`YZE_Need_Signi
 YZE_Hook::add_hook ( YZE_HOOK_GET_LOGIN_USER, function  ( $datas ) {
     $loginUser = $_SESSION [ 'admin' ]; // 这里是在session中存储的用户对象
     if( ! $loginUser) {
-        // 增加 android 客户端的支持：客户端提交 X-CLIENT-TOKEN，token 是用户 id 的 md5 值
+        // sessionless 传入token
         if($_SERVER['HTTP_X_CLIENT_TOKEN']){
             $loginUser = get_from_client_token($_SERVER['HTTP_X_CLIENT_TOKEN']);
         }
@@ -451,11 +457,9 @@ YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function  ( $data ) {
 
 } );
 
-YZE_Hook::add_hook(YZE_FILTER_YZE_EXCEPTION, function ($datas){
+YZE_Hook::add_hook(YZE_HOOK_NEED_SIGNIN, function ($datas){
     //$datas：array("exception"=>$e, "controller"=>$controller, "response"=>$response)
     $request = YZE_Request::get_instance();
-
-    if(! is_a($datas['exception'], "\\yangzie\\YZE_Need_Signin_Exception")) return $datas;// 非登录异常忽略
 
     // 登录异常，修改hook参数response，重定向到登录页面
     $datas['response'] = new YZE_Redirect("/", $datas['controller']);
@@ -511,6 +515,7 @@ YZE_Hook::add_hook(YZE_FILTER_YZE_EXCEPTION, function ($datas){
 // 返回当前用户的 ARO 角色名，格式如 /admin、/admin/normal、/consumer
 YZE_Hook::add_hook(YZE_HOOK_GET_USER_ARO_NAME, function () {
     $user = YZE_User::get_login_user();
+    // 具体ARO如何定义由开发者自己决定
     return $user ? $user->get_role_name() : '';
 });
 ```
@@ -572,16 +577,16 @@ function yze_get_aco_desc($aconame) {
 // 返回当前登录者的动态权限，格式与 yze_get_acos_aros 中单个 ACO 的 deny/allow 相同
 function get_user_permissions() {
     return [
-        "deny"  => ["/admin/user/delete"],
-        "allow" => ["/admin/user"],
+        "deny"  => ["/admin/user/delete"],//这里是拒绝的ACO
+        "allow" => ["/admin/user"],//这里是允许的ACO
     ];
 }
 
 // 返回指定角色的动态权限
 function get_permissions($aro_name) {
     return [
-        "deny"  => [],
-        "allow" => ["/admin/*"],
+        "deny"  => [],//这里是拒绝的ACO
+        "allow" => ["/admin/*"],//这里是允许的ACO
     ];
 }
 ```
@@ -599,8 +604,8 @@ get_user_permissions()  →  get_permissions($aro_name)  →  yze_get_acos_aros(
 3. **deny 优先于 allow**：同一 ACO 下同时命中 deny 和 allow 时，deny 生效。
 4. **`*` 通配**：deny/allow 中的 `*` 表示全部；ACO 省略方法名（`/admin/user`）等同于 `/admin/user/*`。
 5. **父子继承**：ARO 和 ACO 都支持向上一级递归匹配，例如：
-   - ARO `/admin/normal` 未命中时，向上递归检查 `/admin`、`/`；
-   - ACO `/admin/user/index` 未命中时，向上递归检查 `/admin/user`、`/admin`、`/`。
+    - ARO `/admin/normal` 未命中时，向上递归检查 `/admin`、`/`；
+    - ACO `/admin/user/index` 未命中时，向上递归检查 `/admin/user`、`/admin`、`/`。
 6. **多角色**：ARO 可以是数组（用户有多个角色），任一角色有权限即放行。
 7. **未登录**：抛 `YZE_Need_Signin_Exception`（提示"Please signin"）。
 8. **无权限**：抛 `YZE_Permission_Deny_Exception`，提示 `You do not have permission(功能描述:角色名)`，功能描述来自 `yze_get_aco_desc()`。
@@ -638,17 +643,15 @@ Yangzie 支持把每个 module 进行 phar 打包（类似于 jar）。打包后
 
 ### 第六节 模块下public_html的资源访问
 
-模块下的 yze_module_asset_url
+TODO 模块下的 yze_module_asset_url
 
 ## 第四章 控制器
 
-控制器的功能是处理请求，并决定怎么响应请求。控制器主要包含与 URI 对应的 action 方法，以及 public function exception(YZE_RuntimeException $e) 异常处理方法。action 中可以通过 \$this->request 获取请求中的所有内容，它是 YZE_Request 对象，也是一个单例实例，在一个请求的处理进程中是唯一存在的。根据扬子鳄的原则——代码要么成功，要么异常，action 也一样，如果出现任何非预期的问题，都抛出 YZE_FatalException。而 exception 方法就是控制器集中处理自己控制器中的异常的地方，在异常最终反馈给用户前，这里可以给开发者做最后的处理。
-
-![uml.png](images/uml.jpg)
+控制器的功能是处理请求，并决定怎么响应请求。控制器主要包含与 URI 对应的 action 方法，以及 ```public function exception(YZE_RuntimeException $e) ``` 异常处理方法。action 中可以通过 ```$this->request``` 获取请求中的所有内容，它是 YZE_Request 对象，也是一个单例实例，在一个请求的处理进程中是唯一存在的。根据扬子鳄的原则——代码要么成功，要么异常，action 也一样，如果出现任何非预期的问题，都抛出 YZE_FatalException。而 exception 方法就是控制器集中处理自己控制器中的异常的地方，在异常最终反馈给用户前，这里可以给开发者做最后的处理。
 
 响应主要包含两大类：一类是 HTTP 的状态响应，比如重定向、403、404、304 等；一类是可以看到的视图 View 类，而视图又可以具体地细分为不同格式，比如 XML、JSON、图片、PDF、HTML 等等，这会在后面的视图中详细说明。
 
-我们强烈建议：不要在控制器中输出任何内容，这会破坏框架的响应内容，任何内容都通过"响应"进行返回。
+> 我们强烈建议：不要在控制器中输出任何内容，这会破坏框架的响应内容，任何内容都通过"响应"进行返回。
 
 如果要响应视图，每个 action 在 views 中都有一个对应的视图模板文件，比如 Index_Controller::detail 方法对应的 views 模板文件是 index-detail.tpl.php，其中的 tpl 是视图的格式，这在视图中再详细说明。在控制器中，只需通过控制器的 set_view_Data 方法即可给视图传递数据。
 
@@ -697,7 +700,7 @@ public function exception(\Exception $e){
     }
 }
 ```
-
+默认情况下非get请求或者请求的地址是json格式，那么框架不会显示layout同时只想要json结果给前端，其他情况下框架会显示错误layout，
 开发者自行根据自身情况决定异常错误怎么返回给前端。
 
 ### 控制器的最佳实践
@@ -763,15 +766,18 @@ $view->output();
 ![image6.png](images/image6.png)
 
 但某些情况下，需要由视图组件控制界面多个地方的输出。比如每个页面都会显示的顶部菜单或者边栏菜单，需要根据视图组件的不同，来更新这些内容，比如下面这种情况：
-
 ![image7.png](images/image7.png)
-![image8.png](images/image8.png)
 
 那么就需要用到 layout 或 master view，前者主要处理整个页面的布局定义，后者主要处理复杂的ui嵌套。
 
 ### 第二节 Layout 布局与资源绑定
 
-一个系统虽然功能界面各不相同，但是页面上的某些部分在很多页面甚至是所有页面都是相同的，比如顶部的菜单、左边的边栏菜单。这些相同部分的处理，我们不可能在每个 action 的视图中都重复。如下图所示，action 只负责输出该 url 访问的重点内容，其他共性的部分就可以通过 Layout 来重用。Layout 是一个特殊的视图组件，它负责输出公共的视图界面和 HTML 的整体文档结构，也就是 html、head、body、CSS、JS 等等：
+一个系统虽然功能界面各不相同，但是页面上的某些部分在很多页面甚至是所有页面都是相同的，比如顶部的菜单、左边的边栏菜单。这些相同部分的处理，我们不可能在每个 action 的视图中都重复。如下图所示，
+
+![image8.png](images/image8.png)
+
+action 只负责输出该 url 访问的重点内容，其他共性的部分就可以通过 Layout 来重用。
+Layout 是一个特殊的视图组件，它负责输出公共的视图界面和 HTML 的整体文档结构，也就是 html、head、body、CSS、JS 等等：
 
 下面的代码是 tpl 格式的 Layout 内容：
 
@@ -892,8 +898,8 @@ tpl 是 PC 端默认的响应格式，mob 是移动端默认的显示格式。�
 
 ## 第六章 数据库处理
 
-CLI: php scripts/yze.php --model -d=数据库名 -t=表名 -M=模块名。
-需要事先在 app/\_\_config\_\_.php 中配置好数据库连接信息。
+> CLI: php scripts/yze.php --model -d=数据库名 -t=表名 -M=模块名。
+> 需要事先在 app/\_\_config\_\_.php 中配置好数据库连接信息。
 
 说明：Yangzie 的数据库处理基于 PDO，并且各项功能只在 MySQL 上进行了测试。
 
@@ -908,9 +914,9 @@ CLI: php scripts/yze.php --model -d=数据库名 -t=表名 -M=模块名。
 在介绍 model 之前需要说明一下 Yangzie 对 model 的一些约定：
 
 1. 每个表必须有一个且只有一个自增的主键字段。
-2. 需要有一个 uuid 字段（生成 model 时固定以 `uuid` 作为该字段名，生成的 model 通过 `UUID_NAME` 常量引用，提供给前端使用）
+2. 需要有一个 uuid 字段（生成 model 时默认以 `uuid` 作为该字段名，生成的 model 通过 `UUID_NAME` 常量引用，提供给前端使用）
 
-Model 类是对数据库表的映射，database to code 的方式，需要事先创建好数据库表，再通过 scripts/yze.php 生成。默认以表名作为数据对象名，每个表会生成 model 定义文件 `[数据对象名].model.php` 和业务 trait 文件 `[数据对象名].method.php`；如果表中有 MySQL enum 类型的字段，还会为每个 enum 字段额外生成一个 `[数据对象名]_[字段名].enum.php` 的 PHP enum 类型文件。model 定义文件由框架维护，开发者不要进行修改；method 文件提供给开发者编写 model 相关的业务方法。
+Model 类是对数据库表的映射，database to code 的方式，需要事先创建好数据库表，再通过 scripts/yze.php 生成。以表名作为数据对象名，每个表会生成 model 定义文件 `[数据对象名].model.php` 和业务 trait 文件 `[数据对象名].method.php`；如果表中有 MySQL enum 类型的字段，还会为每个 enum 字段额外生成一个 `[数据对象名]_[字段名].enum.php` 的 PHP enum 类型文件。model 定义文件由框架维护，开发者不要进行修改；method 文件提供给开发者编写 model 相关的业务方法。
 
 #### [数据对象名].model.php
 
@@ -924,15 +930,15 @@ Model 类是对数据库表的映射，database to code 的方式，需要事先
     private string $name;
     ```
 
-    Column 注解参数说明：
+   Column 注解参数说明：
 
-    | 参数 | 说明 |
-    |---|---|
-    | `type` | 字段数据类型：int，float，string，date，enum |
-    | `nullable` | 是否允许为 null：true/false |
-    | `length` | string、int 等的长度，0 表示无限制 |
-    | `default` | 默认值 |
-    | `encrypt` | 字段是否加密存储（见字段加密） |
+   | 参数 | 说明 |
+       |---|---|
+   | `type` | 字段数据类型：int，float，string，date，enum |
+   | `nullable` | 是否允许为 null：true/false |
+   | `length` | string、int 等的长度，0 表示无限制 |
+   | `default` | 默认值 |
+   | `encrypt` | 字段是否加密存储（见字段加密） |
 
 3. 表常量：`TABLE`（表名）、`MODULE_NAME`（模块名）、`KEY_NAME`（主键字段名）、`UUID_NAME`（uuid 字段名）
 4. `unique_key`：唯一键字段映射（字段名 => 键名）；`relation_column`：外键关联映射
@@ -943,16 +949,15 @@ Model 类是对数据库表的映射，database to code 的方式，需要事先
 
 该文件采用 PHP trait 的方式，让开发者编写自定义的业务方法，默认 trait 中有如下几个方法：
 
-1. get_column_mean：返回字段的含义，生成的 model 默认会返回数据库字段注释（没有注释时返回字段名），未生成该方法时基类默认返回字段名
-2. get_description：返回表描述
-3. is_enable_graphql、custom_graphql_fields、query_graphql_fields 是 GraphQL 相关字段，在 GraphQL 章节中说明
+1. get_description：返回表描述
+2. is_enable_graphql、custom_graphql_fields、query_graphql_fields 是 GraphQL 相关字段，在 GraphQL 章节中说明
 
 #### Model 查询数据
 
 Model Query 是对 SQL 和 YZE_DBAImpl 的封装，不需要开发者按照 SQL 那种严格的格式写 SQL 语句，不用担心 SQL 注入，不用管理数据库连接，让开发者能灵活地根据情况拼接查询语句。它的语法如下：
 
 ```php
-Model::from($alias)->Where Statement->Execute Statement();
+Model::from($alias)->Where Statement->Execute Statement;
 ```
 
 **Model::from()** 是查询的开头，要查询什么表，就用该表的 Model，比如要查 user 表，那么就是 User_Model::from()。如果单表查询，可以不用传入 alias。
@@ -970,18 +975,18 @@ Model::from($alias)->Where Statement->Execute Statement();
 
     ```php
     [
-    [
+      [
         'u'=>UserModel1,
         'r'=>RoleModel1
-    ]
-    [
+      ]
+      [
         'u'=>UserModel2,
         'r'=>RoleModel2
-    ]
+      ]
     ]
     ```
 
-    如果指定了 alias，则查询指定表的数据，这时每行就是一个 model 对象，例如：
+   如果指定了 alias，则查询指定表的数据，这时每行就是一个 model 对象，例如：
 
     ```php
     [
@@ -999,7 +1004,7 @@ Model::from($alias)->Where Statement->Execute Statement();
     ]
     ```
 
-    如果指定了 alias，则查询指定表的数据，这时就返回指定的 model 对象。
+   如果指定了 alias，则查询指定表的数据，这时就返回指定的 model 对象。
 3. `count($field, $params, $alias, $distinct)`：field 为要计数的字段，params 和 alias 同上，distinct 表示是否去重
 4. `sum($field, $params, $alias)`：field 为要合计的字段，params 和 alias 同上
 5. `max($field, $params, $alias)`：field 为要取最大值的字段，params 和 alias 同上
@@ -1024,7 +1029,9 @@ if ($condition){
 
 要保存数据只需要调用 Model 的 save 方法。调用 model 的 set 方法给字段赋值后，调用 save，框架会根据 model 的主键判断是执行 insert 还是 update：如果设置了主键字段的值则 update，否则 insert。
 
-> 注意：当前版本 model 的 save 更新分支（主键已有值时）存在缺陷，会生成错误的 SQL，暂不可用；有主键的更新请改用原生 `update()`（见第四节）或 `YZE_SQL::update() + execute`。插入（无主键）与下述各保存策略不受影响。
+> 更新分支由 `YZE_DBAImpl::save_update()` 按主键生成 `UPDATE ... WHERE` 条件（内部使用 `YZE_SQL::where($alias, $field, $op, $value)` 结构化调用），插入（无主键）与下述各保存策略均不受影响。
+
+<!-- ai@2026-09-13 更新：YZE_SQL::where() 已支持结构化调用，save 更新分支不再生成错误的 SQL，移除原“暂不可用”提示 -->
 
 ```php
 save($type=YZE_SQL::INSERT_NORMAL, YZE_SQL $checkSql=null)
@@ -1046,19 +1053,23 @@ Yangzie 支持按条件保存，这通过 save 的第一个参数来指定，分
 
 删除某条数据，可以调用 model 的 `remove` 对象方法；如果要批量删除数据，可以调用静态方法 `delete($params, $alias)`，删除满足条件的记录，params 和 alias 同上；如果要清空所有数据，可以调用 `truncate` 方法。
 
-> 注意：`remove` 对象方法当前存在缺陷（依赖的底层删除接口暂不可用），删除单条记录请改用原生 `deletefrom()`（见第四节）或先查询出主键再按主键删除。
+> `remove` 对象方法按 model 主键删除对应记录（底层调用 `YZE_DBAImpl::delete()` 的 `where($alias, $field, $op, $value)` 结构化条件）。
+
+<!-- ai@2026-09-13 更新：YZE_SQL::where() 支持结构化调用后，底层删除接口能生成正确的 WHERE 条件，移除原“暂不可用”提示 -->
 
 #### Model 其他方法
 
-1. `find_by_id` 根据主键查找一条数据（当前存在缺陷，暂不可用，请改用 `YZE_SQL + get_Single` 查询）
-2. `find_by_ids` 根据多个主键查找一组数据（当前存在缺陷，暂不可用，请改用 `YZE_SQL where ... IN ... + select` 查询）
+1. `find_by_id` 根据主键查找一条数据（底层调用 `YZE_DBAImpl::find()`，结构化 where 条件）
+2. `find_by_ids` 根据多个主键查找一组数据，以主键为键返回数组（底层调用 `YZE_DBAImpl::find_by()` 的 `IN` 条件）
 3. `from_Array` 根据数组创建对象
 4. `from_Json` 根据 json 对象字符串创建对象
 5. `Get/set` 设置对象的字段值，也可以直接调用 `$model->field` 或者 `$model->field=""` 赋值
-6. `insert_Or_Update` 对 `INSERT_NOT_EXIST_OR_UPDATE` 的封装：对传入的一组字段进行判断，如果这些字段的值在数据库中找不到则插入，否则更新（当前存在缺陷，暂不可用）
-7. `Update_by_id($id, $attrs, $db, $suffix)` 根据主键更新一条数据（当前存在缺陷，暂不可用，请改用原生 `update()`）
+6. `insert_Or_Update($checkFields)` 对 `INSERT_NOT_EXIST_OR_UPDATE` 的封装：对传入的一组字段进行判断，如果这些字段的值在数据库中找不到则插入，否则更新（内部用 `where($alias, $field, $op, $value)` 构造 checkSql）
+7. `Update_by_id($id, $attrs, $db, $suffix)` 根据主键更新一条数据，`$id` 可以是单个主键，也可以是主键数组
 8. `save_from_data($posts, $prefix, $type, $checkSql)` 助手方法，把 post 的数据赋值给 model，再调用 save 方法
 9. `find_by_uuid` / `find_all` / `remove_all` 等辅助方法：`find_all` 查询全部、`remove_all` 清空全部可用；`find_by_uuid` 当前存在缺陷
+
+<!-- ai@2026-09-13 更新：YZE_SQL::where() 支持结构化调用后，find_by_id / find_by_ids / insert_Or_Update / Update_by_id 已能生成正确的 SQL，移除对应的“暂不可用”提示 -->
 
 ### 第二节 SQL 类
 
@@ -1066,8 +1077,12 @@ Yangzie 支持按条件保存，这通过 save 的第一个参数来指定，分
 
 1. 创建一个 `YZE_SQL` 对象：`$sql = new YZE_SQL()`;
 2. 跟 SQL 语法一样，指定要操作的表：`$sql->from("表对应的Model的Class name", "别名")`。如果是单表查询，别名不用指定；如果是多表查询，则必须指定：`$sql->from("主表的Class Name", "主表别名")->left_join("联合查询的表class name", "别名", "联合查询的on条件")`
-3. 通过 `where($whereStatement)` 拼接查询条件，写法同 Model 的 where（原生条件字符串 + 命名占位符），多条件时以 `or ` 前缀区分：`->where("a.column=:a")->where("or b.column=:b")`
+3. 通过 `where()` 拼接查询条件，支持两种调用方式：
+    1. 原生条件字符串，写法同 Model 的 where（命名占位符），多条件时以 `or ` 前缀区分：`->where("a.column=:a")->where("or b.column=:b")`
+    2. 结构化条件 `where($alias, $field, $op, $value)`：如 `->where("a", "part_no", YZE_SQL::EQ, "P001")`，与前面的条件按 `andor`（默认 `and`）连接；`$value` 为数组时用于 `IN` / `NOT IN` / `BETWEEN`，也可传入 `YZE_SQL` 对象作为子查询。`YZE_DBAImpl` 的 `find` / `find_by` / `delete` / `save` 更新分支与 `YZE_Model` 的 `update_by_id` / `insert_Or_Update` 内部都使用这种写法
 4. 指定 SQL 要做的操作：`select`、`update`、`delete`、`insert`
+
+<!-- ai@2026-09-13 更新：where() 新增结构化调用方式（$alias/$field/$op/$value），补充说明 -->
 
 `YZE_SQL` 只是负责封装并生成 SQL，该 SQL 必须得由 `YZE_DBAImpl` 类执行。
 
@@ -1078,9 +1093,9 @@ Yangzie 支持按条件保存，这通过 save 的第一个参数来指定，分
 3. `clean_limit()`：清除掉 limit 部分
 4. `clean_select()`：清除掉 select 的内容
 5. `clean_where($alias, $column)`：清空 where 条件
-   1. 如果指定了 alias 和 column，则只清空指定的字段条件
-   2. 如果指定了 alias 而没有指定 column，则清空指定表的所有字段条件
-   3. 如果没有指定任何参数，则删除所有的 where 条件
+    1. 如果指定了 alias 和 column，则只清空指定的字段条件
+    2. 如果指定了 alias 而没有指定 column，则清空指定表的所有字段条件
+    3. 如果没有指定任何参数，则删除所有的 where 条件
 
 YZE_SQL 的各方法之间可以任意根据情况组合调用，顺序不限制。
 
@@ -1089,7 +1104,7 @@ YZE_SQL 的各方法之间可以任意根据情况组合调用，顺序不限制
 构建好 YZE_SQL 对象后，就可以通过 select 查询方法查询指定的对象。
 `select($alias, $select)` 要查询的表别名和要查询的字段。如果不调用该方法，就会查询出所有的 model 对象；如果指定了 select，则返回的 model 中只会有 select 所指定的字段值；如果要查询多个 model，则可以调用 select 多次。
 
-where 用法同 Model 的 where。
+where 的用法见前面第 3 步：原生条件字符串与结构化条件（`where($alias, $field, $op, $value)`）两种方式都可用。
 查询的结果和 Model 的查询方法一样，这里不再重复描述。
 
 其他查询方法有（签名中的参数均为表别名、字段名和统计结果的别名，与 Model 层的用法不同）：
@@ -1163,7 +1178,7 @@ Yangzie 可同时支持多数据库的访问，在 app/\_\_config\_\_.php 的 co
 YZE_DBAImpl 在调用 get_instance 方法时，需要明确指定数据库名（不指定就是默认数据库）；
 对于 model 操作，需要调用 in_db() 来设置数据库名；对于某些助手接口，可以直接在接口参数中指定 db。
 
-请注意，YZE_DBAImpl 的连接按数据库名复用，多数据库时用 model 操作和 YZE_SQL 会切换当前实例所使用的数据库，所以每次数据库操作必须明确的调用 in_db 或者在相关的参数中指定数据库名。
+请注意，YZE_DBAImpl是单例实体，里面维护了多个数据库的pdo连接，连接按数据库名复用，多数据库时用 model 操作和 YZE_SQL 会切换成对应的数据库连接，所以每次数据库操作必须明确的调用 in_db 或者在相关的参数中指定数据库名，避免上一步的数据库操作pdo连接切换数据库了，导致下一步连接到错误的数据库。
 
 ### 第六节 分表处理
 
@@ -1178,8 +1193,9 @@ Yangzie 支持分表，但只支持按后缀来区分表。后缀怎么命名由
 ### 第七节 事务
 
 Yangzie 在建立数据库连接（首次 `get_instance`）时就会自动开启事务；Web 请求在正确处理后框架会调用 `commit_all()` 统一提交所有连接的事务，出现异常时调用 `rollBack_all()` 统一回滚。在多数据库的情况下，所有事务都是同时提交或者回滚的。CLI 脚本环境下没有请求流程，事务需要开发者自行 `commit()`/`rollBack()` 处理（连接关闭时未提交的事务会被回滚）。
+如果没有按照框架流程走完请求的处理，比如开发者自己在代码逻辑中exit/die了，那么事务不会自动提交。
 
-包括 MySQL 在内的一些数据库，当在一个事务内有类似删除或创建数据表等 DDL 语句时，会自动导致一次隐式提交。隐式提交将无法回滚此事务范围内的任何更改。
+包括 MySQL 在内的一些数据库，当在一个事务内有类似删除或创建数据表等 DDL 语句时，会自动隐式提交。隐式提交将无法回滚此事务范围内的任何更改。
 
 如果开发者需要自行操作数据库事务，下面是一些用得上的接口：
 
@@ -1192,7 +1208,7 @@ Yangzie 在建立数据库连接（首次 `get_instance`）时就会自动开启
 
 ### 第八节 字段加密
 
-Yangzie 支持数据库表字段的加密存储：存储到表中的字段内容是经过加密的，然后从数据库中读取字段时框架自动解密，这对用户操作数据库时是透明无感知的。要实现加密解密，需要在 model 类中把字段声明为加密字段（推荐在字段的 `#[Column(...)]` 注解上设置 `encrypt: true`，旧模型也可在类中定义 `protected $encrypt_columns = ['字段名', ...]` 数组），并且在 app/\_\_config\_\_.php 的数据库配置中给 `crypt_key` 设置加密密钥。配置了加密字段后，框架在保存字段时自动加密、读取字段时自动解密。
+Yangzie 支持数据库表字段的加密存储（对称加密）：存储到表中的字段内容是经过加密的，然后从数据库中读取字段时框架自动解密，这对用户操作数据库时是透明无感知的。要实现加密解密，需要在 model 类中把字段声明为加密字段（在字段的 `#[Column(...)]` 注解上设置 `encrypt: true`），并且在 app/\_\_config\_\_.php 的数据库配置中给 `crypt_key` 设置加密密钥。配置了加密字段后，框架在保存字段时自动加密、读取字段时自动解密。
 
 ### 第九节 连接重试
 
@@ -1200,7 +1216,8 @@ Yangzie 支持数据库表字段的加密存储：存储到表中的字段内容
 
 ### 第十节 其他
 
-尽可能使用框架提供的方法来操作数据库。如果需要自己写 sql、拼接查询语句，则记得对变量进行转义，可通过 `YZE_DBAImpl::get_instance()->quote()` 方法进行转义。
+1. 尽可能使用框架提供的方法来操作数据库。如果需要自己写 sql、拼接查询语句，则记得对变量进行转义，可通过 `YZE_DBAImpl::get_instance()->quote()` 方法进行转义。
+2. 在写自己的sql时，建议不要直接写数据库的对象名（数据库名、表名、字段名）而是用数据库对应对语法符号把这些对象包起来，比如mysql对``` \`order\`.\`column\` ```，oracle的``` "order"."column" ```；或者使用`YZE_DBAImpl::get_instance()->quote_identifier()`来处理
 
 ## 第七章 Request
 
@@ -1234,7 +1251,7 @@ Request 是全局对象，任何地方都可以通过 YZE_Request::get_instance(
 
 > 提示：GraphQL 可以让客户端直接查询数据库的数据，而无需编写中间的接口，这带来了一定的便利，但同时也存在一定的安全隐患，开发者需要清楚这一点；然后在决定是否该提供Graphql支持。
 
-yangzie自带graphql支持，客户端可通过访问/graphql地址（访问的是graphql模块），然后按照Graphql规范提交参数，即可实现graphql查询和修改；默认情况下，Yangzie 的 model 都不支持 GraphQL 查询。如果希望某个 model 允许被 GraphQL 查询，只需让 model 中的 `is_enable_graphql` 返回 true 即可，还可以在该方法中通过权限来控制是否支持 GraphQL。
+yangzie自带graphql支持，但只能满足简单但查询，客户端可通过访问/graphql地址（访问的是graphql模块, 需要修改public_html/graphql-client/index.html 中 `const api = 'http://yangzie.localhost/graphql';` 地址为正确但本地地址），然后按照Graphql规范提交参数，即可实现graphql查询和修改；默认情况下，Yangzie 的 model 都不支持 GraphQL 查询。如果希望某个 model 允许被 GraphQL 查询，只需让 model 中的 `is_enable_graphql` 返回 true 即可，还可以在该方法中通过权限来控制是否支持 GraphQL。
 
 Model 的字段及其外键关联的 model，Yangzie 都已处理成了 GraphQL 的 query，无需开发者做任何处理，便可通过 GraphQL 查询。Yangzie 自带一个 GraphiQL 客户端，通过访问 /graphql-client 即可使用，从客户端中可以便捷地了解系统支持哪些查询，也可以在这里测试自己写的 GraphQL 的 query 语句。
 
@@ -1250,16 +1267,16 @@ Model 的字段及其外键关联的 model，Yangzie 都已处理成了 GraphQL 
 
 - `id`: 通过id主键查询单个对象
 - `wheres`: Where的数组，指定查询条件
-  - `column`: String! 查询字段名
-  - `op`: String! 比较条件，比如=，like等
-  - `value`: [String] 查询值
-  - `andor`: String `And` / `Or` 拼接下一个where
+    - `column`: String! 查询字段名
+    - `op`: String! 比较条件，比如=，like等
+    - `value`: [String] 查询值
+    - `andor`: String `And` / `Or` 拼接下一个where
 - `clause`: Clause类型，指定查询的排序、分页、统计等信息
-  - `orderBy`: String 排序字段
-  - `sort`: String `ASC` / `DESC`
-  - `groupBy`: String 分组字段
-  - `page`: Int 当前页 默认 1
-  - `limit`: Int 每页大小 默认 10
+    - `orderBy`: String 排序字段
+    - `sort`: String `ASC` / `DESC`
+    - `groupBy`: String 分组字段
+    - `page`: Int 当前页 默认 1
+    - `limit`: Int 每页大小 默认 10
 
 示例：
 
@@ -1372,14 +1389,14 @@ GraphqlType(string $name=null, string $description=null, string $kind = GraphqlT
 其他示例：
 
 - 定义标量数据
-  
+
   ```php
   ['done_time' => new GraphqlField('done_time', new GraphqlType('Date','',GraphqlType::KIND_SCALAR), '核销时间')],
   'real_pay_price' => new GraphqlField('real_pay_price', new GraphqlType('Float','',GraphqlType::KIND_SCALAR), '实际应付金额')
   ```
 
 - 定义一组数据
-  
+
   ```php
   'status_logs' => new GraphqlField('status_logs', new GraphqlType('', '', GraphqlType::KIND_LIST, new GraphqlType('order_status_log')))
   ```
@@ -1445,7 +1462,7 @@ query_graphql_fields方法中只要判断name是否是自定义的查询字段�
   }
   ```
 
-- 查询表量
+- 查询标量
 
   ```php
   if ($searchNode->name == "done_time"){
@@ -1651,45 +1668,48 @@ YZE_Hook::add_hook ( "Hook名", function  ( &$data ) {
 系统的处理流程中预留了许多的 hook，开发者也可以通过 hook 的方式来扩展功能：
 
 - YZE_HOOK_BEFORE_DISPATCH
-  - 在请求交由控制器处理前触发，这时已经经过了 auth 和权限校验
-  - 无参数
+    - 在请求交由控制器处理前触发，这时已经经过了 auth 和权限校验
+    - 无参数
 - YZE_HOOK_AFTER_DISPATCH
-  - 在控制器处理完请求后触发
-  - 无参数
+    - 在控制器处理完请求后触发
+    - 无参数
 - YZE_HOOK_MODEL_UPDATE
-  - 模型被更新后触发
-  - 参数是被更新的 model 对象
+    - 模型被更新后触发
+    - 参数是被更新的 model 对象
 - YZE_HOOK_MODEL_INSERT
-  - 模型被插入后触发
-  - 参数是被插入的 model 对象
+    - 模型被插入后触发
+    - 参数是被插入的 model 对象
 - YZE_HOOK_MODEL_DELETE
-  - 模型被删除后触发
-  - 参数是被删除的 model 对象
+    - 模型被删除后触发
+    - 参数是被删除的 model 对象
 - YZE_HOOK_MODEL_SELECT
-  - 模型被查询后触发
-  - 参数是被查询出来的 model 对象数组
+    - 模型被查询后触发
+    - 参数是被查询出来的 model 对象数组
 - YZE_HOOK_BEFORE_DO_EXCEPTION
-  - 在控制器出现异常后进入控制器的 exception 前触发
-  - 参数是控制器对象
+    - 在控制器出现异常后进入控制器的 exception 前触发
+    - 参数是控制器对象
 - YZE_HOOK_YZE_EXCEPTION
-  - 在整个处理流程出现异常后进行的处理，也就是整个请求最后处理异常的地方
-  - 参数是一个数组：["exception"=>当前的异常对象，"controller"=>当前控制器对象,"response"=>当前要返回前端的响应对象]
+    - 在整个处理流程出现异常后进行的处理，也就是整个请求最后处理异常的地方
+    - 参数是一个数组：["exception"=>当前的异常对象，"controller"=>当前控制器对象,"response"=>当前要返回前端的响应对象]
+- YZE_HOOK_NEED_SIGNIN
+    - 需要登录的hook，该hook中通过response返回登录地址
+    - 参数是一个数组：["exception"=>当前的异常对象，"controller"=>当前控制器对象,"response"=>当前要返回前端的响应对象]
 - YZE_HOOK_GET_USER_ARO_NAME
-  - 获取当前登录用户的 aro 名字，也就是 acl 控制中登录用户的角色名
-  - 返回 aro 字符串
+    - 获取当前登录用户的 aro 名字，也就是 acl 控制中登录用户的角色名
+    - 返回 aro 字符串
 - YZE_HOOK_FILTER_URI
-  - 解析地址得到请求 url
+    - 解析地址得到请求 url
 - YZE_HOOK_GET_LOGIN_USER
-  - 获取当前的登录用户
-  - 无参数
+    - 获取当前的登录用户
+    - 无参数
 - YZE_HOOK_SET_LOGIN_USER
-  - 设置当前登录用户
-  - 参数为当前登录用户
+    - 设置当前登录用户
+    - 参数为当前登录用户
 - YZE_HOOK_AUTO_LOAD_CLASS
-  - 处理未能识别的 class 的文件包含
-  - 参数是 class 的完整名字
+    - 处理未能识别的 class 的文件包含
+    - 参数是 class 的完整名字
 - YZE_HOOK_GET_LOCALE
-  - 设置当前语言
+    - 设置当前语言
 - YZE_GRAPHQL_CUSTOM_QUERY_TYPE
 - YZE_GRAPHQL_CUSTOM_SEARCH
 
@@ -1699,7 +1719,7 @@ yangzie采用PHPT作为单元测试工具，他是 PHP 官方自带的测试文�
 
 特点：
 
-- 无需安装任何测试框架，PHP 官方包自带 `run-tests.php`；
+- 无需安装任何测试框架，框架自带自带 `autorun.php`；
 - 一个文件即一个测试用例，轻量、可读、易维护；
 - 支持跳过条件、环境变量、php.ini 设置、HTTP 模拟等多种能力。
 
@@ -2033,7 +2053,7 @@ Tests passed    :    4 ( 80.0%) --------
 #### 文件命名约定
 
 - 文件名都采用小写，避免在不同都操作系统上出现文件包含问题
-- 
+-
 
 #### 命名空间
 

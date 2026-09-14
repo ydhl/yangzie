@@ -4,8 +4,14 @@ use \yangzie\YZE_Resource_Controller;
 use \yangzie\YZE_Request;
 use \yangzie\YZE_Redirect;
 use \yangzie\YZE_RuntimeException;
+use yangzie\YZE_View_Adapter;
 
-// $data = $this->get_data('arg_name');
+/**
+ *
+ * @var YZE_View_Adapter $this 视图
+ */
+
+
 ?>
 
 this is index view of index

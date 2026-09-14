@@ -30,23 +30,18 @@ YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function  ( &$data ) {
 	$_SESSION [ 'admin' ] = $data;
 } );
 
-//获取当前登录用户的ARO
-YZE_Hook::add_hook ( YZE_HOOK_GET_USER_ARO_NAME, function  ( ) {
-	// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
-	if ( !($_SESSION['admin'] ?? null) )return "/";
-	return "TODO your ARO NAME";
+YZE_Hook::add_hook ( YZE_HOOK_NEED_SIGNIN, function  (&$datas) {
+//    把下面的/signin修改成你实际的登录地址; 并删除掉该throw new 语句。
+	throw new YZE_FatalException('在app/hooks/auth.php中修改YZE_HOOK_NEED_SIGNIN hook替换实际的登录地址');
+//    $datas['response'] = new YZE_Redirect("/signin", $datas['controller']);
+
 } );
 
-// 在这里对系统的异常进行判断，如果是YZE_Need_Signin_Exception异常，则跳转到指定的登录地址;
 // 传入的$datas格式为["exception"=>$e, "controller"=>$controller, "response"=>$response]
 YZE_Hook::add_hook(YZE_HOOK_YZE_EXCEPTION, function (&$datas){
     $request = YZE_Request::get_instance();
-    if(! is_a($datas['exception'], "\\yangzie\\YZE_Need_Signin_Exception")) return $datas;
-
-//    把下面的/signin修改成你实际的登录地址; 并删除掉该throw new 语句。
-    throw new YZE_FatalException('在app/hooks/auth.php中修改YZE_HOOK_YZE_EXCEPTION hook替换实际的登录地址');
-//    $datas['response'] = new YZE_Redirect("/signin", $datas['controller']);
 
     return $datas;
 });
+
 ?>

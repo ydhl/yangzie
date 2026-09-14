@@ -221,14 +221,42 @@ class YZE_SQL extends YZE_Object{
 	}
 
 	/**
-	 * 构建原生where条件，根据调用的顺序构建最终的where语句；
+	 * 构建where条件，根据调用的顺序构建最终的where语句；
 	 * 需要考虑如何和上一个where是and还是or，如where("and ....")或where("or ....")
-	 * @param $where
+	 *
+	 * 两种调用方式：
+	 * <pre>
+	 * 1) where("m.id=1")：直接拼接原生条件字符串，多个原生条件需自行书写 and/or 连接符
+	 * 2) where("m", "id", YZE_SQL::EQ, 1)：结构化条件，与前面的条件按 andor(默认 and) 连接
+	 * 3) where("m", "id", YZE_SQL::EQ, 1, "or")：结构化条件，与前面的条件按 or 连接
+	 * </pre>
+	 *
+	 * @param string $alias 表别名；单参调用时为原生 where 字符串
+	 * @param string|null $field 字段名
+	 * @param string|null $op 操作符，参见 YZE_SQL::EQ 等常量
+	 * @param mixed|null $value 条件值，数组用于 IN/NOT IN/BETWEEN，YZE_SQL 用于子查询
+	 * @param string $andor 与上一个条件的连接符，仅 or（不区分大小写）按 or 连接，其它值一律按 and；首个条件不使用该值
 	 * @return YZE_SQL
 	 */
-	public function where($where){
+	public function where($alias, $field = null, $op = null, $value = null, $andor = "and"){
+		// ai@2026-09-13 兼容 dba.php/model.php 中 where($alias,$field,$op,$value) 的结构化调用；
+		// 单参调用保持原有语义：直接拼接原生 where 字符串
+		if (func_num_args() === 1) {
 			$this->where[] = array(
-			"native"	=> $where
+				"native"	=> $alias
+			);
+			return $this;
+		}
+		// ai@2026-09-14 andor 会被 _where 原样拼进 sql，这里做白名单规范化，非法值不进入语句
+		$andor = strtolower(trim((string)$andor)) === "or" ? "or" : "and";
+		$this->where[] = array(
+			"alias"		=> $alias,
+			"field"		=> $field,
+			"op"		=> $op,
+			"value"		=> $value,
+			"andor"		=> $andor,
+			// _buildWhere 直接读取该键，缺省会产生未定义索引警告
+			"is_column"	=> false
 		);
 		return $this;
 	}
@@ -554,7 +582,7 @@ class YZE_SQL extends YZE_Object{
 	 * @param string $name 标识符
 	 * @return string 引用后的标识符
 	 */
-	private function _quote_identifier($name){
+	public function quote_identifier($name){
 		switch(strtolower((string)$this->db_type)){
 			case self::DB_TYPE_SQLSERVER:
 			case 'mssql':
@@ -722,7 +750,7 @@ class YZE_SQL extends YZE_Object{
 		foreach($this->from as $alias => $from_table){
 			// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 			// ai@2026-08-28 表名(含分表后缀)按数据库类型加引用符号
-			$from[$alias] = $this->_quote_identifier($from_table['table'].(($this->suffix[$alias] ?? null) ?: ""));
+			$from[$alias] = $this->quote_identifier($from_table['table'].(($this->suffix[$alias] ?? null) ?: ""));
 		}
 		return $from;
 	}
@@ -762,21 +790,21 @@ class YZE_SQL extends YZE_Object{
 		foreach($this->from as $alias => $from_table){
 			$suffix = ($this->suffix[$alias] ?? null) ?: "";
 			// ai@2026-08-28 表名(含分表后缀)按数据库类型加引用符号
-			$table = $this->_quote_identifier($from_table['table'].$suffix);
+			$table = $this->quote_identifier($from_table['table'].$suffix);
 			if($from_table['join']){
 				switch(strtoupper($from_table['join']['type'])){
 					case 'LEFT':
 						$from[] = "LEFT JOIN ".(
 							$no_alias ?
 								$table :
-								$table." AS ".$this->_quote_identifier($alias))
+								$table." AS ".$this->quote_identifier($alias))
 							." ON ".$from_table['join']['on'];
 						break;
 					case 'RIGHT':
 						$from[] = "RIGHT JOIN ".(
 							$no_alias ?
 								$table :
-								$table." AS ".$this->_quote_identifier($alias))
+								$table." AS ".$this->quote_identifier($alias))
 							." ON ".$from_table['join']['on'];
 						break;
 					default:
@@ -784,13 +812,13 @@ class YZE_SQL extends YZE_Object{
 						$from[] = "INNER JOIN ".(
 							$no_alias ?
 								$table :
-								$table." AS ".$this->_quote_identifier($alias))
+								$table." AS ".$this->quote_identifier($alias))
 							." ON ".$from_table['join']['on'];
 						break;
 				}
 			}else{
 				//先处理from，在按顺序处理其他join
-				array_unshift($from, $no_alias ? $table : $table." AS ".$this->_quote_identifier($alias));
+				array_unshift($from, $no_alias ? $table : $table." AS ".$this->quote_identifier($alias));
 			}
 		}
 
@@ -808,7 +836,7 @@ class YZE_SQL extends YZE_Object{
 		if($this->distinct){
 			$alias = $this->distinct['alias'];
 			$column = $this->distinct['field'];
-			$select[] = "distinct ".$this->_quote_identifier($alias).".".$this->_quote_identifier($column)." AS ".$this->_quote_identifier($alias."_".$column);
+			$select[] = "distinct ".$this->quote_identifier($alias).".".$this->quote_identifier($column)." AS ".$this->quote_identifier($alias."_".$column);
 		}
 
 		if($this->select){#指定了要查询什么
@@ -819,11 +847,11 @@ class YZE_SQL extends YZE_Object{
 					    $cls = $this->classes[$alias];
 						$entities = new $cls;
 						foreach($entities->get_columns() as $column => $define){
-							$select[] = $this->_quote_identifier($alias).".".$this->_quote_identifier($column)." AS ".$this->_quote_identifier($alias."_".$column);
+							$select[] = $this->quote_identifier($alias).".".$this->quote_identifier($column)." AS ".$this->quote_identifier($alias."_".$column);
 						}
 						unset($entities);
 					}else{
-						$select[] = $this->_quote_identifier($alias).".".$this->_quote_identifier($column)." AS ".$this->_quote_identifier($alias."_".$column);
+						$select[] = $this->quote_identifier($alias).".".$this->quote_identifier($column)." AS ".$this->quote_identifier($alias."_".$column);
 					}
 				}
 			}
@@ -837,7 +865,7 @@ class YZE_SQL extends YZE_Object{
 			foreach($this->classes as $alias => $cls){
 				$entities = new $cls;
 				foreach($entities->get_columns() as $column => $define){
-					$select[] = $this->_quote_identifier($alias).".".$this->_quote_identifier($column)." AS ".$this->_quote_identifier($alias."_".$column);
+					$select[] = $this->quote_identifier($alias).".".$this->quote_identifier($column)." AS ".$this->quote_identifier($alias."_".$column);
 				}
 				unset($entities);
 			}
@@ -846,23 +874,23 @@ class YZE_SQL extends YZE_Object{
 		foreach($this->count as $counts){
 			foreach($counts as $alias => $count){
 				$select[] = $count['field']=="*"
-					? "count(".($count['distinct'] ? "distinct" : "")." *) AS ".$this->_quote_identifier($alias."_".$count['alias'])
-					: "count(".($count['distinct'] ? "distinct" : "")." ".$this->_quote_identifier($alias).".".$this->_quote_identifier($count['field']).") AS ".$this->_quote_identifier($alias."_".$count['alias']);
+					? "count(".($count['distinct'] ? "distinct" : "")." *) AS ".$this->quote_identifier($alias."_".$count['alias'])
+					: "count(".($count['distinct'] ? "distinct" : "")." ".$this->quote_identifier($alias).".".$this->quote_identifier($count['field']).") AS ".$this->quote_identifier($alias."_".$count['alias']);
 			}
 		}
 		foreach($this->max as $maxs){
 			foreach($maxs as $alias => $max){
-				$select[] = "max(".$this->_quote_identifier($alias).".".$this->_quote_identifier($max['field']).") AS ".$this->_quote_identifier($alias."_".$max['alias']);
+				$select[] = "max(".$this->quote_identifier($alias).".".$this->quote_identifier($max['field']).") AS ".$this->quote_identifier($alias."_".$max['alias']);
 			}
 		}
 		foreach($this->min as $mins){
 			foreach($mins as $alias => $min){
-				$select[] = "min(".$this->_quote_identifier($alias).".".$this->_quote_identifier($min['field']).") AS ".$this->_quote_identifier($alias."_".$min['alias']);
+				$select[] = "min(".$this->quote_identifier($alias).".".$this->quote_identifier($min['field']).") AS ".$this->quote_identifier($alias."_".$min['alias']);
 			}
 		}
 		foreach ($this->sum as $sums){
 			foreach($sums as $alias => $sum){
-				$select[] = "sum(".$this->_quote_identifier($alias).".".$this->_quote_identifier($sum['field']).") AS ".$this->_quote_identifier($alias."_".$sum['alias']);
+				$select[] = "sum(".$this->quote_identifier($alias).".".$this->quote_identifier($sum['field']).") AS ".$this->quote_identifier($alias."_".$sum['alias']);
 			}
 		}
 
@@ -898,11 +926,11 @@ class YZE_SQL extends YZE_Object{
 			foreach((array)$insertDatas as $field => $value){
 			    $val = $this->_quoteValue($value);
 			    if(($this->insert_type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_UPDATE && ! in_array($field, $this->unique_key))){
-			        $update[] = $this->_quote_identifier($field)."=VALUES(".$this->_quote_identifier($field).")";
+			        $update[] = $this->quote_identifier($field)."=VALUES(".$this->quote_identifier($field).")";
 			    }else if($this->insert_type==YZE_SQL::INSERT_ON_DUPLICATE_KEY_REPLACE){
-			        $update[] = $this->_quote_identifier($field)."={$val}";
+			        $update[] = $this->quote_identifier($field)."={$val}";
 			    }
-				$insert_column[] = $this->_quote_identifier($field);
+				$insert_column[] = $this->quote_identifier($field);
 				$insert_value[]  = $val;
 			}
 		}
@@ -911,12 +939,12 @@ class YZE_SQL extends YZE_Object{
 
 		switch ($this->insert_type){
 		    case self::INSERT_EXIST:
-		        $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$this->_quote_identifier($class::KEY_NAME)." FROM ".$this->_from()." WHERE ".$this->_where();
+		        $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$this->quote_identifier($class::KEY_NAME)." FROM ".$this->_from()." WHERE ".$this->_where();
 		        return "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") SELECT ".join(",",$insert_value)." FROM dual WHERE EXISTS ({$where})";
 
 	        case self::INSERT_NOT_EXIST:
             case self::INSERT_NOT_EXIST_OR_UPDATE:
-                $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$this->_quote_identifier($class::KEY_NAME)." FROM ".$this->_from()." WHERE ".$this->_where();
+                $where = $this->check_sql ? $this->check_sql->__toString() : "SELECT ".$this->quote_identifier($class::KEY_NAME)." FROM ".$this->_from()." WHERE ".$this->_where();
 	            return "INSERT INTO ".$this->_from()." (".join(",",$insert_column).") SELECT ".join(",",$insert_value)." FROM dual WHERE NOT EXISTS ({$where})";
 
 		    case self::INSERT_ON_DUPLICATE_KEY_IGNORE:
@@ -926,7 +954,9 @@ class YZE_SQL extends YZE_Object{
 
 		        return  "INSERT INTO ".$this->_from()
 		        ." (".join(",",$insert_column).") VALUES("
-		                .join(",",$insert_value).")  ON DUPLICATE KEY UPDATE ".$this->_quote_identifier($class::KEY_NAME)." = LAST_INSERT_ID(".$this->_quote_identifier($class::KEY_NAME)."), ".join(",", $update);
+		                .join(",",$insert_value).")  ON DUPLICATE KEY UPDATE "
+					.$this->quote_identifier($class::KEY_NAME)." = LAST_INSERT_ID("
+					.$this->quote_identifier($class::KEY_NAME).")".($update ? ", ".join(",", $update) : "");
 
 		    case self::INSERT_ON_DUPLICATE_KEY_REPLACE:
 		        return  "REPLACE INTO ".$this->_from()." SET ".join(",", $update);
@@ -945,7 +975,7 @@ class YZE_SQL extends YZE_Object{
 	private function _update(){
 		foreach($this->update as $alias => $updateDatas){
 			foreach((array)$updateDatas as $field => $value){
-				$update[] = $this->_quote_identifier($alias).".".$this->_quote_identifier($field)."=".$this->_quoteValue($value);
+				$update[] = $this->quote_identifier($alias).".".$this->quote_identifier($field)."=".$this->_quoteValue($value);
 			}
 		}
 		$where = $this->_where();
@@ -964,7 +994,7 @@ class YZE_SQL extends YZE_Object{
 		    if(!empty($group_by['function'])){
 		        $by[] = $group_by['group_by'];
 		    }else{
-			    $by[] = $group_by['use_alias'] ? $this->_quote_identifier($group_by['alias']."_".$group_by['group_by']) : $this->_quote_identifier($group_by['alias']).".".$this->_quote_identifier($group_by['group_by']);
+			    $by[] = $group_by['use_alias'] ? $this->quote_identifier($group_by['alias']."_".$group_by['group_by']) : $this->quote_identifier($group_by['alias']).".".$this->quote_identifier($group_by['group_by']);
 		    }
 		}
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
@@ -977,7 +1007,7 @@ class YZE_SQL extends YZE_Object{
 	 */
 	private function _order_by(){
 		foreach ($this->order_by as $order_by){
-			$by[] = ($order_by['use_alias'] ? $this->_quote_identifier($order_by['alias']."_".$order_by['order_by'])." " : $this->_quote_identifier($order_by['alias']).".".$this->_quote_identifier($order_by['order_by'])." ").strtoupper($order_by['sort']);
+			$by[] = ($order_by['use_alias'] ? $this->quote_identifier($order_by['alias']."_".$order_by['order_by'])." " : $this->quote_identifier($order_by['alias']).".".$this->quote_identifier($order_by['order_by'])." ").strtoupper($order_by['sort']);
 		}
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
 		return ($by ?? null) ? " ORDER BY ".join(',',$by) : "";
@@ -1058,9 +1088,9 @@ class YZE_SQL extends YZE_Object{
 	 */
 	private function _buildWhere($wheres){
 	    if($this->isinsert() || $this->isdelete()){
-	        $column = $this->_quote_identifier($wheres['field']);
+	        $column = $this->quote_identifier($wheres['field']);
 	    }else{
-	        $column = $this->_quote_identifier($wheres['alias']).".".$this->_quote_identifier($wheres['field']);
+	        $column = $this->quote_identifier($wheres['alias']).".".$this->quote_identifier($wheres['field']);
 	        if(!empty($wheres['field_func'])){
 	            $column = $wheres['field_func']."( ".$column." )";
 	        }
@@ -1080,7 +1110,7 @@ class YZE_SQL extends YZE_Object{
 	        }
 	        return $column.$cond;
 	    }
-	    $quoted_value = $wheres['is_column'] ? $this->_quote_identifier($wheres['value']) : $this->_quoteValue($wheres['value']);
+	    $quoted_value = $wheres['is_column'] ? $this->quote_identifier($wheres['value']) : $this->_quoteValue($wheres['value']);
 	    switch($wheres['op']){
 	        case self::LIKE:		$cond = " LIKE ".YZE_DBAImpl::get_instance()->quote("%".self::defilter_var($wheres['value'])."%");break;
 	        case self::BEFORE_LIKE:	$cond = " LIKE ".YZE_DBAImpl::get_instance()->quote("%".self::defilter_var($wheres['value']));break;

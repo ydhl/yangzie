@@ -151,7 +151,11 @@ function yze_handle_request() {
             }
 
             $filter_data = ["exception"=>$e, "controller"=>$controller, "response"=>$response];
-            $filter_data = \yangzie\YZE_Hook::do_hook(YZE_HOOK_YZE_EXCEPTION,$filter_data);
+            if (is_a($e, "\\yangzie\\YZE_Need_Signin_Exception")){
+                $filter_data = \yangzie\YZE_Hook::do_hook(YZE_HOOK_NEED_SIGNIN,$filter_data);
+            }else{
+                $filter_data = \yangzie\YZE_Hook::do_hook(YZE_HOOK_YZE_EXCEPTION,$filter_data);
+            }
             $response = $filter_data['response'];
 
             $output($request, $controller, $response);

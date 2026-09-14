@@ -310,6 +310,18 @@ class YZE_DBAImpl extends YZE_Object
 	}
 
 	/**
+	 * 给标识符(表名/字段名/别名)加上当前数据库类型对应的引用符号
+	 *
+	 * @param string $name 标识符
+	 * @return string 引用后的标识符
+	 */
+	public function quote_identifier($name){
+		$sql = new YZE_SQL();
+		$sql->set_db_type($this->get_db_type());
+		return $sql->quote_identifier($name);
+	}
+
+	/**
 	 * 批量查找class的指定id的对象
 	 * @param array $ids 主键
 	 * @param string $class 类名

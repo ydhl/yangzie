@@ -63,6 +63,11 @@ define ( 'YZE_HOOK_YZE_EXCEPTION', 'yze_hook_yze_exception' );
  * @var unknown
  */
 define ( 'YZE_HOOK_GET_USER_ARO_NAME', 'yze_hook_get_user_aro_name' );
+/**
+ * 登录处理hook，通过response返回登录地址
+ * ["exception"=>$e, "controller"=>$controller, "response"=>$response]
+ */
+define ( 'YZE_HOOK_NEED_SIGNIN', 'yze_hook_need_signin' );
 
 /**
  * 解析地址得到请求url，如module/controller/var

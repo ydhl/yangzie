@@ -57,6 +57,29 @@ class App_Module extends \yangzie\YZE_Base_Module{
 		if( version_compare(PHP_VERSION,'8.0.0','lt')){
 			throw new YZE_FatalException("要求8.0以上PHP版本");
 		}
+		// ai@2026-09-13 补充 PHP 扩展检查：mbstring（dba/model/graphql/pomo 使用 mb_* 函数）、
+		// pdo_mysql（YZE_DBAImpl 的 DSN 写死 mysql）、Phar/zlib/openssl（模块 phar 的打包与 phar:// 加载）；
+		// SESSIONLESS 为 false 时 init.php 会调用 session_start()，故还需要 session。
+		// json 自 PHP 8.0 起为内置扩展不可禁用，无需检查；mysqli 只有 CLI 生成 model 时用到，不属于应用运行必需。
+		$required_extensions = array(
+			"mbstring"  => "框架的字符处理（dba/model/graphql/pomo 的 mb_* 函数）",
+			"pdo_mysql" => "数据库访问（YZE_DBAImpl 使用 PDO 的 mysql DSN）",
+			"Phar"      => "模块 phar 的打包与 phar:// 模块加载",
+			"zlib"      => "phar 打包时使用 Phar::GZ 压缩",
+			"openssl"   => "phar 的 OpenSSL 签名与校验",
+		);
+		if ( ! SESSIONLESS ) {
+			$required_extensions["session"] = "非 SESSIONLESS 应用会调用 session_start()";
+		}
+		$missing = array();
+		foreach ($required_extensions as $extension => $reason){
+			if ( ! extension_loaded($extension) ) {
+				$missing[] = $extension."（".$reason."）";
+			}
+		}
+		if ($missing) {
+			throw new YZE_FatalException("缺少必需的 PHP 扩展：".join("、", $missing));
+		}
 	}
 
 	/**
@@ -65,16 +88,16 @@ class App_Module extends \yangzie\YZE_Base_Module{
 	 */
 	protected function config(): array{
 		return [
-			'default_db' => 'lighttable', // 默认链接的数据库名，请填写项目实际的数据库名
+			'default_db' => 'yangai_20260821', // 默认链接的数据库名，请填写项目实际的数据库名
 			'db_connections' => [
-				'lighttable' => [
-					'db_type' => $this->env('lighttable.db_type', 'mysql'),
-					'db_host' => $this->env('lighttable.db_host', ''),
-					'db_user' => $this->env('lighttable.db_user', ''),
-					'db_psw'  => $this->env('lighttable.db_psw', ''),
-					'db_port' => $this->env('lighttable.db_port', '3306'),
-					'db_charset'=> $this->env('lighttable.db_charset', 'utf8'),
-					'crypt_key'=> $this->env('lighttable.crypt_key', ''),
+				'yangai_20260821' => [
+					'db_type' => $this->env('yangai_20260821.db_type', 'mysql'),
+					'db_host' => $this->env('yangai_20260821.db_host', ''),
+					'db_user' => $this->env('yangai_20260821.db_user', ''),
+					'db_psw'  => $this->env('yangai_20260821.db_psw', ''),
+					'db_port' => $this->env('yangai_20260821.db_port', '3306'),
+					'db_charset'=> $this->env('yangai_20260821.db_charset', 'utf8'),
+					'crypt_key'=> $this->env('yangai_20260821.crypt_key', ''),
 					'db_params' => [\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY=>true],
 				],
 				'test2' => [

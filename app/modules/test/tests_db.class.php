@@ -33,6 +33,8 @@ class Tests_Db {
     const TABLE_DB_CTX_X = 'tests_db_ctx_x';
     /** 测试表：CLI 加密字段生成测试 */
     const TABLE_ENCRYPT = 'yze_encrypt_test';
+    /** 测试表：dba.php 字段加密端到端测试 */
+    const TABLE_ENCRYPT_E2E = 'yze_encrypt_e2e';
 
     /**
      * 所有测试表结构，key 为表名，value 为建表语句
@@ -71,14 +73,23 @@ class Tests_Db {
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
             self::TABLE_ENCRYPT => "CREATE TABLE IF NOT EXISTS `".self::TABLE_ENCRYPT."` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `password` varchar(45) NOT NULL DEFAULT '',
-  `memo` varchar(100) DEFAULT NULL,
-  `other` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8",
-        );
-    }
+             `id` int NOT NULL AUTO_INCREMENT,
+             `password` varchar(45) NOT NULL DEFAULT '',
+             `memo` varchar(100) DEFAULT NULL,
+             `other` varchar(45) DEFAULT NULL,
+             PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
+                        // ai@2026-09-21 dba.php 字段加密端到端测试：password/token/secret_note 为加密字段，长度按 AES_ENCRYPT+bin2hex 输出预留
+                        self::TABLE_ENCRYPT_E2E => "CREATE TABLE IF NOT EXISTS `".self::TABLE_ENCRYPT_E2E."` (
+             `id` int(11) NOT NULL AUTO_INCREMENT,
+             `name` varchar(45) NOT NULL DEFAULT '',
+             `password` varchar(255) NOT NULL DEFAULT '',
+             `token` varchar(255) DEFAULT NULL,
+             `secret_note` varchar(512) DEFAULT NULL,
+             PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
+                    );
+                }
 
     /**
      * 配置中所有的数据库连接（key 为库名）

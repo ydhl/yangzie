@@ -145,13 +145,16 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 获取 model 的完整记录数据，其中加密字段进行加密处理
 	 *
+	 * ai@2026-09-21 仅依据 Column(encrypt: true) 注解判定加密字段；
+	 *     旧版的 $encrypt_columns 数组属性已废弃，不再读取。
+	 *
 	 * @param YZE_Model $entity model 对象
 	 * @return array 加密后的字段值集合
 	 */
 	private function get_entity_record(YZE_Model $entity){
 		$records = $entity->get_records();
 		foreach ($records as $name => &$value) {
-			if (in_array($name, $entity->encrypt_columns)){
+			if ($entity->is_encrypt_column($name)){
 				$value = $this->encrypt($value);
 			}
 		}
@@ -232,7 +235,8 @@ class YZE_DBAImpl extends YZE_Object
 					continue;
 				}
 				$value = self::filter_var($field_value);
-				if (in_array($field_name, $entity->encrypt_columns)){
+				// ai@2026-09-21 仅依据 Column(encrypt: true) 注解判定加密字段；旧版的 $encrypt_columns 数组属性已废弃
+				if ($entity->is_encrypt_column($field_name)){
 					$value = $this->decrypt($value);
 				}
 				$entity->set( $field_name , $value);#数据库取出来编码
@@ -281,9 +285,12 @@ class YZE_DBAImpl extends YZE_Object
 			return null;
 		}
 		$key = $this->get_crypt_key();
-		$rst = $this->native_Query("select AES_DECRYPT(".$this->quote(hex2bin($hexString)).",".$this->quote($key).") as var");
+		// ai@2026-09-21 用 HEX() 把二进制结果转成 hex 字符串再返回，
+		//     避免 utf8 连接把 AES_DECRYPT 输出的非 UTF-8 字节替换成 '?' 导致 roundtrip 失败。
+		$rst = $this->native_Query("select HEX(AES_DECRYPT(".$this->quote(hex2bin($hexString)).",".$this->quote($key).")) as var");
 		$rst->next();
-		return $rst->f('var');
+		$hex = $rst->f('var');
+		return is_null($hex) ? null : hex2bin($hex);
 	}
 
 	/**
@@ -293,11 +300,16 @@ class YZE_DBAImpl extends YZE_Object
 	 * @throws YZE_DBAException
 	 */
 	public function encrypt($value){
+		// ai@2026-09-21 NULL 输入直接返回 NULL，避免 AES_ENCRYPT('', key) 把空串当成空内容加密后落库
+		if (is_null($value)) {
+			return null;
+		}
+		// ai@2026-09-21 用 HEX() 把 AES_ENCRYPT 的二进制结果先转成 hex 字符串，
+		//     避免 utf8 连接把非 UTF-8 字节替换成 '?' 导致 encrypt 输出本身就不可逆。
 		$key = $this->get_crypt_key();
-		$rst = $this->native_Query("select AES_ENCRYPT(".$this->quote($value).",".$this->quote($key).") as var");
+		$rst = $this->native_Query("select HEX(AES_ENCRYPT(".$this->quote($value).",".$this->quote($key).")) as var");
 		$rst->next();
-		$value = $rst->f('var');
-		return $value ? bin2hex($value) : $value;
+		return $rst->f('var');
 	}
 
 	/**

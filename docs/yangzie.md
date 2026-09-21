@@ -943,7 +943,7 @@ Model 类是对数据库表的映射，database to code 的方式，需要事先
 3. 表常量：`TABLE`（表名）、`MODULE_NAME`（模块名）、`KEY_NAME`（主键字段名）、`UUID_NAME`（uuid 字段名）
 4. `unique_key`：唯一键字段映射（字段名 => 键名）；`relation_column`：外键关联映射
 5. 如果表和其他表之间有关联关系，会自动生成相关的 get、set 函数，方法名就是关联字段名去掉_id的部分
-6. 加密字段设置：字段可通过 Column 注解 `encrypt: true` 声明为加密字段（旧模型也可在类中定义 `$encrypt_columns` 数组），见字段加密
+6. 加密字段设置：字段可通过 Column 注解 `encrypt: true` 声明为加密字段，见字段加密
 
 #### [数据对象名].method.php
 

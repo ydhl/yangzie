@@ -616,7 +616,6 @@
 | `$suffix` | `private string|null` 分表查询时使用的表后缀 |
 | `$db` | `private string|null` 当前 Model 使用的数据库名 |
 | `$records` | `protected array` 记录数据集合，key 为字段名 |
-| `$encrypt_columns` | `public array` 需要进行加密的字段名（读写自动加解密） |
 | `$cache` | `private array` 缓存数据集合（预留） |
 | `$unique_key` | `protected array` 唯一键配置 |
 | `$relation_column` | `protected array` 与其他 model 的关联关系 |

@@ -27,11 +27,13 @@ class Test_Module extends YZE_Base_Module{
     public function js_bundle(string $bundle): array
     {
         // TODO: Implement js_bundle() method.
+        return [];
     }
 
     public function css_bundle(string $bundle): array
     {
         // TODO: Implement css_bundle() method.
+        return [];
     }
 }
 ?>

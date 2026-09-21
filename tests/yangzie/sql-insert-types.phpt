@@ -13,27 +13,10 @@ include dirname(__FILE__)."/sql_test_models.php";
 use yangzie\YZE_SQL;
 use yangzie\YZE_DBAImpl;
 use yangzie\YZE_Model;
-use yangzie\Column;
 use yangzie\T_User;
-
-class T_Insert_User extends YZE_Model {
-    const TABLE = "tests_insert_types";
-    const MODULE_NAME = "yangzie";
-    const KEY_NAME = "id";
-
-    protected $unique_key = array("email" => "email");
-
-    #[Column(type: 'int', nullable: false, length: 11)]
-    private int $id;
-    #[Column(type: 'string', nullable: false, length: 45)]
-    private string $name;
-    #[Column(type: 'float', nullable: false, length: 10, default: '0.00')]
-    private float $price;
-    #[Column(type: 'string', nullable: true, length: 100)]
-    private ?string $email;
-    #[Column(type: 'date', nullable: false, default: 'CURRENT_TIMESTAMP')]
-    private string $created_on;
-}
+// ai@2026-09-21 端到端使用的 tests_insert_types 表/model 由 test 模块统一提供
+use app\modules\test\Tests_Db;
+use app\test\Tests_Insert_Types_Model;
 
 function s($sql){ return str_replace("\r\n","\n",(string)$sql); }
 function one_line($sql){ return preg_replace('/\s+/', ' ', s($sql)); }
@@ -166,22 +149,15 @@ ok(strpos(last_log($spy), "UPDATE `users` AS `t`") === 0, "save 已有主键 SQL
 // 恢复连接静态属性，交给下面的端到端用例
 $connProp->setValue(null, $origConn ?: array());
 
-// ============ 3. 端到端：真实 MySQL 验证 7 种策略（自建 tests_insert_types 表） ============
+// ============ 3. 端到端：真实 MySQL 验证 7 种策略（复用 test 模块的 tests_insert_types 表） ============
 echo "--- 3. 端到端（真实 MySQL） ---\n";
+// ai@2026-09-21 检查测试库、测试表是否存在，不存在则创建，并清空数据
+Tests_Db::reset();
+
 $db = YZE_DBAImpl::get_instance();
-$db->exec("DROP TABLE IF EXISTS tests_insert_types");
-$db->exec("CREATE TABLE tests_insert_types (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  name varchar(45) NOT NULL,
-  price decimal(10,2) NOT NULL DEFAULT '0.00',
-  email varchar(100) DEFAULT NULL,
-  created_on datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY email_UNIQUE (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
 function new_user($name, $email, $price=1){
-    $u = new T_Insert_User();
+    $u = new Tests_Insert_Types_Model();
     $u->set('name', $name); $u->set('price', $price); $u->set('email', $email);
     $u->set('created_on', '2026-01-01 00:00:00');
     return $u;
@@ -218,20 +194,20 @@ ok(count_email($db,'normal@x.com') == 1, "端到端 INSERT_ON_DUPLICATE_KEY_REPL
 
 // 3.5 INSERT_EXIST：checkSql 命中才插入
 $db->save(new_user('exists-target', 'exists@x.com'));
-$ckExist = YZE_SQL::new_SQL()->from(T_Insert_User::class,'t')->where("t.email = ".$db->quote('exists@x.com'));
+$ckExist = YZE_SQL::new_SQL()->from(Tests_Insert_Types_Model::class,'t')->where("t.email = ".$db->quote('exists@x.com'));
 $u5 = new_user('created-by-exist', 'exist-new@x.com');
 $r5 = $db->save($u5, YZE_SQL::INSERT_EXIST, $ckExist);
 ok($r5 > 0 && $u5->get_key() == $r5, "端到端 INSERT_EXIST 命中时插入返回主键 $r5");
 ok(count_email($db,'exist-new@x.com') == 1, "端到端 INSERT_EXIST 命中时记录已写入");
 
-$ckExist2 = YZE_SQL::new_SQL()->from(T_Insert_User::class,'t')->where("t.email = ".$db->quote('nobody@x.com'));
+$ckExist2 = YZE_SQL::new_SQL()->from(Tests_Insert_Types_Model::class,'t')->where("t.email = ".$db->quote('nobody@x.com'));
 $u6 = new_user('not-created', 'exist-none@x.com');
 $r6 = $db->save($u6, YZE_SQL::INSERT_EXIST, $ckExist2);
 ok($r6 === 0 && $u6->get_key() == 0, "端到端 INSERT_EXIST 未命中时返回 0");
 ok(count_email($db,'exist-none@x.com') == 0, "端到端 INSERT_EXIST 未命中时未写入");
 
 // 3.6 INSERT_NOT_EXIST：checkSql 未命中才插入
-$ckNotExist = YZE_SQL::new_SQL()->from(T_Insert_User::class,'t')->where("t.email = ".$db->quote('not-exist@x.com'));
+$ckNotExist = YZE_SQL::new_SQL()->from(Tests_Insert_Types_Model::class,'t')->where("t.email = ".$db->quote('not-exist@x.com'));
 $u7 = new_user('inserted-by-not-exist', 'not-exist@x.com');
 $r7 = $db->save($u7, YZE_SQL::INSERT_NOT_EXIST, $ckNotExist);
 ok($r7 > 0 && $u7->get_key() == $r7, "端到端 INSERT_NOT_EXIST 未命中时插入返回主键 $r7");
@@ -242,19 +218,19 @@ ok($r8 === 0 && $u8->get_key() == 0, "端到端 INSERT_NOT_EXIST 命中时返回
 ok(name_of($db,'not-exist@x.com') === 'inserted-by-not-exist', "端到端 INSERT_NOT_EXIST 命中时未修改记录");
 
 // 3.7 INSERT_NOT_EXIST_OR_UPDATE：未命中插入，命中更新
-$ckUpsert = YZE_SQL::new_SQL()->from(T_Insert_User::class,'t')->where("t.email = ".$db->quote('upsert@x.com'));
+$ckUpsert = YZE_SQL::new_SQL()->from(Tests_Insert_Types_Model::class,'t')->where("t.email = ".$db->quote('upsert@x.com'));
 $u9 = new_user('upsert-first', 'upsert@x.com');
 $r9 = $db->save($u9, YZE_SQL::INSERT_NOT_EXIST_OR_UPDATE, $ckUpsert);
 ok($r9 > 0 && $u9->get_key() == $r9, "端到端 INSERT_NOT_EXIST_OR_UPDATE 未命中时插入返回主键 $r9");
 
-$ckUpsert2 = YZE_SQL::new_SQL()->from(T_Insert_User::class,'t')->where("t.email = ".$db->quote('upsert@x.com'));
+$ckUpsert2 = YZE_SQL::new_SQL()->from(Tests_Insert_Types_Model::class,'t')->where("t.email = ".$db->quote('upsert@x.com'));
 $u10 = new_user('upsert-second', 'upsert@x.com');
 $r10 = $db->save($u10, YZE_SQL::INSERT_NOT_EXIST_OR_UPDATE, $ckUpsert2);
 ok($r10 == $r9, "端到端 INSERT_NOT_EXIST_OR_UPDATE 命中时返回已有主键 $r10");
 ok(name_of($db,'upsert@x.com') === 'upsert-second', "端到端 INSERT_NOT_EXIST_OR_UPDATE 命中时更新记录");
 ok(count_email($db,'upsert@x.com') == 1, "端到端 INSERT_NOT_EXIST_OR_UPDATE 未新增行");
 
-$db->exec("DROP TABLE IF EXISTS tests_insert_types");
+// ai@2026-09-21 测试表由 Tests_Db 统一管理，测试内不再 DROP
 ?>
 --EXPECT--
 --- 1. YZE_SQL insert_type 语句生成 ---

@@ -486,10 +486,19 @@ class YZE_DBAImpl extends YZE_Object
 		$num_rows = count($raw_result);
 		$entity_objects = array();
 
+		// ai@2026-09-21 分库/分表上下文同步：本次查询是在 $this->db_name 库上执行的，
+		// 构建出的 model 必须带上该库名与各表的分表后缀，否则 model 后续调用
+		// save/remove/refresh 或自身的链式查询时会回到默认库、丢失分表后缀
+		$suffixs = $sql->get_suffixs();
+
 		//多表查询, 对每一行数据中的每一个entity, 构建好entity
 		for($i=0;$i<$num_rows;$i++){#所有的对象
 			foreach($classes as $alias => $cls){
 				$e = new $cls();
+				$e->in_db($this->db_name);
+				if ( !empty($suffixs[$alias]) ){
+					$e->suffix($suffixs[$alias]);
+				}
 				$entity_objects[$i][ $alias ] = $e;
 			}
 		}

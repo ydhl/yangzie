@@ -536,6 +536,27 @@ abstract class YZE_View_Component extends YZE_View_Adapter{
         parent::__construct( $data, $controller);
 		$this->format 	= $format ?: $controller->get_Request()->get_output_format();
     }
+
+    /**
+     * 工厂方法：构造一个空数据的子类实例，配套 setter 链式填充数据。
+     *
+     * 用法（yangzie.md:751 的约定）：
+     *     $card = User_Card_View::build($this)
+     *         ->set_user('alice', '爱丽丝', 'alice@example.com')
+     *         ->set_level('admin');
+     *     return $card;
+     *
+     * 与直接 `new self([], ...)` 等价，但省略第一个 `[]` 参数（控制器是组件构造的硬约束），
+     * 调用更简洁。子类的 `output_component()` 通常需要拿 `$this->data`，由 setter 写入。
+     *
+     * @param YZE_Resource_Controller $controller 上下文控制器（必传，组件构造约定）
+     * @param string|null             $format     固定输出格式；null 时按请求格式自动取
+     * @return static                                       返回子类实例（late static binding）
+     */
+    public static function build(YZE_Resource_Controller $controller, ?string $format = null): self {
+        return new static([], $controller, $format);
+    }
+
     protected function display_self(){
         $this->output_component();
     }

@@ -51,23 +51,6 @@ abstract class YZE_Model extends YZE_Object{
 	protected $records = array();
 
 	/**
-	 * 需要进行加密的字段名，
-	 *
-	 * 加密是对称的，对于这类指定的加密字段，通过yangzie Api进行读取和写入时（get,set）是自动进行加密解密的，对开发者是无感的.
-	 *
-	 * 如果不配置，开发者也可通过YZE_DBAImpl->encrypt,YZE_DBAImpl->decrypt加解密设置，
-	 * 通过yangzie接口对数据进行读写的都支持加解密处理, 但如果是开发者自己写原生sql，则由开发者自行处理
-	 * <br/><br/>
-	 * 加解密不同的数据库实现会不同，Mysql是通过AES_ENCRYPT、AES_DECRYPT实现的；加解密的秘钥在__config__.php中数据库配置CRYPT_KEY指定
-	 * 但要注意加密的内容是二进制格式（blob），或者自行通过bin2hex等转换成字符串存储，所以需要设置合适的字段类型
-	 *
-	 *
-	 * @var array
-	 */
-	public $encrypt_columns = array();
-
-
-	/**
 	 * 反射解析 Column 注解得到的字段配置缓存，key 为模型类名
 	 * @var array|null
 	 */
@@ -661,44 +644,46 @@ abstract class YZE_Model extends YZE_Object{
 	}
 
 	/**
-	 * 魔术方法：读取字段值，配置为加密字段时自动解密
+	 * 魔术方法：读取字段值
+	 *
+	 * ai@2026-09-21 取消此处的自动解密：
+	 *     字段加解密统一由 dba.php 在 save / load 阶段处理，
+	 *     records 中始终保存明文（最后一次），避免 __get 与 build_entity 双重解密产生乱码。
 	 *
 	 * @param string $name 字段名
-	 * @return mixed 字段值（加密字段为解密后的值），字段不存在时返回 null
+	 * @return mixed 字段值（字段不存在时返回 null）
 	 */
 	public function __get($name){
-	    $value = $this->get($name);
-	    if ($this->is_encrypt_column($name)){
-	    	$value = YZE_DBAImpl::get_instance($this->db)->decrypt($value);
-		}
-	    return $value;
+	    return $this->get($name);
 	}
 
 	/**
 	 * 判断字段是否为加密字段：
-	 * 1. 显式声明在 $encrypt_columns 中的字段（兼容旧模型）；
-	 * 2. 通过 Column 注解 encrypt: true 声明的字段（新模型）
+	 * 通过 Column 注解 encrypt: true 声明的字段。
+	 *
+	 * dba.php 在 save/load 阶段通过本方法判断是否需要加/解密，
+	 * __get/__set 同样依赖本方法实现自动加解密。
 	 *
 	 * @param string $name 字段名
 	 * @return bool
 	 */
-	private function is_encrypt_column($name){
-		// ai@2026-08-27 新模型：Column 注解中的 encrypt 配置
+	public function is_encrypt_column($name){
 		$columns = $this->get_columns();
 		return isset($columns[$name]['encrypt']) && $columns[$name]['encrypt'];
 	}
 
 	/**
-	 * 魔术方法：写入字段值，配置为加密字段时自动加密
+	 * 魔术方法：写入字段值
+	 *
+	 * ai@2026-09-21 取消此处的自动加密：
+	 *     字段加解密统一由 dba.php 在 save / load 阶段处理，
+	 *     避免 __set 与 get_entity_record 双重加密产生无法解开的密文。
 	 *
 	 * @param string $name  字段名
 	 * @param mixed  $value 字段值
 	 * @return YZE_Model 返回当前 model 对象，支持链式调用
 	 */
 	public function __set($name, $value){
-		if ($this->is_encrypt_column($name)){
-			$value = YZE_DBAImpl::get_instance($this->db)->encrypt($value);
-		}
 	    return $this->set($name, $value);
 	}
 

@@ -29,12 +29,17 @@ YZE_Hook::add_hook ( YZE_HOOK_GET_LOGIN_USER, function  () {
 YZE_Hook::add_hook ( YZE_HOOK_SET_LOGIN_USER, function  ( &$data ) {
 	$_SESSION [ 'admin' ] = $data;
 } );
-
+YZE_Hook::add_hook ( YZE_HOOK_GET_USER_ARO_NAME, function  () {
+	// ai@2026-09-22 ACL 演示：当 session 中存了 demo_aro（由 Acl_Controller::switch_role 写入）时，
+	// 用该值作为 ARO；否则默认 /。生产环境应该根据登录用户到用户表里查角色名。
+	return $_SESSION['demo_aro'] ?: "/";
+} );
 YZE_Hook::add_hook ( YZE_HOOK_NEED_SIGNIN, function  (&$datas) {
-//    把下面的/signin修改成你实际的登录地址; 并删除掉该throw new 语句。
-	throw new YZE_FatalException('在app/hooks/auth.php中修改YZE_HOOK_NEED_SIGNIN hook替换实际的登录地址');
-//    $datas['response'] = new YZE_Redirect("/signin", $datas['controller']);
-
+	// ai@2026-09-21 演示登录：把未登录用户重定向到 test 模块下的登录页 /test/signin/login。
+	// 实际项目中按需改为业务登录地址；可以在这里根据 $request->is_get() / 是否 ajax
+	// 决定是返回 401 JSON 还是浏览器侧 Location 跳转。
+	$datas['response'] = new YZE_Redirect("/test/signin/login", $datas['controller']);
+	return $datas;
 } );
 
 // 传入的$datas格式为["exception"=>$e, "controller"=>$controller, "response"=>$response]

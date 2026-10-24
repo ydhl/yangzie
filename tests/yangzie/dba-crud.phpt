@@ -1,41 +1,19 @@
 --TEST--
-yangzie/dba.php 数据库操作单元测试：连接管理、CRUD、查询、insert 系列、字段校验、加密、结果集包装（自建 tests_dba_user 表）
+yangzie/dba.php 数据库操作单元测试：连接管理、CRUD、查询、insert 系列、字段校验、加密、结果集包装（复用 test 模块的 tests_dba_user 表与 model）
 --FILE--
 <?php
-// ai@2026-08-31 dba.php 集成测试：依赖本地 MySQL（.env 配置），自建 tests_dba_user 表，DDL 隐式提交，文件末尾 DROP TABLE 清理
+// ai@2026-08-31 dba.php 集成测试：依赖本地 MySQL（.env 配置）
+// ai@2026-09-21 测试库/表/model 统一由 test 模块提供（Tests_Db 检查库表是否存在，不存在则创建；model 见 app/modules/test/models）
 // ai@2026-08-31 sql.php where() 仅接受原生字符串；dba.php 的 find/find_by/delete/save_update 内部按结构化参数调用存在缺陷，
 //            本测试对这些方法不再断言，改用 lookup/update/deletefrom 及原生 where 的 YZE_SQL 验证等价能力
 ini_set("display_errors",0);
 use yangzie\YZE_DBAImpl;
 use yangzie\YZE_SQL;
 use yangzie\YZE_DBAException;
-use yangzie\YZE_Model;
-use yangzie\Column;
+use app\modules\test\Tests_Db;
+use app\test\Tests_Dba_User_Model;
 chdir(dirname(dirname(dirname(__FILE__)))."/app/public_html");
 include "init.php";
-
-class T_DBA_User extends YZE_Model {
-    const TABLE = "tests_dba_user";
-    const MODULE_NAME = "yangzie";
-    const KEY_NAME = "id";
-
-    protected $unique_key = ["email" => "email"];
-
-    #[Column(type: 'int', nullable: false, length: 11)]
-    private int $id;
-    #[Column(type: 'date', nullable: false, default: 'CURRENT_TIMESTAMP')]
-    private string $created_on;
-    #[Column(type: 'string', nullable: false, length: 45)]
-    private string $name;
-    #[Column(type: 'enum', nullable: false)]
-    private string $role;
-    #[Column(type: 'float', nullable: false, length: 10, default: '0.00')]
-    private float $price;
-    #[Column(type: 'string', nullable: true, length: 100)]
-    private ?string $email;
-
-    public function get_role(){ return ["manager","admin","warehouse"]; }
-}
 
 function ok($cond, $msg){ echo ($cond ? "PASS" : "FAIL"), " - ", $msg, "\n"; }
 function expect_exception($fn, $substr, $msg){
@@ -47,20 +25,10 @@ function expect_exception($fn, $substr, $msg){
     }
 }
 
-$db = YZE_DBAImpl::get_instance();
+// 检查测试库、测试表是否存在，不存在则创建，并清空数据（DDL 隐式提交）
+Tests_Db::reset();
 
-// 建测试表（DDL 隐式提交）
-$db->exec("DROP TABLE IF EXISTS tests_dba_user");
-$db->exec("CREATE TABLE tests_dba_user (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  created_on datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  name varchar(45) NOT NULL,
-  role enum('manager','admin','warehouse') NOT NULL,
-  price decimal(10,2) NOT NULL DEFAULT '0.00',
-  email varchar(100) DEFAULT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY email_UNIQUE (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+$db = YZE_DBAImpl::get_instance();
 
 // 1. 连接管理
 ok($db instanceof YZE_DBAImpl, "get_instance 返回实例");
@@ -82,7 +50,7 @@ ok(ctype_xdigit($hex) && strlen($hex) % 2 === 0, "encrypt 输出十六进制");
 ok(ctype_xdigit($db->encrypt("abc123")), "encrypt 短字符串亦为十六进制");
 
 // 4. save 插入 + 回读
-$u = new T_DBA_User();
+$u = new Tests_Dba_User_Model();
 $u->set("name","alice");
 $u->set("role","admin");
 $u->set("price",99.5);
@@ -104,24 +72,24 @@ $db->update("tests_dba_user","name=:n","id=:id",[":n"=>"alice2",":id"=>$id]);
 ok($db->lookup("name","tests_dba_user","id=:id",[":id"=>$id]) === "alice2", "update 更新数据");
 
 // 6. 批量查询 / find_All
-$u2 = new T_DBA_User();
+$u2 = new Tests_Dba_User_Model();
 $u2->set("name","bob"); $u2->set("role","manager"); $u2->set("price",1); $u2->set("email","bob@example.com"); $u2->set("created_on","2026-02-02 08:00:00");
 $id2 = $db->save($u2);
 // ai@2026-08-31 find_by 内部结构化 where 有缺陷，改用 select + 原生 where IN
-$sql = YZE_SQL::new_SQL()->from(T_DBA_User::class,"a")->where("a.id IN (".intval($id).",".intval($id2).")");
+$sql = YZE_SQL::new_SQL()->from(Tests_Dba_User_Model::class,"a")->where("a.id IN (".intval($id).",".intval($id2).")");
 $arr = $db->select($sql);
 ok(is_array($arr) && count($arr) === 2, "select + 原生 where 批量查询");
-$all2 = $db->find_All(T_DBA_User::class);
+$all2 = $db->find_All(Tests_Dba_User_Model::class);
 ok(count($all2) >= 2 && isset($all2[$id]), "find_All 查询全部并以主键为索引");
 
 // 7. select（index_field）/ get_Single（原生 where）
-$sql = YZE_SQL::new_SQL()->from(T_DBA_User::class, "t");
+$sql = YZE_SQL::new_SQL()->from(Tests_Dba_User_Model::class, "t");
 $rows = $db->select($sql, [], "name");
 ok(isset($rows["alice2"]) && $rows["alice2"]->get("role") === "admin", "select 以 name 为索引");
-$sql = YZE_SQL::new_SQL()->from(T_DBA_User::class, "t")->where("t.name = ".$db->quote("bob"));
+$sql = YZE_SQL::new_SQL()->from(Tests_Dba_User_Model::class, "t")->where("t.name = ".$db->quote("bob"));
 $one = $db->get_Single($sql);
-ok($one instanceof T_DBA_User && $one->get("name") === "bob", "get_Single 单条");
-$sql = YZE_SQL::new_SQL()->from(T_DBA_User::class, "t")->where("t.name = ".$db->quote("nobody"));
+ok($one instanceof Tests_Dba_User_Model && $one->get("name") === "bob", "get_Single 单条");
+$sql = YZE_SQL::new_SQL()->from(Tests_Dba_User_Model::class, "t")->where("t.name = ".$db->quote("nobody"));
 ok($db->get_Single($sql) === null, "get_Single 无结果返回 null");
 
 // 8. lookup 系列
@@ -170,7 +138,7 @@ $uupd = $db->check_Insert("tests_dba_user",["name"=>"dave","role"=>"manager","pr
 ok($uupd > 0 && $db->lookup("price","tests_dba_user","name=:n",[":n"=>"dave"]) == 7, "check_Insert update=true 更新并返回主键 $uupd");
 
 // 11. 删除（原生 deletefrom；dba.php delete() 内部结构化 where 有缺陷不再断言）
-$del_u = new T_DBA_User();
+$del_u = new Tests_Dba_User_Model();
 $del_u->set("name","del-me"); $del_u->set("role","manager"); $del_u->set("price",9); $del_u->set("email","del@example.com"); $del_u->set("created_on","2026-07-07 10:00:00");
 $del_id = $db->save($del_u);
 ok($db->lookup("id","tests_dba_user","id=:id",[":id"=>$del_id]) !== null, "删除前记录存在");
@@ -184,7 +152,7 @@ ok(is_array($row) && isset($row["id"]) && isset($row["name"]), "native_Query nex
 ok($rst->f("name") === $row["name"], "wrapper f() 取当前行字段");
 $rst->reset();
 ok($rst->next() !== null, "wrapper reset 后重新遍历");
-$e = new T_DBA_User();
+$e = new Tests_Dba_User_Model();
 $rst->getEntity($e);
 ok($e->get("id") > 0 && $e->get("name") !== null, "wrapper getEntity 填充 model");
 $rst->reset();
@@ -193,48 +161,47 @@ ok(is_array($allRows) && count($allRows) >= 1, "wrapper get_results 全部结果
 
 // 13. execute（YZE_SQL delete，原生 where）与 exec
 // ai@2026-08-31 单表 DELETE 生成 SQL 无别名，原生 where 不能带表别名（否则 1054 Unknown column）
-$sql = YZE_SQL::new_SQL()->from(T_DBA_User::class, "t")->where("id = ".intval($iid))->delete();
+$sql = YZE_SQL::new_SQL()->from(Tests_Dba_User_Model::class, "t")->where("id = ".intval($iid))->delete();
 ok($db->execute($sql) !== false, "execute 执行 YZE_SQL delete");
 ok($db->lookup("id","tests_dba_user","id=:id",[":id"=>$iid]) === null, "execute 删除生效");
 ok($db->exec("UPDATE tests_dba_user SET price=:p WHERE name=:n",[":p"=>66.6,":n"=>"dave"]) !== false, "exec 原生更新");
 ok($db->lookup("price","tests_dba_user","name=:n",[":n"=>"dave"]) == 66.6, "exec 更新生效");
 
 // 14. valid_entity 字段校验异常
-$t = new T_DBA_User();
+$t = new Tests_Dba_User_Model();
 $t->set("name", null); $t->set("role","admin"); $t->set("price",1); $t->set("created_on","2026-01-01 00:00:00");
 expect_exception(function() use ($db,$t){ $db->save($t); }, "Field 'name' cannot be null", "name=null 非空校验");
 
-$t3 = new T_DBA_User();
+$t3 = new Tests_Dba_User_Model();
 $t3->set("name","xx"); $t3->set("role","super"); $t3->set("price",1); $t3->set("created_on","2026-01-01 00:00:00");
 expect_exception(function() use ($db,$t3){ $db->save($t3); }, "is not in the accepted enum list", "role 非法枚举校验");
 
-$t4 = new T_DBA_User();
+$t4 = new Tests_Dba_User_Model();
 $t4->set("name","yy"); $t4->set("role","admin"); $t4->set("price",1); $t4->set("created_on","not-a-date");
 expect_exception(function() use ($db,$t4){ $db->save($t4); }, "is not the date value", "created_on 非法日期校验");
 
 // ai@2026-08-31 Column 无 default 时解析为 ''，valid_entity 的 "doesn't have a default value" 分支不可达（isset('') 为 true），此处不再断言
 
 // 15. save 的 INSERT_ON_DUPLICATE_KEY_UPDATE 策略（email 冲突更新）
-$u6 = new T_DBA_User();
+$u6 = new Tests_Dba_User_Model();
 $u6->set("name","dup-upd"); $u6->set("role","manager"); $u6->set("price",40); $u6->set("email","alice@example.com"); $u6->set("created_on","2026-05-05 10:00:00");
 $db->save($u6, YZE_SQL::INSERT_ON_DUPLICATE_KEY_UPDATE);
 ok($db->lookup("name","tests_dba_user","email=:e",[":e"=>"alice@example.com"]) === "dup-upd", "save INSERT_ON_DUPLICATE_KEY_UPDATE 冲突更新");
 
 // 16. save 的 INSERT_NOT_EXIST 策略（checkSql 查出记录则不插入，返回 0）
-$u7 = new T_DBA_User();
+$u7 = new Tests_Dba_User_Model();
 $u7->set("name","exists-chk"); $u7->set("role","manager"); $u7->set("price",50); $u7->set("created_on","2026-06-06 10:00:00");
 // ai@2026-08-31 checkSql 使用原生 where
-$ck = YZE_SQL::new_SQL()->from(T_DBA_User::class, "t")->where("t.name = ".$db->quote("exists-chk"));
+$ck = YZE_SQL::new_SQL()->from(Tests_Dba_User_Model::class, "t")->where("t.name = ".$db->quote("exists-chk"));
 $r = $db->save($u7, YZE_SQL::INSERT_NOT_EXIST, $ck);
 ok($r == $u7->get_key() && $r > 0, "save INSERT_NOT_EXIST 记录不存在时插入 $r");
 // ai@2026-08-31 第二次必须用无主键的新 model（原实例已有主键会走 update 分支）
-$u7b = new T_DBA_User();
+$u7b = new Tests_Dba_User_Model();
 $u7b->set("name","exists-chk"); $u7b->set("role","manager"); $u7b->set("price",50); $u7b->set("created_on","2026-06-06 10:00:00");
 $r2 = $db->save($u7b, YZE_SQL::INSERT_NOT_EXIST, $ck);
 ok($r2 == 0 && $u7b->get_key() == 0, "save INSERT_NOT_EXIST 记录已存在时不插入返回 0");
 
-// 清理测试表
-$db->exec("DROP TABLE IF EXISTS tests_dba_user");
+// ai@2026-09-21 测试表由 Tests_Db 统一管理，测试内不再 DROP
 ?>
 --EXPECT--
 PASS - get_instance 返回实例

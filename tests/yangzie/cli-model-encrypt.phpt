@@ -2,7 +2,7 @@
 scripts/yze.php 加密字段：CLI --encrypt/-e 及交互向导生成 encrypt Column 标注，字段不存在时报错退出
 --SKIPIF--
 <?php
-// ai@2026-09-13 本测试需要建临时表才能验证生成结果，默认数据库不可连接时跳过
+// ai@2026-09-21 只需数据库服务可连接；测试库/表由 test 模块的 Tests_Db 在 FILE 中检查并创建
 ini_set("display_errors",0);
 $root = dirname(dirname(dirname(__FILE__)));
 if (!file_exists($root."/app/public_html/init.php")) die("skip init.php not found");
@@ -24,8 +24,8 @@ try {
     $db_name = $app_module->get_module_config("default_db");
     $conn = $app_module->get_module_config("db_connections")[$db_name] ?? null;
     if (!$conn || !$conn["db_host"]) die("skip db connection not configured");
-    $db = mysqli_connect($conn["db_host"], $conn["db_user"], $conn["db_psw"], $db_name, intval($conn["db_port"]));
-    if (!$db) die("skip db not connectable");
+    // ai@2026-09-21 不指定 dbname 连接，库尚不存在时也可判断服务是否可用
+    if (!mysqli_connect($conn["db_host"], $conn["db_user"], $conn["db_psw"], "", $conn["db_port"])) die("skip db not connectable");
 } catch (\Throwable $e) {
     die("skip ".$e->getMessage());
 }
@@ -39,6 +39,7 @@ $table = "yze_encrypt_test";
 $modules = array("yzeenc1", "yzeenc2", "yzeenc3", "yzeenc4", "yzeenc9");
 
 // ai@2026-09-13 递归删除目录，用于清理测试生成的 module 脚手架
+// ai@2026-09-21 测试库/表由 test 模块的 Tests_Db 统一管理，测试内不再建表、删表
 function t_rmdir($dir){
     if (!is_dir($dir)) return;
     foreach (scandir($dir) as $f){
@@ -76,7 +77,7 @@ function column_args($model_file){
 $fail = 0;
 function check($cond, $label){ global $fail; echo ($cond ? "PASS: " : "FAIL: ").$label."\n"; if(!$cond) $fail++; }
 
-// ai@2026-09-13 连接默认库并建临时表（无外键，避免生成时触发关联表的交互输入）
+// ai@2026-09-21 连接默认库，测试库/表由 test 模块的 Tests_Db 统一检查并创建（表无外键，避免生成时触发关联表的交互输入）
 ob_start();
 chdir($root."/app/public_html");
 include_once "init.php";
@@ -85,17 +86,12 @@ chdir($root);
 
 $app_module = new \app\App_Module();
 $db_name = $app_module->get_module_config("default_db");
-$conn = $app_module->get_module_config("db_connections")[$db_name];
-$db = mysqli_connect($conn["db_host"], $conn["db_user"], $conn["db_psw"], $db_name, intval($conn["db_port"]));
-mysqli_query($db, "set names UTF8MB4");
-mysqli_query($db, "DROP TABLE IF EXISTS `$table`");
-mysqli_query($db, "CREATE TABLE `$table`(`id` int NOT NULL AUTO_INCREMENT, `password` varchar(45) NOT NULL DEFAULT '', `memo` varchar(100) DEFAULT NULL, `other` varchar(45) DEFAULT NULL, PRIMARY KEY(`id`))");
+\app\modules\test\Tests_Db::ensure(array($db_name));
 t_clean($root, $modules);
 
-// ai@2026-09-13 兜底清理：测试中断（超时/致命错误）时也删除临时表与生成的 module
-register_shutdown_function(function() use ($root, $modules, $db, $table){
+// ai@2026-09-13 兜底清理：测试中断（超时/致命错误）时也清理生成的 module
+register_shutdown_function(function() use ($root, $modules){
     t_clean($root, $modules);
-    @mysqli_query($db, "DROP TABLE IF EXISTS `$table`");
 });
 
 // 1. CLI 长选项：逗号分隔的多个字段都标注 encrypt，其余字段不受影响
@@ -134,7 +130,6 @@ check($ret === 0 && $code4 !== "" && strpos($code4, "encrypt: true") === false, 
 
 // ai@2026-09-13 显式清理（shutdown 中还有一次幂等兜底）
 t_clean($root, $modules);
-mysqli_query($db, "DROP TABLE IF EXISTS `$table`");
 
 echo $fail === 0 ? "ALL PASS\n" : "SOME FAIL\n";
 --EXPECT--

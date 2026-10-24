@@ -101,8 +101,10 @@ Yangzie 是基于 MVC 的后端 PHP 开发框架，采用 PHP 8 以上版本开�
 Yangzie 是基于 PHP 8+ 开发的快速开发框架。使用 Yangzie 开发，必须先在本地安装好 WEB 运行环境，你可以选择你喜欢的任意一个 WEB 环境，比如 Apache、Nginx 等，也可以用 PHP 内置 Web Server。你只需要三步即可开始进行开发：
 
 1. cd 进入到项目的 app/public_html 目录
-2. 运行 `php -S localhost:8080` 启动 PHP 内置 Web Server
+2. 运行 `php -S localhost:8080 dev-server.php` 启动 PHP 内置 Web Server
 3. 直接访问 localhost:8080 即可
+
+> 注意必须带上 `dev-server.php` 这个 router 脚本（它已随框架提供）。PHP 内置 Server 不带 router 时，会把 URI 中带扩展名的请求（如 `/模块/控制器/action.json`）当成静态文件处理，文件不存在就直接返回 404，不会交给框架；而 Yangzie 的"视图格式"功能恰恰依赖 URI 尾部的 `.json`、`.pdf` 等后缀。`dev-server.php` 的作用就是把非静态文件的请求全部转发给 `index.php`，等价于 Apache 的 rewrite 规则。router 脚本的文件名不要改成 `router.php`、`view.php` 等框架内已有的文件名，否则会干扰框架类的加载（原因见该文件内的注释）。
 
 对于其他 Web Server，由于各自配置不同，请自行配置，但必须要做的是：
 
@@ -335,7 +337,7 @@ app/\_\_config\_\_.php中可以用来定义系统常量，默认有如下几个�
 </IfModule>
 ```
 
-不管哪种配置，其目的都是一样的：把所有的请求都转发到 public_html/index.php 中，而 index.php 是 Yangzie 的处理入口。
+不管哪种配置，其目的都是一样的：把所有的请求都转发到 public_html/index.php 中，而 index.php 是 Yangzie 的处理入口。如果使用 PHP 内置 Web Server 开发，这个"rewrite"由 public_html/dev-server.php 承担（启动方式见第三章），它把非静态文件的请求全部交给 index.php。
 
 URL 路由由 YZE_Router 负责，这是一个全局单例对象，在一个请求的整个处理流程中它是唯一的。该对象的作用是管理整个系统的所有 URL 映射，在请求开始处理时，负责把系统中所有模块的 URL 映射读取出来，以便请求到来时知道某个 URL 由哪个 controller 的 action 处理。
 
@@ -941,7 +943,7 @@ Model 类是对数据库表的映射，database to code 的方式，需要事先
 3. 表常量：`TABLE`（表名）、`MODULE_NAME`（模块名）、`KEY_NAME`（主键字段名）、`UUID_NAME`（uuid 字段名）
 4. `unique_key`：唯一键字段映射（字段名 => 键名）；`relation_column`：外键关联映射
 5. 如果表和其他表之间有关联关系，会自动生成相关的 get、set 函数，方法名就是关联字段名去掉_id的部分
-6. 加密字段设置：字段可通过 Column 注解 `encrypt: true` 声明为加密字段（旧模型也可在类中定义 `$encrypt_columns` 数组），见字段加密
+6. 加密字段设置：字段可通过 Column 注解 `encrypt: true` 声明为加密字段，见字段加密
 
 #### [数据对象名].method.php
 

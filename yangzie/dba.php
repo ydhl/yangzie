@@ -14,7 +14,11 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 各数据库的连接对象集合，key 为数据库名
 	 *
-	 * @var array[PDO]
+	 * ai@2026-09-21 docblock 改为 array<string, PDO|null>，让 intelephense 对
+	 * self::$conn[$name] 的访问推导出 PDO|null 而非整个数组，消除所有
+	 * "Expected type 'array|string|ArrayAccess|null'. Found 'array[PDO]'" 误报
+	 *
+	 * @var array<string, PDO|null>
 	 */
 	private static $conn=[];
 
@@ -65,7 +69,7 @@ class YZE_DBAImpl extends YZE_Object
 		$this->db_name = $db_name;
 
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
-		if ($force && (self::$conn[$db_name] ?? null)) self::$conn[$db_name] = null;
+		if ($force && (self::$conn[$db_name] ?? null)) self::$conn[$db_name] = [];
 
 		// 没有数据库，或者数据库链接已经建立
 		if (!$db_name || (self::$conn[$db_name] ?? null)){
@@ -94,14 +98,14 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 如果是MySQL server has gone away错误，则重连数据库并执行传入的方法
 	 * 其他情况抛出异常
-	 * @param $errorCode
-	 * @param $errorInfo
-	 * @param $method
-	 * @param ...$args
+	 * @param string|int $errorCode
+	 * @param array $errorInfo
+	 * @param string $method
+	 * @param mixed ...$args ai@2026-09-21 显式声明 mixed，让 intelephense 对变参不再报 "no type information available"
 	 * @throws YZE_DBAException
 	 * @return mixed|void
 	 */
-	private function check_connect($errorCode, $errorInfo, $method, ...$args){
+	private function check_connect(string|int $errorCode, array $errorInfo, string $method, mixed ...$args){
 		if(is_array($errorInfo)){
 			$errorInfo = join(' ', $errorInfo);
 		}
@@ -145,13 +149,16 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 获取 model 的完整记录数据，其中加密字段进行加密处理
 	 *
+	 * ai@2026-09-21 仅依据 Column(encrypt: true) 注解判定加密字段；
+	 *     旧版的 $encrypt_columns 数组属性已废弃，不再读取。
+	 *
 	 * @param YZE_Model $entity model 对象
 	 * @return array 加密后的字段值集合
 	 */
 	private function get_entity_record(YZE_Model $entity){
 		$records = $entity->get_records();
 		foreach ($records as $name => &$value) {
-			if (in_array($name, $entity->encrypt_columns)){
+			if ($entity->is_encrypt_column($name)){
 				$value = $this->encrypt($value);
 			}
 		}
@@ -232,7 +239,8 @@ class YZE_DBAImpl extends YZE_Object
 					continue;
 				}
 				$value = self::filter_var($field_value);
-				if (in_array($field_name, $entity->encrypt_columns)){
+				// ai@2026-09-21 仅依据 Column(encrypt: true) 注解判定加密字段；旧版的 $encrypt_columns 数组属性已废弃
+				if ($entity->is_encrypt_column($field_name)){
 					$value = $this->decrypt($value);
 				}
 				$entity->set( $field_name , $value);#数据库取出来编码
@@ -281,9 +289,12 @@ class YZE_DBAImpl extends YZE_Object
 			return null;
 		}
 		$key = $this->get_crypt_key();
-		$rst = $this->native_Query("select AES_DECRYPT(".$this->quote(hex2bin($hexString)).",".$this->quote($key).") as var");
+		// ai@2026-09-21 用 HEX() 把二进制结果转成 hex 字符串再返回，
+		//     避免 utf8 连接把 AES_DECRYPT 输出的非 UTF-8 字节替换成 '?' 导致 roundtrip 失败。
+		$rst = $this->native_Query("select HEX(AES_DECRYPT(".$this->quote(hex2bin($hexString)).",".$this->quote($key).")) as var");
 		$rst->next();
-		return $rst->f('var');
+		$hex = $rst->f('var');
+		return is_null($hex) ? null : hex2bin($hex);
 	}
 
 	/**
@@ -293,19 +304,24 @@ class YZE_DBAImpl extends YZE_Object
 	 * @throws YZE_DBAException
 	 */
 	public function encrypt($value){
+		// ai@2026-09-21 NULL 输入直接返回 NULL，避免 AES_ENCRYPT('', key) 把空串当成空内容加密后落库
+		if (is_null($value)) {
+			return null;
+		}
+		// ai@2026-09-21 用 HEX() 把 AES_ENCRYPT 的二进制结果先转成 hex 字符串，
+		//     避免 utf8 连接把非 UTF-8 字节替换成 '?' 导致 encrypt 输出本身就不可逆。
 		$key = $this->get_crypt_key();
-		$rst = $this->native_Query("select AES_ENCRYPT(".$this->quote($value).",".$this->quote($key).") as var");
+		$rst = $this->native_Query("select HEX(AES_ENCRYPT(".$this->quote($value).",".$this->quote($key).")) as var");
 		$rst->next();
-		$value = $rst->f('var');
-		return $value ? bin2hex($value) : $value;
+		return $rst->f('var');
 	}
 
 	/**
 	 * 对value对值进行转义
-	 * @param $value
+	 * @param string $value
 	 * @return string
 	 */
-	public function quote($value){
+	public function quote(string $value){
 	    return self::$conn[$this->db_name]->quote($value);
 	}
 
@@ -328,7 +344,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @return array model数组
 	 * @throws YZE_DBAException
 	 */
-	public function find_by(array $ids, $class, $suffix){
+	public function find_by(array $ids, $class, string $suffix){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -350,11 +366,12 @@ class YZE_DBAImpl extends YZE_Object
 	 * $key为查询表的主键
 	 *
 	 * @param int $key
-	 * @param string|Model $class
+	 * @param string|YZE_Model $class
+	 * @param string|null $suffix 分表后缀
 	 * @throws YZE_DBAException
 	 * @return YZE_Model
 	 */
-	public function find($key,$class, $suffix=null){
+	public function find($key,$class, string|null $suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -370,11 +387,12 @@ class YZE_DBAImpl extends YZE_Object
 
 	/**
 	 * 查询所有的记录，返回实体数组,键为主键值
-	 * @param string|Model $class
+	 * @param string|YZE_Model $class
+	 * @param string|null $suffix 分表后缀
 	 * @throws YZE_DBAException
 	 * @return array
 	 */
-	public function find_All($class, $suffix=null){
+	public function find_All($class, string|null $suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -486,10 +504,19 @@ class YZE_DBAImpl extends YZE_Object
 		$num_rows = count($raw_result);
 		$entity_objects = array();
 
+		// ai@2026-09-21 分库/分表上下文同步：本次查询是在 $this->db_name 库上执行的，
+		// 构建出的 model 必须带上该库名与各表的分表后缀，否则 model 后续调用
+		// save/remove/refresh 或自身的链式查询时会回到默认库、丢失分表后缀
+		$suffixs = $sql->get_suffixs();
+
 		//多表查询, 对每一行数据中的每一个entity, 构建好entity
 		for($i=0;$i<$num_rows;$i++){#所有的对象
 			foreach($classes as $alias => $cls){
 				$e = new $cls();
+				$e->in_db($this->db_name);
+				if ( !empty($suffixs[$alias]) ){
+					$e->suffix($suffixs[$alias]);
+				}
 				$entity_objects[$i][ $alias ] = $e;
 			}
 		}
@@ -1050,10 +1077,10 @@ class YZE_DBAImpl extends YZE_Object
 
 	/**
 	 * 返回指定表的字段列表
-	 * @param $table
+	 * @param string $table
 	 * @return array
 	 */
-	public function table_fields($table) {
+	public function table_fields(string $table) {
 	    $sql="show columns from $table";
 
 		try{

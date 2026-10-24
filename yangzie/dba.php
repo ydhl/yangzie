@@ -14,7 +14,11 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 各数据库的连接对象集合，key 为数据库名
 	 *
-	 * @var array[PDO]
+	 * ai@2026-09-21 docblock 改为 array<string, PDO|null>，让 intelephense 对
+	 * self::$conn[$name] 的访问推导出 PDO|null 而非整个数组，消除所有
+	 * "Expected type 'array|string|ArrayAccess|null'. Found 'array[PDO]'" 误报
+	 *
+	 * @var array<string, PDO|null>
 	 */
 	private static $conn=[];
 
@@ -65,7 +69,7 @@ class YZE_DBAImpl extends YZE_Object
 		$this->db_name = $db_name;
 
 		// ai@2026-05-27 替换 @ 抑制符，使用 ?? null 显式处理
-		if ($force && (self::$conn[$db_name] ?? null)) self::$conn[$db_name] = null;
+		if ($force && (self::$conn[$db_name] ?? null)) self::$conn[$db_name] = [];
 
 		// 没有数据库，或者数据库链接已经建立
 		if (!$db_name || (self::$conn[$db_name] ?? null)){
@@ -94,14 +98,14 @@ class YZE_DBAImpl extends YZE_Object
 	/**
 	 * 如果是MySQL server has gone away错误，则重连数据库并执行传入的方法
 	 * 其他情况抛出异常
-	 * @param $errorCode
-	 * @param $errorInfo
-	 * @param $method
-	 * @param ...$args
+	 * @param string|int $errorCode
+	 * @param array $errorInfo
+	 * @param string $method
+	 * @param mixed ...$args ai@2026-09-21 显式声明 mixed，让 intelephense 对变参不再报 "no type information available"
 	 * @throws YZE_DBAException
 	 * @return mixed|void
 	 */
-	private function check_connect($errorCode, $errorInfo, $method, ...$args){
+	private function check_connect(string|int $errorCode, array $errorInfo, string $method, mixed ...$args){
 		if(is_array($errorInfo)){
 			$errorInfo = join(' ', $errorInfo);
 		}
@@ -314,10 +318,10 @@ class YZE_DBAImpl extends YZE_Object
 
 	/**
 	 * 对value对值进行转义
-	 * @param $value
+	 * @param string $value
 	 * @return string
 	 */
-	public function quote($value){
+	public function quote(string $value){
 	    return self::$conn[$this->db_name]->quote($value);
 	}
 
@@ -340,7 +344,7 @@ class YZE_DBAImpl extends YZE_Object
 	 * @return array model数组
 	 * @throws YZE_DBAException
 	 */
-	public function find_by(array $ids, $class, $suffix){
+	public function find_by(array $ids, $class, string $suffix){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -362,11 +366,12 @@ class YZE_DBAImpl extends YZE_Object
 	 * $key为查询表的主键
 	 *
 	 * @param int $key
-	 * @param string|Model $class
+	 * @param string|YZE_Model $class
+	 * @param string|null $suffix 分表后缀
 	 * @throws YZE_DBAException
 	 * @return YZE_Model
 	 */
-	public function find($key,$class, $suffix=null){
+	public function find($key,$class, string|null $suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -382,11 +387,12 @@ class YZE_DBAImpl extends YZE_Object
 
 	/**
 	 * 查询所有的记录，返回实体数组,键为主键值
-	 * @param string|Model $class
+	 * @param string|YZE_Model $class
+	 * @param string|null $suffix 分表后缀
 	 * @throws YZE_DBAException
 	 * @return array
 	 */
-	public function find_All($class, $suffix=null){
+	public function find_All($class, string|null $suffix=null){
 		if(!($class instanceof YZE_Model) && !class_exists($class)){
 			throw new YZE_DBAException("Model Class $class not found");
 		}
@@ -1071,10 +1077,10 @@ class YZE_DBAImpl extends YZE_Object
 
 	/**
 	 * 返回指定表的字段列表
-	 * @param $table
+	 * @param string $table
 	 * @return array
 	 */
-	public function table_fields($table) {
+	public function table_fields(string $table) {
 	    $sql="show columns from $table";
 
 		try{

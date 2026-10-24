@@ -678,7 +678,11 @@ class YZE_Request extends YZE_Object {
         $_ = array ();
         foreach ( $routers as $module => $router_info ) {
             foreach ( $router_info as $router => $acontroller ) {
-                $router = ltrim($router, '/');
+                // ai@2026-09-22 由 ltrim 改为 trim：配置里的 uri 不允许以 / 开头或结尾，
+                // 但开发者写成 'test/demo/about/' 时，只去左斜杠会留下尾部 /，
+                // 导致 '^/test/demo/about/.json$' 这类格式分支永远匹配不上。
+                // 两侧都去掉后，尾部斜杠统一由下面的 /?$ 容忍。
+                $router = trim($router, '/');
                 if (preg_match ( "#^/{$router}\.(?P<__yze_resp_format__>[^/]+)$#i", $uri, $matches ) || preg_match ( "#^/{$router}/?$#i", $uri, $matches )) {
                     $_ ['controller_name'] = strtolower ( $acontroller ['controller'] );
                     $_ ['module'] = $module;

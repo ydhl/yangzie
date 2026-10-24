@@ -1,7 +1,5 @@
 # Yangzie PHP 框架开发手册
 
-![image1.png](images/image1.png)
-
 ## 第一章 前言
 
 Yangzie 是基于 MVC 的后端 PHP 开发框架，采用 PHP 8 以上版本开发。框架中所有的概念与其他框架类似，但 Yangzie 的目标是"刚刚好，够用就行"。
